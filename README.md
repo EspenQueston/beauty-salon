@@ -4,16 +4,17 @@ Plateforme SaaS multi-tenant de réservation pour les professionnels de la beaut
 Chaque salon dispose d'un mini-site public sur son propre sous-domaine, d'un
 système de réservation en ligne et d'un espace de gestion.
 
-Ce dépôt couvre les **phases 1 et 2** de la feuille de route : socle multi-tenant
-et MVP réservation. Les paiements en ligne, la marketplace, WhatsApp Business et
-les domaines personnalisés ne sont pas implémentés.
+Ce dépôt couvre les **phases 1 et 2** en entier, l'essentiel de la **phase 3**,
+et deux points de la phase 4. Ce qui manque est listé sans détour plus bas, à
+[Où en est le produit](#où-en-est-le-produit) — un README qui promet plus que
+le code ne fait perdre plus de temps qu'il n'en économise.
 
 ```
 localhost:3100                page de la plateforme
 app.localhost:3100            espace professionnel des salons
 <slug>.localhost:3100         mini-site public d'un salon
 localhost:8001                API Django
-localhost:8001/admin          administration plateforme
+localhost:8001/admin          administration plateforme (chemin réglable)
 ```
 
 Les navigateurs résolvent nativement n'importe quel sous-domaine de
@@ -199,11 +200,21 @@ l'exigence en développement local.
 Deux flux d'argent distincts : l'**abonnement** que le salon paie à la
 plateforme, et l'**acompte** que la cliente verse au salon.
 
-Aucune passerelle de paiement n'est branchée — le document de cadrage
-conditionne cette intégration à la validation d'un partenaire par pays. Ce qui
-est implémenté est l'étape 1 qu'il décrit : suivre ce qui est dû, faire
+Aucune passerelle de paiement n'est branchée, et ce n'est pas seulement un
+retard de planning : les marchés visés sont le Congo, la RDC et la Chine, et
+**Stripe n'en sert aucun des trois**. Les salons paient déjà leurs
+fournisseurs en Mobile Money, WeChat Pay ou Alipay. Le document de cadrage
+conditionne donc l'intégration à la validation d'un partenaire par pays.
+
+Ce qui est implémenté est l'étape 1 qu'il décrit : suivre ce qui est dû, faire
 avancer les périodes, et constater les règlements encaissés hors ligne
 (espèces, Mobile Money, virement).
+
+Pour l'acompte d'une cliente, ce circuit fonctionne déjà de bout en bout — QR
+du salon, capture envoyée, vérification humaine. La voie la plus courte pour
+faire payer l'abonnement est de transposer ce même mécanisme à la facture,
+plutôt que d'intégrer une API qui ne couvre pas les pays où le produit est
+utilisé.
 
 Une tâche quotidienne idempotente convertit les essais échus, émet les
 factures des périodes écoulées et bascule en impayé les abonnements en retard.
@@ -215,6 +226,56 @@ les lignes existantes ne verrait pas les factures des autres salons.
 Tout est stocké en `timestamptz` UTC. Chaque salon porte son fuseau ; les
 horaires récurrents sont saisis en heure locale et convertis via `zoneinfo`. Un
 salon de Kinshasa et un de Guangzhou cohabitent dans la même base.
+
+C'est la source de bug la plus coûteuse du produit, et la plus discrète : une
+recette datée avec l'horloge du serveur tombe sur la veille pendant huit heures
+par jour, et personne ne le voit avant de comparer une caisse. Toute date
+métier passe donc par le fuseau **du salon**, jamais par celui de la machine
+qui calcule ou qui affiche.
+
+### Le parcours complet d'un rendez-vous
+
+```
+réserver → acompte → le salon accepte → rappel J-1 → arrivée (QR) → terminé → avis
+                ↓                                ↓
+        preuve de versement            annulation / déplacement
+```
+
+Chaque étape existe des deux côtés — ce que la cliente voit, ce que le salon
+fait :
+
+| Étape | Cliente | Salon |
+| --- | --- | --- |
+| Réserver | tunnel du mini-site, options, articles à prévoir | arrive dans l'agenda |
+| Acompte | QR du salon, envoi d'une capture | vérifie et accepte, ou refuse avec un motif |
+| Rappel | e-mail J-1 automatique | rien à faire |
+| Arrivée | QR ou code à six caractères | scanne, ou saisit le code |
+| Terminé | e-mail d'invitation à noter | marque la prestation faite |
+| Avis | 5 critères + texte libre, 30 jours | les lit, ne peut ni les modifier ni les supprimer |
+| Changement | annule dans la fenêtre annoncée | annule ou **déplace** vers un créneau réel |
+
+L'acompte n'est **jamais** encaissé par la plateforme : la cliente paie le
+salon directement, et le salon constate. Voir [Abonnements et
+acomptes](#abonnements-et-acomptes).
+
+### Sécurité
+
+[SECURITY.md](SECURITY.md) dit ce qui protège aujourd'hui, la liste à cocher
+avant une mise en ligne, et ce qui reste ouvert. Trois points qui ne se
+devinent pas en lisant le code :
+
+- **`config.settings.production` refuse de démarrer** si `DJANGO_SECRET_KEY`
+  est absente, trop courte, ou restée à la valeur de développement. Cette clé
+  ne signe pas que les sessions : les liens de réinitialisation, les jetons de
+  paiement, les codes d'arrivée et les invitations à noter en dérivent tous.
+- **Les médias privés ne sont pas servis par le serveur de fichiers.** Une
+  preuve de versement vit sous `MEDIA_ROOT/prive/` et ne sort que par
+  `/api/v1/media/<id>/fichier`, qui vérifie l'appartenance au salon. Côté
+  déploiement : `location /media/prive/ { deny all; }`.
+- **Les réglages sont vérifiés par des tests**, pas par une consigne :
+  `tests/test_securite_deploiement.py` charge le module de production comme le
+  ferait un déploiement. Un drapeau qui repasse à `False` échoue avant la mise
+  en ligne.
 
 ---
 
@@ -250,6 +311,25 @@ cd apps/web && npx tsc --noEmit && npm run lint && npm run build
 
 Mailpit capture tous les e-mails de développement : <http://localhost:8025>.
 
+### Avant une mise en ligne
+
+```bash
+cd apps/api && DJANGO_SETTINGS_MODULE=config.settings.production uv run python manage.py check --deploy
+```
+
+**À lancer avec l'environnement de production.** Avec le `.env` de
+développement, la commande s'arrête sur `ImproperlyConfigured: DJANGO_SECRET_KEY
+porte encore la valeur de developpement` — c'est le comportement voulu, et la
+preuve que le garde-fou fonctionne.
+
+Une fois les bonnes variables posées, aucun avertissement `security.*` ne doit
+rester, sauf `W021` — l'inscription HSTS preload, volontairement laissée au
+choix parce qu'elle est irréversible plusieurs mois.
+
+```bash
+cd apps/api && uv run pytest tests/test_securite_deploiement.py -v
+```
+
 ---
 
 ## Vérifier que l'isolation tient
@@ -270,19 +350,57 @@ cd apps/api && uv run pytest tests/test_booking_concurrency.py -v
 
 Deux threads, deux connexions, le même créneau : un seul gagne.
 
+```bash
+cd apps/api && uv run pytest tests/test_media_prive.py -v
+```
+
+Une preuve de versement ne sort que par la route authentifiée : l'inconnu
+n'entre pas, le salon voisin reçoit 404, et le chemin direct du fichier n'est
+plus servi.
+
 **À la main.** Inscrivez deux salons depuis `app.localhost:3100/inscription`,
 validez-les dans l'administration, puis réservez sur le mini-site du premier.
 Le rendez-vous doit apparaître dans son agenda — et nulle part sur le
 mini-site ni dans l'espace du second.
 
+La suite compte **570 tests**. Ils ne mesurent pas une couverture : chacun
+décrit une règle du métier ou un défaut déjà rencontré, et son nom dit
+laquelle.
+
 ---
 
-## Hors périmètre
+## Où en est le produit
 
-Paiements en ligne et acomptes automatiques, abonnements SaaS, WhatsApp Business
-API, SMS, domaines personnalisés, avis clients, prestations à domicile avec frais
-de zone, marketplace, statistiques avancées, application mobile, déploiement
-staging/production.
+### Fait
+
+| Phase | | |
+| --- | --- | --- |
+| 1–2 | Socle multi-tenant, RLS, mini-sites | catalogue, agenda, réservation publique, liste d'attente |
+| 3 | Équipe et permissions | 4 rôles, invitations par e-mail, rôle vérifié sur chaque vue |
+| 3 | Annulation et reprogrammation | le salon déplace vers un créneau réel ; la cliente annule dans la fenêtre qu'il publie |
+| 3 | Rappels automatisés | rappel J-1, demandes d'avis, libération des créneaux impayés, cycle de facturation |
+| 3 | Abonnements et factures | offres, périodes, factures numérotées, cycle quotidien idempotent |
+| 3 | Acompte manuel | QR par canal, preuve, vérification humaine, fenêtre de 30 minutes |
+| 3 | Rapports essentiels | accueil à douze chiffres, recettes/dépenses par catégorie, export CSV |
+| 4 | Prestations à domicile | forfait par quartier, choisi par la cliente au moment de réserver |
+| 4 | Avis contrôlés | rattachés à un rendez-vous honoré, 5 critères, fenêtre de 30 jours |
+
+S'y ajoutent, hors feuille de route : la boutique du salon (articles et
+fournitures à prévoir), l'arrivée par QR ou par code, et l'espace cliente
+multi-salons.
+
+### Pas fait
+
+| | Ce qui manque exactement |
+| --- | --- |
+| **Paiement de l'abonnement SaaS** | Le salon ne peut pas régler sa facture. Tout le reste de la facturation existe ; il manque le geste de paiement. **C'est le seul point qui bloque le livrable de la phase 3.** |
+| Passerelle de paiement | Aucune, et c'est un choix : Stripe ne sert ni le Congo, ni la RDC, ni la Chine. Voir [Abonnements et acomptes](#abonnements-et-acomptes). |
+| WhatsApp Business API | Seulement des liens `wa.me`. Ni gabarits, ni webhooks. |
+| Domaines personnalisés | Le modèle `Domain` porte `kind` et `verified_at`, le routage par hostname fonctionne. Manquent l'écran, la preuve de propriété et le certificat. |
+| Internationalisation | Tout passe par `gettext`, mais un seul catalogue (`fr`). |
+| SMS | Aucun. |
+| Application mobile, marketplace | Non commencés, et conditionnés dans la feuille de route elle-même. |
+| Déploiement | Les réglages de production existent et sont testés ; aucun pipeline de déploiement n'est fourni. |
 
 ### Dettes assumées
 
@@ -291,7 +409,9 @@ staging/production.
   filtrage par rôle. Le chiffrement applicatif viendra avec la phase paiements,
   où une gestion de clés devient de toute façon nécessaire.
 - **Médias en stockage local.** `django-storages` n'est pas encore branché sur
-  R2/S3 ; l'abstraction est en place, seul le backend reste à configurer.
+  R2/S3 ; l'abstraction est en place, seul le backend reste à configurer. Le
+  jour où il le sera, les médias privés passeront par des URL signées à durée
+  limitée plutôt que par la route authentifiée actuelle.
 - **Une seule langue.** Tout passe par `gettext` côté Django, mais un seul
   catalogue (`fr`) existe. Ajouter une langue ne demande aucune réécriture.
 - **Aucune passerelle de paiement.** Abonnements et acomptes sont suivis, les
@@ -300,3 +420,8 @@ staging/production.
 - **Facturation sans export comptable.** Les factures existent en base et à
   l'écran, mais ne sont ni exportées en PDF ni transmises à un logiciel
   comptable.
+- **Le type d'un fichier téléversé est déclaré par le navigateur.** Le contenu
+  réel n'est ouvert qu'ensuite, à la génération des dérivées. La conséquence
+  est bornée par `X-Content-Type-Options: nosniff`, mais une vérification par
+  signature au moment du téléversement serait plus juste. Détail dans
+  [SECURITY.md](SECURITY.md).
