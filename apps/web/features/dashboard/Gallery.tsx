@@ -275,7 +275,16 @@ export function Gallery() {
           </EmptyState>
         )}
 
-        <ul className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
+        {/*
+          Quatre par ligne sur grand écran, deux sur téléphone.
+
+          Une galerie se trie : on cherche une photo pour la mettre en
+          vitrine, ou pour la remonter. Trois colonnes obligeaient à faire
+          défiler pour comparer deux images qui, à quatre, tiennent côte à
+          côte — et laissaient une bande vide à droite sur un écran de
+          bureau.
+        */}
+        <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           {gallery.map((asset, index) => (
             <li key={asset.id}>
               <Card padded={false} className="overflow-hidden">

@@ -318,10 +318,19 @@ function Articles({
         </EmptyState>
       )}
 
-      {/* Deux colonnes dès le téléphone : ces cartes sont courtes, une seule
-          colonne allongerait le défilement sans rien gagner en lisibilité. */}
+      {/*
+        Deux colonnes sur téléphone, quatre sur grand écran.
+
+        Deux dès le téléphone parce que ces cartes sont courtes : une seule
+        colonne allongerait le défilement sans rien gagner en lisibilité.
+
+        Quatre au lieu de trois en haut de gamme : trois laissaient une bande
+        vide à droite d'un écran de bureau et ajoutaient une rangée tous les
+        trois articles. Un inventaire se parcourt du regard — plus il en
+        tient sur une ligne, moins il faut défiler pour trouver le bon.
+      */}
       {products.length > 0 && (
-        <ul className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
+        <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           {products.map((product) => (
             /*
               La carte en cours de modification prend toute la largeur.
@@ -334,7 +343,9 @@ function Articles({
             <li
               key={product.id}
               className={
-                editing === product.id ? "col-span-2 lg:col-span-3" : undefined
+                editing === product.id
+                  ? "col-span-2 md:col-span-3 lg:col-span-4"
+                  : undefined
               }
             >
               {editing === product.id ? (
@@ -981,7 +992,7 @@ function ToBring({
                       <p className="mb-1.5 text-xs text-subtle">
                         Ce que vous proposez à celles qui ne l&apos;ont pas :
                       </p>
-                      <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-3">
+                      <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3 lg:grid-cols-4">
                         {products.map((product) => {
                           const on = requirement.product_ids.includes(product.id);
                           return (
