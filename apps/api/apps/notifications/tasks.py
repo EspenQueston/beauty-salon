@@ -312,10 +312,14 @@ def _salon_recipients(tenant) -> list[str]:
     )
 
 
-# Les criteres notes, nommes dans l.e-mail d.invitation. Importes du modele
+# Les criteres notes, nommes dans l'e-mail d'invitation. Importes du modele
 # plutot que recopies : deux listes qui divergent, et la cliente lit dans son
 # courrier des criteres que le formulaire ne lui demande pas.
-from apps.reviews.models import Review as _Review
+#
+# En bas de fichier et non en tete : `apps.reviews` importe `scheduling`, qui
+# importe ce module pour ses taches. Remonter cette ligne referme la boucle au
+# demarrage. D'ou le `noqa` — la regle a raison en general, pas ici.
+from apps.reviews.models import Review as _Review  # noqa: E402
 
 ReviewCriteria = _Review.CRITERIA
 

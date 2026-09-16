@@ -19,7 +19,6 @@ seule façon de constater qu'il manquait quelque chose entre deux d'entre eux.
 """
 
 from datetime import timedelta
-from decimal import Decimal
 
 import pytest
 from django.utils import timezone

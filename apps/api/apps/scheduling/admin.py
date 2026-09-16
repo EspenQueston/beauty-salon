@@ -1,8 +1,11 @@
 from django.contrib import admin
+from django.utils import timezone
+from django.utils.html import format_html
 
 from apps.common.admin import TenantScopedAdmin
 
 from .models import AvailabilityException, Booking, BusinessHours
+from .waitlist import WaitlistEntry
 
 
 @admin.register(BusinessHours)
@@ -139,3 +142,78 @@ class BookingAdmin(TenantScopedAdmin):
     def has_delete_permission(self, request, obj=None) -> bool:
         # Les lignes de recette pointent vers ces rendez-vous.
         return False
+
+
+@admin.register(WaitlistEntry)
+class WaitlistEntryAdmin(TenantScopedAdmin):
+    """La liste d'attente d'un salon.
+
+    -----------------------------------------------------------------------
+    Pourquoi elle merite un ecran
+    -----------------------------------------------------------------------
+
+    C'est la seule table du produit ou une cliente a laisse ses coordonnees
+    **sans obtenir de rendez-vous**. Quand un salon dit « je n'ai jamais eu
+    de demande », c'est ici qu'on regarde — et souvent la reponse est qu'il
+    a des inscriptions qu'il n'a jamais ouvertes.
+
+    La colonne « Depuis » porte tout l'interet : une inscription de la
+    semaine est une file normale, la meme vieille d'un mois est une cliente
+    partie ailleurs, et c'est ce qu'il faut dire au salon.
+    """
+
+    list_display = (
+        "created_at",
+        "tenant",
+        "full_name",
+        "service",
+        "fenetre",
+        "status",
+        "depuis",
+    )
+    list_filter = ("status", "tenant")
+    search_fields = ("tenant__name", "full_name", "phone", "email", "note")
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+    list_select_related = ("tenant", "service", "staff_member")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Souhaite")
+    def fenetre(self, entry):
+        """La fenêtre demandée, et si elle est déjà passée.
+
+        Une inscription dont la période est révolue n'attend plus rien : la
+        proposer au salon lui ferait rappeler quelqu'un pour un créneau qui
+        n'existe plus.
+        """
+        fenetre = (
+            f"{entry.preferred_from.strftime('%d/%m')} "
+            f"→ {entry.preferred_to.strftime('%d/%m')}"
+        )
+        if entry.preferred_to < timezone.localdate():
+            return format_html(
+                '<span style="color:var(--bs-ink-muted)">{} — période passée</span>', fenetre
+            )
+        return fenetre
+
+    @admin.display(description="Depuis", ordering="created_at")
+    def depuis(self, entry):
+        if entry.status != WaitlistEntry.Status.WAITING:
+            return format_html(
+                '<span style="color:var(--bs-ink-muted)">{}</span>', entry.get_status_display()
+            )
+
+        jours = (timezone.now() - entry.created_at).days
+        if jours >= 14:
+            return format_html(
+                '<span style="color:var(--bs-bad)">{} jours sans réponse</span>', jours
+            )
+        return f"{jours} j"

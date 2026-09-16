@@ -1,9 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import AdminPasswordChangeForm
+from django.utils import timezone
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+
+from apps.common.admin import TenantScopedAdmin
 
 from .forms import UserChangeForm, UserCreationForm
-from .models import Membership, User
+from .models import Invitation, Membership, User
 
 
 class MembershipInline(admin.TabularInline):
@@ -60,3 +65,65 @@ class MembershipAdmin(admin.ModelAdmin):
     list_filter = ("role", "status")
     search_fields = ("user__email", "tenant__name", "tenant__slug")
     autocomplete_fields = ("tenant", "user")
+
+
+@admin.register(Invitation)
+class InvitationAdmin(TenantScopedAdmin):
+    """Les invitations d'equipe envoyees par les salons.
+
+    -----------------------------------------------------------------------
+    Le ticket qu'elle resout
+    -----------------------------------------------------------------------
+
+    « J'ai invite ma collegue, elle n'a rien recu. » Trois causes possibles,
+    et on ne pouvait en verifier aucune : l'invitation n'a jamais ete creee,
+    elle a expire, ou elle a deja ete acceptee sous une autre adresse. La
+    colonne « Etat » les distingue d'un coup d'oeil.
+
+    -----------------------------------------------------------------------
+    Le jeton n'apparait nulle part, et il ne le peut pas
+    -----------------------------------------------------------------------
+
+    Seule son empreinte SHA-256 est stockee — c'est ce qui fait qu'une fuite
+    de la base ne donne acces a aucun compte. Il n'y a donc rien a afficher,
+    et surtout rien a renvoyer depuis ici : le seul geste correct est de
+    demander au salon de reinviter, ce qui emet un jeton neuf.
+    """
+
+    list_display = ("email", "tenant", "role", "etat", "invited_by", "created_at")
+    list_filter = ("role", "tenant")
+    search_fields = ("email", "tenant__name", "invited_by__email")
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+    list_select_related = ("tenant", "invited_by")
+    exclude = ("token_hash",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_readonly_fields(self, request, obj=None):
+        return [f.name for f in self.model._meta.fields if f.name != "token_hash"]
+
+    @admin.display(description="État")
+    def etat(self, invitation):
+        if invitation.revoked_at:
+            return mark_safe('<span style="color:var(--bs-ink-muted)">révoquée</span>')
+        if invitation.accepted_at:
+            return format_html(
+                '<span style="color:var(--bs-ok)">● acceptée le {}</span>',
+                invitation.accepted_at.strftime("%d/%m/%Y"),
+            )
+        if invitation.expires_at <= timezone.now():
+            return mark_safe(
+                '<span style="color:var(--bs-bad)">expirée — le salon doit réinviter</span>'
+            )
+        return format_html(
+            '<span style="color:var(--bs-warn)">en attente — expire le {}</span>',
+            invitation.expires_at.strftime("%d/%m/%Y"),
+        )

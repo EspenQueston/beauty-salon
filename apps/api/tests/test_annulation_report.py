@@ -21,8 +21,8 @@ import pytest
 from django.core import mail
 from django.utils import timezone
 
-from apps.payments.tokens import cancel_token, status_token
 from apps.customers.models import Customer
+from apps.payments.tokens import cancel_token, status_token
 from apps.salons.models import SalonProfile
 from apps.scheduling.models import Booking
 from conftest import as_tenant, salon_host

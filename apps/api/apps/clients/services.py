@@ -11,7 +11,6 @@ du salon concerne.
 """
 
 from apps.common.db import tenant_context
-
 from apps.reviews.models import Review
 
 from .models import ClientSalonLink, HiddenBooking

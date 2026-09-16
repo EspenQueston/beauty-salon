@@ -6,11 +6,10 @@ trois choses - qui peut la lire, ce qu'elle refuse d'enregistrer, et le fait
 qu'une prestation honoree ne soit jamais comptee deux fois.
 """
 
-from contextlib import contextmanager
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from unittest import mock
 from zoneinfo import ZoneInfo
-from decimal import Decimal
 
 import pytest
 from django.utils import timezone

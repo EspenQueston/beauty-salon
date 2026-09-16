@@ -35,7 +35,12 @@ def test_a_completed_booking_can_be_reviewed(api_client, salon_a):
 
     response = api_client.post(
         "/api/v1/public/reviews/create",
-        {"token": make_token(booking.id), "rating_result": 5, "rating_welcome": 5, "comment": "Travail impeccable."},
+        {
+            "token": make_token(booking.id),
+            "rating_result": 5,
+            "rating_welcome": 5,
+            "comment": "Travail impeccable.",
+        },
         format="json",
         headers={"Host": salon_host(salon_a.tenant.slug)},
     )
