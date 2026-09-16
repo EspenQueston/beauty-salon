@@ -35,7 +35,7 @@ interface Asset {
   url: string;
   content_type: string;
   byte_size: number;
-  kind: "gallery" | "logo" | "banner" | "service" | "staff" | "payment" | "about" | "product";
+  kind: "gallery" | "logo" | "banner" | "service" | "staff" | "payment" | "about" | "product" | "proof";
   alt_text: string;
   width: number | null;
   height: number | null;

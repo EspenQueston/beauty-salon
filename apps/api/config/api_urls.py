@@ -33,7 +33,7 @@ from apps.clients.views import (
 )
 from apps.customers.views import CustomerViewSet
 from apps.finance.views import TransactionViewSet
-from apps.media.views import MediaAssetViewSet
+from apps.media.views import MediaAssetViewSet, PrivateMediaView
 from apps.payments.views import (
     PaymentChannelViewSet,
     PublicBookingStatusView,
@@ -158,6 +158,18 @@ urlpatterns = [
     # Accueil du tableau de bord. Une seule lecture pour douze chiffres :
     # en six appels, l'ecran s'assemble par morceaux sur un reseau mobile.
     path("overview", OverviewView.as_view(), name="overview"),
+    # Lecture d'un media prive. C'est la seule sortie des fichiers ranges
+    # sous `prive/` : le serveur de fichiers statiques ne les sert pas, et
+    # cette route verifie l'appartenance au salon avant de lire le disque.
+    #
+    # Hors du routeur : ce n'est pas une action de `MediaAssetViewSet`, dont
+    # l'ecriture est reservee aux gerantes. Ici toute l'equipe lit, personne
+    # n'ecrit.
+    path(
+        "media/<uuid:pk>/fichier",
+        PrivateMediaView.as_view(),
+        name="media-fichier",
+    ),
     path("subscription", SubscriptionView.as_view(), name="subscription"),
     path("", include(router.urls)),
 ]

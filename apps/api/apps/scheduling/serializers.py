@@ -170,12 +170,13 @@ class BookingSerializer(serializers.ModelSerializer):
         if proof is None:
             return None
 
+        # `media_url` et non `file.url` : la capture est rangee en prive, et
+        # son adresse doit donc etre celle de la route authentifiee. La
+        # recalculer ici rouvrirait le trou a cet endroit precis.
+        from apps.media.serializers import media_url
+
         request = self.context.get("request")
-        url = ""
-        if proof.image_id and proof.image:
-            url = proof.image.file.url
-            if request:
-                url = request.build_absolute_uri(url)
+        url = media_url(proof.image, request) if proof.image_id else ""
 
         return {
             "status": proof.status,

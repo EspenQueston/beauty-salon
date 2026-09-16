@@ -26,6 +26,8 @@ export interface PickableMedia {
   content_type: string;
   alt_text: string;
   kind: string;
+  /** « private » : jamais proposé comme illustration. */
+  visibility?: string;
 }
 
 const IMAGES = "image/jpeg,image/png,image/webp";
@@ -68,9 +70,25 @@ export function MediaPicker({
   const [linking, setLinking] = useState(false);
   const [link, setLink] = useState("");
 
+  /*
+    Les preuves de versement ne sont pas des illustrations.
+
+    Le sélecteur reçoit la médiathèque entière. Une capture de paiement —
+    le nom d'une cliente, l'heure du virement, parfois son solde — s'y
+    affichait donc entre deux photos de coiffure, dans la grille « choisir
+    une photo d'article ». Le genre `proof` existe précisément pour la
+    distinguer ; il ne servait qu'au mini-site.
+
+    Le filtre porte sur le genre *et* sur la visibilité : un média privé n'a
+    rien à faire dans un choix d'illustration, quel que soit son genre.
+  */
+  const choisissables = assets.filter(
+    (asset) => asset.kind !== "proof" && asset.visibility !== "private",
+  );
+
   const images = allowVideo
-    ? assets
-    : assets.filter((asset) => !asset.content_type.startsWith("video/"));
+    ? choisissables
+    : choisissables.filter((asset) => !asset.content_type.startsWith("video/"));
   const selected = images.find((asset) => asset.id === value) ?? null;
 
   async function upload(file: File) {

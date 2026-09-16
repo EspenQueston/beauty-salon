@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.accounts.mfa import mfa_view
@@ -47,5 +47,31 @@ if settings.DEBUG:
             SpectacularSwaggerView.as_view(url_name="schema"),
             name="docs",
         ),
+    ]
+    """
+    Fichiers media en developpement — sauf les prives.
+
+    `static()` sert tout ce qui est sous MEDIA_ROOT, y compris `prive/` ou
+    dorment les preuves de versement. En developpement comme en production,
+    ces fichiers ne doivent sortir que par `/api/v1/media/<id>/fichier`, qui
+    verifie l'appartenance au salon.
+
+    La vue de refus passe *avant* : Django prend la premiere route qui
+    correspond, et un motif plus specifique place apres ne serait jamais
+    atteint.
+
+    En production, c'est au serveur web de poser la meme regle :
+        location /media/prive/ { deny all; }
+    """
+    from django.http import Http404
+
+    def _media_prive_refuse(request, chemin):
+        raise Http404("Ce fichier ne se lit que par la route authentifiée.")
+
+    # Django normalise MEDIA_URL avec une barre initiale ; les motifs
+    # d'URL, eux, sont relatifs a la racine et n'en veulent pas.
+    _media = settings.MEDIA_URL.lstrip("/")
+    urlpatterns += [
+        re_path(rf"^{_media}prive/(?P<chemin>.*)$", _media_prive_refuse),
     ]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

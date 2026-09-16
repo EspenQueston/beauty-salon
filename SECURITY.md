@@ -58,6 +58,37 @@ Paiement, changement de statut, arrivée et invitation à laisser un avis
 passent par `django.core.signing` avec un **sel distinct par usage** : un
 jeton de paiement ne peut pas être rejoué sur une autre route.
 
+### Médias privés : une porte gardée, pas une adresse difficile
+
+Une preuve de versement — capture d'écran de paiement, portant le nom de la
+cliente, l'heure du versement et parfois son solde — ne sort que par :
+
+```
+GET /api/v1/media/<id>/fichier
+```
+
+La route vérifie l'appartenance au salon avant de lire le disque, et répond
+**404** au membre d'un autre salon : un 403 confirmerait qu'un média porte cet
+identifiant ailleurs sur la plateforme.
+
+Le fichier lui-même vit sous `MEDIA_ROOT/prive/`, que le serveur de fichiers
+statiques ne sert pas. C'est ce qui rend la règle applicable d'un seul trait
+côté déploiement :
+
+```nginx
+location /media/prive/ { deny all; }
+```
+
+Auparavant, ces captures étaient servies à une adresse publique et n'étaient
+protégées que par l'imprévisibilité de deux UUID — 244 bits. Indevinable,
+certes, mais une adresse se partage, se copie, se retrouve dans le journal
+d'un proxy ou dans un `Referer` : et le jour où elle sort, rien ne permet de
+la révoquer. L'imprévisibilité n'est pas un contrôle d'accès.
+
+`tests/test_media_prive.py` vérifie les onze conditions : le rangement hors
+racine publique, l'adresse publiée, le refus à l'inconnu, le refus au salon
+voisin, la lecture par la réception, et le 404 du chemin direct.
+
 ### Import d'images par URL
 
 `apps/media/fetch.py` refuse tout ce qui ne doit pas être atteint depuis le
@@ -137,25 +168,6 @@ les fait échouer avant la mise en ligne, pas après.
 ## 3. Ce qui reste ouvert
 
 Écrit ici parce qu'un risque connu et noté vaut mieux qu'un risque oublié.
-
-### Les preuves de versement sont protégées par l'adresse seule
-
-Une capture de paiement porte le nom de la cliente et parfois son solde
-bancaire. Elle est rangée en `visibility=private` et en `kind=proof`, ce qui
-la tient hors de la vitrine et hors de la médiathèque du salon — mais le
-fichier lui-même est servi à une adresse publique :
-
-```
-/media/tenants/<uuid-salon>/media/<uuid-media>/<nom-du-fichier>
-```
-
-Deux UUID v4 font environ 244 bits : l'adresse n'est pas devinable. Elle peut
-en revanche **fuir** — par un `Referer`, un journal de proxy, un partage.
-
-*Correction à prévoir* : une route authentifiée qui sert les médias privés
-après vérification du membership, et un stockage hors de la racine web (ou des
-URL signées à durée limitée si l'on passe à un stockage objet). Le champ
-`visibility` existe déjà ; il ne lui manque que le contrôle à la lecture.
 
 ### Le type d'un fichier téléversé est déclaré par le navigateur
 
