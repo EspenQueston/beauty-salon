@@ -1,0 +1,25 @@
+{% extends "emails/base_client.html" %}
+
+{% block preheader %}{{ booking.service_name }} — {{ date_label }} à {{ time_label }}{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Votre rendez-vous est enregistré" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% if booking.deposit_amount %}
+    {% include "emails/_parts.html" with part="amount" label="Acompte demandé" text=deposit_label hint=deposit_hint %}
+  {% endif %}
+
+  {% if payment_url %}
+    {% include "emails/_parts.html" with part="button" url=payment_url text="Régler l'acompte" color=brand %}
+  {% endif %}
+
+  {% if profile.late_policy %}
+    {% include "emails/_parts.html" with part="notice" title=late_title text=profile.late_policy %}
+  {% endif %}
+
+  {% include "emails/_parts.html" with part="rule" %}
+  {% include "emails/_parts.html" with part="text" text="Pour annuler ou déplacer votre rendez-vous, contactez directement le salon." %}
+{% endblock %}

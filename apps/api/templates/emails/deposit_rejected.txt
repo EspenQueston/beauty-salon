@@ -1,0 +1,16 @@
+{% autoescape off %}Bonjour {{ customer.full_name }},
+
+{{ salon.name }} n'a pas retrouvé votre versement pour le rendez-vous du
+{{ date_label }} à {{ time_label }}.
+{% if reason %}
+Motif indiqué par le salon : {{ reason }}
+{% endif %}
+Votre créneau est toujours réservé. Si vous avez bien payé, renvoyez votre
+capture d'écran ici :
+
+{{ payment_url }}
+
+En cas de doute, contactez directement le salon.
+
+{{ salon.name }}
+{% endautoescape %}

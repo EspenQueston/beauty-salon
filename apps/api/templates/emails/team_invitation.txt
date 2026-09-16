@@ -1,0 +1,14 @@
+{% autoescape off %}Bonjour,
+
+Vous êtes invité(e) à rejoindre l'équipe de {{ salon.name }} sur Beauty Salon.
+
+Salon : {{ salon.name }}
+Rôle : {{ role }}{% if invited_by %}
+Invitée par : {{ invited_by.email }}{% endif %}Acceptez l'invitation ici :
+{{ accept_url }}
+
+Ce lien est valable 7 jours. Si vous n'attendiez pas cette invitation, vous
+pouvez simplement ignorer ce message.
+
+L'équipe Beauty Salon
+{% endautoescape %}

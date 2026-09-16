@@ -1,0 +1,30 @@
+{% extends "mfa/base.html" %}
+{% block title %}Activer la double authentification{% endblock %}
+
+{% block contenu %}
+  <h1>Activez la double authentification</h1>
+  <p>
+    Un compte d'administration donne accès aux données de <strong>tous</strong>
+    les salons. Un mot de passe seul n'y suffit pas.
+  </p>
+
+  <p class="discret">
+    Scannez ce code avec Google Authenticator, Authy, ou l'application
+    d'authentification de votre choix.
+  </p>
+
+  <div class="qr">{{ qr_svg|safe }}</div>
+
+  <p class="discret">
+    Impossible de scanner ? Saisissez cette clé à la main :<br>
+    <code>{{ secret }}</code>
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="token"><strong>Code à 6 chiffres</strong></label>
+    <input type="text" id="token" name="token" inputmode="numeric"
+           autocomplete="one-time-code" pattern="[0-9 ]*" required autofocus>
+    <button type="submit">Activer</button>
+  </form>
+{% endblock %}

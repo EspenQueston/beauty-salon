@@ -1,0 +1,20 @@
+{% extends "emails/base_client.html" %}
+
+{% block preheader %}Demain à {{ time_label }} chez {{ salon.name }}{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="C'est demain" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% if maps_url %}
+    {% include "emails/_parts.html" with part="button" url=maps_url text="Voir l'itinéraire" color=brand %}
+  {% endif %}
+
+  {% if profile.late_policy %}
+    {% include "emails/_parts.html" with part="notice" title=late_title text=profile.late_policy %}
+  {% endif %}
+
+  {% include "emails/_parts.html" with part="text" text="Si vous ne pouvez pas venir, prévenez le salon dès que possible." %}
+{% endblock %}

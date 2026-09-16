@@ -1,0 +1,21 @@
+{% extends "emails/base_produit.html" %}
+
+{% block preheader %}{{ customer.full_name }} a envoyé sa preuve de paiement — à vérifier{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Un acompte attend votre vérification" %}
+
+  {% include "emails/_parts.html" with part="notice" title="Tant que vous n'avez pas répondu, le créneau reste bloqué et la cliente attend." %}
+
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_parts.html" with part="contact" name=customer.full_name phone=customer.phone email=customer.email %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% include "emails/_parts.html" with part="text" text="Retrouvez le versement dans votre application de paiement, puis acceptez ou refusez depuis votre agenda." %}
+
+  {% if agenda_url %}
+    {% include "emails/_parts.html" with part="button" url=agenda_url text="Vérifier maintenant" color="#B4436C" %}
+  {% endif %}
+{% endblock %}

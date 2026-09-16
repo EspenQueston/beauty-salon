@@ -1,0 +1,75 @@
+{% if visible %}
+<section class="supervision">
+  <h2>Ce qui attend une décision</h2>
+
+  <div class="supervision-grid">
+    <a class="stat {% if pending_count %}stat--attention{% endif %}" href="{{ pending_url }}">
+      <span class="stat-icon stat-icon--brand" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V8.5L12 4l8 4.5V20"/><path d="M9 20v-6h6v6"/></svg></span>
+      <span class="stat-label">Salons à valider</span>
+      <span class="stat-value">{{ pending_count }}</span>
+      <span class="stat-hint">
+        {% if pending_count %}Leur mini-site reste hors ligne{% else %}Rien en attente{% endif %}
+      </span>
+    </a>
+
+    <a class="stat {% if overdue_count %}stat--attention{% endif %}" href="{{ invoice_url }}">
+      <span class="stat-icon stat-icon--warn" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+      <span class="stat-label">Factures en retard</span>
+      <span class="stat-value">{{ overdue_count }}</span>
+      <span class="stat-hint">
+        {% if overdue_count %}{{ overdue_total }} à recouvrer{% else %}Aucun impayé{% endif %}
+      </span>
+    </a>
+
+    <a class="stat" href="{{ tenant_url }}">
+      <span class="stat-icon stat-icon--ok" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></span>
+      <span class="stat-label">Salons actifs</span>
+      <span class="stat-value">{{ active_count }}</span>
+      <span class="stat-hint">Mini-sites publiés</span>
+    </a>
+
+    <div class="stat">
+      <span class="stat-icon stat-icon--info" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>
+      <span class="stat-label">Rendez-vous · 7 jours</span>
+      <span class="stat-value">{{ booking_count }}</span>
+      <span class="stat-hint">Tous salons confondus</span>
+    </div>
+
+    <a class="stat {% if unprotected %}stat--attention{% else %}stat--calm{% endif %}"
+       href="{{ user_url }}">
+      <span class="stat-icon stat-icon--bad" aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 4.5 7v5c0 4.5 3.2 7.7 7.5 8.8 4.3-1.1 7.5-4.3 7.5-8.8V7z"/><path d="M12 9.5v3.5M12 16v.01"/></svg></span>
+      <span class="stat-label">Admins sans double authentification</span>
+      <span class="stat-value">{{ unprotected|length }}</span>
+      <span class="stat-hint">
+        {% if unprotected %}Accès à tous les salons sans second facteur{% else %}Tous protégés{% endif %}
+      </span>
+    </a>
+  </div>
+
+  {% if pending_rows %}
+    <div class="supervision-queue">
+      <table>
+        <caption>Inscriptions en attente</caption>
+        <tbody>
+          {% for tenant in pending_rows %}
+            <tr>
+              <td>
+                <a href="{% url 'admin:tenants_tenant_change' tenant.pk %}">{{ tenant.name }}</a>
+              </td>
+              <td>{{ tenant.slug }}</td>
+              <td>{{ tenant.get_country_display }}</td>
+              <td><span class="pill pill--warning">Inscrit le {{ tenant.created_at|date:"j F" }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if pending_more %}
+        <p class="supervision-empty">
+          … et {{ pending_more }} autre{{ pending_more|pluralize }}.
+          <a href="{{ pending_url }}">Tout voir</a>
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+{% endif %}

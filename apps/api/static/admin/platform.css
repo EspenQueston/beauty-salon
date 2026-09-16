@@ -1,0 +1,2173 @@
+/*
+ * Habillage de l'administration plateforme.
+ *
+ * On n'a pas remplacé l'admin de Django : on l'aligne sur la charte du
+ * produit. Une mise à jour de Django doit continuer de fonctionner, donc
+ * rien ici ne réécrit sa structure — seulement ses couleurs, ses espacements
+ * et quelques composants.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi deux jeux de variables
+ * ---------------------------------------------------------------------------
+ *
+ * `--bs-*` sont les nôtres ; `--body-fg`, `--darkened-bg`… sont celles de
+ * Django. Nos propres règles n'utilisent QUE `--bs-*`, et on alimente celles
+ * de Django à partir des nôtres pour que ses composants non restylés suivent
+ * la même charte.
+ *
+ * Ce n'est pas de la coquetterie. Django déclare ses variables dans quatre
+ * blocs de spécificités différentes (`:root`, `@media dark :root`,
+ * `html[data-theme="dark"]`) et n'en redéfinit pas toujours la totalité dans
+ * chacun. Une de nos règles qui lisait `var(--body-fg)` sur un fond
+ * `var(--darkened-bg)` pouvait donc récupérer le texte d'un thème et le fond
+ * de l'autre — texte blanc sur gris clair, illisible. En lisant nos propres
+ * variables, toujours déclarées ensemble et au complet, ce panachage devient
+ * impossible.
+ *
+ * ---------------------------------------------------------------------------
+ * Les quatre états de thème
+ * ---------------------------------------------------------------------------
+ *
+ *   système clair  + auto    → clair
+ *   système sombre + auto    → sombre
+ *   n'importe quoi + light   → clair      (le choix explicite gagne)
+ *   n'importe quoi + dark    → sombre     (le choix explicite gagne)
+ *
+ * D'où deux déclarations du bloc sombre, aux valeurs identiques : une sous
+ * `prefers-color-scheme`, une sous `[data-theme="dark"]`. Sans la seconde,
+ * choisir « sombre » sur un système clair retombait sur la palette grise de
+ * Django au lieu de la nôtre.
+ */
+
+/* --------------------------------------------------------------------- */
+/* Palette claire                                                         */
+/* --------------------------------------------------------------------- */
+
+:root,
+html[data-theme="light"] {
+  color-scheme: light;
+
+  /*
+   * Violet, et non le rose du produit. C'est délibéré.
+   *
+   * Cette administration n'appartient pas à un salon : elle les supervise
+   * tous. Lui donner la couleur de marque du produit — celle que voit une
+   * gérante dans son propre espace — rendrait les deux écrans
+   * interchangeables au premier coup d'œil, et c'est précisément le genre de
+   * confusion qui fait cliquer « supprimer » dans le mauvais.
+   *
+   * Le violet dit : vous êtes du côté plateforme.
+   */
+  --bs-brand: #7367f0;
+  --bs-brand-strong: #675dd8;
+  --bs-brand-soft: #eeedfd;
+  --bs-brand-ink: #5a4fd4;
+  /* Extrémité claire du dégradé. Écrite en dur et non calculée : un
+     `color-mix` imbriqué dans un `linear-gradient` est invalidé par
+     certains moteurs, qui abandonnent alors toute la déclaration. */
+  --bs-brand-lift: #9e95f5;
+
+  --bs-canvas: #f4f5fa;
+  --bs-surface: #ffffff;
+  --bs-surface-sunken: #f1f0f4;
+  --bs-surface-hover: #f7f7fa;
+
+  --bs-ink: #2f2b3d;
+  --bs-ink-muted: #6e6b7b;
+  --bs-ink-faint: #a5a3ae;
+  --bs-ink-on-brand: #ffffff;
+
+  --bs-line: #e6e6e9;
+  --bs-line-soft: #f0f0f3;
+
+  --bs-shell: #2f3349;
+  --bs-shell-ink: #e7e4f7;
+  --bs-shell-ink-muted: #a8a5c0;
+  --bs-shell-line: #44485e;
+
+  /*
+   * Teintes d'état : le fond vient de la palette, le texte non.
+   *
+   * Un chip « Actif » vert saturé (#28c76f) sur son propre fond très clair
+   * plafonne à 2,4:1 — sous le minimum lisible, et plus encore sur un écran
+   * de portable mal réglé. On garde donc la teinte pour le fond et la
+   * pastille, et on assombrit le texte jusqu'à passer 4,5:1.
+   */
+  --bs-ok: #1a7f4b;
+  --bs-ok-bg: #e8f9f0;
+  --bs-ok-pure: #28c76f;
+  --bs-warn: #8a5408;
+  --bs-warn-bg: #fff3e8;
+  --bs-warn-pure: #ff9f43;
+  --bs-bad: #b42318;
+  --bs-bad-bg: #fdecec;
+  --bs-bad-pure: #ea5455;
+  --bs-info: #0b7285;
+  --bs-info-bg: #e6f8fb;
+  --bs-info-pure: #00bad1;
+
+  /* Ombres douces et diffuses plutôt que des traits : c'est ce qui fait
+     flotter les cartes au lieu de les découper. */
+  --bs-shadow-sm: 0 1px 3px rgb(47 43 61 / 0.08);
+  --bs-shadow: 0 2px 6px rgb(47 43 61 / 0.1);
+  --bs-shadow-lg: 0 6px 22px -6px rgb(47 43 61 / 0.22);
+
+  --bs-radius: 10px;
+  --bs-radius-sm: 8px;
+}
+
+/* --------------------------------------------------------------------- */
+/* Palette sombre — mêmes valeurs dans les deux blocs                     */
+/* --------------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bs-brand: #8b7ff7;
+    --bs-brand-strong: #a79bff;
+    --bs-brand-soft: #322f57;
+    --bs-brand-ink: #a79bff;
+    --bs-brand-lift: #a79bff;
+
+    --bs-canvas: #25293c;
+    --bs-surface: #2f3349;
+    --bs-surface-sunken: #383c54;
+    --bs-surface-hover: #3a3e57;
+
+    --bs-ink: #e4e1f5;
+    --bs-ink-muted: #b0aecd;
+    --bs-ink-faint: #8c89a8;
+    --bs-ink-on-brand: #1b1d2c;
+
+    --bs-line: #44485e;
+    --bs-line-soft: #3a3e54;
+
+    --bs-shell: #2f3349;
+    --bs-shell-ink: #e4e1f5;
+    --bs-shell-ink-muted: #b0aecd;
+    --bs-shell-line: #44485e;
+
+    --bs-ok: #5ddd97;
+    --bs-ok-bg: #1e3a2c;
+    --bs-ok-pure: #28c76f;
+    --bs-warn: #ffb976;
+    --bs-warn-bg: #3d2f1e;
+    --bs-warn-pure: #ff9f43;
+    --bs-bad: #ff8b8c;
+    --bs-bad-bg: #3d2427;
+    --bs-bad-pure: #ea5455;
+    --bs-info: #4fd8e8;
+    --bs-info-bg: #1b3740;
+    --bs-info-pure: #00bad1;
+
+    --bs-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.4);
+    --bs-shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+    --bs-shadow-lg: 0 6px 22px -6px rgb(0 0 0 / 0.6);
+  }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bs-brand: #8b7ff7;
+  --bs-brand-strong: #a79bff;
+  --bs-brand-soft: #322f57;
+  --bs-brand-ink: #a79bff;
+  --bs-brand-lift: #a79bff;
+
+  --bs-canvas: #25293c;
+  --bs-surface: #2f3349;
+  --bs-surface-sunken: #383c54;
+  --bs-surface-hover: #3a3e57;
+
+  --bs-ink: #e4e1f5;
+  --bs-ink-muted: #b0aecd;
+  --bs-ink-faint: #8c89a8;
+  --bs-ink-on-brand: #1b1d2c;
+
+  --bs-line: #44485e;
+  --bs-line-soft: #3a3e54;
+
+  --bs-shell: #2f3349;
+  --bs-shell-ink: #e4e1f5;
+  --bs-shell-ink-muted: #b0aecd;
+  --bs-shell-line: #44485e;
+
+  --bs-ok: #5ddd97;
+  --bs-ok-bg: #1e3a2c;
+  --bs-ok-pure: #28c76f;
+  --bs-warn: #ffb976;
+  --bs-warn-bg: #3d2f1e;
+  --bs-warn-pure: #ff9f43;
+  --bs-bad: #ff8b8c;
+  --bs-bad-bg: #3d2427;
+  --bs-bad-pure: #ea5455;
+  --bs-info: #4fd8e8;
+  --bs-info-bg: #1b3740;
+  --bs-info-pure: #00bad1;
+
+  --bs-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.4);
+  --bs-shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+  --bs-shadow-lg: 0 6px 22px -6px rgb(0 0 0 / 0.6);
+}
+
+/* --------------------------------------------------------------------- */
+/* Variables de Django, alimentées par les nôtres                         */
+/* --------------------------------------------------------------------- */
+
+:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  --primary: var(--bs-brand);
+  --primary-fg: var(--bs-ink-on-brand);
+  --secondary: var(--bs-shell);
+  --accent: var(--bs-brand-soft);
+
+  --body-fg: var(--bs-ink);
+  --body-bg: var(--bs-canvas);
+  --body-quiet-color: var(--bs-ink-muted);
+  --body-loud-color: var(--bs-ink);
+
+  --header-color: var(--bs-shell-ink);
+  --header-branding-color: var(--bs-shell-ink);
+  --header-bg: var(--bs-shell);
+  --header-link-color: var(--bs-shell-ink);
+
+  --breadcrumbs-fg: var(--bs-ink-muted);
+  --breadcrumbs-link-fg: var(--bs-ink);
+  --breadcrumbs-bg: var(--bs-canvas);
+
+  --link-fg: var(--bs-brand-ink);
+  --link-hover-color: var(--bs-brand-strong);
+  --link-selected-fg: var(--bs-brand);
+
+  --hairline-color: var(--bs-line-soft);
+  --border-color: var(--bs-line);
+
+  --error-fg: var(--bs-bad);
+  --message-success-bg: var(--bs-ok-bg);
+  --message-warning-bg: var(--bs-warn-bg);
+  --message-error-bg: var(--bs-bad-bg);
+
+  --darkened-bg: var(--bs-surface-sunken);
+  --selected-bg: var(--bs-brand-soft);
+  --selected-row: var(--bs-brand-soft);
+
+  --button-fg: var(--bs-ink-on-brand);
+  --button-bg: var(--bs-brand);
+  --button-hover-bg: var(--bs-brand-strong);
+  --default-button-bg: var(--bs-brand);
+  --default-button-hover-bg: var(--bs-brand-strong);
+  --close-button-bg: var(--bs-ink-muted);
+  --close-button-hover-bg: var(--bs-ink);
+  --delete-button-bg: var(--bs-bad);
+  --delete-button-hover-bg: var(--bs-bad);
+
+  --object-tools-bg: var(--bs-shell);
+  --object-tools-fg: var(--bs-shell-ink);
+  --object-tools-hover-bg: var(--bs-brand);
+}
+
+/* --------------------------------------------------------------------- */
+/* Base                                                                   */
+/* --------------------------------------------------------------------- */
+
+html,
+body {
+  background: var(--bs-canvas);
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    sans-serif;
+  font-size: 0.875rem;
+  color: var(--bs-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+a:link,
+a:visited {
+  color: var(--bs-brand-ink);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--bs-brand-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Anneau de focus homogène : le style par défaut disparaît sur les fonds
+   colorés, et cet écran se pilote beaucoup au clavier. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--bs-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* --------------------------------------------------------------------- */
+/* En-tête                                                                */
+/* --------------------------------------------------------------------- */
+
+#header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.75rem;
+  background: var(--bs-shell);
+  color: var(--bs-shell-ink);
+  border-bottom: 1px solid var(--bs-shell-line);
+  box-shadow: none;
+}
+
+#branding {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+#branding h1 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+#branding h1 a:link,
+#branding h1 a:visited {
+  display: inline-flex;
+  align-items: center;
+  color: var(--bs-shell-ink);
+  text-decoration: none;
+}
+
+/* Pastille d'identité : la même que dans l'espace professionnel. */
+#branding h1 a::before {
+  content: "BS";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  margin-right: 0.6rem;
+  border-radius: 0.65rem;
+  background: var(--bs-brand);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Sur le bandeau sombre, la pastille de rôle se lit en clair — jamais via
+   les variables de thème, qui basculeraient avec le reste de la page. */
+#branding .pill {
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.85);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  white-space: nowrap;
+}
+
+#user-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--bs-shell-ink-muted);
+}
+
+#user-tools strong {
+  font-weight: 600;
+  color: var(--bs-shell-ink);
+}
+
+#user-tools a:link,
+#user-tools a:visited,
+#logout-form button {
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: rgb(255 255 255 / 0.78);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+#user-tools a:hover,
+#logout-form button:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Django place des « / » nus entre les liens. */
+#user-tools > *:not(:last-child)::after {
+  content: none;
+}
+
+.theme-toggle {
+  color: rgb(255 255 255 / 0.78);
+}
+
+.theme-toggle:hover {
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------- */
+/* Fil d'Ariane                                                           */
+/* --------------------------------------------------------------------- */
+
+div.breadcrumbs {
+  padding: 0.7rem 1.75rem;
+  background: var(--bs-canvas);
+  border-bottom: 1px solid var(--bs-line);
+  color: var(--bs-ink-faint);
+  font-size: 0.8125rem;
+}
+
+div.breadcrumbs a {
+  color: var(--bs-ink-muted);
+}
+
+div.breadcrumbs a:focus,
+div.breadcrumbs a:hover {
+  color: var(--bs-brand-ink);
+}
+
+/* --------------------------------------------------------------------- */
+/* Colonne de navigation                                                  */
+/* --------------------------------------------------------------------- */
+
+#nav-sidebar {
+  background: var(--bs-surface);
+  border-right: 1px solid var(--bs-line);
+  padding-top: 0.5rem;
+}
+
+/* La colonne de navigation n'est pas une pile de cartes : sans cela, chaque
+   section hérite du cadre et de l'ombre des modules, et la liste triple de
+   hauteur pour ne rien dire de plus. */
+#nav-sidebar .module {
+  margin-bottom: 0.35rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Seul le nom de l'application est en capitales : c'est le titre de section.
+   Les noms de modèles restent en casse normale — ce sont eux qu'on lit. */
+#nav-sidebar .module caption,
+#nav-sidebar .module h2 {
+  background: transparent;
+  color: var(--bs-ink-faint);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  padding: 0.8rem 0.9rem 0.3rem;
+  border: 0;
+}
+
+#nav-sidebar .module th {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+#nav-sidebar .module td {
+  border: 0;
+  padding: 0;
+}
+
+#nav-sidebar a {
+  display: block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  margin: 0 0.4rem;
+  color: var(--bs-ink-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+/* Le lien « Ajouter » de chaque ligne reste discret : c'est le nom du
+   modèle qu'on vient chercher dans cette colonne, pas l'action. */
+#nav-sidebar .addlink {
+  font-size: 0.75rem;
+  color: var(--bs-ink-faint);
+}
+
+#nav-sidebar a:hover {
+  background: var(--bs-surface-hover);
+  color: var(--bs-ink);
+  text-decoration: none;
+}
+
+/* Remplacée par la pastille pleine, plus bas. Conservée ici sans couleur
+   pour garder la graisse : c'est elle qui distingue la ligne courante quand
+   le dégradé ne se rend pas (impression, mode contraste élevé). */
+#nav-sidebar .current-model a,
+#nav-sidebar tr.current-model a {
+  font-weight: 600;
+}
+
+#toggle-nav-sidebar {
+  background: var(--bs-surface);
+  border-right: 1px solid var(--bs-line);
+  color: var(--bs-ink-faint);
+}
+
+/* --------------------------------------------------------------------- */
+/* Coquille de contenu                                                    */
+/* --------------------------------------------------------------------- */
+
+#content {
+  padding: 1.75rem;
+}
+
+#content > h1,
+#content-main > h1 {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.018em;
+  color: var(--bs-ink);
+}
+
+#content-related {
+  background: transparent;
+}
+
+/* --------------------------------------------------------------------- */
+/* Modules                                                                */
+/* --------------------------------------------------------------------- */
+
+.module,
+.inline-group,
+fieldset.module {
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  box-shadow: var(--bs-shadow-sm);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+/*
+ * Intitulés de section.
+ *
+ * Sélecteurs descendants et non `>` : sur la page d'accueil, le `<caption>`
+ * est un enfant du `<table>`, pas du `.module`.
+ *
+ * ---------------------------------------------------------------------------
+ * Le bandeau invisible
+ * ---------------------------------------------------------------------------
+ *
+ * Django peint ce bandeau avec `--header-bg` (sombre) et écrit dedans en
+ * `--header-link-color` (blanc) — cohérent chez lui. En éclaircissant le
+ * fond sans toucher au lien, on obtenait du blanc sur gris clair : les noms
+ * de section devenaient illisibles.
+ *
+ * Le piège est que le `<caption>` prend bien la couleur qu'on lui donne :
+ * c'est le `<a class="section">` à l'intérieur qui restait blanc, via une
+ * règle de Django que la nôtre ne recouvrait pas. D'où la couleur posée
+ * explicitement sur le lien lui-même, ci-dessous.
+ */
+.module h2,
+.module caption,
+.inline-group h2,
+fieldset.module h2 {
+  margin: 0;
+  padding: 0.7rem 1.1rem;
+  background: var(--bs-surface-sunken);
+  color: var(--bs-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bs-line-soft);
+  text-align: left;
+}
+
+.module h2 a,
+.module caption a,
+a.section:link,
+a.section:visited {
+  color: var(--bs-ink);
+}
+
+.module h2 a:hover,
+.module caption a:hover,
+a.section:hover {
+  color: var(--bs-brand-ink);
+}
+
+/* Liste des applications sur la page d'accueil. */
+.dashboard .module table {
+  width: 100%;
+}
+
+.dashboard .module th,
+.dashboard .module td {
+  padding: 0.6rem 1.1rem;
+  border-bottom: 1px solid var(--bs-line-soft);
+  vertical-align: middle;
+}
+
+.dashboard .module tr:last-child th,
+.dashboard .module tr:last-child td {
+  border-bottom: 0;
+}
+
+.dashboard .module tbody tr:hover {
+  background: var(--bs-surface-hover);
+}
+
+.dashboard .module th a {
+  font-weight: 550;
+  color: var(--bs-ink);
+}
+
+.dashboard .module th a:hover {
+  color: var(--bs-brand-ink);
+}
+
+.dashboard .module td a {
+  color: var(--bs-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.dashboard .module td a:hover {
+  color: var(--bs-brand-ink);
+}
+
+/* Actions récentes. */
+#content-related .module {
+  background: var(--bs-surface);
+}
+
+#content-related .module h2 {
+  background: var(--bs-surface-sunken);
+  color: var(--bs-ink);
+  padding: 0.7rem 1.1rem;
+  margin: 0;
+  font-size: 0.7rem;
+  border-bottom: 1px solid var(--bs-line-soft);
+}
+
+#content-related .actionlist {
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+#content-related .actionlist li {
+  padding: 0.45rem 1.1rem 0.45rem 2.4rem;
+  background-position: 1.1rem 0.6rem;
+  font-size: 0.8125rem;
+  border-bottom: 0;
+}
+
+/* --------------------------------------------------------------------- */
+/* Panneau de supervision                                                 */
+/* --------------------------------------------------------------------- */
+
+.supervision {
+  margin-bottom: 1.75rem;
+}
+
+.supervision > h2 {
+  margin: 0 0 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--bs-ink-faint);
+}
+
+.supervision-grid {
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+}
+
+.stat {
+  display: block;
+  position: relative;
+  padding: 1.1rem 1.2rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  box-shadow: var(--bs-shadow-sm);
+  color: var(--bs-ink);
+  text-decoration: none;
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+a.stat:hover {
+  transform: translateY(-2px);
+  border-color: var(--bs-brand);
+  box-shadow: var(--bs-shadow-lg);
+  text-decoration: none;
+  color: var(--bs-ink);
+}
+
+/*
+ * Une carte cliquable doit le dire avant qu'on l'ait survolée.
+ *
+ * Le chevron est écrit en échappement CSS et non en caractère : Django sert
+ * les fichiers statiques sans `charset` dans l'en-tête, et un navigateur qui
+ * devine mal affiche « â€º » à la place.
+ */
+a.stat::after {
+  content: "\203A";
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--bs-ink-faint);
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+a.stat:hover::after {
+  transform: translateX(2px);
+  color: var(--bs-brand);
+}
+
+.stat-label {
+  display: block;
+  padding-right: 1.2rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--bs-ink-muted);
+}
+
+.stat-value {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 1.9rem;
+  font-weight: 650;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--bs-ink);
+}
+
+.stat-hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--bs-ink-faint);
+}
+
+.stat--attention {
+  border-color: color-mix(in srgb, var(--bs-bad) 40%, var(--bs-line));
+  background: var(--bs-bad-bg);
+}
+
+.stat--attention .stat-value {
+  color: var(--bs-bad);
+}
+
+.stat--attention .stat-label,
+.stat--attention .stat-hint {
+  color: color-mix(in srgb, var(--bs-bad) 72%, var(--bs-ink));
+}
+
+.stat--calm {
+  border-color: color-mix(in srgb, var(--bs-ok) 32%, var(--bs-line));
+  background: var(--bs-ok-bg);
+}
+
+.stat--calm .stat-value {
+  color: var(--bs-ok);
+}
+
+.stat--calm .stat-label,
+.stat--calm .stat-hint {
+  color: color-mix(in srgb, var(--bs-ok) 65%, var(--bs-ink));
+}
+
+.supervision-queue {
+  margin-top: 0.875rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  box-shadow: var(--bs-shadow-sm);
+  overflow: hidden;
+}
+
+.supervision-queue table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.supervision-queue caption {
+  text-align: left;
+  padding: 0.7rem 1.1rem;
+  background: var(--bs-surface-sunken);
+  color: var(--bs-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bs-line-soft);
+}
+
+.supervision-queue td,
+.supervision-queue th {
+  padding: 0.7rem 1.1rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--bs-ink);
+  border-bottom: 1px solid var(--bs-line-soft);
+}
+
+.supervision-queue tbody tr:hover {
+  background: var(--bs-surface-hover);
+}
+
+.supervision-queue tr:last-child td {
+  border-bottom: 0;
+}
+
+.supervision-empty {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.8125rem;
+  color: var(--bs-ink-muted);
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--bs-surface-sunken);
+  color: var(--bs-ink-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.pill--warning {
+  background: var(--bs-warn-bg);
+  color: var(--bs-warn);
+}
+
+.pill--danger {
+  background: var(--bs-bad-bg);
+  color: var(--bs-bad);
+}
+
+/* --------------------------------------------------------------------- */
+/* Listes                                                                 */
+/* --------------------------------------------------------------------- */
+
+#changelist {
+  background: transparent;
+}
+
+#changelist .results {
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  box-shadow: var(--bs-shadow-sm);
+  overflow: auto;
+}
+
+#changelist table {
+  border: 0;
+}
+
+#changelist table thead th {
+  background: var(--bs-surface-sunken);
+  color: var(--bs-ink-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bs-line);
+  padding: 0;
+}
+
+#changelist table thead th.action-checkbox-column {
+  padding: 0.6rem 0.75rem;
+}
+
+#changelist table thead th a {
+  display: block;
+  padding: 0.7rem 0.85rem;
+  color: var(--bs-ink-muted);
+}
+
+#changelist table thead th a:hover {
+  color: var(--bs-brand-ink);
+  text-decoration: none;
+}
+
+#changelist table tbody td,
+#changelist table tbody th {
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--bs-line-soft);
+  color: var(--bs-ink);
+  vertical-align: middle;
+}
+
+#changelist table tbody tr:last-child td,
+#changelist table tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+/* Le survol remplace les rayures : plus lisible, et il suit le curseur. */
+#changelist table tbody tr:hover {
+  background: var(--bs-surface-hover);
+}
+
+#changelist table tbody tr.selected {
+  background: var(--bs-brand-soft);
+}
+
+#changelist .actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.875rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius-sm);
+  color: var(--bs-ink-muted);
+}
+
+#changelist .actions.selected {
+  border-color: var(--bs-brand);
+  background: var(--bs-brand-soft);
+}
+
+#toolbar {
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.875rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius-sm);
+}
+
+#toolbar form#changelist-search input[type="submit"] {
+  border-radius: var(--bs-radius-sm);
+}
+
+.paginator {
+  padding: 0.8rem 0.2rem;
+  border: 0;
+  background: transparent;
+  color: var(--bs-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.paginator a:link,
+.paginator a:visited {
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  color: var(--bs-ink);
+}
+
+.paginator a:hover {
+  border-color: var(--bs-brand);
+  text-decoration: none;
+}
+
+.paginator .this-page {
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bs-brand);
+  color: var(--bs-ink-on-brand);
+}
+
+/* Filtres latéraux. */
+#changelist-filter {
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  box-shadow: var(--bs-shadow-sm);
+  overflow: hidden;
+}
+
+#changelist-filter h2 {
+  padding: 0.7rem 1.1rem;
+  background: var(--bs-surface-sunken);
+  color: var(--bs-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--bs-line-soft);
+}
+
+#changelist-filter h3 {
+  padding: 0.7rem 1.1rem 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--bs-ink-muted);
+}
+
+#changelist-filter li.selected {
+  border-left: 3px solid var(--bs-brand);
+}
+
+#changelist-filter a {
+  color: var(--bs-ink-muted);
+}
+
+#changelist-filter li.selected a {
+  color: var(--bs-brand-ink);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------- */
+/* Formulaires                                                            */
+/* --------------------------------------------------------------------- */
+
+.form-row {
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--bs-line-soft);
+}
+
+fieldset.module .form-row:last-child {
+  border-bottom: 0;
+}
+
+.form-row > div > label,
+.aligned label {
+  color: var(--bs-ink);
+  font-weight: 550;
+}
+
+.help,
+.helptext,
+div.help {
+  color: var(--bs-ink-faint);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="tel"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+textarea,
+select,
+.vTextField {
+  padding: 0.45rem 0.65rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius-sm);
+  color: var(--bs-ink);
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  transition: border-color 0.15s ease;
+}
+
+/*
+ * Django fixe `select { height: 1.875rem }`, taillé pour ses 2 px de
+ * remplissage. Avec le nôtre, le texte débordait de la boîte et se
+ * retrouvait coupé au ras des jambages : « Au salon » s'affichait rogné.
+ * On rend la hauteur au contenu, avec un plancher pour que tous les
+ * contrôles d'une ligne restent alignés.
+ */
+select,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+input[type="tel"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+.vTextField {
+  height: auto;
+  min-height: 2.25rem;
+}
+
+select[multiple] {
+  min-height: 9rem;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus,
+.vTextField:focus {
+  border-color: var(--bs-brand);
+}
+
+.submit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.25rem 0 0;
+  padding: 0.9rem 1.1rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  box-shadow: var(--bs-shadow-sm);
+}
+
+.submit-row a.deletelink {
+  border-radius: var(--bs-radius-sm);
+  padding: 0.55rem 1rem;
+  background: var(--bs-bad-bg);
+  color: var(--bs-bad);
+  font-weight: 600;
+}
+
+.submit-row a.deletelink:hover {
+  background: var(--bs-bad-bg);
+  filter: brightness(0.96);
+  text-decoration: none;
+}
+
+.errornote,
+ul.errorlist li {
+  border-radius: var(--bs-radius-sm);
+  background: var(--bs-bad-bg);
+  color: var(--bs-bad);
+  border: 1px solid color-mix(in srgb, var(--bs-bad) 30%, transparent);
+  font-size: 0.8125rem;
+}
+
+/* --------------------------------------------------------------------- */
+/* Boutons                                                                */
+/* --------------------------------------------------------------------- */
+
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button {
+  padding: 0.55rem 1rem;
+  border: 0;
+  border-radius: var(--bs-radius-sm);
+  background: var(--bs-brand);
+  color: var(--bs-ink-on-brand);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover,
+a.button:hover {
+  filter: brightness(1.08);
+  text-decoration: none;
+  color: var(--bs-ink-on-brand);
+}
+
+.button:active,
+input[type="submit"]:active {
+  transform: translateY(1px);
+}
+
+/* Actions secondaires : le même gabarit, sans la couleur de marque. */
+.button.default,
+input[type="submit"].default,
+.submit-row input.default {
+  background: var(--bs-brand);
+  color: var(--bs-ink-on-brand);
+}
+
+.object-tools a {
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  background: var(--bs-shell);
+  color: var(--bs-shell-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.object-tools a:hover {
+  background: var(--bs-brand);
+  color: var(--bs-ink-on-brand);
+}
+
+/* --------------------------------------------------------------------- */
+/* Messages                                                               */
+/* --------------------------------------------------------------------- */
+
+ul.messagelist {
+  padding: 0 1.75rem;
+  margin-top: 0.9rem;
+}
+
+ul.messagelist li {
+  margin-bottom: 0.6rem;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border-radius: var(--bs-radius-sm);
+  font-size: 0.8125rem;
+  background-position: 0.9rem center;
+  color: var(--bs-ink);
+}
+
+ul.messagelist li.success {
+  background-color: var(--bs-ok-bg);
+  color: var(--bs-ok);
+}
+
+ul.messagelist li.warning {
+  background-color: var(--bs-warn-bg);
+  color: var(--bs-warn);
+}
+
+ul.messagelist li.error {
+  background-color: var(--bs-bad-bg);
+  color: var(--bs-bad);
+}
+
+/* --------------------------------------------------------------------- */
+/* Connexion                                                              */
+/* --------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   Connexion : le meme fond vivant que le reste de la plateforme
+   ---------------------------------------------------------------------------
+
+   Les voiles sont peints en `::before` et `::after` plutot qu'en elements :
+   le gabarit de connexion de Django n'est pas a nous, et y ajouter du
+   balisage demanderait de le surcharger entierement pour trois `<span>`.
+
+   Tout se joue en `transform` et `opacity`, jamais en geometrie : le
+   navigateur compose sans recalculer la page.
+--------------------------------------------------------------------------- */
+
+body.login {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  padding: 1.5rem;
+  background: var(--bs-canvas);
+  overflow: hidden;
+}
+
+body.login::before,
+body.login::after {
+  content: "";
+  position: fixed;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+
+body.login::before {
+  top: -20%;
+  left: -12%;
+  width: 54vmax;
+  height: 54vmax;
+  background: var(--bs-brand);
+  animation: bs-drift-a 28s ease-in-out infinite alternate;
+}
+
+body.login::after {
+  right: -16%;
+  bottom: -22%;
+  width: 48vmax;
+  height: 48vmax;
+  background: var(--bs-brand-soft);
+  opacity: 0.32;
+  animation: bs-drift-b 34s ease-in-out infinite alternate;
+}
+
+@keyframes bs-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6vw, 5vh, 0) scale(1.12); }
+}
+
+@keyframes bs-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.06); }
+  to   { transform: translate3d(-7vw, -4vh, 0) scale(0.95); }
+}
+
+/* Le degrade reste, le mouvement s'arrete. */
+@media (prefers-reduced-motion: reduce) {
+  body.login::before,
+  body.login::after {
+    animation: none;
+  }
+}
+
+body.login #container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 23rem;
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: 18px;
+  box-shadow: var(--bs-shadow-lg);
+  overflow: hidden;
+}
+
+body.login #header {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.75rem 1.5rem 1.25rem;
+  background: var(--bs-surface);
+  border-bottom: 1px solid var(--bs-line-soft);
+}
+
+body.login #branding {
+  flex-direction: column;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+body.login #branding h1 a {
+  flex-direction: column;
+  gap: 0.6rem;
+  color: var(--bs-ink);
+}
+
+body.login #branding h1 a::before {
+  width: 2.6rem;
+  height: 2.6rem;
+  margin-right: 0;
+  border-radius: 0.9rem;
+  font-size: 0.95rem;
+}
+
+body.login #branding .pill {
+  background: var(--bs-brand-soft);
+  border-color: transparent;
+  color: var(--bs-brand-ink);
+}
+
+body.login #content {
+  padding: 1.5rem;
+}
+
+body.login .form-row {
+  padding: 0 0 0.9rem;
+  border-bottom: 0;
+}
+
+body.login .form-row label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+}
+
+body.login .form-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body.login .submit-row {
+  margin: 0.4rem 0 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+body.login .submit-row input[type="submit"] {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  font-size: 0.875rem;
+}
+
+body.login #footer {
+  display: none;
+}
+
+/* --------------------------------------------------------------------- */
+/* Petits écrans                                                          */
+/* --------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  #header {
+    padding: 0.75rem 1rem;
+  }
+
+  #user-tools {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  div.breadcrumbs,
+  #content,
+  ul.messagelist {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .supervision-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+
+  a.stat:hover {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------- */
+/* Mise en page : occuper l'écran                                         */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Django fige la page d'accueil de l'administration à `width: 600px`.
+ * Ce chiffre vient d'une époque où l'admin tenait dans une colonne ; sur un
+ * écran de 1440 px il laisse les deux tiers de la page vides et tasse la
+ * liste des applications dans un couloir.
+ *
+ * On rend la largeur au contenu, puis on la structure : une grille pour les
+ * colonnes, une mosaïque pour les applications. Rien n'est retiré — c'est la
+ * même information, rangée de façon à être balayée du regard.
+ */
+.dashboard #content {
+  width: auto;
+  max-width: 100%;
+}
+
+#content {
+  /* Au-delà, les lignes de tableau deviennent trop longues à suivre. */
+  max-width: 1600px;
+}
+
+/* Les flottants de Django deviennent une grille : plus de marges négatives,
+   et les deux colonnes s'alignent en haut au lieu de se chevaucher. */
+#content.colMS {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 21rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+#content.colMS > #content-main,
+#content.colMS > #content-related {
+  float: none;
+  width: auto;
+  margin: 0;
+  position: static;
+}
+
+/* Le panneau de supervision précède les colonnes : il les traverse. */
+#content.colMS > .supervision,
+#content.colMS > h1 {
+  grid-column: 1 / -1;
+}
+
+/* Applications en mosaïque plutôt qu'en pile. Chaque carte reste lisible ;
+   c'est le nombre de colonnes qui s'adapte à la largeur disponible. */
+.dashboard #content-main {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.dashboard #content-main .module {
+  margin-bottom: 0;
+  height: 100%;
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.dashboard #content-main .module:hover {
+  transform: translateY(-2px);
+  border-color: var(--bs-brand);
+  box-shadow: var(--bs-shadow-lg);
+}
+
+/* --------------------------------------------------------------------- */
+/* Colonne de navigation : repliable et visible                           */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Le bouton de repli de Django est une bande de 23 px sans intitulé : on ne
+ * devine pas qu'on peut cliquer dessus. On lui donne la forme d'un bouton,
+ * et on garde son comportement — c'est le script de Django qui bascule la
+ * classe, on ne touche qu'à l'apparence.
+ */
+.toggle-nav-sidebar {
+  flex: 0 0 1.6rem;
+  width: 1.6rem;
+  border-right: 1px solid var(--bs-line);
+  background: var(--bs-surface);
+  color: var(--bs-ink-faint);
+  font-size: 0;
+  position: relative;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.toggle-nav-sidebar::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin: -0.3rem 0 0 -0.35rem;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+/* Colonne repliée : le chevron s'inverse pour annoncer l'ouverture. */
+.nav-sidebar-hidden .toggle-nav-sidebar::before,
+[data-nav-sidebar="hidden"] .toggle-nav-sidebar::before {
+  transform: rotate(-135deg);
+}
+
+.toggle-nav-sidebar:hover,
+.toggle-nav-sidebar:focus {
+  background: var(--bs-brand-soft);
+  color: var(--bs-brand-ink);
+}
+
+#nav-sidebar {
+  flex: 0 0 16.5rem;
+}
+
+#nav-filter {
+  width: calc(100% - 1.4rem);
+  margin: 0.7rem;
+  border-radius: var(--bs-radius-sm);
+  border: 1px solid var(--bs-line);
+  background: var(--bs-surface-sunken);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+/* --------------------------------------------------------------------- */
+/* Listes : plus de respiration, actions plus lisibles                    */
+/* --------------------------------------------------------------------- */
+
+#changelist .results {
+  /* Une liste large défile à l'intérieur de sa carte, jamais la page. */
+  overflow-x: auto;
+}
+
+#changelist table {
+  min-width: 100%;
+}
+
+/* --------------------------------------------------------------------- */
+/* Écrans étroits                                                         */
+/* --------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  #content.colMS {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  /* `min-width: 980px` sur le conteneur force un défilement horizontal de
+     toute la page sur téléphone. On rend la largeur à l'écran. */
+  #container {
+    min-width: 0;
+  }
+
+  .dashboard #content-main {
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  #content {
+    padding: 1rem;
+  }
+
+  #content > h1,
+  #content-main > h1 {
+    font-size: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Comptes de la plateforme, sur la page d'accueil
+   ---------------------------------------------------------------------------
+
+   Les teintes des series sont fixes et identiques a celles du tableau de
+   bord des salons : bleu pour ce qui rentre, orange pour ce qui sort. Elles
+   ne suivent pas la couleur de marque - dans un graphique, une couleur porte
+   une *information*, et elle doit vouloir dire la meme chose partout dans le
+   produit.
+
+   Elles ont ete verifiees pour rester distinguables en deuteranopie, en
+   protanopie et en tritanopie, et chaque serie porte en plus une pastille
+   dans sa legende : la couleur ne porte jamais l'information seule.
+--------------------------------------------------------------------------- */
+
+.ledger h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.ledger-link {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ledger-dot {
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline-end: 0.4rem;
+  border-radius: 2px;
+  vertical-align: baseline;
+}
+
+.ledger-dot--income { background: #2a78d6; }
+.ledger-dot--expense { background: #eb6834; }
+
+.ledger-positive { color: #0ca30c; }
+.ledger-negative { color: #d03b3b; }
+
+.ledger-chart-cell {
+  grid-column: 1 / -1;
+}
+
+.ledger-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  block-size: 5.5rem;
+  margin-block-start: 0.75rem;
+}
+
+.ledger-month {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-inline-size: 0;
+}
+
+/* Les deux barres d'un mois sont cote a cote, jamais empilees : empiler
+   recettes et depenses additionnerait deux grandeurs qui ne s'additionnent
+   pas - c'est leur ecart qui compte. */
+.ledger-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* 2 px de fond entre les deux : sans cet ecart, elles se lisent comme un
+     seul bloc. */
+  gap: 2px;
+  inline-size: 100%;
+  block-size: 4rem;
+}
+
+.ledger-bar {
+  inline-size: 45%;
+  min-block-size: 2px;
+  border-radius: 3px 3px 0 0;
+  transition: block-size 0.4s ease;
+}
+
+.ledger-bar--income { background: #2a78d6; }
+.ledger-bar--expense { background: #eb6834; }
+
+.ledger-month-label {
+  font-size: 0.65rem;
+  color: var(--bs-text-subtle, #6b7280);
+  white-space: nowrap;
+}
+
+/* En mode sombre, les memes teintes re-verifiees contre la surface sombre. */
+@media (prefers-color-scheme: dark) {
+  .ledger-dot--income,
+  .ledger-bar--income { background: #3987e5; }
+
+  .ledger-dot--expense,
+  .ledger-bar--expense { background: #d95926; }
+}
+
+@media (max-width: 40rem) {
+  .ledger-chart { block-size: 4.5rem; }
+  .ledger-bars { block-size: 3rem; }
+  /* Un libelle sur deux : douze mois de « janv. » ne tiennent pas sur
+     375 px sans se chevaucher. */
+  .ledger-month:nth-child(even) .ledger-month-label { visibility: hidden; }
+}
+
+/* --------------------------------------------------------------------- */
+/* Pastilles d'icône des cartes de mesure                                 */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Un carré arrondi teinté devant chaque chiffre.
+ *
+ * ---------------------------------------------------------------------------
+ * À quoi ça sert réellement
+ * ---------------------------------------------------------------------------
+ *
+ * À reconnaître une carte sans la lire. Cinq mesures alignées se ressemblent
+ * toutes quand elles n'ont qu'un libellé et un nombre : on relit les cinq
+ * libellés à chaque passage. La teinte fixe la nature — violet pour ce qui
+ * touche aux salons, orange pour l'argent, rouge pour la sécurité — et la
+ * mémoire fait le reste au bout de deux visites.
+ *
+ * La couleur ne porte jamais l'information seule : le libellé est là, et il
+ * reste le seul texte lu par un lecteur d'écran. L'icône est décorative, d'où
+ * `aria-hidden` dans le gabarit.
+ */
+.stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--bs-radius-sm);
+  flex: none;
+}
+
+.stat-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.stat-icon--brand {
+  color: var(--bs-brand);
+  background: var(--bs-brand-soft);
+}
+.stat-icon--ok {
+  color: var(--bs-ok);
+  background: var(--bs-ok-bg);
+}
+.stat-icon--warn {
+  color: var(--bs-warn);
+  background: var(--bs-warn-bg);
+}
+.stat-icon--bad {
+  color: var(--bs-bad);
+  background: var(--bs-bad-bg);
+}
+.stat-icon--info {
+  color: var(--bs-info);
+  background: var(--bs-info-bg);
+}
+
+/* --------------------------------------------------------------------- */
+/* Pastilles d'état dans les listes                                       */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Les colonnes booléennes de Django rendent une icône « oui / non ».
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi une pastille écrite, et non une pastille colorée
+ * ---------------------------------------------------------------------------
+ *
+ * Sur une liste de trente lignes, trente petites coches vertes identiques ne
+ * se distinguent pas d'un coup d'œil : il faut suivre la colonne du doigt.
+ * Une pastille pleine se repère en vision périphérique.
+ *
+ * Mais une pastille qui ne serait *que* colorée ferait porter toute
+ * l'information à la couleur — inutilisable pour une personne daltonienne,
+ * et ambiguë pour tout le monde sur une colonne dont le titre est hors écran.
+ * Le mot est donc écrit dedans.
+ *
+ * ---------------------------------------------------------------------------
+ * Comment, sans toucher au HTML de Django
+ * ---------------------------------------------------------------------------
+ *
+ * `:has()` permet de désigner la cellule d'après l'image qu'elle contient.
+ * On masque l'image et on écrit le mot sur la cellule. Django continue de
+ * produire son `<img alt="True">` : sa mise à jour ne cassera rien, et le
+ * texte alternatif reste ce que lit un lecteur d'écran.
+ */
+#result_list td:has(> img[src$="icon-yes.svg"]),
+#result_list td:has(> img[src$="icon-no.svg"]),
+#result_list td:has(> img[src$="icon-unknown.svg"]) {
+  white-space: nowrap;
+}
+
+#result_list td > img[src$="icon-yes.svg"],
+#result_list td > img[src$="icon-no.svg"],
+#result_list td > img[src$="icon-unknown.svg"] {
+  display: none;
+}
+
+#result_list td:has(> img[src$="icon-yes.svg"])::after,
+#result_list td:has(> img[src$="icon-no.svg"])::after,
+#result_list td:has(> img[src$="icon-unknown.svg"])::after {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  /* Masqué aux lecteurs d'écran : le `alt` de l'image dit déjà la même
+     chose, et l'annoncer deux fois transforme une colonne en bégaiement. */
+  speak: never;
+}
+
+#result_list td:has(> img[src$="icon-yes.svg"])::after {
+  content: "Oui";
+  color: var(--bs-ok);
+  background: var(--bs-ok-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bs-ok-pure) 35%, transparent);
+}
+
+#result_list td:has(> img[src$="icon-no.svg"])::after {
+  content: "Non";
+  color: var(--bs-bad);
+  background: var(--bs-bad-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bs-bad-pure) 35%, transparent);
+}
+
+#result_list td:has(> img[src$="icon-unknown.svg"])::after {
+  content: "—";
+  color: var(--bs-ink-muted);
+  background: var(--bs-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--bs-line);
+}
+
+/*
+ * Sans `:has()` — quelques navigateurs anciens — on rend l'image à sa taille
+ * normale plutôt que de laisser une cellule vide. Une pastille absente vaut
+ * mieux qu'une donnée absente.
+ */
+@supports not selector(td:has(> img)) {
+  #result_list td > img[src$="icon-yes.svg"],
+  #result_list td > img[src$="icon-no.svg"],
+  #result_list td > img[src$="icon-unknown.svg"] {
+    display: inline;
+  }
+}
+
+/* ===================================================================== */
+/* Couche Materio                                                        */
+/* ===================================================================== */
+
+/*
+ * Ce bloc arrive après tout le reste, et c'est ce qui lui permet d'exister.
+ *
+ * Il ne réécrit pas la feuille : il retouche les quelques endroits où
+ * l'habillage restait celui de Django — un bandeau sombre pleine largeur,
+ * une colonne de navigation sans état actif, des liens qui se ressemblent
+ * tous. Ce sont précisément les trois choses qui font qu'on ne reconnaît pas
+ * un tableau de bord moderne.
+ *
+ * Écrit en surcharge plutôt qu'en modification pour une raison simple : les
+ * règles d'origine restent lisibles avec leur justification, et on voit d'un
+ * coup d'œil ce qui relève du parti pris Materio.
+ */
+
+/* --------------------------------------------------------------------- */
+/* La barre du haut passe en clair                                        */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Un bandeau sombre pleine largeur coupe la page en deux et fait porter à
+ * l'en-tête plus de poids visuel qu'il n'en mérite : on n'y vient que pour
+ * se déconnecter. En clair, il s'efface et laisse la première carte être la
+ * première chose qu'on voit.
+ *
+ * La couleur revient là où elle sert : la pastille d'identité, et l'état
+ * actif de la navigation.
+ */
+#header {
+  background: var(--bs-surface);
+  color: var(--bs-ink);
+  border-bottom: 1px solid var(--bs-line);
+  padding: 0.7rem 1.5rem;
+}
+
+#branding h1 a:link,
+#branding h1 a:visited {
+  color: var(--bs-ink);
+}
+
+#branding .pill {
+  background: var(--bs-brand-soft);
+  color: var(--bs-brand-ink);
+  border: 0;
+}
+
+#user-tools {
+  color: var(--bs-ink-muted);
+}
+
+#user-tools strong {
+  color: var(--bs-ink);
+}
+
+#user-tools a:link,
+#user-tools a:visited,
+#logout-form button {
+  color: var(--bs-ink-muted);
+}
+
+#user-tools a:hover,
+#logout-form button:hover {
+  background: var(--bs-surface-hover);
+  color: var(--bs-ink);
+}
+
+/* --------------------------------------------------------------------- */
+/* La colonne de navigation                                               */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Trois changements, et chacun répond à un défaut précis.
+ *
+ *   1. L'élément actif devient une pastille pleine. Sans état actif, une
+ *      colonne de quarante liens ne dit pas où l'on se trouve : il faut
+ *      relire le fil d'Ariane à chaque fois. La pastille se repère en
+ *      vision périphérique.
+ *   2. Une puce ronde devant chaque entrée. Elle aligne les libellés et
+ *      distingue les modèles des titres d'application, qui sinon se
+ *      confondent dans une même colonne de texte.
+ *   3. La colonne tient toute la hauteur et défile seule. Descendre dans
+ *      une liste de deux cents lignes ne doit pas emporter la navigation.
+ */
+#nav-sidebar {
+  background: var(--bs-canvas);
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#nav-sidebar .module caption,
+#nav-sidebar .module h2 {
+  color: var(--bs-brand);
+  letter-spacing: 0.1em;
+  padding-top: 1rem;
+}
+
+#nav-sidebar a {
+  position: relative;
+  padding-left: 1.6rem;
+  font-weight: 500;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+/* La puce : un petit cercle creux, plein quand la ligne est active. */
+#nav-sidebar th a::before {
+  content: "";
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  width: 0.3rem;
+  height: 0.3rem;
+  margin-top: -0.15rem;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px currentColor;
+  opacity: 0.45;
+}
+
+/*
+ * L'état actif.
+ *
+ * Django pose `current-model` sur la cellule de la ligne courante ; on
+ * remonte au lien qu'elle contient. Un dégradé plutôt qu'un aplat : c'est ce
+ * qui distingue une pastille d'un simple surlignage, et il reprend celui des
+ * boutons pour que les deux se lisent comme la même famille.
+ */
+#nav-sidebar .current-model a,
+#nav-sidebar tr.selected a {
+  background: linear-gradient(90deg, var(--bs-brand) 0%, var(--bs-brand-lift) 100%);
+  color: var(--bs-ink-on-brand);
+  font-weight: 600;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--bs-brand) 45%, transparent);
+}
+
+#nav-sidebar .current-model a::before,
+#nav-sidebar tr.selected a::before {
+  box-shadow: none;
+  background: currentColor;
+  opacity: 1;
+}
+
+#nav-sidebar .current-model a:hover,
+#nav-sidebar tr.selected a:hover {
+  color: var(--bs-ink-on-brand);
+  filter: brightness(1.05);
+}
+
+/* Le champ de filtre de la colonne prend la forme d'une vraie recherche. */
+#nav-filter {
+  width: calc(100% - 0.8rem);
+  margin: 0.5rem 0.4rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--bs-radius-sm);
+  border: 1px solid var(--bs-line);
+  background: var(--bs-surface);
+  color: var(--bs-ink);
+  font-size: 0.8125rem;
+}
+
+#nav-filter:focus {
+  outline: 0;
+  border-color: var(--bs-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bs-brand) 18%, transparent);
+}
+
+/* --------------------------------------------------------------------- */
+/* Cartes plus généreuses                                                 */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Materio respire : ses cartes ont une vingtaine de pixels de marge
+ * intérieure de plus que l'admin de Django, et c'est la moitié de ce qui le
+ * fait paraître soigné. Le reste est l'ombre, qui remplace le trait.
+ */
+.module,
+#content-main > .module {
+  border-radius: var(--bs-radius);
+  box-shadow: var(--bs-shadow);
+}
+
+/* Les en-têtes de colonnes en petites capitales grises : c'est ce qui fait
+   descendre le regard vers les données plutôt que vers les titres. */
+#result_list thead th,
+#result_list thead th a {
+  color: var(--bs-ink-faint);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Survol de ligne : une teinte, pas un trait. */
+#result_list tbody tr:hover > * {
+  background: var(--bs-surface-hover);
+}
+
+/* --------------------------------------------------------------------- */
+/* Boutons                                                                */
+/* --------------------------------------------------------------------- */
+
+/*
+ * Le bouton principal reprend le dégradé de la pastille de navigation. Deux
+ * éléments de la même couleur et de la même forme se lisent comme la même
+ * chose ; c'est ce qui évite d'avoir à apprendre l'interface.
+ */
+.button:not(.default):not(.deletelink),
+input[type="submit"]:not(.default),
+.object-tools a {
+  border-radius: var(--bs-radius-sm);
+}
+
+.button.default,
+input[type="submit"].default,
+.submit-row input[type="submit"] {
+  background: linear-gradient(90deg, var(--bs-brand) 0%, var(--bs-brand-lift) 100%);
+  border-radius: var(--bs-radius-sm);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--bs-brand) 40%, transparent);
+}
+
+.button.default:hover,
+input[type="submit"].default:hover,
+.submit-row input[type="submit"]:hover {
+  filter: brightness(1.06);
+}
+
+/* --------------------------------------------------------------------- */
+/* Téléphone                                                              */
+/* --------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  /* La colonne redevient un bloc dans le flux : collée en haut sur un écran
+     de 375 px, elle mangerait la moitié de la hauteur utile. */
+  #nav-sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  #header {
+    padding: 0.6rem 1rem;
+  }
+
+  /* Les cartes de mesure passent à deux colonnes plutôt qu'une : ce sont des
+     paires courtes, et une colonne unique demande quatre glissements pour
+     cinq nombres. */
+  .supervision-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .supervision-grid .stat {
+    padding: 0.85rem;
+  }
+
+  .supervision-grid .stat-value {
+    font-size: 1.5rem;
+  }
+}

@@ -1,0 +1,24 @@
+{% extends "emails/base_produit.html" %}
+
+{% block preheader %}{{ customer.full_name }} — {{ booking.service_name }}, {{ date_label }}{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Nouvelle réservation" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_parts.html" with part="contact" name=customer.full_name phone=customer.phone email=customer.email %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% if awaiting_payment %}
+    {% include "emails/_parts.html" with part="notice" title="En attente du versement" text="Le créneau est bloqué. Vous serez prévenu dès que la cliente aura envoyé sa preuve de paiement." %}
+  {% endif %}
+
+  {% if booking.customer_note %}
+    {% include "emails/_parts.html" with part="notice" title="Message de la cliente" text=booking.customer_note %}
+  {% endif %}
+
+  {% if agenda_url %}
+    {% include "emails/_parts.html" with part="button" url=agenda_url text="Ouvrir mon agenda" color="#B4436C" %}
+  {% endif %}
+{% endblock %}

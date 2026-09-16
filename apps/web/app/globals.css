@@ -1,0 +1,1229 @@
+@import "tailwindcss";
+
+/*
+ * Fondations visuelles.
+ *
+ * Deux familles de couleurs, et elles ne jouent pas le même rôle :
+ *
+ *   --salon-*   l'identité du salon. Elle habille son mini-site et signe son
+ *               espace, mais ne porte jamais une information de statut.
+ *   --ui-*      la charte du produit : surfaces, textes, bordures, états.
+ *               Elle reste stable d'un salon à l'autre, ce qui garantit
+ *               qu'un bouton « supprimer » se lit pareil partout.
+ *
+ * Les deux thèmes sont définis en clair d'abord, puis redéfinis en sombre :
+ * aucune couleur n'existe uniquement dans le bloc sombre.
+ */
+
+:root {
+  color-scheme: light;
+
+  --ui-bg: #fbfbfd;
+  --ui-surface: #ffffff;
+  --ui-surface-muted: #f4f4f6;
+  --ui-surface-hover: #f0f0f3;
+  --ui-border: #e6e6ea;
+  --ui-border-strong: #d4d4d9;
+
+  --ui-text: #17171c;
+  --ui-text-muted: #6b6b76;
+  --ui-text-subtle: #9a9aa5;
+
+  --ui-success: #0f7b52;
+  --ui-success-bg: #e7f6ee;
+  --ui-warning: #92590b;
+  --ui-warning-bg: #fdf3e2;
+  --ui-danger: #b42318;
+  --ui-danger-bg: #fdeceb;
+  --ui-info: #175cd3;
+  --ui-info-bg: #eaf1fd;
+
+  --salon-primary: #b4436c;
+  --salon-primary-soft: #f7e9ef;
+  --salon-accent: #f2c4ce;
+  --salon-surface: #faf7f8;
+  --salon-radius: 0.875rem;
+
+  --ui-shadow-sm: 0 1px 2px rgb(16 16 22 / 0.05);
+  --ui-shadow: 0 1px 3px rgb(16 16 22 / 0.07), 0 1px 2px rgb(16 16 22 / 0.04);
+  --ui-shadow-lg: 0 12px 32px -8px rgb(16 16 22 / 0.16);
+}
+
+/*
+ * Le thème sombre est déclaré deux fois, et il le faut :
+ *
+ *   - sous `prefers-color-scheme`, pour suivre le réglage du système tant que
+ *     personne n'a choisi ;
+ *   - sous `[data-theme="dark"]`, pour que le bouton l'emporte y compris sur
+ *     un système réglé en clair.
+ *
+ * Une seule des deux règles laisserait la moitié des cas sans thème sombre.
+ * Les valeurs sont identiques : toute modification va dans les deux blocs.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --ui-bg: #0e0e12;
+    --ui-surface: #17171d;
+    --ui-surface-muted: #1e1e26;
+    --ui-surface-hover: #23232c;
+    --ui-border: #2a2a34;
+    --ui-border-strong: #3a3a46;
+
+    --ui-text: #f2f2f5;
+    --ui-text-muted: #a1a1af;
+    --ui-text-subtle: #74747f;
+
+    --ui-success: #4ade80;
+    --ui-success-bg: #10281c;
+    --ui-warning: #fbbf24;
+    --ui-warning-bg: #2a1f08;
+    --ui-danger: #fb7185;
+    --ui-danger-bg: #2b1114;
+    --ui-info: #7dabf8;
+    --ui-info-bg: #101c30;
+
+    --salon-primary-soft: #2a1620;
+    /* --salon-surface n'est pas inversé : il n'habille que le mini-site,
+       qui reste clair pour toutes les visiteuses. */
+
+    --ui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --ui-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+    --ui-shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ui-bg: #0e0e12;
+  --ui-surface: #17171d;
+  --ui-surface-muted: #1e1e26;
+  --ui-surface-hover: #23232c;
+  --ui-border: #2a2a34;
+  --ui-border-strong: #3a3a46;
+
+  --ui-text: #f2f2f5;
+  --ui-text-muted: #a1a1af;
+  --ui-text-subtle: #74747f;
+
+  --ui-success: #4ade80;
+  --ui-success-bg: #10281c;
+  --ui-warning: #fbbf24;
+  --ui-warning-bg: #2a1f08;
+  --ui-danger: #fb7185;
+  --ui-danger-bg: #2b1114;
+  --ui-info: #7dabf8;
+  --ui-info-bg: #101c30;
+
+  --salon-primary-soft: #2a1620;
+
+  --ui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --ui-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+  --ui-shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-bg: var(--ui-bg);
+  --color-surface: var(--ui-surface);
+  --color-surface-muted: var(--ui-surface-muted);
+  --color-surface-hover: var(--ui-surface-hover);
+  --color-line: var(--ui-border);
+  --color-line-strong: var(--ui-border-strong);
+
+  --color-ink: var(--ui-text);
+  --color-muted: var(--ui-text-muted);
+  --color-subtle: var(--ui-text-subtle);
+
+  --color-success: var(--ui-success);
+  --color-success-bg: var(--ui-success-bg);
+  --color-warning: var(--ui-warning);
+  --color-warning-bg: var(--ui-warning-bg);
+  --color-danger: var(--ui-danger);
+  --color-danger-bg: var(--ui-danger-bg);
+  --color-info: var(--ui-info);
+  --color-info-bg: var(--ui-info-bg);
+
+  --color-salon: var(--salon-primary);
+  --color-salon-soft: var(--salon-primary-soft);
+  --color-salon-accent: var(--salon-accent);
+  --color-salon-surface: var(--salon-surface);
+
+  --radius-salon: var(--salon-radius);
+  --font-sans: var(--font-geist-sans);
+  --shadow-card: var(--ui-shadow);
+  --shadow-float: var(--ui-shadow-lg);
+}
+
+body {
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Chiffres alignés : les prix et les heures se lisent en colonne. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Mini-site public.
+ *
+ * Il ne suit délibérément pas le thème du produit. La page d'un salon doit
+ * s'afficher de la même façon pour toutes ses clientes, et une inversion
+ * sombre automatique retournerait des couleurs de marque choisies à la main
+ * — un rose poudré sur fond noir ne dit plus la même chose.
+ */
+.salon-site {
+  color-scheme: light;
+
+  --site-surface: #ffffff;
+  --site-ground: var(--salon-surface);
+  --site-line: rgb(23 23 28 / 0.1);
+  --site-ink: #17171c;
+  --site-muted: #5f5f6b;
+  --site-subtle: #8b8b96;
+
+  /* L'ombre de survol vient du produit ; on la redéfinit ici pour qu'elle
+     reste claire même quand le système de la visiteuse est en sombre. */
+  --ui-shadow-lg: 0 14px 32px -10px rgb(23 23 28 / 0.22);
+
+  background: var(--site-ground);
+  color: var(--site-ink);
+}
+
+/*
+ * Mode sombre du mini-site.
+ *
+ * Il est **dérivé de la palette du salon**, pas d'un gris générique : le
+ * fond reprend la teinte principale poussée vers le noir, si bien qu'un
+ * salon émeraude reste émeraude la nuit. Un gris neutre effacerait
+ * l'identité qu'on vient de lui faire choisir.
+ *
+ * La couleur principale, elle, est **éclaircie** : un violet #6D28D9 lisible
+ * sur blanc tombe sous le seuil de contraste sur fond sombre. `color-mix`
+ * fait ce travail sans JavaScript et sans stocker une seconde palette.
+ *
+ * Le choix appartient à la visiteuse, pas au salon : c'est elle qui lit, et
+ * souvent le soir. Il est piloté par `data-mode` sur `.salon-site`.
+ */
+.salon-site[data-mode="dark"] {
+  color-scheme: dark;
+
+  --site-ground: color-mix(in srgb, var(--salon-primary) 12%, #0b0b0f);
+  --site-surface: color-mix(in srgb, var(--salon-primary) 8%, #16161b);
+  --site-line: rgb(255 255 255 / 0.12);
+  --site-ink: #f4f4f7;
+  --site-muted: #adadba;
+  --site-subtle: #83838f;
+
+  --ui-shadow-lg: 0 14px 32px -10px rgb(0 0 0 / 0.65);
+}
+
+/*
+ * Couleurs de marque relevées pour le fond sombre.
+ *
+ * On ne touche pas à `--salon-primary` lui-même : il sert aussi de fond de
+ * bouton, où il doit rester saturé. C'est son usage *en texte* qui a besoin
+ * d'être éclairci, d'où une variable distincte.
+ */
+.salon-site {
+  --salon-ink: var(--salon-primary);
+}
+
+.salon-site[data-mode="dark"] {
+  --salon-ink: color-mix(in srgb, var(--salon-primary) 45%, white);
+  --salon-accent: color-mix(in srgb, var(--salon-primary) 30%, #1c1c22);
+}
+
+/* Sur le mini-site, la bordure de survol est celle du salon. */
+.salon-site .lift:hover {
+  border-color: var(--salon-primary);
+}
+
+/* Les photos supportent mal un fond sombre à pleine luminosité. */
+.salon-site[data-mode="dark"] img {
+  filter: brightness(0.92);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Mini-site : relief et matière                                            */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Inclinaison 3D pilotée par `features/salon/Tilt.tsx`.
+ *
+ * La perspective vit sur le conteneur et la rotation sur l'enfant : c'est
+ * ce qui donne une profondeur réaliste plutôt qu'un simple cisaillement.
+ * Au repos les variables valent zéro, donc la carte est parfaitement plate
+ * tant que rien ne la survole.
+ */
+.tilt {
+  perspective: 900px;
+}
+
+.tilt > * {
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* Pendant le survol, la carte suit le curseur sans amortissement : un délai
+   ici donnerait une impression de latence. */
+.tilt[data-tilting="true"] > * {
+  transition: transform 0.08s linear;
+}
+
+.tilt--glare > * {
+  position: relative;
+}
+
+.tilt--glare > *::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    22rem circle at var(--glare-x, 50%) var(--glare-y, 50%),
+    rgb(255 255 255 / 0.5),
+    transparent 55%
+  );
+}
+
+.tilt[data-tilting="true"].tilt--glare > *::after {
+  opacity: 1;
+}
+
+/* Dégradé de marque, utilisé sur les surfaces d'accent du mini-site. */
+.salon-gradient {
+  background-image: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--salon-primary) 92%, black) 0%,
+    var(--salon-primary) 45%,
+    color-mix(in srgb, var(--salon-primary) 55%, var(--salon-accent)) 100%
+  );
+}
+
+/* Texte en dégradé pour les titres de section. */
+.salon-titre {
+  background-image: linear-gradient(
+    100deg,
+    var(--site-ink) 30%,
+    color-mix(in srgb, var(--salon-primary) 75%, var(--site-ink)) 100%
+  );
+  background-clip: text;
+  color: transparent;
+}
+
+/*
+ * Voile décoratif du haut de page. Deux halos très diffus aux couleurs du
+ * salon : ils donnent de la profondeur sans image à télécharger, ce qui
+ * compte sur un forfait facturé à la donnée.
+ */
+.salon-halo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.salon-halo::before,
+.salon-halo::after {
+  content: "";
+  position: absolute;
+  width: 32rem;
+  height: 32rem;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+
+.salon-halo::before {
+  top: -14rem;
+  right: -8rem;
+  background: var(--salon-accent);
+}
+
+.salon-halo::after {
+  top: -6rem;
+  left: -12rem;
+  background: color-mix(in srgb, var(--salon-primary) 25%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt > * {
+    transform: none !important;
+  }
+
+  .tilt--glare > *::after {
+    opacity: 0 !important;
+  }
+}
+
+/*
+ * Garde-fou des images — et il doit rester dans `@layer base`.
+ *
+ * ---------------------------------------------------------------------------
+ * Le défaut que cette accolade a causé
+ * ---------------------------------------------------------------------------
+ *
+ * Cette règle était écrite hors couche. Or une déclaration sans couche
+ * l'emporte sur n'importe quelle déclaration en couche, quelle que soit sa
+ * spécificité — c'est le mécanisme même de la cascade en couches. Elle
+ * battait donc `@layer utilities`, c'est-à-dire **tous** les utilitaires de
+ * hauteur posés sur une image : `size-full`, `h-full`, `h-64`… tous
+ * silencieusement remplacés par `height: auto`.
+ *
+ * Les conséquences étaient partout, et se lisaient comme des bugs séparés :
+ * la photo du haut de page ne couvrait que sa moitié haute et laissait une
+ * large bande plate en dessous, les vignettes de prestation ne remplissaient
+ * pas leur cadre, le panneau illustré des écrans de connexion débordait du
+ * sien. Aucun de ces écrans n'avait de problème : ils avaient tous le même.
+ *
+ * `@layer base` lui rend son rôle — un filet de sécurité pour les images
+ * sans classe — et laisse les utilitaires décider quand ils s'expriment.
+ */
+@layer base {
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /*
+   * Les ancres glissent au lieu de sauter.
+   *
+   * Un saut instantané fait perdre le fil : on se retrouve ailleurs sans
+   * savoir si la page a bougé de deux cents pixels ou de trois écrans. Le
+   * glissement montre le trajet, donc la distance parcourue.
+   *
+   * Il s'annule sous `prefers-reduced-motion` — c'est exactement le genre de
+   * déplacement qui donne le vertige à qui l'a demandé — et le saut
+   * instantané reprend alors sa place.
+   */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/*
+ * Anneau de focus visible et homogène. Le style par défaut du navigateur
+ * disparaît sous les fonds colorés ; celui-ci reste lisible partout, ce qui
+ * compte pour qui navigue au clavier.
+ */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--salon-primary);
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Squelette de chargement : une onde discrète, pas un clignotement. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--ui-surface-muted);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.14),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Apparitions                                                              */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Deux mouvements, un seul vocabulaire.
+ *
+ *   .rise        entrée, jouée au chargement — le haut de page ne doit pas
+ *                attendre un défilement pour exister ;
+ *   .reveal      apparition au défilement, déclenchée par IntersectionObserver
+ *                qui pose `data-visible` sur l'élément.
+ *
+ * L'état de départ n'est appliqué que si le JavaScript a pris la main
+ * (`html[data-js]`). Sans lui — script bloqué, robot d'indexation — le contenu
+ * reste simplement visible : une animation ne doit jamais décider si une
+ * page a du contenu.
+ */
+.rise {
+  animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * L'apparition au défilement : plus lente, et avec une mise au point.
+ *
+ * ---------------------------------------------------------------------------
+ * Trois gestes en un
+ * ---------------------------------------------------------------------------
+ *
+ * Le bloc monte, s'agrandit imperceptiblement, et **se met au point** — il
+ * arrive flou et devient net. C'est ce dernier geste qui fait la différence :
+ * un fondu dit « ceci apparaît », une mise au point dit « ceci se précise »,
+ * et sur un site de coiffure c'est exactement le registre.
+ *
+ * L'échelle part de 0,985 et non de 0,9 : à 0,9 le bloc grandit visiblement
+ * et le texte devient illisible pendant la transition. À 0,985 on ne voit pas
+ * l'agrandissement, on sent seulement que le bloc s'installe.
+ *
+ * ---------------------------------------------------------------------------
+ * La durée
+ * ---------------------------------------------------------------------------
+ *
+ * 1,05 s au lieu de 0,65 s. Assez lent pour qu'on voie le mouvement plutôt
+ * que son résultat, assez court pour qu'un bloc atteint en défilant rapide ne
+ * soit pas encore flou quand le regard s'y pose. La courbe termine très
+ * doucement : c'est la fin d'un mouvement qu'on remarque, pas son début.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi le flou s'arrête au téléphone
+ * ---------------------------------------------------------------------------
+ *
+ * `filter: blur()` force le navigateur à recomposer la zone à chaque image.
+ * Sur les appareils visés — Android d'entrée de gamme — six cartes floues qui
+ * se précisent en cascade font tomber le nombre d'images par seconde, et une
+ * animation saccadée est pire que pas d'animation du tout.
+ *
+ * Sous 640 px il ne reste donc que la montée et le fondu, qui ne coûtent
+ * rien : le navigateur les compose sans redessiner.
+ */
+html[data-js] .reveal {
+  opacity: 0;
+  transform: translateY(2rem) scale(0.985);
+  transition:
+    opacity 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  html[data-js] .reveal {
+    filter: blur(6px);
+  }
+}
+
+html[data-js] .reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/*
+ * Cartes penchées qui se redressent.
+ *
+ * Variante de `.reveal` : au lieu de monter, la carte arrive de biais et se
+ * remet d'aplomb. L'angle vient de `--angle`, posé au rendu, ce qui évite
+ * six classes pour six inclinaisons.
+ *
+ * L'effet a une raison d'être et pas seulement un effet : un empilement de
+ * cartes penchées se lit comme une pile d'objets posés, et le redressement
+ * dit qu'on les a sorties une à une. C'est ce qui fait la différence entre
+ * une grille et un geste.
+ */
+html[data-js] .tilt {
+  opacity: 0;
+  transform: rotate(var(--angle, -3deg)) translateY(1.75rem) scale(0.97);
+  /* Même durée que `.reveal` : deux vitesses d'apparition sur une même page
+     se remarquent, et ce qu'on remarque alors est l'incohérence. */
+  transition:
+    opacity 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html[data-js] .tilt[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-js] .tilt {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Survol des blocs. Le mouvement reste sous le millimètre : il signale que
+ * l'élément est vivant, il ne le fait pas sauter sous le curseur.
+ */
+.lift {
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ui-shadow-lg);
+    border-color: var(--salon-primary);
+  }
+}
+
+/*
+ * Mouvement réduit : on retire le déplacement, pas la vie.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi ce n'est plus un interrupteur général
+ * ---------------------------------------------------------------------------
+ *
+ * La règle d'usage — « animation-duration: 0.01ms » posée sur « * » — est
+ * commode et trop large. Ce que « prefers-reduced-motion » demande, ce sont
+ * les mouvements
+ * qui peuvent déclencher un trouble vestibulaire : les déplacements amples,
+ * le parallaxe, les rotations, tout ce qui donne la sensation de bouger soi-
+ * même. Un fondu d'opacité n'en fait pas partie — rien ne se déplace.
+ *
+ * En coupant tout, on rendait la page entièrement figée pour ces personnes,
+ * alors qu'elles pouvaient parfaitement profiter d'une apparition douce. On
+ * ne garde donc que le fondu, et on supprime la translation.
+ *
+ * Les mouvements réellement amples — la bande défilante, les cartes penchées,
+ * les compteurs — restent coupés, chacun par sa propre règle.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* Assez lent pour rester une apparition, assez court pour ne pas faire
+       attendre quelqu'un qui a précisément demandé moins d'effets. */
+    animation-duration: 0.35s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.25s !important;
+  }
+
+  /*
+   * Le bloc apparaît, mais ne monte plus et ne se met plus au point.
+   *
+   * Le flou ne déplace rien et ne relève donc pas du trouble vestibulaire,
+   * mais une image qui se précise reste une sollicitation visuelle forte —
+   * et quelqu'un qui demande moins d'effets ne demande pas *un autre* effet.
+   * Il ne reste que le fondu.
+   */
+  html[data-js] .reveal {
+    transform: none;
+    filter: none;
+  }
+
+  html[data-js] .reveal[data-visible="true"] {
+    opacity: 1;
+  }
+
+  .lift:hover {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Mots mis en valeur                                                       */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Un mot souligné d'un trait qui se dessine.
+ *
+ * Le trait part de la gauche et s'étire une fois le titre en place : l'œil
+ * lit la phrase, puis le trait lui désigne ce qu'il faut retenir. Un effet
+ * qui démarre en même temps que le texte se confondrait avec l'entrée.
+ *
+ * `background-size` plutôt qu'un pseudo-élément redimensionné : la
+ * composition se fait sans recalcul de mise en page, ce qui compte sur un
+ * téléphone d'entrée de gamme.
+ */
+.mot-cle {
+  position: relative;
+  white-space: nowrap;
+  background-image: linear-gradient(
+    var(--mot-cle-couleur, var(--salon-primary)),
+    var(--mot-cle-couleur, var(--salon-primary))
+  );
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: 0% 0.14em;
+  animation: souligner 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.55s forwards;
+}
+
+@keyframes souligner {
+  to {
+    background-size: 100% 0.14em;
+  }
+}
+
+/*
+ * Variante « lettres » : chaque caractère monte à son tour.
+ *
+ * Le décalage est porté par une variable posée à l'écriture du composant, et
+ * non calculé en JavaScript : l'animation démarre au premier rendu, sans
+ * attendre l'hydratation.
+ */
+.lettres > span {
+  display: inline-block;
+  animation: lettre 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms + 120ms);
+}
+
+@keyframes lettre {
+  from {
+    opacity: 0;
+    transform: translateY(0.5em) rotate(4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Un espace ne s'anime pas : il garderait une largeur nulle en cours de
+   route et les mots se colleraient. */
+.lettres > span[data-espace] {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mot-cle {
+    animation: none;
+    background-size: 100% 0.14em;
+  }
+
+  .lettres > span {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Pages d'identification : le fond vivant
+   ---------------------------------------------------------------------------
+
+   Trois voiles de couleur qui dérivent lentement derrière le formulaire.
+
+   Les teintes viennent des variables du thème **courant** : sur un mini-site
+   ce sont celles du salon, sur l'espace professionnel celles du produit. La
+   page se reteinte donc toute seule quand un salon change sa palette ou
+   quand on passe en mode sombre, sans une ligne de JavaScript.
+
+   Tout se joue en `transform` et `opacity` — jamais en géométrie. Le
+   navigateur compose ces deux propriétés sur le processeur graphique sans
+   recalculer la mise en page, ce qui rend l'animation gratuite même sur un
+   téléphone d'entrée de gamme.
+--------------------------------------------------------------------------- */
+
+.auth-blob {
+  position: absolute;
+  border-radius: 9999px;
+  /* Le flou fait tout le travail : sans lui on verrait trois disques, avec
+     lui on voit un dégradé qui respire. */
+  filter: blur(96px);
+  /* 0.28 et non 0.55 : à pleine force, le dégradé ne décorait plus la page,
+     il la peignait — et la carte du formulaire, seule chose à regarder ici,
+     se battait contre son propre fond. Un accent se remarque mieux quand il
+     ne réclame rien. */
+  opacity: 0.28;
+  will-change: transform;
+}
+
+.auth-blob-1 {
+  inset-block-start: -18%;
+  inset-inline-start: -12%;
+  inline-size: 56vmax;
+  block-size: 56vmax;
+  background: var(--salon-primary, var(--ui-accent, #b4436c));
+  animation: auth-drift-1 26s ease-in-out infinite alternate;
+}
+
+.auth-blob-2 {
+  inset-block-end: -24%;
+  inset-inline-end: -14%;
+  inline-size: 52vmax;
+  block-size: 52vmax;
+  background: var(--salon-accent, var(--ui-accent-soft, #f2c4ce));
+  animation: auth-drift-2 32s ease-in-out infinite alternate;
+}
+
+.auth-blob-3 {
+  inset-block-start: 28%;
+  inset-inline-end: 18%;
+  inline-size: 30vmax;
+  block-size: 30vmax;
+  background: var(--salon-surface, var(--ui-surface-muted, #faf7f8));
+  opacity: 0.22;
+  animation: auth-drift-3 38s ease-in-out infinite alternate;
+}
+
+@keyframes auth-drift-1 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6vw, 5vh, 0) scale(1.12); }
+}
+
+@keyframes auth-drift-2 {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to   { transform: translate3d(-7vw, -4vh, 0) scale(0.94); }
+}
+
+@keyframes auth-drift-3 {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-5vw, 7vh, 0); }
+}
+
+/* Le dégradé reste, le mouvement s'arrête : quelqu'un qui a demandé moins
+   d'animation veut une page calme, pas une page terne. */
+@media (prefers-reduced-motion: reduce) {
+  .auth-blob {
+    animation: none;
+  }
+}
+
+/* En mode sombre, les mêmes teintes à pleine opacité éclaireraient la page
+   au lieu de l'habiller. */
+:root[data-theme="dark"] .auth-blob,
+:root:not([data-theme="light"]) .auth-blob {
+  opacity: 0.16;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .auth-blob {
+    opacity: 0.28;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Écran d'identification sur un mini-site
+   ---------------------------------------------------------------------------
+
+   La page « Mon espace » vit sous la coquille du salon — menu, pied de page,
+   barre de réservation. Tant que personne n'est connecté, cette coquille
+   doit disparaître : sur un écran d'identification, chaque élément cliquable
+   qui n'est pas le formulaire est une occasion de partir sans le remplir.
+
+   Fait en CSS plutôt qu'en React : la coquille est rendue par un composant
+   serveur qui ne peut pas connaître l'état de session, lequel n'existe que
+   dans le navigateur. Un attribut posé sur <html> traverse cette frontière
+   sans remonter l'information à travers cinq composants.
+--------------------------------------------------------------------------- */
+
+:root[data-auth-screen] .salon-site > header,
+:root[data-auth-screen] .salon-site > footer,
+:root[data-auth-screen] .salon-site [data-site-chrome] {
+  display: none;
+}
+
+/* La marge qui réservait la place de la barre de réservation n'a plus
+   d'objet une fois celle-ci masquée. */
+:root[data-auth-screen] .salon-site > div[class*="pb-24"] {
+  padding-bottom: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Espace professionnel : le document ne défile pas
+   ---------------------------------------------------------------------------
+
+   La coquille du tableau de bord fait exactement la hauteur de la fenêtre ;
+   ce sont la colonne de navigation et la zone de contenu qui défilent,
+   chacune de son côté. Cet invariant était jusqu'ici seulement *espéré* :
+   rien n'empêchait le document lui-même de défiler.
+
+   Il suffit alors qu'un nœud s'ajoute à <body> — une extension du
+   navigateur, un outil injecté dans la page — pour que le document devienne
+   plus haut que la fenêtre. La coquille s'arrête à sa hauteur, et tout ce
+   qu'on trouve en dessous est une bande vide, de la couleur du fond : la
+   colonne de gauche semble coupée en plein milieu, sans que rien dans
+   l'application n'explique pourquoi.
+
+   `overflow: hidden` ferme ce chemin. Aucun contenu du produit ne peut être
+   masqué au passage : tout ce qui défile dans l'espace professionnel vit
+   déjà dans un conteneur `overflow-y-auto` à l'intérieur de la coquille.
+
+   Hors des règles en couches : les utilitaires Tailwind (`min-h-full` sur
+   <body>) vivent dans `@layer utilities`, et une déclaration sans couche
+   l'emporte sur une déclaration en couche quelle que soit sa spécificité.
+--------------------------------------------------------------------------- */
+
+:root[data-app-shell],
+:root[data-app-shell] body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Graphiques : la palette
+   ---------------------------------------------------------------------------
+
+   Ces teintes ne sont pas celles du salon, et c'est délibéré.
+
+   La couleur d'un salon habille sa vitrine ; dans un graphique, elle
+   porterait une *information* — « ceci est une recette », « ceci est une
+   dépense » — et deux salons aux palettes différentes liraient alors leurs
+   comptes avec des codes différents. Les séries gardent donc des teintes
+   fixes, vérifiées pour rester distinguables en vision normale comme en
+   deutéranopie, protanopie et tritanopie.
+
+   Les valeurs sombres ne sont pas un simple éclaircissement des claires :
+   elles ont été re-vérifiées contre la surface sombre.
+--------------------------------------------------------------------------- */
+
+:root {
+  --viz-income: #2a78d6;   /* bleu — recettes */
+  --viz-expense: #eb6834;  /* orange — dépenses */
+  --viz-third: #1baf7a;    /* aqua — troisième part */
+  --viz-other: #6b7280;    /* gris — « Autres », jamais une série à part entière */
+
+  /* Rampe séquentielle : une seule teinte, plus foncé = plus grand. Sert aux
+     barres classées, où c'est la magnitude qui compte, pas l'identité. */
+  --viz-ramp-1: #cde2fb;
+  --viz-ramp-2: #9ec5f4;
+  --viz-ramp-3: #6da7ec;
+  --viz-ramp-4: #3987e5;
+  --viz-ramp-5: #2a78d6;
+  --viz-ramp-6: #256abf;
+  --viz-ramp-7: #184f95;
+  --viz-ramp-8: #0d366b;
+
+  --viz-grid: rgb(23 23 28 / 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --viz-income: #3987e5;
+    --viz-expense: #d95926;
+    --viz-third: #199e70;
+    --viz-other: #9ca3af;
+
+    --viz-ramp-1: #184f95;
+    --viz-ramp-2: #256abf;
+    --viz-ramp-3: #2a78d6;
+    --viz-ramp-4: #3987e5;
+    --viz-ramp-5: #5598e7;
+    --viz-ramp-6: #6da7ec;
+    --viz-ramp-7: #86b6ef;
+    --viz-ramp-8: #9ec5f4;
+
+    --viz-grid: rgb(255 255 255 / 0.1);
+  }
+}
+
+:root[data-theme="dark"] {
+  --viz-income: #3987e5;
+  --viz-expense: #d95926;
+  --viz-third: #199e70;
+  --viz-other: #9ca3af;
+
+  --viz-ramp-1: #184f95;
+  --viz-ramp-2: #256abf;
+  --viz-ramp-3: #2a78d6;
+  --viz-ramp-4: #3987e5;
+  --viz-ramp-5: #5598e7;
+  --viz-ramp-6: #6da7ec;
+  --viz-ramp-7: #86b6ef;
+  --viz-ramp-8: #9ec5f4;
+
+  --viz-grid: rgb(255 255 255 / 0.1);
+}
+
+/* ---------------------------------------------------------------------------
+   Panneau illustré des écrans d'identification
+   ---------------------------------------------------------------------------
+
+   L'inclinaison est faite en CSS seul : une perspective sur la scène, une
+   rotation pilotée par la position du pointeur. Aucune bibliothèque 3D — ce
+   serait des centaines de kilo-octets pour un décor, sur des forfaits
+   facturés à la donnée.
+
+   La scène ne porte plus qu'une image. Les trois plans superposés d'avant
+   se masquaient les uns les autres : on voyait une pile, pas des photos.
+--------------------------------------------------------------------------- */
+
+.auth-stage {
+  perspective: 1100px;
+  perspective-origin: 50% 50%;
+}
+
+.auth-stage-inner {
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  transform-style: preserve-3d;
+  /* Assez lent pour que le mouvement suive la main sans la devancer, assez
+     court pour ne pas traîner derrière elle. */
+  transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Le mouvement s'arrête, la composition reste. */
+@media (prefers-reduced-motion: reduce) {
+  .auth-stage-inner {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Bande défilante                                                           */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Le défilement sans fin, en CSS seul.
+ *
+ * La piste contient deux copies identiques de la liste et se translate de
+ * exactement -50 % : au moment où l'animation reboucle, la seconde copie
+ * occupe la place qu'occupait la première, et la coupure est invisible.
+ *
+ * `width: max-content` est ce qui rend le calcul exact : sans lui, la piste
+ * prend la largeur du conteneur et -50 % ne correspond plus à une copie.
+ */
+.marquee-piste {
+  display: flex;
+  width: max-content;
+  animation: defiler 32s linear infinite;
+}
+
+.marquee-groupe {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@keyframes defiler {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/*
+ * On s'arrête sur un nom quand il nous intéresse.
+ *
+ * Un texte qui fuit sous le curseur au moment précis où l'on veut le lire
+ * est une petite cruauté. `hover: hover` réserve la règle aux vrais
+ * pointeurs : sur écran tactile, le survol reste collé après le doigt et
+ * figerait la bande pour de bon.
+ */
+@media (hover: hover) {
+  .marquee:hover .marquee-piste {
+    animation-play-state: paused;
+  }
+}
+
+/*
+ * Les voiles latéraux.
+ *
+ * Ils fondent la bande dans la page au lieu de la couper net, et c'est ce
+ * qui distingue un défilé continu d'un tableau qui déborde. Le dégradé part
+ * de la surface exacte de la bande, donc la jointure ne se voit pas quel que
+ * soit le thème du salon.
+ */
+.marquee-voile {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .marquee-voile {
+    width: 5rem;
+  }
+}
+
+.marquee-voile--gauche {
+  left: 0;
+  background: linear-gradient(90deg, var(--site-surface), transparent);
+}
+
+.marquee-voile--droite {
+  right: 0;
+  background: linear-gradient(270deg, var(--site-surface), transparent);
+}
+
+/*
+ * En « mouvement réduit », elle ralentit — elle ne s'arrête pas.
+ *
+ * C'est une exception assumée, et la seule de la page. Une bande d'enseigne
+ * dont le mouvement est le propos n'a plus de raison d'être une fois figée :
+ * elle devient une liste de mots coupée aux deux bouts.
+ *
+ * La contrepartie est le bouton d'arrêt. Il n'était pas obligatoire tant que
+ * le réglage suffisait à figer la bande ; il le devient ici, parce qu'un
+ * contenu en mouvement de plus de cinq secondes doit pouvoir être arrêté.
+ *
+ * Le réglage reste écouté : moitié moins vite.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-piste {
+    /*
+     * `!important` est ici une nécessité, pas un raccourci.
+     *
+     * La règle générale de ce même bloc ramène toute animation à 0,35 s et à
+     * une seule répétition, avec `!important` — c'est ce qui neutralise les
+     * mouvements qu'on ne veut pas. La bande est l'exception assumée : sans
+     * ces trois déclarations, elle se jouait une fois en un tiers de seconde
+     * et restait figée, ce qui est exactement ce qu'on cherche à éviter.
+     */
+    animation-duration: 64s !important;
+    animation-iteration-count: infinite !important;
+    animation-timing-function: linear !important;
+  }
+}
+
+/*
+ * L'arrêt demandé, et l'arrêt au survol.
+ *
+ * `animation-play-state` fige la piste là où elle est, au lieu de la
+ * remettre au début : reprendre poursuit le mouvement, ce qui est ce qu'on
+ * attend d'une pause.
+ *
+ * Le survol ne concerne que les vrais pointeurs. Sur écran tactile, il
+ * reste collé après le doigt et figerait la bande pour de bon.
+ */
+.marquee-piste[data-arretee] {
+  animation-play-state: paused;
+}
+
+@media (hover: hover) {
+  .marquee:hover .marquee-piste:not([data-arretee]) {
+    animation-play-state: paused;
+  }
+}
+
+/*
+ * Le bouton s'efface tant qu'on ne le cherche pas.
+ *
+ * Visible en permanence, il concurrencerait les noms qui défilent — or c'est
+ * eux qu'on est censé lire. Il reste dans le document : atteignable au
+ * clavier, annoncé par un lecteur d'écran, et il réapparaît dès que le
+ * curseur entre dans la bande ou qu'il reçoit le focus.
+ *
+ * Sur écran tactile, où il n'y a pas de survol, il est visible en
+ * permanence : une commande qu'on ne peut pas faire apparaître n'existe pas.
+ */
+.marquee-bouton {
+  opacity: 0.55;
+}
+
+@media (hover: hover) {
+  .marquee-bouton {
+    opacity: 0;
+  }
+
+  .marquee:hover .marquee-bouton {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Mots qui montent de derrière une ligne                                    */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * Le masque, et la réserve pour les jambages.
+ *
+ * `overflow: hidden` coupe net ce qui dépasse du cadre — et ce qui dépasse
+ * d'une ligne de texte, ce sont les jambages : le g de « rouge », le p de
+ * « pose ». On donne donc au masque une réserve en bas, qu'une marge
+ * négative de même valeur reprend : la coupe tombe sous les jambages, et la
+ * mise en page ne bouge pas d'un pixel.
+ *
+ * `vertical-align: bottom` est ce qui aligne le masque sur la ligne de base
+ * du texte voisin. Sans lui, un titre mêlant mots animés et texte normal se
+ * décale d'un demi-cadratin.
+ */
+.mots-masque {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
+}
+
+.mots-mot {
+  display: inline-block;
+}
+
+/*
+ * Le mot part sous le masque et remonte.
+ *
+ * `110 %` et non `100 %` : à exactement une hauteur de ligne, le haut du mot
+ * affleure encore le bord du masque pendant quelques images, ce qui se voit
+ * comme un liseré. Un peu plus bas, il entre franchement.
+ *
+ * L'état de départ n'est posé que si le JavaScript a pris la main : sans lui
+ * — script bloqué, robot d'indexation — le titre est simplement là. Une
+ * animation ne doit jamais décider si une page a du contenu.
+ */
+html[data-js] .mots-mot {
+  transform: translateY(110%);
+  animation: monter 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes monter {
+  to {
+    transform: none;
+  }
+}
+
+/*
+ * Sans mouvement, les mots sont en place d'emblée.
+ *
+ * On ne se contente pas de supprimer l'animation : il faut aussi annuler la
+ * translation de départ, sinon le titre resterait sous son masque — donc
+ * invisible — pour toujours.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html[data-js] .mots-mot {
+    transform: none;
+    animation: none;
+  }
+}

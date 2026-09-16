@@ -1,0 +1,47 @@
+name: beauty-salon-saas
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: salon-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: salon
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Joue une seule fois, a la creation du volume. Cree les deux roles
+      # sur lesquels repose l'isolation RLS (voir 01-roles.sql).
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d salon"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: salon-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Capture tous les e-mails sortants en dev. Interface : http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: salon-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  postgres_data:
+  redis_data:

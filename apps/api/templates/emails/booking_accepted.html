@@ -1,0 +1,16 @@
+{% extends "emails/base_client.html" %}
+
+{% block preheader %}C'est confirmé — {{ date_label }} à {{ time_label }}{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="C'est confirmé" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% if profile.late_policy %}
+    {% include "emails/_parts.html" with part="notice" title=late_title text=profile.late_policy %}
+  {% endif %}
+
+  {% include "emails/_parts.html" with part="text" text="À bientôt." %}
+{% endblock %}

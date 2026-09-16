@@ -1,0 +1,46 @@
+{% if visible %}
+<section class="supervision ledger">
+  <h2>
+    Vos comptes
+    <a class="ledger-link" href="{{ ledger_url }}">tout voir</a>
+  </h2>
+
+  <div class="supervision-grid">
+    <div class="stat">
+      <span class="stat-label">Résultat du mois</span>
+      <span class="stat-value {% if positive %}ledger-positive{% else %}ledger-negative{% endif %}">
+        {{ net|floatformat:0 }}
+      </span>
+      <span class="stat-hint">recettes moins dépenses</span>
+    </div>
+
+    <div class="stat">
+      <span class="stat-label"><i class="ledger-dot ledger-dot--income"></i>Recettes</span>
+      <span class="stat-value">{{ income|floatformat:0 }}</span>
+      <span class="stat-hint">{{ paying_salons }} salon{{ paying_salons|pluralize }} ayant réglé</span>
+    </div>
+
+    <div class="stat">
+      <span class="stat-label"><i class="ledger-dot ledger-dot--expense"></i>Dépenses</span>
+      <span class="stat-value">{{ expense|floatformat:0 }}</span>
+      <span class="stat-hint">hébergement, outils, frais</span>
+    </div>
+
+    <div class="stat ledger-chart-cell">
+      <span class="stat-label">Douze derniers mois</span>
+      <div class="ledger-chart" role="img"
+           aria-label="Recettes et dépenses de la plateforme sur douze mois">
+        {% for point in series %}
+          <span class="ledger-month" title="{{ point.label }} — recettes {{ point.income|floatformat:0 }}, dépenses {{ point.expense|floatformat:0 }}">
+            <span class="ledger-bars">
+              <span class="ledger-bar ledger-bar--income" style="height: {{ point.income_height }}%"></span>
+              <span class="ledger-bar ledger-bar--expense" style="height: {{ point.expense_height }}%"></span>
+            </span>
+            <span class="ledger-month-label">{{ point.label }}</span>
+          </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}

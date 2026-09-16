@@ -1,0 +1,16 @@
+{% extends "admin/index.html" %}
+{% load platform_admin %}
+
+{% comment %}
+Page d'accueil de l'administration.
+
+L'index de Django liste des modeles ; il ne dit pas ce qui attend une
+decision. Le panneau de supervision passe donc avant, et la liste des
+applications reste dessous, inchangee.
+{% endcomment %}
+
+{% block content %}
+  {% supervision_panel %}
+  {% platform_finances %}
+  {{ block.super }}
+{% endblock %}

@@ -1,0 +1,126 @@
+{% comment %}
+===========================================================================
+Gabarit des e-mails adressés aux clientes.
+===========================================================================
+
+Un e-mail n'est pas une page web, et écrire l'un comme l'autre est la
+première façon de le rater. Ce qui suit s'écarte volontairement de ce qu'on
+ferait sur le site :
+
+  - **Des tableaux, pas de flex ni de grid.** Outlook rend le HTML avec le
+    moteur de Word : `display:flex` y est purement ignoré, et la mise en page
+    s'effondre en une colonne de texte nu.
+  - **Du CSS en ligne.** Les feuilles de style externes ne partent pas avec
+    le message, et une partie des clients retire les balises `<style>`. Les
+    règles du `<head>` ne servent donc qu'au responsive, en supplément.
+  - **600 px de large.** C'est la largeur que tous les clients de bureau
+    affichent sans rogner, et la valeur qu'attendent les gabarits d'Outlook.
+  - **Aucune image indispensable.** La moitié des clients bloquent les
+    images par défaut : tout ce qui porte du sens est du texte.
+
+---------------------------------------------------------------------------
+Une seule colonne, et pourquoi
+---------------------------------------------------------------------------
+
+Sur le site, deux colonnes valent mieux qu'une sur téléphone. En e-mail,
+c'est l'inverse : l'application Gmail sur Android ignore une partie des
+requêtes média, si bien qu'une mise en page à deux colonnes reste à deux
+colonnes sur un écran de 360 px et devient illisible.
+
+La seule exception est le tableau de détails — libellé à gauche, valeur à
+droite. Ce n'est pas une mise en page en colonnes, c'est un tableau de
+données, et il se comporte bien partout.
+
+---------------------------------------------------------------------------
+La marque du salon
+---------------------------------------------------------------------------
+
+La couleur principale vient du salon, pas de la plateforme : la cliente a
+réservé chez « blondrose », pas chez nous. Le pied de page seul nous nomme.
+{% endcomment %}<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>{{ subject|default:salon.name }}</title>
+<style>
+  /* Réglages que le CSS en ligne ne peut pas exprimer. Tout ce qui est
+     vital est dupliqué en ligne : ces règles ne font qu'améliorer. */
+  body { margin:0; padding:0; width:100% !important; }
+  table { border-collapse:collapse; }
+  img { border:0; line-height:100%; outline:none; text-decoration:none; }
+
+  /* Sur téléphone : marges resserrées et corps légèrement réduit, pour que
+     la première ligne utile tienne au-dessus de la ligne de flottaison. */
+  @media only screen and (max-width:600px) {
+    .wrap { padding:16px 12px !important; }
+    .card { padding:20px 18px !important; }
+    .h1 { font-size:20px !important; line-height:28px !important; }
+    .big { font-size:26px !important; }
+    .stack { display:block !important; width:100% !important; }
+  }
+
+  /* Mode sombre : uniquement là où il est fiable — Apple Mail, Outlook
+     macOS. Ailleurs la version claire reste affichée, ce qui est correct. */
+  @media (prefers-color-scheme:dark) {
+    .bg { background:#0f0f13 !important; }
+    .card { background:#1a1a20 !important; }
+    .ink { color:#f4f4f7 !important; }
+    .muted { color:#a9a9b5 !important; }
+    .line { border-color:#2c2c35 !important; }
+    .soft { background:#22222a !important; }
+  }
+</style>
+</head>
+<body class="bg" style="margin:0;padding:0;background:#f6f4f7;">
+
+{% comment %}
+  Pré-en-tête : le texte que la boîte de réception affiche à côté de l'objet.
+  Sans lui, elle y met les premiers mots du corps — souvent « Bonjour
+  Prénom, », qui ne dit rien. Masqué dans le message lui-même.
+{% endcomment %}
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+  {% block preheader %}{% endblock %}
+  &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg" style="background:#f6f4f7;">
+  <tr>
+    <td align="center" class="wrap" style="padding:28px 16px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;">
+
+        {# ----- Bandeau du salon ----- #}
+        <tr>
+          <td style="padding:0 0 18px;font:600 18px/24px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:{{ brand|default:'#B4436C' }};">
+            {{ salon.name }}
+          </td>
+        </tr>
+
+        {# ----- Le message ----- #}
+        <tr>
+          <td class="card" style="background:#ffffff;border-radius:14px;padding:28px 26px;font:400 15px/23px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">
+            {% block body %}{% endblock %}
+          </td>
+        </tr>
+
+        {# ----- Pied de page ----- #}
+        <tr>
+          <td class="muted" style="padding:20px 6px 0;font:400 12px/19px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#82828e;">
+            {% block footer %}
+              Vous recevez ce message parce que vous avez pris rendez-vous chez
+              {{ salon.name }}.
+            {% endblock %}
+            <br><br>
+            <span style="color:#a0a0ab;">Propulsé par Beauty Salon</span>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

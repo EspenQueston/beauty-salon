@@ -1,0 +1,16 @@
+{% autoescape off %}Bonjour,
+
+{{ customer.full_name }} a annulé son rendez-vous.
+
+Prestation : {{ booking.service_name }}
+Date : {{ date_label }} à {{ time_label }}
+Téléphone : {{ customer.phone }}
+{% if booking.cancellation_reason %}Motif : {{ booking.cancellation_reason }}
+{% endif %}
+Le créneau est de nouveau libre. Si des clientes sont sur votre liste
+d'attente, c'est le moment de les prévenir :
+
+{{ waitlist_url }}
+
+{{ salon.name }}
+{% endautoescape %}

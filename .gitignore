@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Django
+media/
+staticfiles/
+*.log
+
+# Celery : etat local de l'ordonnanceur, reconstruit au demarrage. Le fichier
+# WAL atteint plusieurs mega-octets en quelques jours et ne dit rien du code.
+celerybeat-schedule*
+celerybeat.pid
+
+# Bases locales
+*.sqlite3
+*.db
+
+# Node
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

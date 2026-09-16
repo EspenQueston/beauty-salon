@@ -1,0 +1,22 @@
+{% extends "emails/base_produit.html" %}
+
+{% block preheader %}Votre espace est prêt — préparez votre catalogue en attendant la mise en ligne{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Bienvenue sur Beauty Salon" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% include "emails/_parts.html" with part="notice" title="Votre mini-site n'est pas encore public." text="Notre équipe le vérifie avant sa mise en ligne. Vous recevrez un message dès qu'il sera visible." %}
+
+  {% include "emails/_parts.html" with part="text" text="En attendant, préparez votre catalogue, vos horaires et votre équipe : tout sera déjà en place le jour de l'ouverture." %}
+
+  {% if app_url %}
+    {% include "emails/_parts.html" with part="button" url=app_url text="Ouvrir mon espace" color="#B4436C" %}
+  {% endif %}
+{% endblock %}
+
+{% block footer %}
+  Vous recevez ce message parce qu'un salon vient d'être créé avec cette adresse.
+{% endblock %}

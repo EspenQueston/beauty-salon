@@ -1,0 +1,31 @@
+{% comment %}
+===========================================================================
+Le tableau de détails : libellé à gauche, valeur à droite.
+===========================================================================
+
+C'est la seule chose de ces e-mails qui soit sur deux colonnes, et c'est
+voulu. Une mise en page à deux colonnes ne tient pas en e-mail — l'appli
+Gmail sur Android ignore une partie des requêtes média, et deux colonnes
+restent deux colonnes sur 360 px de large. Ici il ne s'agit pas d'une mise
+en page mais d'un **tableau de données**, et un tableau se rend correctement
+partout, y compris dans Outlook.
+
+La valeur est alignée à droite et en `tabular` : des montants et des heures
+alignés se comparent d'un coup d'œil, ce qui est exactement l'usage.
+
+Attendu dans le contexte : `rows`, une liste de dictionnaires
+`{label, value, strong}`.
+===========================================================================
+{% endcomment %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+  {% for row in rows %}
+  <tr>
+    <td class="muted line" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:400 14px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#82828e;white-space:nowrap;">
+      {{ row.label }}
+    </td>
+    <td class="ink line" align="right" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:{% if row.strong %}600{% else %}400{% endif %} 14px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">
+      {{ row.value }}
+    </td>
+  </tr>
+  {% endfor %}
+</table>

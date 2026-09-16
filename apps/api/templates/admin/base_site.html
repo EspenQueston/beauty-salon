@@ -1,0 +1,29 @@
+{% extends "admin/base.html" %}
+{% load platform_admin %}
+
+{% comment %}
+Habillage de l'administration plateforme.
+
+On etend `admin/base.html` plutot que de le remplacer : les mises a jour de
+Django continuent de s'appliquer, et seule la feuille de style s'ajoute.
+{% endcomment %}
+
+{% comment %}
+La feuille passe par `extrahead` et non `extrastyle` : Django rend ce bloc
+apres les styles propres a chaque page (changelists, responsive), donc apres
+tout ce qu'elle doit pouvoir surcharger.
+{% endcomment %}
+{% block extrahead %}{{ block.super }}
+  <link rel="stylesheet" href="{% versioned_static 'admin/platform.css' %}">
+{% endblock %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Beauty Salon{% endblock %}
+
+{% block branding %}
+  <h1 id="site-name"><a href="{% url 'admin:index' %}">Beauty Salon</a></h1>
+  {% if user.is_authenticated and user.is_staff %}
+    <span class="pill">Administration plateforme</span>
+  {% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

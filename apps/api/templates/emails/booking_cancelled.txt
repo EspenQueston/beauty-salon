@@ -1,0 +1,14 @@
+{% autoescape off %}Bonjour {{ customer.full_name }},
+
+{% if by_salon %}{{ salon.name }} a dû annuler votre rendez-vous.{% else %}Votre rendez-vous est bien annulé.{% endif %}Prestation : {{ booking.service_name }}
+Date : {{ date_label }} à {{ time_label }}
+{% if booking.cancellation_reason %}Motif : {{ booking.cancellation_reason }}
+{% endif %}{% if booking.deposit_paid %}
+Un acompte de {{ booking.deposit_received }} {{ salon.currency }} avait été versé.
+Contactez le salon pour convenir de la suite.
+{% endif %}{% if by_salon %}
+Nous en sommes désolés. Vous pouvez reprendre rendez-vous quand vous le
+souhaitez, ou écrire au salon pour trouver un autre créneau.
+{% endif %}
+{{ salon.name }}
+{% endautoescape %}

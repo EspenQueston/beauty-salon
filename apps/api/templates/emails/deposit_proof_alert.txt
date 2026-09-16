@@ -1,0 +1,18 @@
+{% autoescape off %}Bonjour,
+
+{{ customer.full_name }} a envoyé une preuve de versement pour son acompte.
+
+Prestation : {{ booking.service_name }}
+Date : {{ date_label }} à {{ time_label }}
+Acompte : {{ booking.deposit_amount }} {{ salon.currency }}
+Téléphone : {{ customer.phone }}
+
+Vérifiez le versement dans votre application de paiement, puis acceptez ou
+refusez depuis votre agenda :
+
+{{ agenda_url }}
+ Tant que vous n'avez pas répondu, le créneau
+reste bloqué et la cliente attend.
+
+{{ salon.name }}
+{% endautoescape %}

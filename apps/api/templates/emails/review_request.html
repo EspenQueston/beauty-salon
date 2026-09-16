@@ -1,0 +1,46 @@
+{% extends "emails/base_client.html" %}
+
+{% block preheader %}Votre avis sur {{ booking.service_name }} en deux minutes{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Comment ça s'est passé ?" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% include "emails/_parts.html" with part="text" text="Vous noterez cinq points, de 1 à 5 étoiles, et vous pourrez ajouter un commentaire si vous le souhaitez." %}
+
+  {% comment %} -------------------------------------------------------------
+    Les critères, annoncés avant le clic.
+
+    Un bouton « Laisser mon avis » seul ne dit pas ce qui attend derrière, et
+    ce qui n'est pas dit est supposé long. Nommer les cinq points transforme
+    « encore un formulaire » en « deux minutes, je sais quoi dire » — et
+    c'est la seule chose qui fasse bouger un taux de réponse.
+
+    Un tableau et non une liste à puces : l'application Gmail sur Android
+    rogne les retraits de `<ul>`, et les puces finissent contre le bord.
+    Les étoiles vides disent « cinq crans » sans un mot de plus.
+  --------------------------------------------------------------------- {% endcomment %}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+    {% for label in review_criteria %}
+    <tr>
+      <td class="ink line" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:400 14px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">
+        {{ label }}
+      </td>
+      <td class="muted line" align="right" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:400 15px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b8b8c0;letter-spacing:2px;white-space:nowrap;">
+        &#9734;&#9734;&#9734;&#9734;&#9734;
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  {% if review_url %}
+    {% include "emails/_parts.html" with part="button" url=review_url text="Laisser mon avis" color=brand %}
+  {% endif %}
+{% endblock %}
+
+{% block footer %}
+  Vous recevez ce message après votre rendez-vous chez {{ salon.name }}.
+  Si vous ne souhaitez pas laisser d'avis, ignorez simplement cet e-mail.
+{% endblock %}

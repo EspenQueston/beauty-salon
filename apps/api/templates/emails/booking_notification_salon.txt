@@ -1,0 +1,16 @@
+{% autoescape off %}Nouvelle réservation sur votre mini-site.
+
+Cliente : {{ customer.full_name }}
+Téléphone : {{ customer.phone }}
+Prestation : {{ booking.service_name }}
+Prestataire : {{ staff_member.name }}
+Date : {{ date_label }} à {{ time_label }}
+Origine : {{ booking.get_source_display }}
+{% if booking.customer_note %}
+Message de la cliente :
+{{ booking.customer_note }}
+{% endif %}
+Retrouvez ce rendez-vous dans votre agenda :
+
+{{ agenda_url }}
+{% endautoescape %}

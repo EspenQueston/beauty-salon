@@ -1,0 +1,18 @@
+{% extends "emails/base_produit.html" %}
+
+{% block preheader %}{{ customer.full_name }} a annulé — créneau du {{ date_label }} libéré{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Une cliente a annulé" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_parts.html" with part="contact" name=customer.full_name phone=customer.phone email=customer.email %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% include "emails/_parts.html" with part="notice" title="Le créneau est de nouveau libre." text="Si des clientes sont sur votre liste d'attente, c'est le moment de les prévenir." %}
+
+  {% if waitlist_url %}
+    {% include "emails/_parts.html" with part="button" url=waitlist_url text="Voir la liste d'attente" color="#B4436C" %}
+  {% endif %}
+{% endblock %}

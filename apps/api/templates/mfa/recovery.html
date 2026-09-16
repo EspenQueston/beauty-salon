@@ -1,0 +1,21 @@
+{% extends "mfa/base.html" %}
+{% block title %}Codes de secours{% endblock %}
+
+{% block contenu %}
+  <h1>Notez vos codes de secours</h1>
+  <p>
+    Ils sont affichés <strong>une seule fois</strong>. Chacun ne fonctionne
+    qu'une fois et remplace le code de votre téléphone si vous le perdez.
+  </p>
+
+  <ol class="codes">
+    {% for code in codes %}<li>{{ code }}</li>{% endfor %}
+  </ol>
+
+  <p class="discret">
+    Sans téléphone ni code de secours, seul un autre administrateur pourra
+    vous rendre l'accès.
+  </p>
+
+  <a class="suite" href="{{ next_url }}">J'ai noté mes codes, continuer →</a>
+{% endblock %}

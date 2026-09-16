@@ -1,0 +1,20 @@
+{% extends "emails/base_client.html" %}
+
+{% block preheader %}Votre créneau est gardé — renvoyez votre preuve de paiement{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Nous n'avons pas retrouvé votre versement" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% if reason %}
+    {% include "emails/_parts.html" with part="notice" title="Motif indiqué par le salon" text=reason %}
+  {% endif %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% include "emails/_parts.html" with part="text" text="Votre créneau est toujours réservé. Si vous avez bien payé, renvoyez votre capture d'écran." %}
+
+  {% if payment_url %}
+    {% include "emails/_parts.html" with part="button" url=payment_url text="Renvoyer ma preuve" color=brand %}
+  {% endif %}
+{% endblock %}

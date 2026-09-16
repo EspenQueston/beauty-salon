@@ -1,0 +1,22 @@
+{% extends "mfa/base.html" %}
+{% block title %}Vérification{% endblock %}
+
+{% block contenu %}
+  <h1>Code de vérification</h1>
+  <p>
+    Ouvrez votre application d'authentification et saisissez le code affiché
+    pour {{ user.email }}.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="token"><strong>Code à 6 chiffres</strong></label>
+    <input type="text" id="token" name="token" inputmode="numeric"
+           autocomplete="one-time-code" pattern="[0-9A-Za-z ]*" required autofocus>
+    <button type="submit">Vérifier</button>
+  </form>
+
+  <p class="discret" style="margin-top:1.5rem">
+    Téléphone perdu ? Saisissez l'un de vos codes de secours dans le même champ.
+  </p>
+{% endblock %}

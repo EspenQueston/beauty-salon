@@ -1,0 +1,20 @@
+{% extends "emails/base_produit.html" %}
+
+{% block preheader %}Rejoignez l'équipe de {{ salon.name }} — le lien est valable 7 jours{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text="Vous êtes invitée à rejoindre une équipe" %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% if accept_url %}
+    {% include "emails/_parts.html" with part="button" url=accept_url text="Accepter l'invitation" color="#B4436C" %}
+  {% endif %}
+
+  {% include "emails/_parts.html" with part="text" text="Ce lien est valable 7 jours. Si vous n'attendiez pas cette invitation, ignorez simplement ce message : sans votre accord, rien ne se passe." %}
+{% endblock %}
+
+{% block footer %}
+  Invitation envoyée depuis l'espace professionnel de {{ salon.name }}.
+{% endblock %}

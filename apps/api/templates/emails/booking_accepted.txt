@@ -1,0 +1,16 @@
+{% autoescape off %}Bonjour {{ customer.full_name }},
+
+{{ salon.name }} a bien reçu votre acompte : votre rendez-vous est confirmé.
+
+Prestation : {{ booking.service_name }}
+Avec : {{ staff_member.name }}
+Date : {{ date_label }} à {{ time_label }}
+Durée : {{ duration_label }}
+Total : {{ booking.total_amount }} {{ salon.currency }}
+Acompte reçu : {{ booking.deposit_received }} {{ salon.currency }}
+{% if profile.late_policy %}
+Merci d'arriver à l'heure : au-delà de {{ profile.late_tolerance_minutes }} minutes de retard, {{ profile.late_policy|lower }}
+{% endif %}
+À bientôt,
+{{ salon.name }}
+{% endautoescape %}

@@ -1,0 +1,21 @@
+{% extends "emails/base_client.html" %}
+
+{% block preheader %}{{ booking.service_name }} du {{ date_label }} — annulé{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text=headline %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% if booking.deposit_paid %}
+    {% include "emails/_parts.html" with part="notice" title=deposit_title text="Contactez le salon pour convenir de la suite." %}
+  {% endif %}
+
+  {% if by_salon %}
+    {% include "emails/_parts.html" with part="text" text="Nous en sommes désolés. Vous pouvez reprendre rendez-vous quand vous le souhaitez." %}
+    {% if booking_url %}
+      {% include "emails/_parts.html" with part="button" url=booking_url text="Reprendre rendez-vous" color=brand %}
+    {% endif %}
+  {% endif %}
+{% endblock %}
