@@ -15,6 +15,7 @@ from apps.scheduling.models import Booking
 from . import services
 from .models import DepositProof, PaymentChannel
 from .tokens import (
+    booking_from_cancel,
     booking_from_status,
     booking_from_token,
     checkin_code,
@@ -221,6 +222,10 @@ class PublicBookingStatusView(APIView):
                     "travel_zone_name": booking.travel_zone_name,
                     "address": booking.address,
                     "cancellation_reason": booking.cancellation_reason,
+                    # La page de suivi porte le bouton d'annulation : c'est
+                    # le lien que la cliente garde dans ses e-mails, et celui
+                    # qu'elle rouvre quand un imprevu arrive.
+                    **_etat_annulation(booking),
                 },
                 "payment": {
                     "state": state,
@@ -369,3 +374,93 @@ class DepositReviewSerializer(serializers.Serializer):
 
 def _booking_for(request, pk) -> Booking:
     return get_object_or_404(Booking, pk=pk, tenant_id=request.tenant_id)
+
+
+class PublicBookingCancelView(APIView):
+    """Annulation par la cliente, dans la fenetre annoncee par le salon.
+
+    -----------------------------------------------------------------------
+    Pourquoi la cliente peut maintenant annuler elle-meme
+    -----------------------------------------------------------------------
+
+    Le salon publie « annulation gratuite jusqu'a 24 h avant » sur son
+    mini-site, dans son e-mail de confirmation et dans sa page d'infos. C'est
+    une promesse — et aucune interface ne permettait de l'exercer. La cliente
+    devait telephoner ; le salon recevait des appels pour un geste que la
+    page pouvait faire, et les clientes qui n'osaient pas appeler ne venaient
+    simplement pas.
+
+    Un creneau libere une journee a l'avance se reproprose. Un creneau
+    abandonne en silence coute une demi-journee de travail.
+
+    -----------------------------------------------------------------------
+    Le jeton, et pourquoi ce n'est pas celui du suivi
+    -----------------------------------------------------------------------
+
+    Le jeton de suivi promet, dans sa propre documentation, de n'autoriser
+    aucune ecriture ; il vit cent vingt jours dans un signet. Celui-ci est
+    distinct, dure six heures, et n'est emis que lorsque l'annulation est
+    reellement ouverte. La regle est revalidee ici : un jeton emis il y a
+    cinq heures ne doit pas ouvrir une porte que le delai vient de fermer.
+    """
+
+    permission_classes = [AllowAny, IsTenantResolved]
+    # Meme borne que l'envoi d'une preuve : c'est une ecriture publique, rare
+    # pour un humain, et repetable par un robot.
+    throttle_scope = "deposit_proof"
+
+    def post(self, request):
+        from apps.scheduling.services.annulation import cliente_peut_annuler
+        from apps.scheduling.services.booking import BookingRefused, cancel_booking
+
+        booking = booking_from_cancel(request.data.get("token", ""))
+        if booking is None or str(booking.tenant_id) != str(request.tenant_id):
+            return Response(
+                {"detail": "Ce lien n'est plus valable.", "code": "invalid_token"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if booking.status == Booking.Status.CANCELLED:
+            # Deja fait : on repond comme si l'on venait de le faire. Un
+            # deuxieme clic, ou un renvoi de formulaire, ne doit pas produire
+            # une erreur devant quelqu'un qui a obtenu ce qu'il voulait.
+            return Response({"status": booking.status, "detail": "Déjà annulé."})
+
+        if not cliente_peut_annuler(booking):
+            return Response(
+                {
+                    "detail": (
+                        "Le délai d'annulation est passé. "
+                        "Contactez le salon, il reste joignable."
+                    ),
+                    "code": "cancel_window_closed",
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        try:
+            cancel_booking(
+                booking=booking,
+                reason=str(request.data.get("reason", ""))[:280],
+                # `by_salon=False` : c'est la cliente. Le message qu'elle
+                # recoit dit « votre rendez-vous est bien annule », et le
+                # salon en recoit un de son cote — un creneau libere est une
+                # information qui vaut de l'argent.
+                by_salon=False,
+            )
+        except BookingRefused as exc:
+            return Response(
+                {"detail": str(exc), "code": "booking_refused"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({"status": booking.status, "detail": "Rendez-vous annulé."})
+
+
+def _etat_annulation(booking) -> dict:
+    """Import differe : `annulation` importe les modeles de `scheduling`, qui
+    importent `payments` pour les jetons. Au niveau du module, la boucle se
+    referme au demarrage."""
+    from apps.scheduling.services.annulation import etat_annulation
+
+    return etat_annulation(booking)

@@ -284,3 +284,43 @@ def booking_from_code(code: str, tenant_id) -> tuple[Booking | None, bool]:
     if len(found) > 1:
         return None, True
     return (found[0] if found else None), False
+
+
+# ---------------------------------------------------------------------------
+# Annulation par la cliente
+# ---------------------------------------------------------------------------
+#
+# Un sel distinct, et c'est tout l'interet : le jeton de suivi promet, dans sa
+# propre documentation, de n'autoriser aucune ecriture. Le reutiliser pour
+# annuler romprait cette promesse sans que rien ne le signale — un jeton
+# copie d'un signet vieux de quatre mois deviendrait un droit de suppression.
+#
+# Celui-ci n'est emis que lorsque l'annulation est reellement ouverte, et il
+# ne vit que le temps d'une visite sur la page. Au-dela, la cliente rouvre sa
+# page : le jeton se reemet si la fenetre du salon le permet encore, et ne se
+# reemet pas sinon.
+CANCEL_SALT = "beauty-salon.booking-cancel"
+
+CANCEL_MAX_AGE = 60 * 60 * 6
+
+
+def cancel_token(booking) -> str:
+    """Droit d'annuler ce rendez-vous, et rien d'autre."""
+    return signing.dumps({"booking": str(booking.id)}, salt=CANCEL_SALT)
+
+
+def booking_from_cancel(token: str) -> Booking | None:
+    """Rendez-vous designe par un jeton d'annulation, ou None."""
+    if not token:
+        return None
+
+    try:
+        data = signing.loads(token, salt=CANCEL_SALT, max_age=CANCEL_MAX_AGE)
+    except signing.BadSignature:
+        return None
+
+    return (
+        Booking.objects.select_related("customer", "staff_member", "tenant", "service")
+        .filter(id=data.get("booking"))
+        .first()
+    )

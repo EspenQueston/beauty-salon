@@ -36,6 +36,7 @@ from apps.finance.views import TransactionViewSet
 from apps.media.views import MediaAssetViewSet, PrivateMediaView
 from apps.payments.views import (
     PaymentChannelViewSet,
+    PublicBookingCancelView,
     PublicBookingStatusView,
     PublicDepositProofView,
     PublicPaymentView,
@@ -119,6 +120,13 @@ public_urlpatterns = [
         "booking-status",
         PublicBookingStatusView.as_view(),
         name="public-booking-status",
+    ),
+    # Annulation par la cliente, dans la fenetre que le salon a publiee.
+    # Jeton distinct de celui du suivi : celui-ci ecrit, l'autre non.
+    path(
+        "booking/cancel",
+        PublicBookingCancelView.as_view(),
+        name="public-booking-cancel",
     ),
     # L'espace cliente vit sous `public/` parce qu'il s'ouvre depuis un
     # mini-site, sans compte d'equipe. Les routes restent authentifiees,

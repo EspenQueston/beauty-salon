@@ -13,20 +13,30 @@
  * compte partout, mais l'entrée est toujours locale.
  *
  * ---------------------------------------------------------------------------
- * Ce que cet écran ne fait pas
+ * Annuler, oui. Déplacer, non.
  * ---------------------------------------------------------------------------
  *
- * Il n'annule ni ne déplace un rendez-vous. Ces gestes passent par le salon,
- * qui a ses propres règles de délai et qui doit pouvoir en discuter. Un
- * bouton « annuler » ici donnerait un pouvoir que la politique d'annulation
- * du salon ne prévoit pas forcément — et créerait des trous de dernière
- * minute que personne ne comblerait.
+ * Cet écran a longtemps ne rien permis des deux, au motif qu'un bouton
+ * « annuler » donnerait un pouvoir que la politique du salon ne prévoit pas.
+ * C'était se tromper de conclusion : le salon *publie* sa politique —
+ * « annulation gratuite jusqu'à 24 h avant » — et n'offrait aucune façon de
+ * l'exercer. La promesse existait, pas le geste.
+ *
+ * L'annulation est donc possible, mais **dans la fenêtre annoncée par le
+ * salon, et pas au-delà**. Le serveur en est seul juge et revalide la règle
+ * au moment de l'exécuter ; cet écran ne fait que lire `can_cancel`. Passé
+ * le délai, le bouton cède la place aux coordonnées du salon — c'est la
+ * seule réponse honnête quand la politique demande de parler à quelqu'un.
+ *
+ * Déplacer reste chez le salon. Choisir un autre créneau suppose de voir les
+ * disponibilités d'une prestataire, d'arbitrer avec les rendez-vous voisins,
+ * parfois de rappeler quelqu'un d'autre : c'est un travail d'agenda, pas un
+ * bouton.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
-import { browserApi, csrfToken } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import type { PublicSalon } from "@/lib/types";
 import { SalonIcon } from "@/features/salon/icons";
@@ -44,6 +54,10 @@ import { SalonLogo } from "@/features/salon/SalonLogo";
 import { platformUrl } from "@/lib/site";
 
 import { AuthShowcase } from "@/features/ui/AuthShowcase";
+// Les appels API de l'espace vivent à part : l'annulation en a besoin elle
+// aussi, et l'importer depuis ce fichier refermerait un cycle.
+import { api } from "./api";
+import { Annuler } from "./Annuler";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { Tracker } from "./Tracker";
 import type { ClientBooking } from "./types";
@@ -119,114 +133,6 @@ const STATUS: Record<string, { label: string; className: string }> = {
     className: "bg-red-500/15 text-red-700 dark:text-red-400",
   },
 };
-
-/**
- * Appel API de l'espace cliente.
- *
- * Deux points qui n'existent nulle part ailleurs dans le mini-site :
- *
- *   - `X-Tenant-Host` : le navigateur est sur `blondrose.localhost:3100` mais
- *     l'API répond sur un autre port. Sans cet en-tête, le serveur ne sait
- *     pas de quel salon il s'agit et refuse la requête.
- *   - `credentials: "include"` : c'est le seul endroit du site public qui
- *     travaille avec une session. Le reste du mini-site est anonyme.
- */
-async function api<T>(
-  path: string,
-  host: string,
-  init?: RequestInit,
-): Promise<T> {
-  // `browserApi()` déduit l'hôte de l'API de celui de la page. C'est ce
-  // qui garde le cookie de session valable : depuis
-  // `blondrose.localhost`, viser `localhost` tout court en ferait une
-  // requête vers un autre hôte, et la session ne suivrait pas.
-  // Django n'exempte de CSRF que les requêtes anonymes : ici, tout est
-  // authentifié, donc toute écriture porte son jeton.
-  const method = (init?.method ?? "GET").toUpperCase();
-  const needsCsrf = !["GET", "HEAD", "OPTIONS"].includes(method);
-
-  const response = await fetch(`${browserApi()}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Tenant-Host": host,
-      ...(needsCsrf ? { "X-CSRFToken": await csrfToken() } : {}),
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(readError(body));
-  }
-  return body as T;
-}
-
-/**
- * Message lisible tiré d'une réponse d'erreur.
- *
- * DRF répond de deux façons selon l'erreur : `{detail: "…"}` pour un refus
- * global, `{detail: {email: ["…"]}}` pour une erreur de champ. Ne lire que
- * `detail` marchait dans le premier cas et affichait « [object Object] »
- * dans le second — précisément celui où le serveur avait pris la peine
- * d'expliquer ce qui n'allait pas.
- *
- * La recherche est récursive : les erreurs de champ peuvent elles-mêmes
- * être imbriquées, et un message perdu vaut un message absent.
- */
-function readError(body: unknown): string {
-  const found = firstString(body, 0);
-  return found ? humanDelay(found) : "Une erreur est survenue. Réessayez dans un instant.";
-}
-
-/**
- * « 3259 secondes » n'est pas une durée, c'est un nombre.
- *
- * La limitation de débit renvoie des secondes brutes. Personne ne convertit
- * mentalement, et le message donne l'impression d'un blocage arbitraire
- * alors qu'il dit « revenez dans une heure ».
- */
-function humanDelay(message: string): string {
-  return message.replace(/(\d+)\s*secondes?/g, (whole, raw) => {
-    const seconds = Number(raw);
-    if (seconds < 90) return whole;
-    const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `${minutes} minutes`;
-    const hours = Math.round(minutes / 60);
-    return hours <= 1 ? "une heure" : `${hours} heures`;
-  });
-}
-
-function firstString(value: unknown, depth: number): string | null {
-  if (depth > 4) return null;
-  if (typeof value === "string") return value.trim() || null;
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = firstString(item, depth + 1);
-      if (found) return found;
-    }
-    return null;
-  }
-
-  if (value && typeof value === "object") {
-    // `detail` d'abord : c'est là que DRF met le message le plus précis.
-    const record = value as Record<string, unknown>;
-    const ordered = [
-      ...("detail" in record ? [record.detail] : []),
-      ...Object.entries(record)
-        .filter(([key]) => key !== "detail" && key !== "code")
-        .map(([, item]) => item),
-    ];
-    for (const item of ordered) {
-      const found = firstString(item, depth + 1);
-      if (found) return found;
-    }
-  }
-
-  return null;
-}
 
 export function ClientSpace({ salon, host }: { salon: PublicSalon; host: string }) {
   const [session, setSession] = useState<Session | null | "anonymous">(null);
@@ -622,6 +528,15 @@ function Space({
     bookings: ClientBooking[];
   } | null>(null);
   const [failed, setFailed] = useState(false);
+  /*
+    Ce qui déclenche une relecture de la liste.
+
+    Une annulation change l'état d'une ligne *et* sa place — elle quitte
+    « à venir » pour l'historique. Retirer la carte à la main dans le
+    navigateur donnerait un écran qui ne dit plus la même chose que le
+    serveur ; on relit, c'est une requête et la vérité.
+  */
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -635,7 +550,9 @@ function Space({
     return () => {
       cancelled = true;
     };
-  }, [host]);
+  }, [host, reloadToken]);
+
+  const relire = useCallback(() => setReloadToken((value) => value + 1), []);
 
   // Lu une fois au montage : appeler `Date.now()` pendant le rendu rend le
   // résultat instable d'un rendu à l'autre, et le classement d'un
@@ -820,7 +737,7 @@ function Space({
 
       {/* Le prochain rendez-vous, en grand : c'est la seule chose qu'on
           vient vérifier neuf fois sur dix. */}
-      {nextOne && <NextBooking booking={nextOne} host={host} />}
+      {nextOne && <NextBooking booking={nextOne} host={host} onCancelled={relire} />}
 
       {data !== null && upcoming.length === 0 && (
         <div className={`${CARD} p-6 text-center`}>
@@ -1248,9 +1165,11 @@ function Preferences({
 function NextBooking({
   booking,
   host,
+  onCancelled,
 }: {
   booking: ClientBooking;
   host: string;
+  onCancelled: () => void;
 }) {
   const status = STATUS[booking.status] ?? {
     label: booking.status,
@@ -1429,6 +1348,21 @@ function NextBooking({
             Le salon
           </a>
         </div>
+
+        {/*
+          L'annulation, en bas et en retrait.
+
+          Elle est la dernière chose de la carte, et volontairement la moins
+          voyante : c'est une sortie, pas une action qu'on propose. Mais
+          elle est là — la cacher revenait à obliger à téléphoner pour un
+          geste que le salon autorise par écrit.
+        */}
+        <Annuler
+          booking={booking}
+          host={host}
+          salonUrl={salonUrl}
+          onDone={onCancelled}
+        />
       </div>
     </section>
   );

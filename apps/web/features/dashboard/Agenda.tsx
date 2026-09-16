@@ -40,6 +40,7 @@ import {
 import { rows as pageRows, useResource, type Page } from "./useResource";
 import { BookingProgress } from "./BookingProgress";
 import { CheckInButton, CheckInPanel } from "./CheckIn";
+import { ReschedulePanel } from "./Reschedule";
 import { useDashboard } from "./DashboardShell";
 
 interface Booking {
@@ -47,7 +48,9 @@ interface Booking {
   starts_at: string;
   ends_at: string;
   status: string;
+  service: string;
   service_name: string;
+  staff_member: string | null;
   staff_member_name: string;
   customer_name: string;
   customer_phone: string;
@@ -129,6 +132,8 @@ export function Agenda() {
   /* Le rendez-vous dont on est en train de vérifier l'arrivée, s'il y en a
      un : le lecteur s'ouvre alors ciblé sur lui. */
   const [arrival, setArrival] = useState<Booking | null>(null);
+  // Le rendez-vous qu'on est en train de déplacer, ou rien.
+  const [moving, setMoving] = useState<Booking | null>(null);
 
   /*
    * La recherche attend qu'on ait fini de taper.
@@ -573,6 +578,31 @@ export function Agenda() {
                             </GhostButton>
                           ),
                         )}
+                        {/*
+                          « Déplacer » avant « Annuler », et c'est délibéré.
+
+                          Quand une cliente demande un autre jour, le salon
+                          n'avait qu'une sortie : annuler puis ressaisir —
+                          deux gestes qui perdent l'acompte déjà versé et
+                          préviennent la cliente d'une annulation qui n'en
+                          est pas une. Le bon geste doit être le plus
+                          proche.
+
+                          Les états clos en sont exclus, comme le serveur :
+                          proposer un bouton que la route refusera est une
+                          promesse qu'on ne tient pas.
+                        */}
+                        {["pending_payment", "requested", "confirmed"].includes(
+                          booking.status,
+                        ) && (
+                          <GhostButton
+                            type="button"
+                            icon={<Icon name="calendar" className="size-4" />}
+                            onClick={() => setMoving(booking)}
+                          >
+                            Déplacer
+                          </GhostButton>
+                        )}
                         {!["cancelled", "completed"].includes(booking.status) && (
                           <DangerButton type="button" onClick={() => cancel(booking)}>
                             Annuler
@@ -609,6 +639,22 @@ export function Agenda() {
             setArrival(null);
           }}
           onClose={() => setArrival(null)}
+        />
+      )}
+
+      {/* Même raison que le lecteur d'arrivée : monté au niveau de la page,
+          il se superpose à tout l'écran sans dépendre des marges d'une
+          carte. */}
+      {moving && (
+        <ReschedulePanel
+          booking={moving}
+          tenantId={tenantId}
+          timeZone={timeZone}
+          onClose={() => setMoving(null)}
+          onDone={() => {
+            setMoving(null);
+            reload();
+          }}
         />
       )}
     </section>

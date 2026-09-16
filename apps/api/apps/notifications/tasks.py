@@ -644,3 +644,87 @@ def send_booking_cancelled(self, booking_id: str, tenant_id: str, by_salon: bool
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec d'avis d'annulation pour %s.", booking_id)
         raise self.retry(exc=exc) from exc
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def send_booking_rescheduled(
+    self, booking_id: str, tenant_id: str, ancienne_date: str = ""
+):
+    """Previent la cliente qu'un rendez-vous a change d'heure.
+
+    C'etait silencieux. Le salon deplacait le creneau depuis son agenda, la
+    cliente se presentait a l'ancienne heure — exactement le defaut qu'on
+    avait corrige pour l'annulation, et qu'on avait laisse ouvert a cote.
+
+    Le message met les deux dates cote a cote, l'ancienne en premier. Donner
+    seulement la nouvelle obligerait a retrouver l'e-mail precedent pour
+    comprendre ce qui a bouge, et une cliente qui doute de sa memoire
+    telephonera.
+    """
+    try:
+        with tenant_context(tenant_id):
+            booking = (
+                Booking.objects.select_related("customer", "staff_member", "tenant")
+                .filter(id=booking_id)
+                .first()
+            )
+            if booking is None:
+                return
+
+            context = _booking_context(booking)
+            context["headline"] = "Votre rendez-vous a été déplacé"
+            context["intro"] = (
+                f"Bonjour {booking.customer.full_name}, "
+                f"{booking.tenant.name} a déplacé votre rendez-vous. "
+                "La nouvelle date est ci-dessous."
+            )
+
+            ancien = _ancienne_date(booking, ancienne_date)
+            context["ancienne_date"] = ancien["date"]
+            context["ancienne_heure"] = ancien["heure"]
+            context["ancien_titre"] = (
+                f"Ancienne date : {ancien['date']} à {ancien['heure']}"
+                if ancien["date"]
+                else "Ancienne date annulée"
+            )
+            context["inchange"] = (
+                "Rien d'autre ne change : ni le tarif, ni la prestation"
+                + (", ni l'acompte déjà versé" if booking.deposit_paid else "")
+                + ". Si cette nouvelle date ne vous convient pas, écrivez au salon."
+            )
+            context["status_url"] = _status_url(booking)
+
+            _send(
+                subject=f"Rendez-vous déplacé — {booking.tenant.name}",
+                template="booking_rescheduled",
+                context=context,
+                to=[booking.customer.email],
+            )
+    except Exception as exc:  # noqa: BLE001
+        raise self.retry(exc=exc) from exc
+
+
+def _ancienne_date(booking, iso: str) -> dict:
+    """L'ancien creneau, dans le fuseau du salon.
+
+    Il arrive en ISO depuis le service, qui l'a lu avant d'ecrire : la tache
+    s'execute apres l'enregistrement et ne peut plus le retrouver en base.
+    """
+    if not iso:
+        return {"date": "", "heure": ""}
+
+    from django.utils.dateparse import parse_datetime
+
+    moment = parse_datetime(iso)
+    if moment is None:
+        return {"date": "", "heure": ""}
+
+    local = moment.astimezone(_tenant_timezone(booking.tenant))
+    return {"date": local.strftime("%d/%m/%Y"), "heure": local.strftime("%H:%M")}
+
+
+def _status_url(booking) -> str:
+    """Page de suivi du rendez-vous, sur le mini-site du salon."""
+    from apps.payments.tokens import status_token
+
+    return f"{_salon_base_url(booking.tenant)}/rendez-vous?token={status_token(booking)}"

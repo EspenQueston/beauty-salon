@@ -44,6 +44,7 @@ def bookings_for(user) -> list[dict]:
         status_token,
     )
     from apps.scheduling.models import Booking
+    from apps.scheduling.services.annulation import etat_annulation
 
     # Visites que la cliente a retirees de sa vue. Chargees une fois : un
     # test par ligne ferait autant de requetes que de rendez-vous.
@@ -157,6 +158,16 @@ def bookings_for(user) -> list[dict]:
                             # propose sur une visite deja notee, ou refuse sur
                             # une visite qui l'accepte encore.
                             **_review_state(booking),
+                            # ----- l'annulation ---------------------------
+                            #
+                            # Meme raisonnement que pour l'avis : la regle
+                            # est decidee ici, par la fonction que la route
+                            # d'annulation consulte elle aussi. Laisser le
+                            # navigateur calculer « plus de 24 h avant »
+                            # donnerait deux verdicts qui finissent par
+                            # diverger — un bouton propose sur un rendez-vous
+                            # que le serveur refusera.
+                            **etat_annulation(booking),
                         }
                     )
 

@@ -43,4 +43,18 @@ export interface ClientBooking {
   review_token: string;
   /** Date limite pour noter, en ISO. Vide quand il n'y a rien à noter. */
   review_until: string;
+
+  /* ----- l'annulation ---------------------------------------------------
+   *
+   * Même raisonnement que pour l'avis : le serveur seul décide, et la route
+   * d'annulation revalide la règle au moment de l'exécuter. Recalculer
+   * « plus de 24 h avant » dans le navigateur donnerait un bouton proposé
+   * sur un rendez-vous que le serveur refusera.
+   */
+  can_cancel: boolean;
+  /** Droit d'annuler ce rendez-vous. Émis seulement si la fenêtre est ouverte. */
+  cancel_token: string;
+  /** Instant après lequel il faut téléphoner au salon. Vide si sans objet. */
+  cancel_until: string;
+  cancel_deadline_hours: number;
 }

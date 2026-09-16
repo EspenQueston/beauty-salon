@@ -303,6 +303,24 @@ def reschedule_booking(*, booking: Booking, starts_at: datetime, actor=None) -> 
     tenant = booking.tenant
     previous = booking.starts_at
 
+    # -----------------------------------------------------------------------
+    # Un rendez-vous clos ne se deplace pas
+    # -----------------------------------------------------------------------
+    #
+    # Rien ne l'interdisait. On pouvait donner une nouvelle date a une
+    # prestation deja terminee - la recette etait deja comptabilisee, l'avis
+    # deja demande - ou ressusciter une annulation en la posant ailleurs,
+    # sans que la cliente, prevenue de l'annulation, n'en sache rien.
+    #
+    # `CHECKED_IN` est exclu aussi : la cliente est dans le fauteuil, il est
+    # trop tard pour changer l'heure de son rendez-vous.
+    if booking.status not in (
+        Booking.Status.PENDING_PAYMENT,
+        Booking.Status.REQUESTED,
+        Booking.Status.CONFIRMED,
+    ):
+        raise BookingRefused("Ce rendez-vous ne peut plus être déplacé.")
+
     if not is_slot_available(
         tenant=tenant,
         service=booking.service,
@@ -319,14 +337,34 @@ def reschedule_booking(*, booking: Booking, starts_at: datetime, actor=None) -> 
 
     booking.starts_at = starts_at
     booking.ends_at = starts_at + timedelta(minutes=booking.service.duration_minutes)
+    # Le rappel J-1 se rearme.
+    #
+    # `reminder_sent_at` est ce qui garantit un envoi unique. Laisse tel
+    # quel apres un deplacement, il produisait le pire des deux cas : la
+    # cliente avait recu un rappel pour l'ancienne date, et n'en recevrait
+    # aucun pour la nouvelle.
+    booking.reminder_sent_at = None
 
     try:
         with transaction.atomic():
-            booking.save(update_fields=["starts_at", "ends_at", "updated_at"])
+            booking.save(
+                update_fields=["starts_at", "ends_at", "reminder_sent_at", "updated_at"]
+            )
     except CRENEAU_PRIS as exc:
         if not est_un_conflit_de_creneau(exc):
             raise
         raise SlotUnavailable() from None
+
+    # La cliente doit l'apprendre, et pas en arrivant.
+    #
+    # Le deplacement etait silencieux : le salon changeait l'heure, la
+    # cliente se presentait a l'ancienne. C'est exactement le defaut qu'on
+    # avait corrige pour l'annulation, laisse ouvert a cote.
+    from apps.notifications.tasks import send_booking_rescheduled
+
+    send_booking_rescheduled.delay(
+        str(booking.id), str(booking.tenant_id), previous.isoformat()
+    )
 
     AuditLog.objects.create(
         tenant_id=booking.tenant_id,

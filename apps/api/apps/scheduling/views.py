@@ -229,6 +229,14 @@ class BookingViewSet(TenantModelViewSet):
                  "extra": exc.extra},
                 status=status.HTTP_409_CONFLICT,
             )
+        except BookingRefused as exc:
+            # `cancel` attrapait deja ce refus, pas `reschedule` : depuis que
+            # le service refuse de deplacer un rendez-vous clos, l'oubli
+            # transformait un refus metier en erreur 500.
+            return Response(
+                {"detail": str(exc), "code": "booking_refused"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response(BookingSerializer(booking).data)
 
     @action(detail=True, methods=["post"], url_path="status")

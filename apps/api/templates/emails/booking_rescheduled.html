@@ -1,0 +1,21 @@
+{% extends "emails/base_client.html" %}
+
+{% block preheader %}Nouvelle date : {{ date_label }} à {{ time_label }}{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text=headline %}
+  {% include "emails/_parts.html" with part="text" text=intro %}
+
+  {# L'ancienne date d'abord, barrée par les mots plutôt que par le style :
+     un texte barré ne survit pas à tous les clients de messagerie, et c'est
+     précisément la ligne qu'il ne faut pas lire de travers. #}
+  {% include "emails/_parts.html" with part="notice" title=ancien_titre text="Ce créneau n'est plus retenu pour vous." %}
+
+  {% include "emails/_details.html" with rows=details %}
+
+  {% include "emails/_parts.html" with part="text" text=inchange %}
+
+  {% if status_url %}
+    {% include "emails/_parts.html" with part="button" url=status_url text="Voir mon rendez-vous" color=brand %}
+  {% endif %}
+{% endblock %}
