@@ -505,3 +505,70 @@ def test_une_ressource_a_capacite_un_le_signale(admin_client, salon_a):
     ).content.decode()
 
     assert "une seule cliente à la fois" in contenu
+
+
+# ---------------------------------------------------------------------------
+# La racine du serveur d'API
+# ---------------------------------------------------------------------------
+
+
+def test_la_racine_mene_a_l_administration_en_developpement_et_nulle_part_ailleurs():
+    """Ce port sert une API : il n'y a rien à afficher sur « / ».
+
+    Django y répondait 404 avec la liste de ses routes — correct, et tout de
+    même une perte de temps : on tape l'adresse du serveur qu'on vient de
+    lancer et il faut lire une URLconf pour trouver l'écran cherché.
+
+    En production, la même redirection annoncerait le chemin de
+    l'administration à quiconque visite la racine — l'inverse exact de ce que
+    permet `ADMIN_PATH`. Le 404 y redevient la bonne réponse.
+
+    -----------------------------------------------------------------------
+    Pourquoi on relit le module au lieu d'appeler le serveur
+    -----------------------------------------------------------------------
+
+    Django force `DEBUG=False` pendant toute la suite de tests, quel que soit
+    le module de réglages. Un `client.get("/")` ne verrait donc jamais la
+    redirection, et un `override_settings(DEBUG=True)` seul n'y changerait
+    rien : les routes sont construites à l'import du module, pas à la
+    requête. On recharge, on regarde les motifs obtenus.
+    """
+    import importlib
+
+    from django.test import override_settings
+
+    def motifs(debug: bool) -> set[str]:
+        with override_settings(DEBUG=debug):
+            urls = importlib.reload(importlib.import_module("config.urls"))
+            # `str(pattern)` rend la route telle qu'elle est écrite — « admin/ »,
+            # « health ». L'expression régulière compilée, elle, dépend de la
+            # version de Django : la racine y vaut « ^\Z » aujourd'hui et
+            # valait « ^$ » hier.
+            return {str(p.pattern) for p in urls.urlpatterns}
+
+    try:
+        assert "" in motifs(True), "la racine devrait exister en développement"
+        assert "" not in motifs(False), "la racine ne doit pas exister en production"
+    finally:
+        # Le module retrouve son état de test, sinon les tests suivants
+        # héritent d'une URLconf sans médias ni schéma.
+        importlib.reload(importlib.import_module("config.urls"))
+
+
+def test_la_racine_pointe_bien_sur_le_chemin_configure():
+    """`ADMIN_PATH` est réglable : la redirection doit le suivre, sinon elle
+    renverrait vers une adresse qui n'existe plus le jour où on le change."""
+    import importlib
+
+    from django.test import override_settings
+    from django.views.generic import RedirectView
+
+    try:
+        with override_settings(DEBUG=True, ADMIN_PATH="supervision-xyz/"):
+            urls = importlib.reload(importlib.import_module("config.urls"))
+            racine = next(p for p in urls.urlpatterns if str(p.pattern) == "")
+            vue = racine.callback.view_class
+            assert issubclass(vue, RedirectView)
+            assert racine.callback.view_initkwargs["url"] == "/supervision-xyz/"
+    finally:
+        importlib.reload(importlib.import_module("config.urls"))

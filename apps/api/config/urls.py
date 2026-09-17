@@ -38,9 +38,34 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    # Le schema n'est jamais expose en production : rien ne l'exige et il
-    # decrit toute la surface d'attaque.
+    """
+    La racine mene a l'administration — en developpement seulement.
+
+    -----------------------------------------------------------------------
+    Pourquoi ce raccourci existe
+    -----------------------------------------------------------------------
+
+    Ce port sert une API, pas un site : il n'y a rien a afficher sur « / »,
+    et Django repondait donc 404 avec la liste de ses routes. C'est correct,
+    et c'est tout de meme une perte de temps — on tape l'adresse du serveur
+    qu'on vient de lancer, on tombe sur une page jaune, et il faut lire une
+    URLconf pour apprendre que l'ecran cherche est sous `admin/`.
+
+    -----------------------------------------------------------------------
+    Et pourquoi il reste en developpement
+    -----------------------------------------------------------------------
+
+    En production, cette redirection annoncerait le chemin de
+    l'administration a quiconque visite la racine — c'est-a-dire l'inverse
+    exact de ce que permet `ADMIN_PATH`. Le 404 y est la bonne reponse : une
+    API n'a pas de page d'accueil, et le silence ne renseigne personne.
+    """
+    from django.views.generic import RedirectView
+
     urlpatterns += [
+        path("", RedirectView.as_view(url=f"/{ADMIN_PATH}", permanent=False)),
+        # Le schema n'est jamais expose en production : rien ne l'exige et il
+        # decrit toute la surface d'attaque.
         path("api/schema", SpectacularAPIView.as_view(), name="schema"),
         path(
             "api/docs",
