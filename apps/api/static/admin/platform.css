@@ -2138,6 +2138,117 @@ input[type="submit"].default:hover,
   filter: brightness(1.06);
 }
 
+/* ---------------------------------------------------------------------------
+   Colonne de navigation : deux défauts hérités de Django
+   ---------------------------------------------------------------------------
+
+   Placé en fin de feuille, après les deux blocs `#nav-sidebar` qui précèdent
+   et après la feuille de Django : c'est la seule position où ces règles
+   gagnent sans avoir à gonfler leur spécificité.
+--------------------------------------------------------------------------- */
+
+/*
+ * 1. Le titre de la rubrique ouverte était illisible.
+ *
+ * Django peint le lien de la rubrique courante avec `--header-color` :
+ *
+ *     #nav-sidebar .current-app .section:link { color: var(--header-color); }
+ *
+ * C'est la couleur du texte de la barre du haut, que cet habillage règle sur
+ * `--bs-shell-ink` (#e7e4f7) — une lavande très pâle, faite pour le fond
+ * sombre de cette barre. Posée sur la colonne claire (#f4f5fa), elle donne
+ * un rapport de contraste d'environ 1,1:1.
+ *
+ * Résultat visible à l'écran : de toute la liste, le seul titre effacé était
+ * celui de la rubrique où l'on se trouve — « COMPTES CLIENTES » quand on y
+ * était, « AGENDA » quand on y était.
+ *
+ * La couleur de marque le rend lisible, et la graisse que Django pose déjà
+ * continue de dire lequel est ouvert.
+ */
+#nav-sidebar .current-app .section:link,
+#nav-sidebar .current-app .section:visited {
+  color: var(--bs-brand-ink);
+}
+
+/*
+ * 2. La pastille n'avait pas la même largeur d'une ligne à l'autre.
+ *
+ * Le gabarit de Django rend chaque modèle en trois cellules, et la cellule
+ * du lien « Ajouter » existe **toujours** — vide quand le modèle n'est pas
+ * créable :
+ *
+ *     <tr><th>…nom…</th><td><a class="addlink">Ajouter</a></td><td></td></tr>
+ *
+ * La largeur du `<th>` étant automatique, elle dépendait donc de la présence
+ * de ce lien : une ligne sans « Ajouter » s'étirait sur toute la colonne, la
+ * voisine s'arrêtait au milieu. Le fond de survol et la pastille active,
+ * portés par le lien, héritaient de ces deux largeurs — d'où l'impression
+ * d'un surlignage coupé, et d'une colonne en dents de scie.
+ *
+ * Elle se voit d'autant plus depuis que les écrans de supervision sont en
+ * lecture seule : la plupart des lignes n'ont plus de lien « Ajouter ».
+ *
+ * La ligne devient donc une boîte flexible qui porte elle-même le fond : le
+ * nom prend la place qui reste, « Ajouter » garde la sienne, et toutes les
+ * pastilles commencent et finissent au même endroit.
+ */
+#nav-sidebar .module tbody tr {
+  display: flex;
+  align-items: center;
+  margin: 0 0.4rem;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+#nav-sidebar .module tbody th {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#nav-sidebar .module tbody td {
+  flex: 0 0 auto;
+}
+
+/* Le fond passe de l'ancre à la ligne : l'ancre garde son rembourrage, qui
+   reste la surface cliquable, mais ne peint plus rien. */
+#nav-sidebar .module tbody a {
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#nav-sidebar .module tbody tr:hover {
+  background: var(--bs-surface-hover);
+}
+
+#nav-sidebar .module tbody tr:hover a {
+  background: transparent;
+  color: var(--bs-ink);
+}
+
+/* La ligne courante : le dégradé est sur la ligne, plus sur le lien. */
+#nav-sidebar .module tbody tr.current-model,
+#nav-sidebar .module tbody tr.selected {
+  background: linear-gradient(90deg, var(--bs-brand) 0%, var(--bs-brand-lift) 100%);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--bs-brand) 45%, transparent);
+}
+
+#nav-sidebar .module tbody tr.current-model a,
+#nav-sidebar .module tbody tr.selected a,
+#nav-sidebar .module tbody tr.current-model:hover a,
+#nav-sidebar .module tbody tr.selected:hover a {
+  background: transparent;
+  color: var(--bs-ink-on-brand);
+}
+
+/* « Ajouter » sur une ligne active : le gris discret devient illisible sur
+   le dégradé. On le garde en retrait, mais lisible. */
+#nav-sidebar .module tbody tr.current-model .addlink,
+#nav-sidebar .module tbody tr.selected .addlink {
+  color: color-mix(in srgb, var(--bs-ink-on-brand) 80%, transparent);
+}
+
 /* --------------------------------------------------------------------- */
 /* Téléphone                                                              */
 /* --------------------------------------------------------------------- */
