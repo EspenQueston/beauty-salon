@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { ANCRE_CONTENU, Hero } from "@/features/salon/Hero";
 import { ServiceCard } from "@/features/salon/ServiceCard";
-import { StaffCard } from "@/features/salon/StaffCard";
+import { TeamShowcase } from "@/features/salon/TeamShowcase";
 import { GalleryGrid } from "@/features/salon/GalleryGrid";
 import { SalonIcon, categoryIcon } from "@/features/salon/icons";
 import {
@@ -301,22 +301,19 @@ export default async function SalonHome({ params }: Props) {
                 eyebrow="Qui vous reçoit"
                 title="L'équipe"
                 action={
-                  salon.staff_members.length > 4 ? (
+                  salon.staff_members.length > 6 ? (
                     <MoreLink href="/equipe">Toute l&apos;équipe</MoreLink>
                   ) : undefined
                 }
               />
             </Reveal>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {/* Quatre : la grille en compte quatre par ligne, et trois y
-                  laissaient une colonne vide. */}
-              {salon.staff_members.slice(0, 4).map((member, index) => (
-                <Reveal key={member.id} delay={index * 80}>
-                  <StaffCard member={member} />
-                </Reveal>
-              ))}
-            </div>
+            <Reveal>
+              {/* Six : deux rangées pleines dans une mosaïque de trois
+                  colonnes. Au-delà, la mosaïque s'allonge plus vite que la
+                  liste de noms placée à côté, et le bloc se déséquilibre. */}
+              <TeamShowcase members={salon.staff_members.slice(0, 6)} />
+            </Reveal>
           </section>
         )}
 

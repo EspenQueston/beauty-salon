@@ -356,6 +356,43 @@ body {
   background: color-mix(in srgb, var(--salon-primary) 25%, transparent);
 }
 
+/*
+ * Pastille de réseau social, au pied de page.
+ *
+ * Sa surface est dérivée de `--site-surface`, et surtout pas de
+ * `--salon-accent`. L'accent est choisi par le salon et posé en style en
+ * ligne : il bat donc la règle qui l'assombrit en mode sombre. Blondrose a
+ * retenu un beige clair, sur lequel `--salon-ink` — un rose pâle dans ce
+ * mode — tombait à 1,5:1. Autrement dit : quatre carrés vides.
+ *
+ * Un mélange de la couleur de marque et de la surface de la page suit le
+ * thème dans les deux sens : pâle sur fond blanc, sombre sur fond sombre,
+ * et l'encre de marque y garde son contraste.
+ *
+ * Le survol est déclaré ici, pas en utilitaires : cette règle vit hors
+ * couche CSS et l'emporterait sur un `hover:bg-*` de Tailwind.
+ */
+.salon-site .salon-social {
+  background: color-mix(in srgb, var(--salon-primary) 12%, var(--site-surface));
+  color: var(--salon-ink);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.salon-site .salon-social:hover {
+  background: var(--salon-primary);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .salon-site .salon-social:hover {
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tilt > * {
     transform: none !important;

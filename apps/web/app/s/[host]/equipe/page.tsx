@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { PageHero } from "@/features/salon/PageHero";
 import { PAGE_SLIDES, salonSlides } from "@/features/salon/slides";
-import { StaffCard } from "@/features/salon/StaffCard";
+import { TeamShowcase } from "@/features/salon/TeamShowcase";
 import { EmptyNote } from "@/features/salon/ui";
 import { Reveal } from "@/features/ui/Reveal";
 import { fetchSalon } from "@/lib/api";
@@ -32,13 +32,9 @@ export default async function EquipePage({ params }: Props) {
             Ce salon n&apos;a pas encore publié ses prestataires.
           </EmptyNote>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
-            {salon.staff_members.map((member, index) => (
-              <Reveal key={member.id} delay={index * 70} className="h-full">
-                <StaffCard member={member} detailed />
-              </Reveal>
-            ))}
-          </div>
+          <Reveal>
+            <TeamShowcase members={salon.staff_members} detailed />
+          </Reveal>
         )}
       </main>
     </>
