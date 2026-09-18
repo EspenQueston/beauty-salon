@@ -156,16 +156,15 @@ FATY_IDENTITE = {
     "longitude": Decimal("113.324500"),
     "phone": "+86 138 0000 0012",
     "whatsapp_number": "+86 138 0000 0012",
-    # Les trois premiers pointent vers un compte `.demo` : le suffixe rend la
-    # collision avec un vrai pseudonyme à peu près impossible, et signale du
-    # premier coup d'œil que le lien est factice. WeChat n'a pas d'adresse de
-    # profil publique — on renvoie donc vers la plateforme elle-même plutôt
-    # que d'inventer une URL qui n'existe dans aucun format.
+    # Le suffixe `.demo` rend la collision avec un vrai pseudonyme à peu près
+    # impossible, et signale du premier coup d'œil que le lien est factice.
+    #
+    # WeChat n'est pas dans cette liste : il ne se rejoint pas par une
+    # adresse. Son identifiant et son QR ont leurs propres champs, plus bas.
     "social_links": {
         "instagram": "https://www.instagram.com/byfaty.demo/",
         "tiktok": "https://www.tiktok.com/@byfaty.demo",
         "facebook": "https://www.facebook.com/byfaty.demo",
-        "wechat": "https://weixin.qq.com/",
     },
     # L'identifiant WeChat. Le QR qui l'accompagne est fabrique plus bas
     # plutot que telecharge : un vrai QR de contact WeChat pointe vers un

@@ -22,7 +22,6 @@ const NETWORKS: { key: string; label: string; icon: SalonIconName }[] = [
   { key: "instagram", label: "Instagram", icon: "instagram" },
   { key: "tiktok", label: "TikTok", icon: "tiktok" },
   { key: "facebook", label: "Facebook", icon: "facebook" },
-  { key: "wechat", label: "WeChat", icon: "wechat" },
 ];
 
 export const SERVICE_MODES: Record<string, string> = {

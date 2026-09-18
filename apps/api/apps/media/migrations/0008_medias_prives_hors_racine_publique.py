@@ -28,15 +28,42 @@ PREFIXE = "prive"
 
 
 def deplacer(apps, schema_editor):
+    """Deplace les fichiers prives sous `prive/`.
+
+    -----------------------------------------------------------------------
+    Pourquoi chaque requete porte `.using(alias)`
+    -----------------------------------------------------------------------
+
+    Sans lui, cette migration ne faisait rien - et le disait en s'appliquant
+    normalement.
+
+    Un `RunPython` recoit `schema_editor.connection`, ouverte sur l'alias des
+    migrations. Mais un queryset de modele n'en sait rien : il passe par le
+    routeur, dont `db_for_read` renvoie `None`, donc par `default`. Le
+    `set_config('app.tenant_id', ...)` pose juste au-dessus vit alors sur une
+    *autre* connexion que la requete : la politique RLS de `default` ne voit
+    aucun salon, la boucle parcourt zero ligne, et la migration est inscrite
+    comme appliquee.
+
+    Le symptome est muet et durable. Deux preuves de versement sont restees a
+    la racine publique, servies en 200 sans authentification, pendant que
+    `django_migrations` affirmait le contraire. C'est `0010` qui les repare
+    sur les bases deja migrees ; ici, la correction sert les installations
+    neuves.
+    """
     MediaAsset = apps.get_model("media", "MediaAsset")
     Tenant = apps.get_model("tenants", "Tenant")
     connection = schema_editor.connection
 
-    for tenant_id in Tenant.objects.values_list("id", flat=True):
+    alias = connection.alias
+
+    for tenant_id in Tenant.objects.using(alias).values_list("id", flat=True):
         with connection.cursor() as cursor:
             cursor.execute("SELECT set_config('app.tenant_id', %s, true)", [str(tenant_id)])
 
-        prives = MediaAsset.objects.filter(tenant_id=tenant_id, visibility="private")
+        prives = MediaAsset.objects.using(alias).filter(
+            tenant_id=tenant_id, visibility="private"
+        )
         for asset in prives:
             ancien = asset.file.name
             if not ancien or ancien.startswith(f"{PREFIXE}/"):
@@ -57,7 +84,7 @@ def deplacer(apps, schema_editor):
                 ecrit = stockage.save(nouveau, source)
 
             asset.file.name = ecrit
-            asset.save(update_fields=["file"])
+            asset.save(update_fields=["file"], using=alias)
             stockage.delete(ancien)
 
 
@@ -72,11 +99,15 @@ def revenir(apps, schema_editor):
     Tenant = apps.get_model("tenants", "Tenant")
     connection = schema_editor.connection
 
-    for tenant_id in Tenant.objects.values_list("id", flat=True):
+    alias = connection.alias
+
+    for tenant_id in Tenant.objects.using(alias).values_list("id", flat=True):
         with connection.cursor() as cursor:
             cursor.execute("SELECT set_config('app.tenant_id', %s, true)", [str(tenant_id)])
 
-        for asset in MediaAsset.objects.filter(tenant_id=tenant_id, visibility="private"):
+        for asset in MediaAsset.objects.using(alias).filter(
+            tenant_id=tenant_id, visibility="private"
+        ):
             ancien = asset.file.name
             if not ancien or not ancien.startswith(f"{PREFIXE}/"):
                 continue
@@ -90,7 +121,7 @@ def revenir(apps, schema_editor):
                 ecrit = stockage.save(nouveau, source)
 
             asset.file.name = ecrit
-            asset.save(update_fields=["file"])
+            asset.save(update_fields=["file"], using=alias)
             stockage.delete(ancien)
 
 

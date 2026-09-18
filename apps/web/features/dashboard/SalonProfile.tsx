@@ -68,7 +68,6 @@ const NETWORKS = [
   { key: "instagram", label: "Instagram" },
   { key: "tiktok", label: "TikTok" },
   { key: "facebook", label: "Facebook" },
-  { key: "wechat", label: "WeChat" },
 ] as const;
 
 /** Ordre de la barre de sections : celui de la page, pas un autre. */

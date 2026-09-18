@@ -93,15 +93,13 @@ export function ShareCard({
   const message = `Prenez rendez-vous chez ${salonName} : ${url}`;
 
   /*
-    Le compte WeChat renseigné à l'ancienne, s'il l'est encore.
+    Le bouton WeChat n'existe que s'il y a de quoi le remplir.
 
-    Un salon qui avait collé une adresse dans « Réseaux sociaux » ne doit pas
-    voir son lien disparaître le jour où l'on ajoute mieux : il reste, à
-    l'intérieur du panneau.
+    L'ancienne adresse collée dans « Réseaux sociaux » a disparu : elle ne
+    menait qu'à l'accueil de WeChat, ce qui est le contraire d'un contact.
+    C'est le QR ou l'identifiant, ou rien.
   */
-  const lienWechat = socials.find((social) => social.key === "wechat");
-  const autresReseaux = socials.filter((social) => social.key !== "wechat");
-  const aWechat = Boolean(wechatId.trim() || wechatQr || lienWechat);
+  const aWechat = Boolean(wechatId.trim() || wechatQr);
 
   async function copy() {
     try {
@@ -198,7 +196,7 @@ export function ShareCard({
               seconde rangee coupait la ligne du regard pour une distinction
               que les libelles portent deja tout seuls.
             */}
-            {autresReseaux.map((social) => (
+            {socials.map((social) => (
               <a
                 key={social.key}
                 href={social.href}
@@ -246,7 +244,6 @@ export function ShareCard({
               salonName={salonName}
               identifiant={wechatId.trim()}
               qr={wechatQr}
-              lien={lienWechat}
               copie={copiedId}
               onCopier={copierIdentifiant}
             />
@@ -270,7 +267,6 @@ function PanneauWechat({
   salonName,
   identifiant,
   qr,
-  lien,
   copie,
   onCopier,
 }: {
@@ -278,7 +274,6 @@ function PanneauWechat({
   salonName: string;
   identifiant: string;
   qr: MediaAsset | null;
-  lien?: ContactLink;
   copie: boolean;
   onCopier: () => void;
 }) {
@@ -345,16 +340,6 @@ function PanneauWechat({
           </button>
         )}
 
-        {lien && (
-          <a
-            href={lien.href}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="mt-3 block text-[0.8rem] font-medium text-[var(--salon-ink)] underline-offset-4 hover:underline"
-          >
-            Ouvrir le compte WeChat du salon
-          </a>
-        )}
       </div>
     </div>
   );
