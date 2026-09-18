@@ -865,13 +865,29 @@ class Command(BaseCommand):
 
             total = service.price_amount + options_montant + articles_montant + frais
             profil = SalonProfile.objects.get(tenant=tenant)
-            acompte = (
-                max(
-                    (total * profil.deposit_rate / 100).quantize(Decimal("0.01")),
-                    profil.deposit_minimum,
-                )
-                if service.requires_deposit
-                else Decimal("0")
+
+            # L'acompte se calcule par `compute_deposit`, pas ici.
+            #
+            # J'en avais ecrit une seconde version - pourcentage arrondi au
+            # centime, borne par le plancher. Elle ignorait deux regles que
+            # la vraie applique : l'arrondi vers le bas au pas de la devise,
+            # et le fait que la marchandise et le trajet n'entrent pas
+            # forcement dans l'assiette. Les montants de demonstration
+            # auraient donc differe de ceux que le produit facture, et c'est
+            # precisement sur ces montants qu'on regarde si l'ecran est
+            # juste.
+            from apps.scheduling.services.deposit import compute_deposit
+
+            acompte = compute_deposit(
+                service_amount=service.price_amount,
+                options_amount=options_montant,
+                items_amount=articles_montant,
+                travel_amount=frais,
+                requires_deposit=bool(service.requires_deposit),
+                rate=profil.deposit_rate or 0,
+                minimum=profil.deposit_minimum or Decimal("0"),
+                covers_items=profil.deposit_covers_items,
+                currency=tenant.currency,
             )
 
             paye = bool(extra.get("acompte_paye"))

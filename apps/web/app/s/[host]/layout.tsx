@@ -75,8 +75,22 @@ export default async function SiteLayout({ children, params }: Props) {
    * `suppressHydrationWarning` : le script modifie l'attribut avant que
    * React ne compare son rendu au DOM.
    */
+  /*
+    Le slug passe par `JSON.stringify`, jamais brut.
+
+    Il est interpolé dans une chaîne JavaScript à l'intérieur d'un `<script>`
+    : un slug contenant un guillemet ou `</script>` s'échapperait du littéral
+    et deviendrait du code exécuté sur toutes les pages du mini-site.
+
+    Aucun slug ne peut en contenir — le modèle impose
+    `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`. Mais cette garantie vit dans un
+    validateur Django, à deux couches d'ici, et rien sur cette ligne ne la
+    rappelle : il suffirait qu'on assouplisse un jour la règle des adresses
+    pour ouvrir une faille sans que personne ne relie les deux. L'échappement
+    est donc fait ici, où l'injection a lieu.
+  */
   const boot =
-    `(function(){try{var k="beauty-salon.mode.${salon.slug}",v=localStorage.getItem(k);` +
+    `(function(){try{var k="beauty-salon.mode."+${JSON.stringify(salon.slug)},v=localStorage.getItem(k);` +
     `if(v!=="light"&&v!=="dark"){v=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}` +
     `document.currentScript.parentElement.dataset.mode=v}catch(e){}})()`;
 

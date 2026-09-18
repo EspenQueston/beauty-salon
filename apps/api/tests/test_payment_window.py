@@ -520,3 +520,49 @@ def test_settling_twice_stays_settled(salon_a):
         assert services.expirer(booking) is False
         booking.refresh_from_db()
         assert booking.cancelled_at == premier
+
+
+@pytest.mark.django_db
+def test_two_simultaneous_reads_give_the_stock_back_once(salon_a):
+    """Le risque ouvert en soldant l'echeance a la lecture.
+
+    `give_back_stock` ajoute `stock + quantite` : deux appels rendent la
+    marchandise deux fois, et le salon croit avoir des meches qu'il n'a pas.
+
+    Deux instances chargees separement, c'est exactement ce que voient deux
+    requetes simultanees - deux onglets, ou une lecture qui croise le
+    balayage Celery. Les deux franchissent le test en memoire ; seul
+    l'`UPDATE` conditionnel les departage.
+    """
+    from apps.store.models import Product
+
+    with as_tenant(salon_a.tenant):
+        article = Product.objects.create(
+            tenant=salon_a.tenant, name="Mèches", price=Decimal("3500"), stock=10
+        )
+
+    booking = booking_for(
+        salon_a,
+        items_snapshot=[
+            {
+                "product_id": str(article.id),
+                "name": article.name,
+                "quantity": 3,
+                "unit_price": "3500",
+                "total": "10500",
+            }
+        ],
+        items_amount=Decimal("10500"),
+    )
+    age(salon_a, booking, minutes=31)
+
+    with as_tenant(salon_a.tenant):
+        premier = Booking.objects.get(pk=booking.pk)
+        second = Booking.objects.get(pk=booking.pk)
+
+        assert services.expirer(premier) is True
+        assert services.expirer(second) is False
+
+        article.refresh_from_db()
+
+    assert article.stock == 13, "le stock ne doit etre rendu qu'une fois"

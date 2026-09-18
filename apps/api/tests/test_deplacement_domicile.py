@@ -334,3 +334,47 @@ def test_the_travel_income_shows_up_in_the_breakdown(salon_a):
     # de bord : on compare donc apres conversion, pas la representation.
     assert Decimal(postes[Transaction.IncomeCategory.TRAVEL]) == Decimal("50")
     assert Transaction.IncomeCategory.SERVICE in postes
+
+
+# ---------------------------------------------------------------------------
+# La colonne de supervision doit dire vrai
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db(databases=["default", "admin"], transaction=True)
+def test_the_platform_column_counts_what_really_exists(salon_a):
+    """Une colonne qui ment est pire qu'une colonne absente.
+
+    Elle comptait avec `TravelZone.objects`, le manager filtre sur le
+    contexte tenant courant. L'administration plateforme n'en ouvre aucun :
+    le compte valait donc zero, et l'ecran annoncait « aucune zone
+    declaree » a des salons qui en avaient cinq. Le defaut est invisible en
+    lecture du code - la requete est correcte, c'est son manager qui ne voit
+    rien - et il ne se revele qu'en comparant a la verite.
+    """
+    from django.contrib import admin as site_admin
+
+    fiche = profil(salon_a)
+    with as_tenant(salon_a.tenant):
+        fiche.service_mode = ServiceMode.HYBRID
+        fiche.save(update_fields=["service_mode"])
+        Service.objects.filter(pk=salon_a.service.pk).update(
+            location_mode=ServiceMode.HYBRID
+        )
+    zone(salon_a, nom="Bacongo", frais="2000")
+    zone(salon_a, nom="Poto-Poto", frais="3000")
+
+    ecran = site_admin.site._registry[SalonProfile]
+
+    class Requete:
+        pass
+
+    ligne = next(
+        p
+        for p in ecran.get_queryset(Requete())
+        if str(p.tenant_id) == str(salon_a.tenant.id)
+    )
+
+    rendu = str(ecran.deplacement(ligne))
+    assert "2 zone(s)" in rendu
+    assert "1 prestation(s)" in rendu

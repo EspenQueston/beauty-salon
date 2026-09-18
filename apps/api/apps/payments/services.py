@@ -364,12 +364,40 @@ def expirer(booking, now=None) -> bool:
     if now < deadline:
         return False
 
+    # -----------------------------------------------------------------
+    # La bascule se joue dans la base, pas en memoire
+    # -----------------------------------------------------------------
+    #
+    # `give_back_stock` ajoute `stock + quantite` : ce n'est pas idempotent.
+    # Deux appels rendent la marchandise deux fois, et le salon croit avoir
+    # des meches qu'il n'a pas.
+    #
+    # Le test ci-dessus lit un objet deja charge. Deux lectures simultanees
+    # - deux onglets, la page de suivi et l'espace cliente, ou une lecture
+    # qui croise le balayage Celery - le franchissent donc toutes les deux
+    # avant que l'une ait ecrit. Tant que l'expiration ne vivait que dans le
+    # balayage, la fenetre etait etroite ; depuis qu'un simple affichage la
+    # declenche, elle s'ouvre a chaque chargement de page.
+    #
+    # L'`UPDATE` conditionnel tranche : la base ne laisse passer qu'un seul
+    # ecrivain, et seul celui qui a gagne rend les articles.
+    gagne = Booking.objects.filter(
+        pk=booking.pk, status=Booking.Status.PENDING_PAYMENT
+    ).update(
+        status=Booking.Status.CANCELLED,
+        cancelled_at=now,
+        cancellation_reason=MOTIF_EXPIRATION,
+        # `update()` court-circuite `auto_now` : sans cette ligne, la fiche
+        # garderait la date de sa derniere modification par un humain.
+        updated_at=now,
+    )
+    if not gagne:
+        return False
+
+    # L'objet en memoire suit, pour que l'appelant lise l'etat reel.
     booking.status = Booking.Status.CANCELLED
     booking.cancelled_at = now
     booking.cancellation_reason = MOTIF_EXPIRATION
-    booking.save(
-        update_fields=["status", "cancelled_at", "cancellation_reason", "updated_at"]
-    )
 
     # Les articles reserves retournent en rayon.
     from apps.store.services import give_back_stock

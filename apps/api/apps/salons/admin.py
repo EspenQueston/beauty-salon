@@ -1,9 +1,11 @@
 from django.contrib import admin
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from apps.catalog.models import Service
-from apps.common.admin import TenantScopedAdmin
+from apps.common.admin import ADMIN_DB, TenantScopedAdmin
 
 from .models import SalonProfile, ServiceMode, TravelZone
 
@@ -94,6 +96,48 @@ class SalonProfileAdmin(TenantScopedAdmin):
                              "identifiant)</span>")
         return mark_safe('<span style="color:var(--bs-ink-muted)">—</span>')
 
+    def get_queryset(self, request):
+        """Compte les zones et les prestations à domicile en une seule requête.
+
+        Deux raisons, et la première est une correction.
+
+        **`objects` ne voit rien ici.** Les managers des modèles tenant
+        filtrent sur le contexte courant ; l'administration plateforme n'en
+        ouvre aucun, et un `TravelZone.objects.count()` y renvoie donc
+        toujours zéro. La colonne annonçait « aucune zone déclarée » à des
+        salons qui en avaient cinq — une colonne qui ment est pire que pas
+        de colonne. Les sous-requêtes passent par `all_tenants` sur l'alias
+        d'administration, comme tout le reste de cet écran.
+
+        **Et une requête par ligne fait une liste lente.** Compter à
+        l'affichage aurait coûté deux requêtes par salon.
+        """
+        zones = (
+            TravelZone.all_tenants.using(ADMIN_DB)
+            .filter(tenant_id=OuterRef("tenant_id"), active=True)
+            .values("tenant_id")
+            .annotate(n=Count("id"))
+            .values("n")
+        )
+        prestations = (
+            Service.all_tenants.using(ADMIN_DB)
+            .filter(tenant_id=OuterRef("tenant_id"), active=True)
+            .exclude(location_mode=ServiceMode.SALON)
+            .values("tenant_id")
+            .annotate(n=Count("id"))
+            .values("n")
+        )
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(
+                nb_zones=Coalesce(Subquery(zones, output_field=IntegerField()), 0),
+                nb_a_domicile=Coalesce(
+                    Subquery(prestations, output_field=IntegerField()), 0
+                ),
+            )
+        )
+
     @admin.display(description="Déplacement", ordering="service_mode")
     def deplacement(self, profile):
         """Ce salon peut-il reellement etre reserve a domicile.
@@ -110,19 +154,28 @@ class SalonProfileAdmin(TenantScopedAdmin):
         if profile.service_mode == ServiceMode.SALON:
             return mark_safe('<span style="color:var(--bs-ink-muted)">Au salon</span>')
 
-        zones = TravelZone.objects.filter(
-            tenant_id=profile.tenant_id, active=True
-        ).count()
+        # Annotes par `get_queryset` ; la fiche isolee, elle, n'a pas ces
+        # attributs et retombe sur un comptage direct.
+        zones = getattr(profile, "nb_zones", None)
+        if zones is None:
+            zones = (
+                TravelZone.all_tenants.using(ADMIN_DB)
+                .filter(tenant_id=profile.tenant_id, active=True)
+                .count()
+            )
         if not zones:
             return mark_safe(
                 '<span style="color:var(--bs-warn)">aucune zone déclarée</span>'
             )
 
-        ouvertes = (
-            Service.objects.filter(tenant_id=profile.tenant_id, active=True)
-            .exclude(location_mode=ServiceMode.SALON)
-            .count()
-        )
+        ouvertes = getattr(profile, "nb_a_domicile", None)
+        if ouvertes is None:
+            ouvertes = (
+                Service.all_tenants.using(ADMIN_DB)
+                .filter(tenant_id=profile.tenant_id, active=True)
+                .exclude(location_mode=ServiceMode.SALON)
+                .count()
+            )
         if not ouvertes:
             return mark_safe(
                 '<span style="color:var(--bs-warn)">aucune prestation à '
