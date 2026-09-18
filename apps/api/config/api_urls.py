@@ -69,6 +69,7 @@ from apps.store.views import (
 )
 from apps.tenants.views_devise import SalonCurrencyView
 from apps.tenants.views_identity import SalonIdentityView
+from apps.tenants.views_taux import PublicRateView
 
 router = DefaultRouter()
 router.register("service-categories", ServiceCategoryViewSet, basename="service-category")
@@ -104,6 +105,9 @@ router.register("travel-zones", TravelZoneViewSet, basename="travel-zone")
 
 public_urlpatterns = [
     path("salon", PublicSalonView.as_view(), name="public-salon"),
+    # Taux du jour, pour afficher un prix converti a titre indicatif. Ne
+    # change rien : le salon facture dans sa devise.
+    path("rate", PublicRateView.as_view(), name="public-rate"),
     path("availability", PublicAvailabilityView.as_view(), name="public-availability"),
     path("bookings", PublicBookingCreateView.as_view(), name="public-booking-create"),
     path("waitlist", PublicWaitlistView.as_view(), name="public-waitlist"),

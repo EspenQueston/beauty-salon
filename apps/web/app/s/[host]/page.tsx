@@ -215,7 +215,6 @@ export default async function SalonHome({ params }: Props) {
                 <Reveal key={service.id} delay={Math.min(index, 5) * 80}>
                   <ServiceCard
                     service={service}
-                    currency={salon.currency}
                     icon={categoryIcon(category.name)}
                     theme={themeFromCategory(category.name)}
                     fallback={visuels.get(service.id)}

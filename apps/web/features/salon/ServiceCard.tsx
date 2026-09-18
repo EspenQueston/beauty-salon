@@ -9,7 +9,8 @@
 
 import Link from "next/link";
 
-import { formatDuration, formatServicePrice } from "@/lib/format";
+import { formatDuration } from "@/lib/format";
+import { Prix } from "./Devise";
 import {
   illustrationUrl,
   pickIllustration,
@@ -23,13 +24,11 @@ import { Pill, SURFACE } from "./ui";
 
 export function ServiceCard({
   service,
-  currency,
   icon,
   theme,
   fallback,
 }: {
   service: PublicService;
-  currency: string;
   icon: SalonIconName;
   /** Famille de la catégorie : choisit l'illustration à défaut de photo. */
   theme: IllustrationTheme;
@@ -106,9 +105,25 @@ export function ServiceCard({
             <span className="text-[0.9rem] font-semibold leading-snug text-[var(--site-ink)] sm:text-base">
               {service.name}
             </span>
-            <span className="tabular shrink-0 text-sm font-semibold text-[var(--salon-ink)] sm:text-base">
-              {formatServicePrice(service, currency)}
-            </span>
+            {/*
+              Le prix passe par `<Prix>`, seul morceau client de cette carte.
+
+              Il doit suivre la devise que la visiteuse a choisi de lire, et
+              ce choix ne peut pas être connu du serveur. Rendre la carte
+              entière côté client pour un seul nombre serait payer cher un
+              détail : seul le nombre descend.
+            */}
+            {service.price_kind === "quote" ? (
+              <span className="shrink-0 text-sm font-semibold text-[var(--salon-ink)] sm:text-base">
+                Sur devis
+              </span>
+            ) : (
+              <Prix
+                montant={service.price_amount}
+                prefixe={service.price_kind === "from" ? "À partir de" : ""}
+                className="tabular shrink-0 text-sm font-semibold text-[var(--salon-ink)] sm:text-base"
+              />
+            )}
           </span>
 
           <span className="mt-2 flex flex-wrap items-center gap-1.5">

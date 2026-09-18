@@ -13,7 +13,7 @@ import {
   serviceAreas,
   socialLinks,
 } from "@/features/salon/contact";
-import { formatPrice } from "@/lib/format";
+import { Prix } from "@/features/salon/Devise";
 import { Reveal } from "@/features/ui/Reveal";
 import { fetchSalon } from "@/lib/api";
 import type { PublicSalon } from "@/lib/types";
@@ -247,7 +247,7 @@ function TravelCard({
                   gratuit ? "text-emerald-600" : "text-[var(--salon-ink)]"
                 }`}
               >
-                {gratuit ? "Offert" : formatPrice(zone.fee_amount, salon.currency)}
+                {gratuit ? "Offert" : <Prix montant={zone.fee_amount} />}
               </span>
             </li>
           );

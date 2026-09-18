@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 
 import { BookingBar } from "@/features/salon/BookingBar";
 import { SalonFooter } from "@/features/salon/SalonFooter";
+import { DeviseProvider } from "@/features/salon/Devise";
 import { SalonNav } from "@/features/salon/SalonNav";
 import { InlineScript } from "@/app/InlineScript";
 import { ScrollTop } from "@/features/ui/ScrollTop";
@@ -103,17 +104,29 @@ export default async function SiteLayout({ children, params }: Props) {
     >
       <InlineScript html={boot} />
 
-      <SalonNav
-        name={salon.name}
-        slug={salon.slug}
-        logo={salon.logo}
-        show={show}
-      />
+      {/*
+        Le choix de lecture des prix couvre tout le mini-site.
 
-      {/* La marge basse laisse la place à la barre de réservation fixe. */}
-      <div className="flex-1 pb-24">{children}</div>
+        Ici plutôt que page par page : une visiteuse qui a demandé à lire en
+        francs ne veut pas le redemander en changeant d'onglet, et le bouton
+        vit dans la barre du haut, qui est elle aussi commune.
 
-      <SalonFooter salon={salon} />
+        Le pied de page reste dedans : il ne montre pas de prix aujourd'hui,
+        mais rien ne garantit qu'il n'en montrera jamais.
+      */}
+      <DeviseProvider salonSlug={salon.slug} devise={salon.currency}>
+        <SalonNav
+          name={salon.name}
+          slug={salon.slug}
+          logo={salon.logo}
+          show={show}
+        />
+
+        {/* La marge basse laisse la place à la barre de réservation fixe. */}
+        <div className="flex-1 pb-24">{children}</div>
+
+        <SalonFooter salon={salon} />
+      </DeviseProvider>
 
       {/* Marqués comme habillage : ils disparaissent sur l'écran
           d'identification, où toute sortie autre que « retour au site »

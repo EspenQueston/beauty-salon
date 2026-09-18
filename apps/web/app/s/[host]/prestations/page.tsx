@@ -108,7 +108,6 @@ export default async function PrestationsPage({ params }: Props) {
                       <ServiceCard
                         key={service.id}
                         service={service}
-                        currency={salon.currency}
                         icon={categoryIcon(category.name)}
                         theme={themeFromCategory(category.name)}
                       />

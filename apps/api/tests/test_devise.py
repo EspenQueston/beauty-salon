@@ -365,3 +365,72 @@ def test_an_unavailable_rate_answers_503(api_client, salon_a):
 
     assert reponse.status_code == 503
     assert reponse.data["code"] == "taux_indisponible"
+
+
+# ---------------------------------------------------------------------------
+# Le taux public, pour le bouton du mini-site
+# ---------------------------------------------------------------------------
+#
+# Il ne change rien : le salon facture dans sa devise. Ce qu'il permet, c'est
+# qu'une visiteuse à Brazzaville sache ce que représentent 280 ¥ sans quitter
+# la page.
+
+HOTE = {"Host": "blondrose.localhost"}
+PUBLIC = "/api/v1/public/rate"
+
+
+@pytest.mark.django_db
+def test_a_visitor_can_read_the_rate_without_an_account(api_client, salon_a):
+    en_xaf(salon_a)
+
+    with patch("apps.tenants.views_taux.taux", return_value=XAF_VERS_CNY):
+        reponse = api_client.get(f"{PUBLIC}?vers=CNY", headers=HOTE)
+
+    assert reponse.status_code == 200, reponse.data
+    assert reponse.data == {"de": "XAF", "vers": "CNY", "taux": str(XAF_VERS_CNY)}
+
+
+@pytest.mark.django_db
+def test_the_same_currency_needs_no_rate(api_client, salon_a):
+    """Ni appel réseau, ni quota consommé pour un taux de 1."""
+    en_xaf(salon_a)
+
+    with patch("apps.tenants.views_taux.taux") as jamais:
+        reponse = api_client.get(f"{PUBLIC}?vers=XAF", headers=HOTE)
+
+    assert reponse.status_code == 200
+    assert reponse.data["taux"] == "1"
+    jamais.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_an_unknown_currency_is_refused(api_client, salon_a):
+    """La liste est fermée aux devises de la plateforme.
+
+    Une route publique qui accepte n'importe quel code ferait de nous un
+    convertisseur universel gratuit, adossé à une clé d'API payante — et le
+    premier robot venu épuiserait le quota.
+    """
+    en_xaf(salon_a)
+
+    reponse = api_client.get(f"{PUBLIC}?vers=BTC", headers=HOTE)
+
+    assert reponse.status_code == 400
+    assert reponse.data["code"] == "devise_inconnue"
+
+
+@pytest.mark.django_db
+def test_an_unavailable_rate_leaves_the_page_in_the_salon_currency(
+    api_client, salon_a
+):
+    """503, et l'écran retombe sur la devise du salon — toujours exacte."""
+    en_xaf(salon_a)
+
+    with patch(
+        "apps.tenants.views_taux.taux",
+        side_effect=TauxIndisponible("service injoignable"),
+    ):
+        reponse = api_client.get(f"{PUBLIC}?vers=CNY", headers=HOTE)
+
+    assert reponse.status_code == 503
+    assert reponse.data["code"] == "taux_indisponible"

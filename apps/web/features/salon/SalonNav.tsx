@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 
 import { SalonIcon } from "./icons";
 import { SalonLogo } from "./SalonLogo";
+import { DeviseToggle } from "./Devise";
 import { SiteModeToggle } from "./SiteMode";
 import type { MediaAsset } from "@/lib/types";
 
@@ -139,6 +140,15 @@ export function SalonNav({ name, slug, logo, show }: Props) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          {/*
+            Le choix de lecture des prix, à côté du clair/sombre.
+
+            Les deux répondent à la même sorte de question — « comment je
+            veux lire cette page » — et se rangent donc ensemble. Fermé, le
+            bouton n'occupe que trois caractères : cette barre compte déjà
+            quatre éléments sur téléphone.
+          */}
+          <DeviseToggle />
           <SiteModeToggle
             slug={slug}
             className={
