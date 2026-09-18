@@ -323,8 +323,14 @@ FATY_RENDEZVOUS = [
      Booking.Status.COMPLETED,
      {"acompte_paye": True, "options": ["French manucure"],
       "articles": [("Vernis semi-permanent", 1)]}),
+    # Une visite a domicile deja honoree : c'est la seule facon de voir la
+    # recette « Deplacement » apparaitre dans l'ecran Finances, a cote de la
+    # depense de transport qu'elle est censee couvrir.
     (-7, time(11, 0), "pedicure", "Lin Xiaowen", "Prudence Mabiala",
-     Booking.Status.COMPLETED, {"acompte_paye": True}),
+     Booking.Status.COMPLETED,
+     {"acompte_paye": True, "zone": "Yuexiu",
+      "adresse": "48 Beijing Road, Yuexiu",
+      "note": "Portail vert, sonner deux fois."}),
     (-5, time(16, 0), "Nail art intégral", "Faty Nguesso", "Lisa Kouassi",
      Booking.Status.CANCELLED,
      {"motif": "Empêchement de dernière minute, reportée par téléphone."}),
@@ -806,8 +812,21 @@ class Command(BaseCommand):
             jour = maintenant.astimezone(fuseau).date() + timedelta(days=jours)
             debut = datetime.combine(jour, heure, tzinfo=fuseau)
 
+            # Le doublon se reconnait a la cliente, la prestation et l'etat -
+            # pas a l'horaire.
+            #
+            # Les dates de cette fixture sont relatives a aujourd'hui.
+            # Dedoublonner sur `starts_at` marchait le premier jour et plus
+            # jamais ensuite : relancee le lendemain, la commande calculait
+            # des horaires decales d'un jour, n'y reconnaissait rien, et
+            # doublait tout l'agenda - donc aussi le chiffre d'affaires de
+            # demonstration. La promesse « elle se relance sans rien
+            # ecraser » ne tenait qu'une journee.
             if Booking.objects.filter(
-                tenant=tenant, customer=cliente, starts_at=debut
+                tenant=tenant,
+                customer=cliente,
+                service=service,
+                status=statut,
             ).exists():
                 continue
 
@@ -896,7 +915,21 @@ class Command(BaseCommand):
             )
             crees += 1
 
-        self.stdout.write(f"{OK} {crees} rendez-vous à l'agenda")
+        # Les visites honorees produisent leurs ecritures, comme le ferait
+        # l'agenda quand la gerante coche « terminee ». Sans elles, l'ecran
+        # Finances reste une page vide et l'on ne peut rien y juger — ni la
+        # repartition des recettes, ni la ligne « Deplacement » qu'on vient
+        # d'ajouter.
+        from apps.finance.services import record_booking_income
+
+        ecritures = 0
+        for reservation in Booking.objects.filter(
+            tenant=tenant, status=Booking.Status.COMPLETED
+        ):
+            if record_booking_income(reservation) is not None:
+                ecritures += 1
+
+        self.stdout.write(f"{OK} {crees} rendez-vous à l'agenda, {ecritures} en recette")
         return crees
 
     def _avis(self, tenant, avis):

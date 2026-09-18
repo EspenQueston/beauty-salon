@@ -45,6 +45,18 @@ class Transaction(TenantOwnedModel):
     class IncomeCategory(models.TextChoices):
         SERVICE = "service", _("Prestation")
         PRODUCT = "product", _("Vente de produit")
+        # Ce que la cliente paie pour qu'on vienne chez elle.
+        #
+        # A part, et non fondu dans la prestation. Un deplacement n'est pas du
+        # metier : il coute du carburant et du temps de trajet, il a sa propre
+        # depense en face - la categorie « Transport et deplacements » existe
+        # deja du cote sortie - et c'est la comparaison des deux qui dit si le
+        # forfait d'une zone couvre ce qu'il coute.
+        #
+        # Fondu dans « Prestation », ce calcul etait impossible : la recette
+        # de trajet gonflait le chiffre d'affaires du geste technique, et la
+        # depense de trajet, seule de son cote, faisait croire a une perte.
+        TRAVEL = "travel", _("Déplacement")
         TIP = "tip", _("Pourboire")
         OTHER_INCOME = "other_income", _("Autre recette")
 
@@ -101,6 +113,7 @@ class Transaction(TenantOwnedModel):
         BOOKING_DEPOSIT = "booking_deposit", _("Acompte encaissé")
         BOOKING_BALANCE = "booking_balance", _("Solde de la prestation")
         BOOKING_ITEMS = "booking_items", _("Vente au comptoir")
+        BOOKING_TRAVEL = "booking_travel", _("Forfait de déplacement")
         SUBSCRIPTION = "subscription", _("Abonnement à la plateforme")
 
     # D'ou vient la ligne.

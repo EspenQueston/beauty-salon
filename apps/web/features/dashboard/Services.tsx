@@ -84,6 +84,8 @@ const LOCATIONS = [
 interface DepositRule {
   deposit_rate: number;
   deposit_minimum: string;
+  /** Le lieu que le salon a declare : il sert de valeur de depart ici. */
+  service_mode: Service["location_mode"];
 }
 
 /**
@@ -150,7 +152,6 @@ const EMPTY: Partial<Service> = {
   price_kind: "fixed",
   price_amount: "0",
   requires_deposit: false,
-  location_mode: "salon",
   active: true,
 };
 
@@ -201,6 +202,28 @@ export function Services() {
   const [filter, setFilter] = useState<FilterState>(EMPTY_FILTER);
 
   const categoryRows = rows(categories.data);
+
+  /**
+   * Une prestation neuve, préremplie comme le salon s'est décrit.
+   *
+   * Le lieu partait de « Au salon », quoi qu'ait déclaré le salon par
+   * ailleurs. Une gérante qui réglait son profil sur « au salon ou à
+   * domicile », déclarait ses quartiers et leurs forfaits, puis créait ses
+   * prestations, obtenait un parcours de réservation où l'étape « à
+   * domicile » n'apparaissait jamais — deux réglages qui parlent de la même
+   * chose, dans deux écrans, sans rien pour les relier.
+   *
+   * Le serveur applique la même valeur de départ pour qui passe par l'API.
+   * Ici, on la met aussi à l'écran : un champ qui affiche autre chose que ce
+   * qui sera enregistré vaut moins que pas de champ du tout.
+   */
+  function nouvelle(): Partial<Service> {
+    return {
+      ...EMPTY,
+      category: categoryRows[0]?.id,
+      location_mode: rule.data?.service_mode ?? "salon",
+    };
+  }
   const serviceRows = rows(services.data);
   const mediaRows = rows(media.data);
 
@@ -277,7 +300,7 @@ export function Services() {
             <Button
               type="button"
               icon={<Icon name="plus" className="size-4" />}
-              onClick={() => setEditing({ ...EMPTY, category: categoryRows[0]?.id })}
+              onClick={() => setEditing(nouvelle())}
             >
               Nouvelle prestation
             </Button>
@@ -373,7 +396,7 @@ export function Services() {
             canEdit && (
               <Button
                 type="button"
-                onClick={() => setEditing({ ...EMPTY, category: categoryRows[0]?.id })}
+                onClick={() => setEditing(nouvelle())}
               >
                 Créer ma première prestation
               </Button>
@@ -758,7 +781,14 @@ function ServiceForm({
             />
           </div>
 
-          <Field label="Lieu">
+          <Field
+            label="Lieu"
+            hint={
+              values.location_mode === "salon"
+                ? "Cette prestation ne sera pas proposée à domicile, même si votre salon se déplace."
+                : "La cliente choisira son quartier à la réservation, et le forfait s'ajoutera au total."
+            }
+          >
             <select
               value={values.location_mode ?? "salon"}
               onChange={(event) =>

@@ -96,9 +96,43 @@ class ServiceSerializer(serializers.ModelSerializer):
     # le calcul le borne au total du rendez-vous.
 
     def create(self, validated_data):
+        validated_data.setdefault("location_mode", _lieu_du_salon(self.context))
         service = super().create(validated_data)
         _link_solo_provider(service)
         return service
+
+
+def _lieu_du_salon(context) -> str:
+    """Le lieu par defaut d'une nouvelle prestation : celui du salon.
+
+    -----------------------------------------------------------------------
+    Le piege que ceci ferme
+    -----------------------------------------------------------------------
+
+    `Service.location_mode` valait « au salon » par defaut, quoi qu'ait
+    declare le salon par ailleurs. Une gerante qui reglait son profil sur
+    « au salon ou a domicile », declarait trois quartiers et leurs forfaits,
+    puis creait ses prestations, obtenait un parcours de reservation ou
+    l'etape « a domicile » n'apparaissait jamais.
+
+    Rien n'etait casse : le moteur lit bien `service.location_mode`, et il
+    disait « au salon ». Simplement, deux reglages qui parlent de la meme
+    chose vivaient dans deux ecrans differents, et rien ne les reliait. Le
+    symptome - « mes zones ne servent a rien » - ne designe pas sa cause.
+
+    Le reglage du salon devient donc la valeur de depart. La prestation garde
+    son champ : c'est ainsi qu'un salon qui se deplace declare la seule
+    prestation qu'il ne fait qu'en cabine.
+    """
+    from apps.salons.models import SalonProfile, ServiceMode
+
+    requete = context.get("request")
+    tenant_id = getattr(requete, "tenant_id", None)
+    if tenant_id is None:
+        return ServiceMode.SALON
+
+    profil = SalonProfile.objects.filter(tenant_id=tenant_id).first()
+    return profil.service_mode if profil else ServiceMode.SALON
 
 
 def _link_solo_provider(service) -> None:

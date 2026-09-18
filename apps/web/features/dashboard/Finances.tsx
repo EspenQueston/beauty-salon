@@ -117,6 +117,7 @@ interface Summary {
 const INCOME_CATEGORIES = [
   { value: "service", label: "Prestation" },
   { value: "product", label: "Vente de produit" },
+  { value: "travel", label: "Déplacement" },
   { value: "tip", label: "Pourboire" },
   { value: "other_income", label: "Autre recette" },
 ];
@@ -152,6 +153,10 @@ const METHODS = [
 const CATEGORY_ICONS: Record<string, IconName> = {
   service: "sparkles",
   product: "bag",
+  // Le même camion que la dépense « Transport et déplacements », en face.
+  // C'est le rapprochement des deux lignes qui dit si un forfait de zone
+  // couvre ce qu'il coûte.
+  travel: "truck",
   tip: "star",
   other_income: "wallet",
   supplies: "bag",

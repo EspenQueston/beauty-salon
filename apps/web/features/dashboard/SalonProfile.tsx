@@ -157,18 +157,37 @@ export function SalonProfileScreen() {
     if (!profile) return;
     setPending(true);
 
+    // Le serveur dit combien de prestations il a ouvertes au domicile quand
+    // le mode du salon vient de changer. Un effet de bord se raconte : sans
+    // cette phrase, la gérante découvrirait plus tard que son catalogue a
+    // changé de lieu sans qu'elle l'ait touché.
+    let alignees = 0;
+
     const ok = await toast.run(
-      () =>
-        dashboardFetch(
+      async () => {
+        const reponse = await dashboardFetch<
+          Profile & { prestations_alignees?: number }
+        >(
           "/api/v1/salon-profile",
           { method: "PATCH", body: JSON.stringify(profile) },
           tenantId,
-        ),
+        );
+        alignees = reponse.prestations_alignees ?? 0;
+      },
       { success: "Profil enregistré. Votre mini-site est à jour." },
     );
 
     setPending(false);
-    if (ok) setSaved(profile);
+    if (ok) {
+      setSaved(profile);
+      if (alignees > 0) {
+        toast.info(
+          alignees === 1
+            ? "1 prestation est désormais proposée à domicile."
+            : `${alignees} prestations sont désormais proposées à domicile.`,
+        );
+      }
+    }
   }
 
   if (error) {
@@ -260,7 +279,26 @@ export function SalonProfileScreen() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Prestations réalisées" className="sm:col-span-2">
+            {/*
+              Ce réglage en commande un autre, et il faut le dire.
+
+              Chaque prestation porte son propre lieu. Passer ici à « à
+              domicile » sans que le catalogue suive donnait un parcours de
+              réservation qui n'offrait jamais le déplacement : les zones
+              déclarées plus bas ne servaient à rien, et le symptôme ne
+              désignait pas sa cause. Le serveur aligne donc les prestations
+              qui n'avaient pas été réglées à part — autant l'annoncer avant
+              plutôt que de le faire découvrir.
+            */}
+            <Field
+              label="Prestations réalisées"
+              className="sm:col-span-2"
+              hint={
+                profile.service_mode === "salon"
+                  ? "Ouvrir le domicile proposera aussi vos prestations chez la cliente, sauf celles que vous aurez mises à part."
+                  : "Vos prestations sont proposées à domicile, sauf celles réglées sur « Au salon » dans leur fiche. Les forfaits se règlent dans « Déplacement »."
+              }
+            >
               <select
                 value={profile.service_mode}
                 onChange={(event) =>

@@ -314,6 +314,49 @@ def record_items_income(booking) -> Transaction | None:
     )
 
 
+def record_travel_income(booking) -> Transaction | None:
+    """Constate separement le forfait de deplacement.
+
+    Meme raison que pour la vente au comptoir : une ligne a part, sinon le
+    graphique « d'ou vient l'argent » ne dit plus rien. Se deplacer n'est pas
+    coiffer - c'est du carburant, du temps de trajet et un risque de retard -
+    et la depense correspondante existe deja de l'autre cote du livre, sous
+    « Transport et deplacements ».
+
+    Fondu dans la prestation, le forfait gonflait le chiffre d'affaires du
+    geste technique pendant que le trajet ne paraissait qu'en depense : un
+    salon regardant ses deux colonnes concluait que le domicile lui coutait
+    de l'argent. Les deux lignes se font maintenant face, et la question
+    « le forfait de cette zone couvre-t-il le trajet ? » devient lisible.
+    """
+    amount = booking.travel_fee_amount or Decimal("0")
+    if amount <= 0:
+        # Une zone desservie gratuitement est un choix commercial, pas une
+        # recette de zero : rien a ecrire.
+        return None
+
+    existing = Transaction.objects.filter(
+        booking=booking, source=Transaction.Source.BOOKING_TRAVEL
+    ).first()
+    if existing is not None:
+        return existing
+
+    zone = booking.travel_zone_name or "zone non precisee"
+
+    return Transaction.objects.create(
+        tenant_id=booking.tenant_id,
+        kind=Transaction.Kind.INCOME,
+        category=Transaction.IncomeCategory.TRAVEL,
+        source=Transaction.Source.BOOKING_TRAVEL,
+        label=f"Déplacement — {zone}"[:160],
+        amount=amount,
+        occurred_on=jour_du_salon(booking.starts_at, booking.tenant),
+        method=booking.deposit_method or Transaction.Method.CASH,
+        counterparty=getattr(booking.customer, "full_name", "") or "",
+        booking=booking,
+    )
+
+
 def record_booking_income(booking) -> Transaction | None:
     """Constate le **solde** d'un rendez-vous honore.
 
@@ -332,9 +375,12 @@ def record_booking_income(booking) -> Transaction | None:
     if existing is not None:
         return existing
 
-    # La vente au comptoir est constatee d'abord : le solde se calcule sur ce
-    # qui reste, donc elle s'en deduit toute seule.
+    # La vente au comptoir et le deplacement sont constates d'abord : le
+    # solde se calcule sur ce qui reste, donc ils s'en deduisent tout seuls.
+    # Inverser l'ordre les compterait deux fois - une fois dans le solde,
+    # une fois dans leur propre ligne.
     record_items_income(booking)
+    record_travel_income(booking)
 
     balance = booking.total_amount - _already_recorded(booking)
     if balance <= 0:

@@ -2,9 +2,10 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+from apps.catalog.models import Service
 from apps.common.admin import TenantScopedAdmin
 
-from .models import SalonProfile, TravelZone
+from .models import SalonProfile, ServiceMode, TravelZone
 
 
 @admin.register(SalonProfile)
@@ -16,6 +17,7 @@ class SalonProfileAdmin(TenantScopedAdmin):
         "phone",
         "whatsapp_number",
         "wechat",
+        "deplacement",
     )
     list_filter = ("service_mode", "tenant")
     search_fields = ("tenant__name", "city", "address", "wechat_id")
@@ -91,6 +93,43 @@ class SalonProfileAdmin(TenantScopedAdmin):
             return mark_safe('QR seul <span style="color:var(--bs-warn)">(sans '
                              "identifiant)</span>")
         return mark_safe('<span style="color:var(--bs-ink-muted)">—</span>')
+
+    @admin.display(description="Déplacement", ordering="service_mode")
+    def deplacement(self, profile):
+        """Ce salon peut-il reellement etre reserve a domicile.
+
+        Trois reglages doivent concorder pour qu'une cliente puisse choisir
+        « chez moi » : le mode du salon, au moins une zone desservie, et des
+        prestations qui ne soient pas toutes cantonnees au salon. Deux sur
+        trois donnent un parcours qui n'offre jamais le deplacement, sans
+        message d'erreur.
+
+        La colonne dit donc laquelle manque, plutot qu'un « oui/non » qui
+        obligerait a ouvrir trois ecrans pour comprendre.
+        """
+        if profile.service_mode == ServiceMode.SALON:
+            return mark_safe('<span style="color:var(--bs-ink-muted)">Au salon</span>')
+
+        zones = TravelZone.objects.filter(
+            tenant_id=profile.tenant_id, active=True
+        ).count()
+        if not zones:
+            return mark_safe(
+                '<span style="color:var(--bs-warn)">aucune zone déclarée</span>'
+            )
+
+        ouvertes = (
+            Service.objects.filter(tenant_id=profile.tenant_id, active=True)
+            .exclude(location_mode=ServiceMode.SALON)
+            .count()
+        )
+        if not ouvertes:
+            return mark_safe(
+                '<span style="color:var(--bs-warn)">aucune prestation à '
+                "domicile</span>"
+            )
+
+        return format_html("{} zone(s) · {} prestation(s)", zones, ouvertes)
 
     @admin.display(description="Le code")
     def apercu_wechat(self, profile):

@@ -36,8 +36,13 @@ class TransactionAdmin(TenantScopedAdmin):
         "label",
         "amount",
         "method",
+        "source",
     )
-    list_filter = ("kind", "method", "tenant", "occurred_on")
+    # `source` au filtre : c'est ce qui permet d'isoler d'un clic les lignes
+    # qu'aucun salon n'a saisies — un forfait de deplacement, une vente au
+    # comptoir, un acompte. Sans lui, la seule facon de repondre a « d'ou
+    # vient cette ligne ? » etait d'ouvrir la fiche une par une.
+    list_filter = ("kind", "category", "source", "method", "tenant", "occurred_on")
     search_fields = ("label", "counterparty", "tenant__name")
     date_hierarchy = "occurred_on"
     ordering = ("-occurred_on",)
@@ -46,6 +51,7 @@ class TransactionAdmin(TenantScopedAdmin):
         "tenant",
         "kind",
         "category",
+        "source",
         "label",
         "amount",
         "occurred_on",

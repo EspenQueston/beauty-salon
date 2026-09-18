@@ -8,7 +8,7 @@ from apps.accounts.models import Membership
 from apps.common.permissions import HasTenantRole, IsTenantMember
 from apps.common.viewsets import TenantModelViewSet
 
-from .models import SalonProfile, TravelZone
+from .models import SalonProfile, ServiceMode, TravelZone
 
 MANAGERS = (Membership.Role.OWNER, Membership.Role.MANAGER)
 EVERYONE = (*MANAGERS, Membership.Role.RECEPTIONIST, Membership.Role.STAFF)
@@ -116,10 +116,22 @@ class SalonProfileView(APIView):
 
     def patch(self, request):
         profile = self._get_or_create(request)
+        lieu_avant = profile.service_mode
+
         serializer = SalonProfileSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        alignees = _aligner_les_prestations(profile, lieu_avant)
+
+        donnees = dict(serializer.data)
+        if alignees:
+            # Un effet de bord se raconte, sinon il surprend. L'ecran affiche
+            # la phrase ; sans elle, la gerante decouvrirait plus tard que
+            # ses prestations ont change de lieu sans qu'elle les ait
+            # touchees.
+            donnees["prestations_alignees"] = alignees
+        return Response(donnees, status=status.HTTP_200_OK)
 
     def _get_or_create(self, request) -> SalonProfile:
         profile = SalonProfile.objects.filter(tenant_id=request.tenant_id).first()
@@ -128,6 +140,44 @@ class SalonProfileView(APIView):
             # d'imposer une etape de creation explicite.
             profile = SalonProfile.objects.create(tenant_id=request.tenant_id)
         return profile
+
+
+def _aligner_les_prestations(profile, lieu_avant: str) -> int:
+    """Ouvre le domicile aux prestations quand le salon vient de l'ouvrir.
+
+    -----------------------------------------------------------------------
+    Pourquoi un effet de bord, ici
+    -----------------------------------------------------------------------
+
+    Deux reglages parlent du meme sujet dans deux ecrans : le salon dit s'il
+    se deplace, chaque prestation dit ou elle se fait. Rien ne les reliait.
+    Une gerante passait son profil en « au salon ou a domicile », declarait
+    ses quartiers et leurs forfaits, et son parcours de reservation
+    continuait de n'offrir que le salon - parce que ses quinze prestations
+    etaient restees sur la valeur par defaut, dans un champ qu'elle n'a
+    aucune raison d'aller ouvrir quinze fois.
+
+    Le symptome - « mes zones ne servent a rien » - ne designe pas sa cause,
+    et c'est ce qui le rend couteux.
+
+    On n'aligne donc que ce qui n'a pas ete choisi : les prestations encore
+    sur l'ancien mode du salon, c'est-a-dire celles qui n'avaient jamais ete
+    decidees separement. Une prestation deja mise a part garde son reglage.
+
+    Et seulement dans le sens qui ouvre. Repasser en « au salon » ne referme
+    rien tout seul : retirer une prestation de la vente est une decision
+    commerciale, pas la consequence d'un changement d'adresse.
+    """
+    from apps.catalog.models import Service
+
+    if profile.service_mode == lieu_avant:
+        return 0
+    if profile.service_mode == ServiceMode.SALON:
+        return 0
+
+    return Service.objects.filter(
+        tenant_id=profile.tenant_id, location_mode=lieu_avant
+    ).update(location_mode=profile.service_mode)
 
 
 class TravelZoneSerializer(serializers.ModelSerializer):
