@@ -20,6 +20,13 @@ export interface ClientBooking {
   options_snapshot: { name: string; price: string; minutes: number }[];
   travel_zone_name: string;
   address: string;
+  /**
+   * Pourquoi ce rendez-vous n'aura pas lieu. Vide s'il n'est pas annulé.
+   *
+   * « Annulé » tout court fait chercher : on se demande si on a annulé
+   * soi-même, si le salon a fermé, ou si l'acompte est arrivé trop tard.
+   */
+  cancellation_reason: string;
   /** QR d'arrivée. Non vide seulement une fois le salon d'accord. */
   checkin_token: string;
   checkin_code: string;

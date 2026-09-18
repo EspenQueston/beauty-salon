@@ -263,11 +263,38 @@ def test_the_status_page_shows_the_pass_only_once_confirmed(api_client, salon_a)
 
 
 @pytest.mark.django_db
-def test_the_status_page_explains_a_cancellation(api_client, salon_a):
-    """Un rendez-vous annule garde une page : c'est la qu'on lit pourquoi."""
+def test_the_status_page_explains_an_expiry(api_client, salon_a):
+    """Un rendez-vous annule garde une page : c'est la qu'on lit pourquoi.
+
+    L'etat annonce est « depasse » et non « annule », bien que la ligne
+    porte desormais le statut annule : les deux histoires ne se racontent
+    pas pareil. « Faute de reglement dans les trente minutes, le creneau a
+    ete remis a disposition » dit ce qui s'est passe et ce qu'on peut faire
+    ensuite ; « ce rendez-vous a ete annule » laisse chercher qui a decide.
+    """
     booking = age(salon_a, booking_for(salon_a), minutes=31)
     with as_tenant(salon_a.tenant):
         release_expired()
+        booking.refresh_from_db()
+        assert booking.status == Booking.Status.CANCELLED
+
+    response = api_client.get(
+        f"/api/v1/public/booking-status?token={status_token(booking)}", headers=HOST
+    )
+
+    assert response.status_code == 200
+    assert response.data["payment"]["state"] == PaymentState.EXPIRED
+    assert response.data["booking"]["cancellation_reason"] == services.MOTIF_EXPIRATION
+
+
+@pytest.mark.django_db
+def test_the_status_page_explains_a_cancellation_by_the_salon(api_client, salon_a):
+    """L'autre histoire : quelqu'un a decide, et la page le dit autrement."""
+    booking = booking_for(salon_a)
+    with as_tenant(salon_a.tenant):
+        booking.status = Booking.Status.CANCELLED
+        booking.cancellation_reason = "Le salon est fermé ce jour-là"
+        booking.save(update_fields=["status", "cancellation_reason"])
 
     response = api_client.get(
         f"/api/v1/public/booking-status?token={status_token(booking)}", headers=HOST
@@ -275,7 +302,10 @@ def test_the_status_page_explains_a_cancellation(api_client, salon_a):
 
     assert response.status_code == 200
     assert response.data["payment"]["state"] == PaymentState.CANCELLED
-    assert response.data["booking"]["cancellation_reason"]
+    assert (
+        response.data["booking"]["cancellation_reason"]
+        == "Le salon est fermé ce jour-là"
+    )
 
 
 @pytest.mark.django_db
@@ -393,3 +423,100 @@ def test_an_unspecified_payment_method_is_left_unsaid(api_client, salon_a):
     )
 
     assert response.data["payment"]["deposit_method"] == ""
+
+
+# ---------------------------------------------------------------------------
+# L'echeance se solde a la lecture, pas seulement au balayage
+# ---------------------------------------------------------------------------
+#
+# La transition ne vivait que dans la tache Celery. Tant qu'elle tourne,
+# l'ecart entre « l'ecran dit depasse » et « la base dit en attente » se
+# compte en minutes. Des qu'elle ne tourne pas - poste sans worker, file
+# bloquee -, l'ecart n'a plus de fin : l'espace cliente continue d'inviter a
+# payer, et le bouton mene a « le delai est depasse ». On ouvre une porte et
+# on la referme au nez.
+
+
+@pytest.mark.django_db
+def test_opening_the_payment_page_settles_an_expired_booking(api_client, salon_a):
+    """Lire la page suffit : elle ne se contente plus de l'afficher."""
+    booking = age(salon_a, booking_for(salon_a), minutes=31)
+
+    reponse = api_client.get(
+        f"/api/v1/public/payment?token={payment_token(booking)}", headers=HOST
+    )
+
+    assert reponse.status_code == 200
+    assert reponse.data["state"] == PaymentState.EXPIRED
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    assert booking.status == Booking.Status.CANCELLED
+    assert booking.cancellation_reason == services.MOTIF_EXPIRATION
+    assert booking.cancelled_at is not None
+
+
+@pytest.mark.django_db
+def test_opening_the_status_page_settles_it_too(api_client, salon_a):
+    booking = age(salon_a, booking_for(salon_a), minutes=31)
+
+    reponse = api_client.get(
+        f"/api/v1/public/booking-status?token={status_token(booking)}", headers=HOST
+    )
+
+    assert reponse.status_code == 200
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    assert booking.status == Booking.Status.CANCELLED
+
+
+@pytest.mark.django_db
+def test_reading_a_live_booking_changes_nothing(api_client, salon_a):
+    """Le garde-fou de la lecture qui ecrit : elle ne touche que l'echu."""
+    booking = age(salon_a, booking_for(salon_a), minutes=29)
+
+    reponse = api_client.get(
+        f"/api/v1/public/payment?token={payment_token(booking)}", headers=HOST
+    )
+
+    assert reponse.data["state"] == PaymentState.PAYABLE
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    assert booking.status == Booking.Status.PENDING_PAYMENT
+
+
+@pytest.mark.django_db
+def test_a_sent_proof_survives_a_read(api_client, salon_a):
+    """Une capture envoyee suspend le compte a rebours, lecture comprise.
+
+    C'est la regle la plus importante de cette fonction : reprendre son
+    creneau a une cliente qui a peut-etre reellement paye serait injuste, et
+    l'erreur serait invisible - elle n'apprendrait l'annulation qu'en se
+    presentant.
+    """
+    booking = age(salon_a, booking_for(salon_a), minutes=120)
+    with as_tenant(salon_a.tenant):
+        services.submit_proof(booking=booking, channel="wechat")
+
+    api_client.get(
+        f"/api/v1/public/payment?token={payment_token(booking)}", headers=HOST
+    )
+
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    # `submit_proof` l'a deja fait passer en « demandee » : ce qui compte
+    # ici est qu'il n'ait pas ete annule, deux heures apres l'echeance.
+    assert booking.status == Booking.Status.REQUESTED
+    assert booking.cancellation_reason == ""
+
+
+@pytest.mark.django_db
+def test_settling_twice_stays_settled(salon_a):
+    """Idempotence : deux lectures ne produisent pas deux annulations."""
+    booking = age(salon_a, booking_for(salon_a), minutes=31)
+
+    with as_tenant(salon_a.tenant):
+        assert services.expirer(booking) is True
+        premier = booking.cancelled_at
+        assert services.expirer(booking) is False
+        booking.refresh_from_db()
+        assert booking.cancelled_at == premier

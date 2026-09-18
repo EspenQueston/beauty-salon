@@ -994,6 +994,21 @@ function BookingCard({
         </span>
       </div>
 
+      {/*
+        Le motif, sous l'étiquette.
+
+        « Annulé » tout court fait chercher : on se demande si on a annulé
+        soi-même, si le salon a fermé, ou si l'acompte est arrivé trop tard.
+        Le salon écrit ce motif à chaque annulation ; il ne remontait
+        simplement pas jusqu'ici.
+      */}
+      {booking.status === "cancelled" && booking.cancellation_reason && (
+        <p className="mt-2 flex items-start gap-1.5 text-sm text-[var(--site-muted)]">
+          <SalonIcon name="clock" className="mt-0.5 size-3.5 shrink-0" />
+          <span>{booking.cancellation_reason}</span>
+        </p>
+      )}
+
       <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--site-muted)]">
         <a
           href={salonUrl}

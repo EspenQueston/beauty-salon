@@ -51,6 +51,14 @@ from .models import DepositProof, PaymentChannel
 # c'est pour cela que `release_expired` exige `deposit_proof__isnull=True`.
 PAYMENT_WINDOW = timedelta(minutes=30)
 
+# Le motif inscrit sur un rendez-vous que l'echeance a annule.
+#
+# Une constante et non deux chaines : `expirer` l'ecrit, `payment_state` le
+# relit pour distinguer l'echeance d'une annulation decidee par quelqu'un.
+# Deux libelles qui divergeraient d'un accent feraient afficher le mauvais
+# ecran, et rien ne le signalerait.
+MOTIF_EXPIRATION = "Acompte non réglé dans le délai"
+
 
 # Les etats visibles de la page de reglement. Une seule valeur a lire cote
 # navigateur, plutot que quatre booleens qu'il faudrait recombiner - et
@@ -86,6 +94,20 @@ def payment_state(booking, now=None) -> str:
     now = now or timezone.now()
 
     if booking.status == Booking.Status.CANCELLED:
+        # « Annule » et « delai depasse » sont deux histoires differentes.
+        #
+        # Depuis que l'echeance annule pour de bon, un rendez-vous expire est
+        # aussi un rendez-vous annule - et la page allait donc afficher le
+        # message generique. C'eut ete une perte : « faute de reglement dans
+        # les trente minutes, le creneau a ete remis a disposition, rien ne
+        # vous a ete debite » dit ce qui s'est passe et ce qu'on peut faire
+        # ensuite, la ou « ce rendez-vous a ete annule » laisse chercher.
+        #
+        # On compare au motif ecrit par `expirer`, des deux cotes la meme
+        # constante : c'est la seule facon de distinguer l'echeance d'une
+        # annulation decidee par le salon ou par la cliente.
+        if booking.cancellation_reason == MOTIF_EXPIRATION:
+            return PaymentState.EXPIRED
         return PaymentState.CANCELLED
 
     if booking.deposit_paid or booking.status in (
@@ -293,6 +315,69 @@ def reject_proof(*, booking, actor, reason: str = "") -> DepositProof:
     return proof
 
 
+
+
+def expirer(booking, now=None) -> bool:
+    """Annule ce rendez-vous si son delai de reglement est passe.
+
+    Renvoie True quand la transition a eu lieu. Idempotente : rappelee sur
+    un rendez-vous deja annule, deja paye, ou dont la preuve est arrivee,
+    elle ne fait rien.
+
+    -----------------------------------------------------------------------
+    Pourquoi cette regle doit pouvoir s'appliquer a la lecture
+    -----------------------------------------------------------------------
+
+    Elle ne vivait que dans le balayage Celery, toutes les cinq minutes. Le
+    reste du produit se contentait de *calculer* l'etat a l'affichage - la
+    page de reglement disait « delai depasse » a la seconde pres, sans rien
+    changer en base.
+
+    Tant que le balayage tourne, l'ecart se compte en minutes et personne ne
+    le voit. Des qu'il ne tourne pas - poste de developpement sans worker,
+    file bloquee, redemarrage rate -, l'ecart n'a plus de fin : le
+    rendez-vous reste « en attente de paiement » pour toujours. L'espace
+    cliente continue d'afficher « Un acompte reste a regler » et son bouton
+    mene a « le delai est depasse ». On invite quelqu'un a payer, et on lui
+    ferme la porte au nez.
+
+    Trois rendez-vous etaient dans cet etat sur cette base, dont un depuis
+    vingt-deux heures.
+
+    La transition est donc declenchee aussi la ou l'etat est lu. Ecrire
+    pendant une lecture ne se fait pas a la legere : c'est acceptable ici
+    parce que l'ecriture est idempotente, bornee aux rendez-vous deja
+    echus, et qu'elle applique exactement la meme regle que le balayage -
+    celui-ci reste la voie normale, et la seule qui libere un creneau quand
+    plus personne ne regarde la page.
+    """
+    now = now or timezone.now()
+
+    if booking.status != Booking.Status.PENDING_PAYMENT:
+        return False
+    # Une preuve deja envoyee suspend le compte a rebours : le rendez-vous
+    # n'attend plus la cliente, il attend le salon.
+    if getattr(booking, "deposit_proof", None) is not None:
+        return False
+
+    deadline = booking.created_at + PAYMENT_WINDOW
+    if now < deadline:
+        return False
+
+    booking.status = Booking.Status.CANCELLED
+    booking.cancelled_at = now
+    booking.cancellation_reason = MOTIF_EXPIRATION
+    booking.save(
+        update_fields=["status", "cancelled_at", "cancellation_reason", "updated_at"]
+    )
+
+    # Les articles reserves retournent en rayon.
+    from apps.store.services import give_back_stock
+
+    give_back_stock(booking)
+    return True
+
+
 def release_expired(now=None) -> int:
     """Rend les creneaux que personne n'a payes.
 
@@ -300,6 +385,11 @@ def release_expired(now=None) -> int:
     quatre heures pour toujours. Seuls les rendez-vous restes **sans aucune
     preuve** expirent : une cliente qui a envoye sa capture attend le salon,
     pas l'inverse, et lui reprendre son creneau serait injuste.
+
+    La transition elle-meme vit dans `expirer` : c'est la meme, qu'elle soit
+    declenchee par ce balayage ou par la lecture d'une page. Deux copies de
+    cette regle finiraient par diverger, et la divergence porterait sur
+    « ce rendez-vous existe-t-il encore ».
     """
     now = now or timezone.now()
     deadline = now - PAYMENT_WINDOW
@@ -310,24 +400,4 @@ def release_expired(now=None) -> int:
         deposit_proof__isnull=True,
     )
 
-    released = 0
-    for booking in stale:
-        booking.status = Booking.Status.CANCELLED
-        booking.cancelled_at = now
-        booking.cancellation_reason = "Acompte non réglé dans le délai"
-        booking.save(
-            update_fields=[
-                "status",
-                "cancelled_at",
-                "cancellation_reason",
-                "updated_at",
-            ]
-        )
-
-        # Les articles reserves retournent en rayon.
-        from apps.store.services import give_back_stock
-
-        give_back_stock(booking)
-        released += 1
-
-    return released
+    return sum(1 for booking in stale if expirer(booking, now))

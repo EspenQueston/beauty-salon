@@ -95,6 +95,15 @@ class PublicPaymentView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # Ouvrir cette page apres l'echeance solde le rendez-vous.
+        #
+        # L'ecran affichait « le delai est depasse » depuis un etat calcule,
+        # sans rien inscrire : le rendez-vous restait « en attente de
+        # paiement » jusqu'au prochain balayage Celery - donc indefiniment
+        # sur un poste sans worker. La cliente lisait « depasse » ici et
+        # « un acompte reste a regler » dans son espace, au meme instant.
+        services.expirer(booking)
+
         channels = services.channels_for(request.tenant_id)
         proof = getattr(booking, "deposit_proof", None)
 
@@ -199,6 +208,11 @@ class PublicBookingStatusView(APIView):
                 {"detail": "Ce lien n'est plus valable.", "code": "invalid_token"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        # Meme regle que sur la page de reglement : consulter le suivi d'un
+        # rendez-vous echu le solde, plutot que de le laisser afficher un
+        # etat que la base contredit.
+        services.expirer(booking)
 
         state = services.payment_state(booking)
         proof = getattr(booking, "deposit_proof", None)

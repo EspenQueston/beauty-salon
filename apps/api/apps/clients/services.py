@@ -36,6 +36,7 @@ def bookings_for(user) -> list[dict]:
     forme d'instances Django inviterait a declencher, plus tard, une requete
     paresseuse hors du bon contexte.
     """
+    from apps.payments.services import expirer
     from apps.payments.tokens import (
         checkin_code,
         checkin_token,
@@ -82,6 +83,20 @@ def bookings_for(user) -> list[dict]:
                 for booking in bookings:
                     if booking.id in hidden:
                         continue
+
+                    # Un delai de reglement passe se solde ici aussi.
+                    #
+                    # L'espace cliente affichait « Un acompte reste a regler »
+                    # avec un bouton qui menait a « le delai est depasse » :
+                    # on invitait a payer, puis on fermait la porte. La cause
+                    # etait que la transition n'existait que dans le balayage
+                    # Celery, et qu'un poste sans worker la laissait en
+                    # suspens indefiniment.
+                    #
+                    # `expirer` ne touche que ce qui est deja echu et sans
+                    # preuve ; sur tout le reste elle ne fait rien.
+                    expirer(booking)
+
                     rows.append(
                         {
                             "id": str(booking.id),
@@ -100,6 +115,7 @@ def bookings_for(user) -> list[dict]:
                             "options_snapshot": booking.options_snapshot,
                             "travel_zone_name": booking.travel_zone_name,
                             "address": booking.address,
+                            "cancellation_reason": booking.cancellation_reason,
                             # Laissez-passer vers la page de paiement, pour
                             # les seuls rendez-vous qui attendent un acompte.
                             # Sans lui, une cliente qui a ferme l'onglet de

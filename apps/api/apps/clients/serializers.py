@@ -123,3 +123,10 @@ class ClientBookingSerializer(serializers.Serializer):
     status_token = serializers.CharField()
     can_forget = serializers.BooleanField()
     address = serializers.CharField()
+    # Pourquoi ce rendez-vous n'aura pas lieu.
+    #
+    # « Annulé » sans motif fait chercher : la cliente se demande si elle a
+    # annulé elle-même, si le salon a fermé, ou si son acompte est arrivé
+    # trop tard. Le motif est déjà écrit en base à chaque annulation — il ne
+    # manquait qu'ici, et l'écran affichait donc une étiquette muette.
+    cancellation_reason = serializers.CharField(allow_blank=True)

@@ -445,3 +445,98 @@ def test_every_booking_carries_a_link_to_its_own_status_page(api_client, salon_a
     )
     assert detail.status_code == 200
     assert detail.data["booking"]["service_name"] == rows[0]["service_name"]
+
+
+# ---------------------------------------------------------------------------
+# Un acompte dont le delai est passe
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_an_expired_deposit_stops_asking_to_be_paid(api_client, salon_a):
+    """Le defaut vu a l'ecran : « Un acompte reste a regler », et le bouton
+    menait a « le delai est depasse ».
+
+    Les deux ecrans disaient vrai chacun de son cote. L'espace cliente lisait
+    le statut en base - toujours « en attente de paiement », faute de
+    balayage Celery - pendant que la page de reglement recalculait
+    l'echeance a la seconde. On invitait quelqu'un a payer, puis on lui
+    fermait la porte.
+    """
+    from apps.payments.services import MOTIF_EXPIRATION, PAYMENT_WINDOW
+
+    signup(api_client, HOST_A)
+    user = ClientProfile.objects.get(user__email="awa@example.com").user
+
+    debut = timezone.now() + timedelta(days=3)
+    with as_tenant(salon_a.tenant):
+        reservation = Booking.objects.create(
+            tenant=salon_a.tenant,
+            customer=salon_a.customer,
+            staff_member=salon_a.staff,
+            service=salon_a.service,
+            starts_at=debut,
+            ends_at=debut + timedelta(hours=2),
+            status=Booking.Status.PENDING_PAYMENT,
+            service_name="Box braids",
+            total_amount=Decimal("450"),
+            deposit_amount=Decimal("150"),
+        )
+        # `created_at` est pose automatiquement : on le recule par `update`.
+        Booking.objects.filter(id=reservation.id).update(
+            created_at=timezone.now() - PAYMENT_WINDOW - timedelta(minutes=1)
+        )
+
+    ClientSalonLink.objects.create(
+        user=user, tenant=salon_a.tenant, customer_id=salon_a.customer.id
+    )
+
+    response = api_client.get("/api/v1/public/client/bookings", headers=HOST_A)
+
+    assert response.status_code == 200
+    ligne = next(
+        row for row in response.data["bookings"] if row["id"] == str(reservation.id)
+    )
+    assert ligne["status"] == Booking.Status.CANCELLED
+    # Plus aucun chemin vers le paiement : c'est le bouton de la capture.
+    assert ligne["payment_token"] == ""
+    # Et le motif, pour ne pas laisser chercher ce qui s'est passe.
+    assert ligne["cancellation_reason"] == MOTIF_EXPIRATION
+
+    with as_tenant(salon_a.tenant):
+        reservation.refresh_from_db()
+    assert reservation.status == Booking.Status.CANCELLED
+
+
+@pytest.mark.django_db
+def test_a_deposit_still_within_its_window_keeps_its_button(api_client, salon_a):
+    """Le garde-fou : la lecture n'annule que ce qui est deja echu."""
+    signup(api_client, HOST_A)
+    user = ClientProfile.objects.get(user__email="awa@example.com").user
+
+    debut = timezone.now() + timedelta(days=3)
+    with as_tenant(salon_a.tenant):
+        reservation = Booking.objects.create(
+            tenant=salon_a.tenant,
+            customer=salon_a.customer,
+            staff_member=salon_a.staff,
+            service=salon_a.service,
+            starts_at=debut,
+            ends_at=debut + timedelta(hours=2),
+            status=Booking.Status.PENDING_PAYMENT,
+            service_name="Box braids",
+            total_amount=Decimal("450"),
+            deposit_amount=Decimal("150"),
+        )
+
+    ClientSalonLink.objects.create(
+        user=user, tenant=salon_a.tenant, customer_id=salon_a.customer.id
+    )
+
+    response = api_client.get("/api/v1/public/client/bookings", headers=HOST_A)
+
+    ligne = next(
+        row for row in response.data["bookings"] if row["id"] == str(reservation.id)
+    )
+    assert ligne["status"] == Booking.Status.PENDING_PAYMENT
+    assert ligne["payment_token"] != ""
