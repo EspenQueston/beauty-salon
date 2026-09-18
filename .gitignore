@@ -10,7 +10,17 @@ htmlcov/
 coverage.xml
 
 # Django
-media/
+#
+# `media/` sans barre initiale s'applique a *tout* dossier de ce nom, a
+# n'importe quelle profondeur. Il attrapait donc `apps/api/apps/media/` -
+# l'application Django qui gere les televersements - et ses dix-neuf fichiers
+# source n'ont jamais ete versionnes : un clone neuf ne demarrait pas, et le
+# depot public n'a jamais contenu la vue qui protege les preuves de versement.
+#
+# Le chemin est desormais ancre sur le vrai MEDIA_ROOT, et sur lui seul. Les
+# `tenants/<id>/media/` qu'il contient restent couverts, puisqu'ils sont
+# dessous.
+/apps/api/media/
 staticfiles/
 *.log
 
