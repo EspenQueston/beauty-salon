@@ -72,6 +72,77 @@ async function lireTaux(vers: string): Promise<number> {
   return valeur;
 }
 
+/**
+ * Ce qu'une visiteuse a demandé à lire, et contre quoi.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi `base` existe
+ * ---------------------------------------------------------------------------
+ *
+ * Un choix de lecture n'a de sens que relativement à la devise du salon au
+ * moment où il est fait. « Montre-moi ça en dollars » veut dire « convertis
+ * ces prix en yuans vers des dollars ».
+ *
+ * Le jour où le salon passe en francs CFA, ce choix ne désigne plus la même
+ * chose — et c'est le salon qui a raison : c'est lui qui facture. Sans
+ * `base`, la préférence d'une visiteuse survivait au changement et lui
+ * cachait la devise réelle du salon, indéfiniment, sur tous ses écrans.
+ *
+ * On enregistre donc les deux, et un désaccord efface la préférence.
+ */
+interface Preference {
+  /** La devise que la visiteuse lit. */
+  lue: string;
+  /** La devise du salon au moment du choix. */
+  base: string;
+}
+
+function lirePreference(cle: string, devise: string): string {
+  let brut: string | null = null;
+  try {
+    brut = localStorage.getItem(cle);
+  } catch {
+    // Stockage refusé (navigation privée) : pas de préférence, donc la
+    // devise du salon — le comportement voulu par défaut.
+    return devise;
+  }
+  if (!brut) return devise;
+
+  let preference: Preference | null = null;
+  try {
+    const decode = JSON.parse(brut);
+    if (decode && typeof decode.lue === "string" && typeof decode.base === "string") {
+      preference = decode;
+    }
+  } catch {
+    // Ancien format : une simple chaîne, sans la devise de référence. On ne
+    // peut pas savoir contre quoi le choix a été fait, donc on l'abandonne.
+  }
+
+  if (!preference || preference.base !== devise) {
+    oublierPreference(cle);
+    return devise;
+  }
+  return preference.lue;
+}
+
+function ecrirePreference(cle: string, lue: string, base: string) {
+  try {
+    localStorage.setItem(cle, JSON.stringify({ lue, base } satisfies Preference));
+  } catch {
+    // Sans stockage, le choix ne survit pas au changement de page. Il vaut
+    // mieux que rien.
+  }
+}
+
+function oublierPreference(cle: string) {
+  try {
+    localStorage.removeItem(cle);
+  } catch {
+    // Rien à faire : il n'y avait rien à oublier.
+  }
+}
+
 /** Ce qu'on propose de lire, au-delà de la devise du salon. */
 const PROPOSEES = [
   { code: "XAF", label: "Franc CFA", court: "FCFA" },
@@ -135,13 +206,9 @@ export function DeviseProvider({
   useEffect(() => {
     let perime = false;
 
-    let voulue = devise;
-    try {
-      voulue = localStorage.getItem(cle) || devise;
-    } catch {
-      // Stockage refusé (navigation privée) : on reste sur la devise du
-      // salon, ce qui est le comportement par défaut de toute façon.
-    }
+    // `lirePreference` efface d'elle-même un choix fait contre une autre
+    // devise que celle du salon aujourd'hui : c'est le salon qui décide.
+    const voulue = lirePreference(cle, devise);
     if (voulue === devise) return;
 
     /*
@@ -173,18 +240,17 @@ export function DeviseProvider({
 
   const choisir = useCallback(
     (code: string) => {
-      try {
-        localStorage.setItem(cle, code);
-      } catch {
-        // Sans stockage, le choix ne survit pas au changement de page. Il
-        // vaut mieux que rien.
-      }
-
       if (code === devise) {
+        // Revenir à la devise du salon, c'est renoncer à la préférence.
+        // La garder ferait réapparaître un « ≈ » au prochain changement de
+        // devise du salon, pour un choix que personne n'a refait.
+        oublierPreference(cle);
         setAffichee(devise);
         setTaux(1);
         return;
       }
+
+      ecrirePreference(cle, code, devise);
 
       setOccupe(true);
       lireTaux(code)

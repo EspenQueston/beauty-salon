@@ -18,6 +18,7 @@ from apps.accounts.models import Membership
 from apps.billing.models import Invoice, Plan, Subscription
 from apps.billing.services import mark_invoice_paid
 from apps.finance.models import Transaction
+from apps.finance.services import jour_du_salon
 from apps.platformledger.models import PlatformEntry
 from apps.scheduling.models import Booking
 from conftest import as_tenant, salon_host
@@ -86,7 +87,20 @@ def test_taking_a_deposit_records_the_income_the_same_day(api_client, salon_a):
         )
     assert line.amount == Decimal("150")
     assert line.kind == Transaction.Kind.INCOME
-    assert line.occurred_on == timezone.now().date()
+
+    # La date du salon, pas celle d'UTC.
+    #
+    # Ce test comparait a `timezone.now().date()`. Il passait seize heures
+    # par jour et echouait les huit autres : le salon d'essai vit a
+    # Asia/Shanghai, et entre 16 h et minuit UTC les deux calendriers ne
+    # sont plus le meme jour. La recette, elle, etait correcte - c'est tout
+    # l'objet de `jour_du_salon`, qui evite qu'un salon cherche dans ses
+    # comptes du mardi l'argent gagne le mercredi.
+    #
+    # On compare donc avec la regle du produit, pas avec une seconde
+    # version ecrite ici : deux implementations de la meme regle finissent
+    # toujours par diverger, et celle du test aurait tort.
+    assert line.occurred_on == jour_du_salon(timezone.now(), salon_a.tenant)
 
 
 @pytest.mark.django_db
