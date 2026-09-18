@@ -174,6 +174,17 @@ class Booking(TenantOwnedModel):
     # Instantanes : le catalogue evolue, une reservation passee doit rester
     # lisible telle qu'elle a ete vendue.
     service_name = models.CharField(max_length=150)
+
+    # La devise dans laquelle ce rendez-vous a ete vendu.
+    #
+    # Figee ici, et pas lue sur le salon, pour la meme raison que le nom de
+    # la prestation juste au-dessus : un salon peut changer de devise - il
+    # demenage, ou il s'est trompe a l'inscription. Sans cette colonne, les
+    # 25 000 francs d'une pose de l'an dernier s'afficheraient du jour au
+    # lendemain comme 25 000 yuans, soit quatre-vingt-cinq fois leur valeur.
+    # Le montant, lui, ne serait pas converti : c'est l'etiquette qui
+    # mentirait, ce qui est la pire des deux erreurs.
+    currency = models.CharField(_("devise"), max_length=3, blank=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     deposit_paid = models.BooleanField(_("acompte encaissé"), default=False)
@@ -306,6 +317,25 @@ class Booking(TenantOwnedModel):
                 condition=Q(status__in=list(BLOCKING_BOOKING_STATUSES)),
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        """Fige la devise a la creation, si personne ne l'a posee.
+
+        Au niveau du modele plutot que dans `create_booking` : une
+        reservation s'ecrit aussi depuis l'agenda du salon, depuis une
+        commande de peuplement et, un jour, depuis un import. Chacun de ces
+        chemins aurait pu l'oublier, et l'oubli ne se voit qu'apres coup,
+        quand un salon change de devise et que les lignes sans etiquette
+        basculent avec lui.
+        """
+        if not self.currency:
+            from apps.common.devise import devise_du_salon
+
+            # `tenant_id` peut encore etre vide ici : la classe de base le
+            # remplit depuis le contexte, juste apres. On resout donc la
+            # meme source qu'elle.
+            self.currency = devise_du_salon(self.tenant_id)
+        return super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.service_name} - {self.starts_at:%d/%m/%Y %H:%M}"

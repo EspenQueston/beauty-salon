@@ -43,6 +43,10 @@ class TransactionSerializer(serializers.ModelSerializer):
             "category_label",
             "label",
             "amount",
+            # La devise de l'ecriture, figee le jour ou elle est passee : un
+            # livre de comptes ne se reetiquette pas quand le salon change
+            # de devise.
+            "currency",
             "occurred_on",
             "method",
             "method_label",

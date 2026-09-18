@@ -67,6 +67,7 @@ from apps.store.views import (
     RequirementProductViewSet,
     RequirementViewSet,
 )
+from apps.tenants.views_devise import SalonCurrencyView
 from apps.tenants.views_identity import SalonIdentityView
 
 router = DefaultRouter()
@@ -163,6 +164,10 @@ urlpatterns = [
     # Identite : le nom du salon et les coordonnees de qui le tient.
     # Trois tables, un seul ecran - on vient les changer au meme moment.
     path("salon-identity", SalonIdentityView.as_view(), name="salon-identity"),
+    # La devise du salon, et sa conversion. GET pour l'apercu, POST pour la
+    # bascule : convertir un catalogue ne se fait pas sans avoir vu ce que
+    # devient le prix phare.
+    path("salon-currency", SalonCurrencyView.as_view(), name="salon-currency"),
     # Accueil du tableau de bord. Une seule lecture pour douze chiffres :
     # en six appels, l'ecran s'assemble par morceaux sur un reseau mobile.
     path("overview", OverviewView.as_view(), name="overview"),

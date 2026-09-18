@@ -102,7 +102,11 @@ def bookings_for(user) -> list[dict]:
                             "id": str(booking.id),
                             "salon_name": link.tenant.name,
                             "salon_slug": link.tenant.slug,
-                            "currency": link.tenant.currency,
+                            # Celle du rendez-vous, pas celle du salon
+                            # aujourd'hui : un salon qui change de devise ne
+                            # doit pas reetiqueter ses visites passees.
+                            # `or` pour les lignes anterieures a la colonne.
+                            "currency": booking.currency or link.tenant.currency,
                             "starts_at": booking.starts_at,
                             "ends_at": booking.ends_at,
                             "status": booking.status,

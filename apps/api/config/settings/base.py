@@ -171,6 +171,12 @@ OTP_TOTP_ISSUER = "Beauty Salon"
 # finale est obligatoire, Django construit ses sous-chemins par concatenation.
 ADMIN_PATH = env("ADMIN_PATH", default="admin/")
 
+# Cle de currencyapi.com, pour convertir un catalogue quand un salon change
+# de devise. Vide par defaut : sans elle, le basculement est *refuse* plutot
+# qu'effectue a un taux devine — convertir toute une grille tarifaire avec
+# dix pour cent d'erreur ne se rattrape pas.
+CURRENCY_API_KEY = env("CURRENCY_API_KEY", default="")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 

@@ -28,6 +28,7 @@ import { useToast } from "@/features/ui/Toast";
 import { Icon } from "./icons";
 import { ContrastMeter } from "./ContrastMeter";
 import { MediaPicker, type PickableMedia } from "./MediaPicker";
+import { CurrencySwitch } from "./CurrencySwitch";
 import { PaymentChannels } from "./PaymentChannels";
 import { TravelZones } from "./TravelZones";
 import { rows, useResource, type Page } from "./useResource";
@@ -79,6 +80,7 @@ const PROFILE_SECTIONS: NavSection[] = [
   { id: "regles", label: "Réservation" },
   { id: "deplacement", label: "Déplacement" },
   { id: "acompte", label: "Acompte" },
+  { id: "devise", label: "Devise" },
   { id: "encaissement", label: "Encaissement" },
   { id: "annulation", label: "Annulation" },
   { id: "retard", label: "Retard" },
@@ -825,6 +827,13 @@ export function SalonProfileScreen() {
         {/* Les acomptes se règlent avant la venue : l'écran vit à côté de
             la politique d'annulation, qui répond à la même question — que
             se passe-t-il si la cliente ne vient pas. */}
+        {/* ------------------------------------------------------------ devise */}
+        <CurrencySwitch
+          tenantId={tenantId}
+          canEdit={canEdit}
+          onChanged={media.reload}
+        />
+
         <PaymentChannels
           tenantId={tenantId}
           canEdit={canEdit}

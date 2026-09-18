@@ -97,6 +97,16 @@ class Transaction(TenantOwnedModel):
         # Toujours positif : c'est `kind` qui porte le sens.
         validators=[MinValueValidator(Decimal("0.01"))],
     )
+
+    # La devise de cette ecriture, figee le jour ou elle est passee.
+    #
+    # Un livre de comptes ne se reetiquette pas. Si un salon change de devise
+    # - il demenage, ou il s'est trompe a l'inscription -, ses mouvements
+    # passes restent ce qu'ils ont ete : 25 000 francs encaisses en mars ne
+    # deviennent pas 25 000 yuans en avril. Sans cette colonne, l'ecran
+    # Finances aurait affiche l'ancien montant sous le nouveau symbole, et
+    # le total de l'annee n'aurait plus voulu rien dire.
+    currency = models.CharField(_("devise"), max_length=3, blank=True)
     occurred_on = models.DateField(_("date"))
     method = models.CharField(
         _("moyen"), max_length=20, choices=Method.choices, default=Method.CASH
@@ -176,6 +186,21 @@ class Transaction(TenantOwnedModel):
                 name="one_transaction_per_invoice",
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        """Fige la devise a l'ecriture, si personne ne l'a posee.
+
+        Au niveau du modele : les mouvements naissent de cinq endroits — un
+        acompte encaisse, un solde constate, une vente au comptoir, un
+        forfait de deplacement, une saisie a la main —, et il suffit qu'un
+        seul oublie l'etiquette pour que sa ligne suive le salon au prochain
+        changement de devise.
+        """
+        if not self.currency:
+            from apps.common.devise import devise_du_salon
+
+            self.currency = devise_du_salon(self.tenant_id)
+        return super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.get_kind_display()} — {self.label} ({self.amount})"
