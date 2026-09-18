@@ -167,7 +167,13 @@ export default async function InfosPage({ params }: Props) {
         </Reveal>
 
           <Reveal delay={nextDelay()} className="lg:col-span-2">
-            <ShareCard host={host} salonName={salon.name} socials={socials} />
+            <ShareCard
+              host={host}
+              salonName={salon.name}
+              socials={socials}
+              wechatId={salon.wechat_id}
+              wechatQr={salon.wechat_qr}
+            />
           </Reveal>
         </div>
       </main>

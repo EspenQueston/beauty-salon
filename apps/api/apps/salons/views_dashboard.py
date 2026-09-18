@@ -48,6 +48,8 @@ class SalonProfileSerializer(serializers.ModelSerializer):
             "phone",
             "whatsapp_number",
             "social_links",
+            "wechat_id",
+            "wechat_qr",
             "theme_config",
             "logo",
             "banner",

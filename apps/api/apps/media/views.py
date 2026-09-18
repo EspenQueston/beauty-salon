@@ -14,6 +14,7 @@ from .fetch import RemoteMediaError, fetch_remote_media
 from .models import MediaAsset
 from .serializers import MediaAssetSerializer
 
+
 class RemoteMediaSerializer(serializers.Serializer):
     url = serializers.URLField(max_length=2000)
     kind = serializers.ChoiceField(

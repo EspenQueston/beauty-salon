@@ -138,6 +138,10 @@ export interface PublicSalon {
   phone: string;
   whatsapp_number: string;
   social_links: Record<string, string>;
+  /** L.identifiant WeChat du salon. Vide tant qu.il ne l.a pas renseigné. */
+  wechat_id: string;
+  /** Le QR qui ajoute le salon en contact WeChat. */
+  wechat_qr: MediaAsset | null;
   theme_config: ThemeConfig;
   /** Page « À propos », rédigée par le salon. Vide tant qu'il n'a rien écrit. */
   about_title: string;

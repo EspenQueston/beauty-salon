@@ -75,6 +75,7 @@ Tout passe par `get_or_create` : la commande se relance sans rien écraser.
 
 from datetime import datetime, time, timedelta
 from decimal import Decimal
+from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -166,6 +167,10 @@ FATY_IDENTITE = {
         "facebook": "https://www.facebook.com/byfaty.demo",
         "wechat": "https://weixin.qq.com/",
     },
+    # L'identifiant WeChat. Le QR qui l'accompagne est fabrique plus bas
+    # plutot que telecharge : un vrai QR de contact WeChat pointe vers un
+    # vrai compte, et on n'en invente pas.
+    "wechat_id": "byfaty-demo-gz",
     "cancellation_policy": (
         "Prévenez-nous au moins 24 h avant et l'acompte est reporté sur votre "
         "prochain rendez-vous. En deçà, il reste acquis au salon : le créneau "
@@ -421,6 +426,8 @@ class Command(BaseCommand):
                         clientes = self._clientes(tenant, FATY_CLIENTES)
                         self._rendezvous(tenant, FATY_RENDEZVOUS, clientes)
                         self._avis(tenant, FATY_AVIS)
+
+                    self._qr_wechat(tenant, FATY_IDENTITE["wechat_id"])
                 elif not options["portraits"]:
                     self.stdout.write(
                         f"{INFO} vitrine déjà écrite à la main : portraits seuls"
@@ -499,6 +506,39 @@ class Command(BaseCommand):
                 f"{INFO} {sans} prestataire(s) encore sans photo : "
                 "la fiche affiche l'initiale, c'est prévu"
             )
+
+    def _qr_wechat(self, tenant, identifiant: str):
+        """Fabrique le QR de contact au lieu de le telecharger.
+
+        Un vrai QR WeChat encode un vrai compte : en publier un pris ailleurs
+        ferait ajouter un inconnu par les visiteuses du salon de
+        demonstration. Celui-ci encode l'adresse de son propre mini-site —
+        un code valide, scannable, et qui ne mene chez personne.
+        """
+        import qrcode
+
+        profil = SalonProfile.objects.get(tenant=tenant)
+        if profil.wechat_qr_id is not None:
+            self.stdout.write(f"{INFO} QR WeChat deja en place")
+            return
+
+        legende = f"QR WeChat — {tenant.name}"
+        image = qrcode.make(f"https://{tenant.slug}.localhost:3100")
+        tampon = BytesIO()
+        image.save(tampon, format="PNG")
+        tampon.seek(0)
+
+        code = MediaAsset.objects.create(
+            tenant=tenant,
+            file=ContentFile(tampon.read(), name="qr-wechat.png"),
+            content_type="image/png",
+            byte_size=tampon.tell(),
+            kind=MediaAsset.Kind.WECHAT,
+            alt_text=legende,
+        )
+        profil.wechat_qr = code
+        profil.save(update_fields=["wechat_qr", "updated_at"])
+        self.stdout.write(f"{OK} QR WeChat (identifiant : {identifiant})")
 
     def _galerie(self, tenant, planches):
         pose = 0

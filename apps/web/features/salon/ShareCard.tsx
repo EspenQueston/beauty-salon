@@ -27,11 +27,27 @@
  * Les comptes du salon complètent la rangée quand il en a déclaré : ils
  * mènent au même geste — ouvrir le salon ailleurs — et leurs libellés
  * suffisent à les distinguer sans qu'on ait à les isoler.
+ *
+ * ---------------------------------------------------------------------------
+ * Sauf WeChat
+ * ---------------------------------------------------------------------------
+ *
+ * Lui ne s'ouvre pas par une adresse : on rejoint quelqu'un en scannant son
+ * QR, ou en tapant son identifiant dans la barre de recherche. Rangé parmi
+ * les autres, le bouton « WeChat » menait donc à une page d'accueil
+ * générique — une promesse non tenue, exactement ce que le reste de ce
+ * fichier s'applique à éviter.
+ *
+ * Il ouvre maintenant un panneau qui montre **les deux ensemble**. Ce n'est
+ * pas de la redondance : le QR sert à qui lit la page sur un ordinateur ou
+ * une affichette, l'identifiant à qui la lit *dans* WeChat, où l'on ne peut
+ * pas scanner son propre écran. Chacun couvre l'angle mort de l'autre.
  */
 
 import { useState, useSyncExternalStore } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
+import type { MediaAsset } from "@/lib/types";
 import { SalonIcon } from "./icons";
 import type { ContactLink } from "./contact";
 
@@ -52,13 +68,21 @@ export function ShareCard({
   host,
   salonName,
   socials = [],
+  wechatId = "",
+  wechatQr = null,
 }: {
   host: string;
   salonName: string;
   /** Comptes renseignés par le salon. Vide s'il n'en a déclaré aucun. */
   socials?: ContactLink[];
+  /** L'identifiant WeChat du salon, tel qu'on le tape pour le chercher. */
+  wechatId?: string;
+  /** Le QR qui ajoute le salon en contact. */
+  wechatQr?: MediaAsset | null;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const [wechatOuvert, setWechatOuvert] = useState(false);
   const canShare = useSyncExternalStore(
     NEVER_CHANGES,
     readShareSupport,
@@ -67,6 +91,17 @@ export function ShareCard({
 
   const url = `https://${host}`;
   const message = `Prenez rendez-vous chez ${salonName} : ${url}`;
+
+  /*
+    Le compte WeChat renseigné à l'ancienne, s'il l'est encore.
+
+    Un salon qui avait collé une adresse dans « Réseaux sociaux » ne doit pas
+    voir son lien disparaître le jour où l'on ajoute mieux : il reste, à
+    l'intérieur du panneau.
+  */
+  const lienWechat = socials.find((social) => social.key === "wechat");
+  const autresReseaux = socials.filter((social) => social.key !== "wechat");
+  const aWechat = Boolean(wechatId.trim() || wechatQr || lienWechat);
 
   async function copy() {
     try {
@@ -77,6 +112,17 @@ export function ShareCard({
       // Presse-papier refusé (contexte non sécurisé, permission) : le lien
       // reste affiché en clair juste au-dessus, rien n'est perdu.
       setCopied(false);
+    }
+  }
+
+  async function copierIdentifiant() {
+    try {
+      await navigator.clipboard.writeText(wechatId.trim());
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2200);
+    } catch {
+      // L'identifiant reste affiché en clair : il se recopie à la main.
+      setCopiedId(false);
     }
   }
 
@@ -152,7 +198,7 @@ export function ShareCard({
               seconde rangee coupait la ligne du regard pour une distinction
               que les libelles portent deja tout seuls.
             */}
-            {socials.map((social) => (
+            {autresReseaux.map((social) => (
               <a
                 key={social.key}
                 href={social.href}
@@ -167,8 +213,148 @@ export function ShareCard({
                 {social.label}
               </a>
             ))}
+
+            {aWechat && (
+              <button
+                type="button"
+                onClick={() => setWechatOuvert((ouvert) => !ouvert)}
+                aria-expanded={wechatOuvert}
+                aria-controls="panneau-wechat"
+                className={`${ACTION} group ${
+                  wechatOuvert ? "border-[var(--salon-primary)]" : ""
+                }`}
+              >
+                <SalonIcon
+                  name="wechat"
+                  className="size-4 text-[var(--salon-ink)] transition-transform duration-300 group-hover:scale-110"
+                />
+                WeChat
+                <SalonIcon
+                  name="arrow"
+                  aria-hidden
+                  className={`size-3.5 opacity-50 transition-transform duration-300 ${
+                    wechatOuvert ? "-rotate-90" : "rotate-90"
+                  }`}
+                />
+              </button>
+            )}
           </div>
+
+          {aWechat && wechatOuvert && (
+            <PanneauWechat
+              id="panneau-wechat"
+              salonName={salonName}
+              identifiant={wechatId.trim()}
+              qr={wechatQr}
+              lien={lienWechat}
+              copie={copiedId}
+              onCopier={copierIdentifiant}
+            />
+          )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Le QR et l'identifiant, ensemble.
+ *
+ * Il se déplie sous la rangée plutôt que dans une fenêtre modale : il n'y a
+ * rien à décider ici, seulement quelque chose à lire. Une modale aurait
+ * demandé un piège de focus et un bouton pour refermer, pour un contenu de
+ * trois lignes qu'on regarde puis qu'on quitte.
+ */
+function PanneauWechat({
+  id,
+  salonName,
+  identifiant,
+  qr,
+  lien,
+  copie,
+  onCopier,
+}: {
+  id: string;
+  salonName: string;
+  identifiant: string;
+  qr: MediaAsset | null;
+  lien?: ContactLink;
+  copie: boolean;
+  onCopier: () => void;
+}) {
+  return (
+    <div
+      id={id}
+      className="mt-4 flex flex-col gap-4 rounded-xl border border-[var(--site-line)] bg-[var(--salon-primary)]/[0.04] p-4 text-left sm:flex-row sm:items-center"
+    >
+      {qr && (
+        /*
+          Fond blanc quel que soit le thème, comme le QR du lien juste
+          au-dessus : un code inversé n'est plus lisible par la moitié des
+          téléphones, et le mini-site passe en sombre chez qui le demande.
+        */
+        <div className="mx-auto w-fit shrink-0 rounded-xl bg-white p-2.5 ring-1 ring-[var(--site-line)] sm:mx-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={qr.url}
+            alt={`QR code WeChat de ${salonName}`}
+            /*
+              Chargée tout de suite, pas en différé.
+
+              Le panneau n'existe qu'une fois le bouton pressé : l'image est
+              donc demandée au moment précis où elle apparaît. En « lazy »,
+              le navigateur la mettait en file d'attente et le cadre restait
+              vide une seconde — juste après le seul geste dont le but était
+              de la voir.
+            */
+            loading="eager"
+            className="size-32 object-contain"
+          />
+        </div>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-[var(--site-ink)]">
+          {qr
+            ? "Scannez le code dans WeChat"
+            : `Cherchez ${salonName} dans WeChat`}
+        </p>
+        <p className="mt-1 text-[0.8rem] leading-relaxed text-[var(--site-muted)]">
+          {qr
+            ? "Découvrir › Scanner. Depuis votre téléphone, recopiez plutôt l’identifiant."
+            : "Ouvrez la recherche et collez l’identifiant ci-dessous."}
+        </p>
+
+        {identifiant && (
+          <button
+            type="button"
+            onClick={onCopier}
+            aria-live="polite"
+            className="mt-3 inline-flex max-w-full items-center gap-2 rounded-lg border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-2 text-sm transition hover:border-[var(--salon-primary)]"
+          >
+            <SalonIcon
+              name={copie ? "check" : "sparkle"}
+              className="size-4 shrink-0 text-[var(--salon-ink)]"
+            />
+            <span className="truncate font-medium text-[var(--site-ink)]">
+              {identifiant}
+            </span>
+            <span className="shrink-0 text-xs text-[var(--site-subtle)]">
+              {copie ? "copié" : "copier"}
+            </span>
+          </button>
+        )}
+
+        {lien && (
+          <a
+            href={lien.href}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="mt-3 block text-[0.8rem] font-medium text-[var(--salon-ink)] underline-offset-4 hover:underline"
+          >
+            Ouvrir le compte WeChat du salon
+          </a>
+        )}
       </div>
     </div>
   );

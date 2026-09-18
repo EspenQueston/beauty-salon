@@ -157,6 +157,7 @@ class PublicSalonSerializer(serializers.ModelSerializer):
     logo = MediaAssetSerializer(read_only=True)
     banner = MediaAssetSerializer(read_only=True)
     about_image = MediaAssetSerializer(read_only=True)
+    wechat_qr = MediaAssetSerializer(read_only=True)
 
     categories = serializers.SerializerMethodField()
     staff_members = serializers.SerializerMethodField()
@@ -182,6 +183,8 @@ class PublicSalonSerializer(serializers.ModelSerializer):
             "phone",
             "whatsapp_number",
             "social_links",
+            "wechat_id",
+            "wechat_qr",
             "theme_config",
             "about_title",
             "about_content",

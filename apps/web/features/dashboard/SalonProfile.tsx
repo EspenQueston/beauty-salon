@@ -45,6 +45,8 @@ interface Profile {
   phone: string;
   whatsapp_number: string;
   social_links: Record<string, string>;
+  wechat_id: string;
+  wechat_qr: string | null;
   theme_config: { primary?: string; accent?: string; surface?: string };
   about_title: string;
   about_content: string;
@@ -296,6 +298,61 @@ export function SalonProfileScreen() {
                 />
               </Field>
             ))}
+          </div>
+
+          {/*
+            WeChat ne s'ajoute pas par une adresse.
+
+            Les autres réseaux se partagent par un lien qu'on ouvre. WeChat se
+            rejoint en scannant un QR, ou en tapant un identifiant dans la
+            barre de recherche — d'où deux champs à part, sous les liens.
+
+            Les deux, et pas l'un au choix : le QR sert quand la cliente lit
+            la page sur un écran qu'elle peut scanner, l'identifiant quand
+            elle la lit *dans* WeChat, où l'on ne peut pas scanner son propre
+            téléphone. Le mini-site affiche ce que vous remplissez ici.
+          */}
+          <div className="mt-6 border-t border-line pt-5">
+            <h3 className="text-sm font-semibold text-ink">
+              Vous ajouter sur WeChat
+            </h3>
+            <p className="mt-1 text-sm text-muted">
+              Le QR code s&apos;affiche sur votre mini-site avec votre
+              identifiant à côté. Une cliente scanne depuis son ordinateur, ou
+              recopie l&apos;identifiant si elle lit la page depuis WeChat.
+            </p>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Identifiant WeChat"
+                hint="Celui qu'on tape pour vous chercher, pas votre nom affiché."
+              >
+                <input
+                  value={profile.wechat_id ?? ""}
+                  onChange={(event) => set("wechat_id", event.target.value)}
+                  disabled={!canEdit}
+                  placeholder="salon-beaute-gz"
+                  maxLength={64}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+
+            <div className="mt-4">
+              <MediaPicker
+                tenantId={tenantId}
+                assets={rows(media.data)}
+                value={profile.wechat_qr}
+                onChange={(id) => set("wechat_qr", id)}
+                onUploaded={media.reload}
+                label="QR code WeChat"
+                hint="Dans WeChat : Moi › QR code personnel › enregistrer l.image, puis téléversez-la ici."
+                // Un genre à lui : ce code n.est ni une réalisation, ni le QR
+                // de paiement. Les confondre ferait payer une cliente qui
+                // voulait poser une question.
+                kind="wechat"
+              />
+            </div>
           </div>
         </Card>
 

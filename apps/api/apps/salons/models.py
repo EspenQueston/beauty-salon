@@ -73,6 +73,41 @@ class SalonProfile(TenantOwnedModel):
     # {"instagram": "...", "tiktok": "...", "wechat": "...", "facebook": "..."}
     social_links = models.JSONField(default=dict, blank=True)
 
+    # ----- WeChat --------------------------------------------------------
+    #
+    # Pourquoi deux colonnes plutot qu'une entree de plus dans `social_links`
+    # -------------------------------------------------------------------
+    #
+    # Parce que WeChat ne s'ajoute pas par une adresse. Les autres reseaux se
+    # partagent par un lien qu'on ouvre ; WeChat se rejoint en scannant un QR
+    # ou en tapant un identifiant dans la barre de recherche. Ranger l'un des
+    # deux sous une cle « wechat » a cote d'URL Instagram donnerait un bouton
+    # qui ne mene nulle part - et c'est exactement ce qui se passait.
+    #
+    # Les deux sont montres ensemble, jamais l'un a la place de l'autre : le
+    # QR sert quand on lit la page sur un ordinateur ou une affichette, et
+    # l'identifiant sert quand on lit la page *dans* WeChat, ou l'on ne peut
+    # pas scanner son propre ecran.
+    #
+    # A ne pas confondre avec le QR de `PaymentChannel` : celui-la encaisse
+    # un acompte, celui-ci ajoute le salon en contact. Les afficher au meme
+    # endroit ferait payer une cliente qui voulait poser une question.
+    wechat_id = models.CharField(
+        _("identifiant WeChat"),
+        max_length=64,
+        blank=True,
+        help_text=_("Le numero WeChat du salon, tel qu'on le tape pour le chercher."),
+    )
+    wechat_qr = models.ForeignKey(
+        "media.MediaAsset",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name=_("QR code WeChat"),
+        help_text=_("Le code a scanner pour ajouter le salon en contact."),
+    )
+
     # {"primary": "#8B5CF6", "accent": "...", "font": "...", "radius": "..."}
     theme_config = models.JSONField(default=dict, blank=True)
 
