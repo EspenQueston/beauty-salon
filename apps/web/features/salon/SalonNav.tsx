@@ -219,7 +219,7 @@ export function SalonNav({ name, slug, logo, show }: Props) {
                 aria-current={isCurrent(link.href) ? "page" : undefined}
                 className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   isCurrent(link.href)
-                    ? "bg-[var(--salon-accent)] text-[var(--salon-ink)]"
+                    ? "bg-[var(--salon-accent)] text-[var(--salon-ink-accent)]"
                     : "text-[var(--site-ink)] hover:bg-black/[0.03]"
                 }`}
               >

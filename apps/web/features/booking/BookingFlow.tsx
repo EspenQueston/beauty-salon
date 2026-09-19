@@ -805,7 +805,7 @@ function StaffStep({
                   className="size-11 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--salon-accent)] font-semibold text-[var(--salon-ink)]">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--salon-accent)] font-semibold text-[var(--salon-ink-accent)]">
                   {member.name.slice(0, 1).toUpperCase()}
                 </span>
               )}
@@ -1518,7 +1518,7 @@ function Confirmation({
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 text-center">
-      <span className="inline-flex size-14 items-center justify-center rounded-full bg-[var(--salon-accent)] text-[var(--salon-ink)]">
+      <span className="inline-flex size-14 items-center justify-center rounded-full bg-[var(--salon-accent)] text-[var(--salon-ink-accent)]">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-7">
           <path
             d="M20 6 9 17l-5-5"

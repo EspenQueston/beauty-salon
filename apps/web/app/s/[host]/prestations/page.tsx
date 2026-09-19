@@ -86,7 +86,7 @@ export default async function PrestationsPage({ params }: Props) {
                       className="flex size-11 items-center justify-center rounded-2xl"
                       style={{
                         background: "var(--salon-accent)",
-                        color: "var(--salon-ink)",
+                        color: "var(--salon-ink-accent)",
                       }}
                     >
                       <SalonIcon

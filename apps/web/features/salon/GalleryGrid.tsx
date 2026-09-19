@@ -122,7 +122,7 @@ export function GalleryGrid({
                       className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                      <span className="flex size-12 items-center justify-center rounded-full bg-white/90 text-[var(--salon-ink)] shadow-lg transition-transform duration-300 group-hover:scale-110">
+                      <span className="flex size-12 items-center justify-center rounded-full bg-white/90 text-[var(--salon-ink-white)] shadow-lg transition-transform duration-300 group-hover:scale-110">
                         <SalonIcon name="play" className="size-6" filled />
                       </span>
                     </span>

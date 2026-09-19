@@ -157,7 +157,7 @@ function Chapitre({
       <div className={`min-w-0 ${texteADroite ? "lg:order-2" : ""}`}>
         {premier && (
           <Reveal>
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-[var(--salon-accent)] px-3 py-1.5 text-xs font-medium text-[var(--salon-ink)]">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-[var(--salon-accent)] px-3 py-1.5 text-xs font-medium text-[var(--salon-ink-accent)]">
               <SalonIcon name="clock" className="size-3.5" />
               {minutes} min de lecture
             </p>
@@ -265,7 +265,7 @@ function TableauDeChiffres({ chiffres }: { chiffres: Chiffre[] }) {
                 className="flex size-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
                 style={{
                   background: "var(--salon-accent)",
-                  color: "var(--salon-ink)",
+                  color: "var(--salon-ink-accent)",
                 }}
               >
                 <SalonIcon name={chiffre.icon} className="size-4" />

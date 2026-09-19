@@ -167,7 +167,7 @@ export function InverseLink({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--salon-ink)] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--salon-ink-white)] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl ${className}`}
     >
       {icon && <SalonIcon name={icon} className="size-4" />}
       {children}
@@ -225,7 +225,7 @@ export function Pill({
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
         tone === "accent"
-          ? "bg-[var(--salon-accent)] text-[var(--salon-ink)]"
+          ? "bg-[var(--salon-accent)] text-[var(--salon-ink-accent)]"
           : "bg-black/[0.04] text-[var(--site-muted)]"
       }`}
     >
@@ -246,7 +246,7 @@ export function EmptyNote({
 }) {
   return (
     <div className="rounded-2xl border border-dashed border-[var(--site-line)] px-6 py-12 text-center">
-      <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--salon-accent)] text-[var(--salon-ink)]">
+      <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--salon-accent)] text-[var(--salon-ink-accent)]">
         <SalonIcon name={icon} className="size-6" />
       </span>
       <p className="mt-4 font-medium text-[var(--site-ink)]">{title}</p>

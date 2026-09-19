@@ -104,7 +104,7 @@ export default async function RealisationsPage({ params }: Props) {
                   className="flex size-10 shrink-0 items-center justify-center rounded-xl"
                   style={{
                     background: "var(--salon-accent)",
-                    color: "var(--salon-ink)",
+                    color: "var(--salon-ink-accent)",
                   }}
                 >
                   <SalonIcon name="sparkle" className="size-5" />

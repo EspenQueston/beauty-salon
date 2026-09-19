@@ -272,7 +272,7 @@ function Head({ icon, title }: { icon: "pin" | "clock" | "phone" | "calendar"; t
         className="flex size-9 items-center justify-center rounded-xl"
         style={{
           background: "var(--salon-accent)",
-          color: "var(--salon-ink)",
+          color: "var(--salon-ink-accent)",
         }}
       >
         <SalonIcon name={icon} className="size-4.5" />

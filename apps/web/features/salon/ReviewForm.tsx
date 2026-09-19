@@ -181,7 +181,7 @@ export function ReviewForm({
           className="mx-auto flex size-12 items-center justify-center rounded-2xl"
           style={{
             background: "var(--salon-accent)",
-            color: "var(--salon-ink)",
+            color: "var(--salon-ink-accent)",
           }}
         >
           <SalonIcon name="check" className="size-6" />

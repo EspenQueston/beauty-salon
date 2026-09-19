@@ -228,14 +228,54 @@ body {
  * On ne touche pas à `--salon-primary` lui-même : il sert aussi de fond de
  * bouton, où il doit rester saturé. C'est son usage *en texte* qui a besoin
  * d'être éclairci, d'où une variable distincte.
+ *
+ * ---------------------------------------------------------------------------
+ * Trois encres de marque, parce qu'il y a trois sortes de fonds
+ * ---------------------------------------------------------------------------
+ *
+ * `--salon-ink` veut dire « la couleur du salon, lisible sur le fond de la
+ * page ». En mode sombre elle est donc **claire**. Mais deux surfaces restent
+ * claires dans les deux modes :
+ *
+ *   - `--salon-accent` quand le salon a choisi sa couleur secondaire. Elle
+ *     est alors posée en style en ligne sur `.salon-site`, ce qui bat la
+ *     règle ci-dessous qui l'assombrit ;
+ *   - le blanc pur des boutons et des pastilles posées sur une photo.
+ *
+ * Y peindre `--salon-ink` donnait du pâle sur du pâle : la pastille
+ * « Acompte » de blondrose tombait à 1,86:1 en mode sombre, soit un rectangle
+ * vide. D'où deux encres de plus, destinées aux fonds clairs et identiques
+ * dans les deux modes.
+ *
+ * Les valeurs ci-dessous ne sont qu'un **repli**, utilisé quand le salon n'a
+ * pas choisi de couleur secondaire. Dès qu'il en choisit une, `themeToCssVars`
+ * (lib/format.ts) calcule l'encre exacte à partir des deux couleurs réelles et
+ * l'écrase en style en ligne : la teinte du salon n'est alors assombrie que du
+ * strict nécessaire, et seulement si elle en a besoin.
+ *
+ * Le repli, lui, ne connaît pas l'accent : il assombrit à l'aveugle de 22 %,
+ * le moins qui tienne face à l'accent par défaut pour les dix palettes
+ * proposées (4,86:1 au pire, contre 3,34:1 sans correction).
  */
 .salon-site {
   --salon-ink: var(--salon-primary);
+  --salon-ink-accent: color-mix(in srgb, var(--salon-primary) 78%, black);
+  --salon-ink-white: color-mix(in srgb, var(--salon-primary) 78%, black);
 }
 
 .salon-site[data-mode="dark"] {
   --salon-ink: color-mix(in srgb, var(--salon-primary) 45%, white);
   --salon-accent: color-mix(in srgb, var(--salon-primary) 30%, #1c1c22);
+
+  /*
+    Ici l'accent par défaut devient sombre : l'encre doit repartir vers le
+    clair avec lui (6,11:1 au pire sur les dix palettes). Un salon qui a
+    choisi sa couleur secondaire écrase cette ligne en style en ligne, et
+    garde l'encre foncée puisque son accent, lui, reste clair.
+
+    `--salon-ink-white` n'est pas repris : le blanc reste blanc.
+  */
+  --salon-ink-accent: var(--salon-ink);
 }
 
 /* Sur le mini-site, la bordure de survol est celle du salon. */

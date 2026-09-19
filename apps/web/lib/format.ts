@@ -1,3 +1,4 @@
+import { adjustForContrast } from "./contrast";
 import type { PublicService, ThemeConfig } from "./types";
 
 const LOCALE = "fr-FR";
@@ -142,7 +143,50 @@ export function themeToCssVars(theme: ThemeConfig): Record<string, string> {
   if (theme.radius && /^[0-9.]+(px|rem|em)$/.test(theme.radius)) {
     vars["--salon-radius"] = theme.radius;
   }
+
+  /*
+    Les deux encres posées sur un fond clair.
+
+    Elles sont calculées ici, et pas dans la feuille de style, parce qu'ici
+    on connaît les couleurs réelles : on peut mesurer le contraste au lieu
+    de l'estimer. `adjustForContrast` ne fonce la teinte du salon que si
+    elle en a besoin, et seulement du strict nécessaire — sur les dix
+    palettes proposées, sept passent déjà et ressortent inchangées.
+
+    Le repli de `app/globals.css`, lui, assombrit à l'aveugle : il ne voit
+    pas l'accent. Voir le commentaire qui accompagne `--salon-ink-accent`.
+  */
+  const marque = isSafeColor(theme.primary) ? theme.primary! : PRIMAIRE_PAR_DEFAUT;
+  if (isSafeColor(theme.accent)) {
+    vars["--salon-ink-accent"] = encreSurFondClair(marque, theme.accent!);
+  }
+  if (isSafeColor(theme.primary)) {
+    vars["--salon-ink-white"] = encreSurFondClair(marque, "#ffffff");
+  }
+
   return vars;
+}
+
+/**
+ * La couleur de marque par défaut, celle de `--salon-primary` dans
+ * `app/globals.css`. Elle sert de base quand le salon a choisi une couleur
+ * secondaire sans toucher à sa couleur principale.
+ */
+const PRIMAIRE_PAR_DEFAUT = "#b4436c";
+
+/**
+ * La couleur de marque, rendue lisible sur un fond clair donné.
+ *
+ * Le seuil est celui du texte courant (4,5:1) et non celui des icônes (3:1) :
+ * ces deux variables habillent aussi bien la pastille « Acompte » que le
+ * bouton « Réserver maintenant ». Viser le seuil le plus exigeant des deux
+ * évite d'avoir à se demander, à chaque usage, lequel s'applique.
+ *
+ * `adjustForContrast` rend `null` quand le contraste est déjà suffisant : la
+ * couleur du salon passe alors telle quelle, sans être dénaturée.
+ */
+function encreSurFondClair(marque: string, fond: string): string {
+  return adjustForContrast(marque, fond, 4.5) ?? marque;
 }
 
 function isSafeColor(value?: string): boolean {

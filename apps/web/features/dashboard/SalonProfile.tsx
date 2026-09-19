@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { adjustForContrast } from "@/lib/contrast";
 import { dashboardFetch } from "@/lib/dashboard";
 import { formatPrice } from "@/lib/format";
 import { formatDuration } from "@/lib/format";
@@ -214,6 +215,16 @@ export function SalonProfileScreen() {
   const primary = theme.primary ?? DEFAULT_PRIMARY;
   const accent = theme.accent ?? DEFAULT_ACCENT;
   const surface = theme.surface ?? DEFAULT_SURFACE;
+
+  /*
+    L'aperçu doit montrer ce que verra la cliente.
+
+    Sur une pastille, le mini-site ne pose pas la couleur de marque brute :
+    il la fonce juste assez pour rester lisible sur la couleur secondaire
+    (`themeToCssVars`, lib/format.ts). Peindre ici la couleur brute donnait
+    un aperçu plus pâle que le site réel — c'est-à-dire un aperçu qui ment.
+  */
+  const encrePastille = adjustForContrast(primary, accent, 4.5) ?? primary;
 
   return (
     <section>
@@ -497,7 +508,7 @@ export function SalonProfileScreen() {
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <span
                       className="rounded-full px-2.5 py-1 text-xs font-medium"
-                      style={{ background: accent, color: primary }}
+                      style={{ background: accent, color: encrePastille }}
                     >
                       Tresses
                     </span>

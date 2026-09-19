@@ -57,7 +57,7 @@ export function OpeningHours({
                   className="rounded-full px-2 py-0.5 text-[0.7rem] font-medium"
                   style={{
                     background: "var(--salon-accent)",
-                    color: "var(--salon-ink)",
+                    color: "var(--salon-ink-accent)",
                   }}
                 >
                   aujourd&apos;hui

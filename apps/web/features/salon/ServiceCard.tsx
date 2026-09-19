@@ -86,7 +86,7 @@ export function ServiceCard({
             />
             <span
               aria-hidden
-              className="absolute bottom-2 left-2 flex size-8 items-center justify-center rounded-lg bg-white/85 text-[var(--salon-ink)] backdrop-blur"
+              className="absolute bottom-2 left-2 flex size-8 items-center justify-center rounded-lg bg-white/85 text-[var(--salon-ink-white)] backdrop-blur"
             >
               <SalonIcon name={icon} className="size-4" />
             </span>
