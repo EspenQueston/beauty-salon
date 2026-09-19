@@ -6,6 +6,7 @@ import { SalonFooter } from "@/features/salon/SalonFooter";
 import { DeviseProvider } from "@/features/salon/Devise";
 import { SalonNav } from "@/features/salon/SalonNav";
 import { InlineScript } from "@/app/InlineScript";
+import { Installer } from "@/features/ui/Installer";
 import { ScrollTop } from "@/features/ui/ScrollTop";
 import { fetchSalon } from "@/lib/api";
 import { themeToCssVars } from "@/lib/format";
@@ -139,6 +140,11 @@ export default async function SiteLayout({ children, params }: Props) {
           recouvrir sur mobile. */}
       <div data-site-chrome>
         <ScrollTop offset="6.5rem" />
+      </div>
+
+      {/* Proposée à la deuxième visite seulement, et une seule fois. */}
+      <div data-site-chrome>
+        <Installer nom={salon.name} />
       </div>
     </div>
   );

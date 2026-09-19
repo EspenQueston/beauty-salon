@@ -35,7 +35,7 @@ export function BookingBar({ salon }: { salon: PublicSalon }) {
   return (
     <div
       aria-hidden={!visible}
-      className={`fixed inset-x-0 bottom-0 z-30 border-t border-[var(--site-line)] bg-[var(--site-surface)]/95 p-3 backdrop-blur transition-transform duration-300 ${
+      className={`fixed inset-x-0 bottom-0 z-30 border-t border-[var(--site-line)] bg-[var(--site-surface)]/95 p-3 backdrop-blur transition-transform duration-300 marge-basse-sure ${
         visible ? "translate-y-0" : "translate-y-full"
       }`}
     >

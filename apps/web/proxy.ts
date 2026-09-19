@@ -66,7 +66,20 @@ export default function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Tout sauf les fichiers internes de Next et les assets statiques.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    /*
+      Tout sauf les fichiers internes de Next et les assets statiques.
+
+      Trois chemins sont exclus volontairement. Tous doivent être servis **à
+      la racine de l'hôte**, sans réécriture :
+
+        - `manifest.webmanifest` est unique et se façonne lui-même d'après
+          l'en-tête `Host` ; réécrit vers `/s/<hôte>/…`, il n'existerait pas ;
+        - `sw.js` : un service worker ne gouverne que les chemins situés sous
+          le sien. Servi depuis `/s/<hôte>/sw.js`, il ne verrait rien du site ;
+        - `hors-ligne` est la page de secours du service worker. Réécrite, elle
+          répondait 404 sur tous les sous-domaines — c'est-à-dire partout où
+          elle sert.
+    */
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|hors-ligne|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

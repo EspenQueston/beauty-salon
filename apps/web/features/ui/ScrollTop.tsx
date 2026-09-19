@@ -50,7 +50,10 @@ export function ScrollTop({ home = "/", offset = "6.5rem" }: Props) {
   return (
     <div
       aria-hidden={!visible}
-      style={{ bottom: offset }}
+      // La barre « Réserver » a grandi de la marge système : ce bouton, qui
+      // se pose juste au-dessus, doit grandir d'autant. `env()` vaut 0 là où
+      // il n'y a pas d'encoche, donc le décalage d'origine est conservé.
+      style={{ bottom: `calc(${offset} + env(safe-area-inset-bottom))` }}
       className={`fixed right-4 z-30 flex flex-col items-center gap-2 transition-all duration-300 ${
         visible
           ? "translate-y-0 opacity-100"

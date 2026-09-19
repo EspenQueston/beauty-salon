@@ -1264,3 +1264,40 @@ html[data-js] .mots-mot {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Les bords de l'écran, sur un téléphone qui en a
+ * ---------------------------------------------------------------------------
+ *
+ * `viewportFit: "cover"` autorise la page à s'étendre sous l'encoche et sous
+ * la barre d'accueil. C'est ce qu'on veut — deux bandes vides font tout de
+ * suite « site web dans une coquille » — mais tout ce qui est collé à un
+ * bord passe alors *sous* les éléments du système.
+ *
+ * Le cas visible : la barre « Réserver », fixée en bas. Sur un iPhone, son
+ * bouton se retrouvait à demi couvert par l'indicateur d'accueil, et le
+ * pouce touchait la barre système au lieu du bouton. Le défaut ne se voit
+ * pas en développement — un navigateur d'ordinateur renvoie zéro pour
+ * chacune de ces valeurs.
+ *
+ * `max()` plutôt que l'addition : sur un écran sans encoche, `env()` vaut 0
+ * et l'on garde l'espacement d'origine. Sur un écran qui en a, c'est la
+ * marge système qui l'emporte, sans jamais cumuler les deux.
+ */
+.marge-basse-sure {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.decalage-bas-sur {
+  bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+}
+
+/*
+ * Les bords latéraux comptent aussi, en paysage : c'est là que l'encoche
+ * mange une colonne entière.
+ */
+.salon-site,
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
