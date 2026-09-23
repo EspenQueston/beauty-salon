@@ -12,6 +12,7 @@ from apps.media.reserved import duplicate_media_ids, reserved_media_ids
 from apps.scheduling.models import BusinessHours
 from apps.staff.models import StaffMember, StaffService
 from apps.tenants.models import Tenant
+from apps.translations.langue import table_pour
 
 from .models import SalonProfile, TravelZone
 from .serializers import PublicSalonSerializer
@@ -167,6 +168,13 @@ class PublicSalonView(APIView):
                 TravelZone.objects.filter(active=True).order_by("position", "name")
             ),
             "rating": _rating_summary(),
+            # Toutes les traductions du salon, en une requete.
+            #
+            # Une par champ aurait ajoute une requete par prestation, sur la
+            # page qui doit s ouvrir le plus vite du produit. Vide quand la
+            # langue demandee est le francais : il n y a alors rien a
+            # remplacer, et la requete serait perdue.
+            "traductions": table_pour(request, profile.tenant_id),
         }
 
         return Response(PublicSalonSerializer(profile, context=context).data)

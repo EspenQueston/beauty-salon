@@ -1,20 +1,12 @@
-{% autoescape off %}Bonjour {{ customer.full_name }},
+{% extends "emails/base_client.txt" %}
 
-Vous êtes passée chez {{ salon.name }} le {{ date_label }} pour « {{ booking.service_name }} »{% if staff_member %} avec {{ staff_member.name }}{% endif %}.
+{% block extra %}
+{{ t.avis_cinq_points }}
+{% for label in review_criteria %}- {{ label }}
+{% endfor %}{% endblock %}
 
-Comment ça s'est passé ? Votre avis aidera les prochaines clientes à choisir, et le salon à s'améliorer là où il faut.
-
-Vous noterez cinq points, de 1 à 5 étoiles :
-{% for label in review_criteria %}{{ label }}
-{% endfor %}
-Et vous pourrez ajouter un commentaire si vous le souhaitez.
-
-Ça prend deux minutes :
-
+{% block action %}{% if review_url %}
+{{ t.avis_bouton }} :
 {{ review_url }}
-
-Ce lien vous est personnel et reste valable 30 jours.
-
-Merci,
-L'équipe {{ salon.name }}
-{% endautoescape %}
+{% endif %}
+{% endblock %}

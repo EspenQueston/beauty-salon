@@ -1,9 +1,10 @@
 /**
- * Aiguillage par sous-domaine (convention `proxy` de Next.js 16).
+ * Aiguillage par sous-domaine et par langue (convention `proxy` de Next 16).
  *
- *   blondrose.localhost  ->  /s/blondrose.localhost/...   (mini-site du salon)
- *   app.localhost        ->  /dashboard/...               (espace professionnel)
- *   localhost            ->  /...                         (site de la plateforme)
+ *   blondrose.localhost      ->  /fr/s/blondrose.localhost/...  (mini-site)
+ *   blondrose.localhost/en   ->  /en/s/blondrose.localhost/...
+ *   app.localhost            ->  /fr/dashboard/...              (espace pro)
+ *   localhost                ->  /fr/...                        (plateforme)
  *
  * Les navigateurs resolvent nativement n'importe quel sous-domaine de
  * .localhost vers la boucle locale (RFC 6761) : pas de DNS a configurer, pas
@@ -17,10 +18,34 @@
  * Le segment est `/s/` et non `/_sites/` : dans l'App Router, un dossier
  * prefixe d'un underscore est prive et ne produit aucune route - la
  * reecriture tomberait en 404.
+ *
+ * ---------------------------------------------------------------------------
+ * La langue, et pourquoi elle est resolue ici
+ * ---------------------------------------------------------------------------
+ *
+ * Tout `app/` vit sous `app/[locale]/`. Ce segment est donc un **parametre
+ * racine** : `next/root-params` le sert a n'importe quel composant serveur,
+ * et le rendu statique des pages qui en beneficient est conserve, une copie
+ * par langue. C'est ce que permet de faire ce fichier, et lui seul : il est
+ * le seul endroit qui voie a la fois l'URL publique, le cookie et l'en-tete
+ * `Accept-Language`.
+ *
+ * Dans la barre d'adresse, le francais n'a pas de prefixe et l'anglais en a
+ * un — voir `i18n/langues.ts` pour le pourquoi.
  */
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+import { ENTETE_CHEMIN } from "@/i18n/adresses";
+import {
+  COOKIE_LANGUE,
+  LANGUE_PAR_DEFAUT,
+  decouper,
+  estLangue,
+  langueDemandee,
+  type Langue,
+} from "@/i18n/langues";
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
 
@@ -43,25 +68,91 @@ function subdomainOf(hostname: string): string | null {
 export default function proxy(request: NextRequest) {
   const hostname = (request.headers.get("host") ?? "").split(":")[0].toLowerCase();
   const label = subdomainOf(hostname);
-  const { pathname } = request.nextUrl;
 
-  // Chemin deja reecrit (ou atteint directement) : on le sert tel quel.
-  // Sans ce garde-fou, app.localhost/dashboard deviendrait /dashboard/dashboard.
-  // Le contenu servi est le meme que sur le sous-domaine ; c'est la balise
-  // canonique du mini-site, pas un 404, qui evite la duplication SEO.
-  if (pathname.startsWith("/s/") || pathname.startsWith("/dashboard")) {
-    return NextResponse.next();
+  /*
+    L'URL publique se lit en deux morceaux : la langue, et le reste.
+
+    `decouper` renvoie `null` quand aucun prefixe n'est present — ce qui n'est
+    pas la meme chose que « francais ». Sans prefixe, le choix n'a pas encore
+    ete exprime dans l'adresse, et il reste le cookie puis le navigateur a
+    consulter.
+  */
+  const { langue: explicite, reste } = decouper(request.nextUrl.pathname);
+
+  const stocke = request.cookies.get(COOKIE_LANGUE)?.value;
+  const langue: Langue =
+    explicite ??
+    (estLangue(stocke) ? stocke : null) ??
+    langueDemandee(request.headers.get("accept-language")) ??
+    LANGUE_PAR_DEFAUT;
+
+  /*
+    L'adresse doit dire la langue qu'elle sert.
+
+    Quand la langue retenue n'est pas celle par defaut et que l'URL ne la
+    porte pas, on redirige plutot que de reecrire : sans cela, la meme
+    adresse servirait deux contenus differents selon le lecteur. Un lien
+    partage ne voudrait plus rien dire, et un moteur d'indexation prendrait
+    l'une des deux versions pour un doublon de l'autre.
+
+    Redirection **temporaire** : elle depend du cookie et de l'en-tete du
+    navigateur, jamais du chemin seul. Une 301 serait mise en cache et
+    enfermerait la machine dans une langue.
+
+    `hors-ligne` en est exempte : le service worker met cette page de cote a
+    l'installation, et une reponse redirigee ne peut pas resservir a une
+    navigation — la page de secours ne s'afficherait jamais.
+  */
+  const horsLigne = reste === "/hors-ligne";
+  if (!explicite && langue !== LANGUE_PAR_DEFAUT && !horsLigne) {
+    const cible = request.nextUrl.clone();
+    cible.pathname = `/${langue}${reste === "/" ? "" : reste}`;
+    const reponse = NextResponse.redirect(cible, 307);
+    // Sans cela, un cache partage servirait a tout le monde la redirection
+    // calculee pour le premier visiteur venu.
+    reponse.headers.set("Vary", "Accept-Language, Cookie");
+    return reponse;
   }
 
-  if (!label || RESERVED.has(label)) {
-    return NextResponse.next();
+  /*
+    Le chemin interne.
+
+    `/s/...` et `/dashboard/...` peuvent arriver deja formes — on les atteint
+    directement en developpement, et Next les reutilise tels quels. Il ne
+    reste alors qu'a leur poser la langue devant.
+  */
+  let interne: string;
+  if (horsLigne) {
+    interne = "/hors-ligne";
+  } else if (reste.startsWith("/s/") || reste.startsWith("/dashboard")) {
+    interne = reste;
+  } else if (!label || RESERVED.has(label)) {
+    interne = reste;
+  } else if (label === "app") {
+    interne = `/dashboard${reste === "/" ? "" : reste}`;
+  } else {
+    interne = `/s/${hostname}${reste === "/" ? "" : reste}`;
   }
 
   const url = request.nextUrl.clone();
-  const suffix = pathname === "/" ? "" : pathname;
+  url.pathname = `/${langue}${interne === "/" ? "" : interne}`;
 
-  url.pathname = label === "app" ? `/dashboard${suffix}` : `/s/${hostname}${suffix}`;
-  return NextResponse.rewrite(url);
+  /*
+    Le chemin public, transmis aux pages.
+
+    Elles ne le connaissent pas autrement : elles reçoivent le chemin interne
+    (`/fr/s/blondrose.com/prestations`) et n'ont aucun moyen de remonter à
+    celui de la barre d'adresse (`/prestations`). Or c'est celui-là qu'il faut
+    pour écrire la balise canonique et les `hreflang` — une page qui se
+    déclare sous son adresse interne ne serait jamais indexée.
+
+    Sans préfixe de langue : chaque page le remet elle-même pour désigner sa
+    sœur dans l'autre langue.
+  */
+  const entetes = new Headers(request.headers);
+  entetes.set(ENTETE_CHEMIN, reste);
+
+  return NextResponse.rewrite(url, { request: { headers: entetes } });
 }
 
 export const config = {
@@ -69,17 +160,20 @@ export const config = {
     /*
       Tout sauf les fichiers internes de Next et les assets statiques.
 
-      Trois chemins sont exclus volontairement. Tous doivent être servis **à
-      la racine de l'hôte**, sans réécriture :
+      Deux chemins sont exclus volontairement. Tous deux doivent être servis
+      **à la racine de l'hôte**, sans réécriture :
 
         - `manifest.webmanifest` est unique et se façonne lui-même d'après
           l'en-tête `Host` ; réécrit vers `/s/<hôte>/…`, il n'existerait pas ;
         - `sw.js` : un service worker ne gouverne que les chemins situés sous
-          le sien. Servi depuis `/s/<hôte>/sw.js`, il ne verrait rien du site ;
-        - `hors-ligne` est la page de secours du service worker. Réécrite, elle
-          répondait 404 sur tous les sous-domaines — c'est-à-dire partout où
-          elle sert.
+          le sien. Servi depuis `/s/<hôte>/sw.js`, il ne verrait rien du site.
+
+      `hors-ligne`, lui, y est revenu. Il en était sorti parce que la
+      réécriture l'envoyait vers `/s/<hôte>/hors-ligne`, qui n'existe pas ;
+      depuis que toutes les routes vivent sous `[locale]`, il lui faut au
+      contraire passer par ici pour recevoir sa langue. Le proxy le traite à
+      part : jamais de redirection, seulement une réécriture.
     */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|hors-ligne|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
   ],
 };

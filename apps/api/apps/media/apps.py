@@ -11,3 +11,8 @@ class MediaConfig(AppConfig):
 
     name = "apps.media"
     verbose_name = "Photos et vidéos"
+
+    def ready(self):
+        # Le fichier suit la ligne : sans cet import, le signal n'est jamais
+        # branché et « supprimer » laisse la photo sur le disque.
+        from . import signals  # noqa: F401

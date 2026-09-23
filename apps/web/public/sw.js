@@ -165,3 +165,131 @@ async function reseauDAbord(request) {
     );
   }
 }
+
+/* ===========================================================================
+ * Notifications push
+ * ===========================================================================
+ *
+ * C'est ici que le service worker cesse d'être un cache. Ces deux
+ * gestionnaires sont réveillés par le navigateur **alors qu'aucun onglet du
+ * site n'est ouvert** — c'est tout l'intérêt : une gérante dont le téléphone
+ * est dans sa poche apprend qu'un acompte vient d'arriver.
+ *
+ * Le message est déjà déchiffré quand il nous parvient. Le service de push
+ * de l'éditeur du navigateur l'a transporté sans pouvoir le lire : le
+ * chiffrement est fait côté serveur avec les clés que ce navigateur a
+ * fournies en s'abonnant. C'est la norme, pas une précaution maison.
+ */
+
+/** Ce qu'on affiche quand la charge est illisible ou absente. */
+const REPLI = {
+  titre: "Beauty Salon",
+  corps: "Vous avez une nouvelle notification.",
+  lien: "/",
+};
+
+self.addEventListener("push", (evenement) => {
+  /*
+    Une charge vide n'est pas une erreur.
+
+    Certains navigateurs réveillent le service worker sans données — pour
+    vérifier qu'il répond, ou quand la charge a été perdue. La norme exige
+    qu'on affiche **quelque chose** : ne rien montrer fait perdre au site le
+    droit d'envoyer des notifications, silencieusement et définitivement.
+  */
+  let donnees = REPLI;
+  try {
+    if (evenement.data) {
+      const lu = evenement.data.json();
+      donnees = {
+        titre: lu.titre || REPLI.titre,
+        corps: lu.corps || "",
+        lien: lu.lien || REPLI.lien,
+        genre: lu.genre || "",
+      };
+    }
+  } catch {
+    // Charge non-JSON : on garde le repli plutôt que de ne rien montrer.
+  }
+
+  evenement.waitUntil(
+    Promise.all([
+      prevenirLesOnglets(),
+      self.registration.showNotification(donnees.titre, {
+        body: donnees.corps,
+        icon: "/icones/192.png",
+        // Le badge est la petite forme monochrome de la barre d'état Android.
+        // Sans lui, le système affiche un carré gris générique.
+        badge: "/icones/badge.png",
+        lang: "fr",
+        /*
+          Pas de `tag`.
+
+          Un `tag` partagé fait remplacer la notification précédente par la
+          suivante : deux clientes qui réservent à une minute d'intervalle, et
+          la première disparaît sans avoir été lue. Chaque événement mérite sa
+          ligne.
+        */
+        data: { lien: donnees.lien },
+        /*
+          `renotify` est sans objet sans `tag`, et `requireInteraction` garde la
+          notification à l'écran jusqu'à ce qu'on la touche — ce qui, sur un
+          téléphone, revient à prendre l'écran en otage. On laisse le système
+          décider, c'est lui qui connaît le mode « ne pas déranger ».
+        */
+      }),
+    ]),
+  );
+});
+
+self.addEventListener("notificationclick", (evenement) => {
+  evenement.notification.close();
+
+  const lien = (evenement.notification.data && evenement.notification.data.lien) || "/";
+  const cible = new URL(lien, self.location.origin).href;
+
+  /*
+    Réutiliser l'onglet déjà ouvert plutôt que d'en empiler un.
+
+    Une gérante qui reçoit six notifications dans la journée se retrouverait
+    avec six onglets du même tableau de bord. On cherche donc une fenêtre de
+    cette origine, on l'amène au premier plan et on l'emmène au bon endroit ;
+    on n'en ouvre une que s'il n'y en a aucune.
+  */
+  evenement.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((fenetres) => {
+        for (const fenetre of fenetres) {
+          if (new URL(fenetre.url).origin !== self.location.origin) continue;
+          if ("navigate" in fenetre) {
+            return fenetre.navigate(cible).then((f) => (f || fenetre).focus());
+          }
+          return fenetre.focus();
+        }
+        return self.clients.openWindow(cible);
+      }),
+  );
+});
+
+/*
+ * Prévenir les onglets ouverts.
+ *
+ * Le panneau de notifications interroge le serveur toutes les trente
+ * secondes. C'est assez pour ne rien manquer, mais pas pour donner
+ * l'impression que la page est vivante : une gérante qui a le tableau de
+ * bord sous les yeux verrait la pastille apparaître avec une demi-minute de
+ * retard sur la notification de son téléphone.
+ *
+ * Le service worker, lui, sait à la seconde. Il le dit aux onglets ouverts,
+ * qui rechargent leur liste immédiatement.
+ */
+async function prevenirLesOnglets() {
+  const fenetres = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  for (const fenetre of fenetres) {
+    fenetre.postMessage({ type: "beauty-salon:notification" });
+  }
+}

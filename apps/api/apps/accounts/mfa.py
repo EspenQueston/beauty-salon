@@ -86,6 +86,10 @@ def mfa_view(request):
     device = confirmed_device(user)
 
     if request.method == "POST":
+        # « Revenir a la connexion » : on repart de zero.
+        if request.POST.get("action") == "deconnexion":
+            return _recommencer(request)
+
         token = (request.POST.get("token") or "").strip().replace(" ", "")
 
         if device is not None:
@@ -146,6 +150,27 @@ def _enroll(request, token: str):
         "mfa/recovery.html",
         {"codes": codes, "next_url": _next_url(request)},
     )
+
+
+def _recommencer(request):
+    """Ferme la session et renvoie a l'ecran de connexion.
+
+    Un simple lien vers l'administration ne suffirait pas : le middleware y
+    renvoie ici tant que la session n'est pas verifiee, et l'on tournerait en
+    rond sans jamais revoir le formulaire de connexion. Il faut donc vraiment
+    fermer la session.
+
+    C'est aussi la seule sortie honnete de cet ecran. Sans elle, quelqu'un
+    qui s'est trompe de compte - ou dont le telephone est reste a la maison -
+    n'a d'autre choix que de vider ses cookies a la main.
+
+    `logout()` fait tourner la cle de session : le mot de passe devra etre
+    ressaisi, ce qui est exactement le sens de « recommencer ».
+    """
+    from django.contrib.auth import logout
+
+    logout(request)
+    return HttpResponseRedirect(reverse("admin:login"))
 
 
 def _next_url(request) -> str:

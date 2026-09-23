@@ -17,6 +17,7 @@
  *     toujours.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { Reveal } from "@/features/ui/Reveal";
@@ -38,6 +39,7 @@ export function GalleryGrid({
   assets: MediaAsset[];
   salonName: string;
 }) {
+  const t = useTranslations("salon");
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const close = useCallback(() => setOpenIndex(null), []);
@@ -108,7 +110,8 @@ export function GalleryGrid({
               onClick={() => setOpenIndex(index)}
               className="group flex size-full flex-col overflow-hidden rounded-2xl bg-[var(--site-surface)] text-left ring-1 ring-[var(--site-line)] transition hover:ring-[var(--salon-primary)]"
               aria-label={
-                asset.alt_text || `Réalisation ${index + 1} de ${salonName}`
+                asset.alt_text ||
+                t("galerie.altNumerotee", { n: index + 1, salon: salonName })
               }
             >
               <span className="relative min-h-0 flex-1 overflow-hidden bg-black/[0.05]">
@@ -131,7 +134,9 @@ export function GalleryGrid({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={asset.url}
-                    alt={asset.alt_text || `Réalisation de ${salonName}`}
+                    alt={
+                      asset.alt_text || t("galerie.alt", { salon: salonName })
+                    }
                     loading="lazy"
                     className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
@@ -152,7 +157,7 @@ export function GalleryGrid({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={open.alt_text || "Réalisation"}
+          aria-label={open.alt_text || t("galerie.simple")}
           onClick={close}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
         >
@@ -173,7 +178,7 @@ export function GalleryGrid({
                   event.stopPropagation();
                   move(-1);
                 }}
-                aria-label="Précédente"
+                aria-label={t("precedente")}
                 className="absolute left-3 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
               >
                 <SalonIcon name="arrow" className="size-5 rotate-180" />
@@ -184,7 +189,7 @@ export function GalleryGrid({
                   event.stopPropagation();
                   move(1);
                 }}
-                aria-label="Suivante"
+                aria-label={t("suivante")}
                 className="absolute right-3 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
               >
                 <SalonIcon name="arrow" className="size-5" />
@@ -210,7 +215,7 @@ export function GalleryGrid({
               <img
                 key={open.id}
                 src={open.url}
-                alt={open.alt_text || `Réalisation de ${salonName}`}
+                alt={open.alt_text || t("galerie.alt", { salon: salonName })}
                 className="max-h-[78svh] w-full rounded-2xl object-contain"
               />
             )}

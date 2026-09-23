@@ -6,6 +6,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.accounts.mfa import mfa_view
 from apps.common.views import csrf, health
+from apps.notifications.views_sw import service_worker_admin
 
 admin.site.site_header = "Beauty Salon - Administration plateforme"
 admin.site.site_title = "Beauty Salon"
@@ -34,6 +35,10 @@ urlpatterns = [
     path("mfa", mfa_view, name="mfa"),
     path("health", health, name="health"),
     path("api/v1/csrf", csrf, name="csrf"),
+    # Le service worker de l'administration, a la racine de l'hote.
+    # Servi depuis `/static/`, sa portee ne couvrirait pas les pages
+    # d'administration : voir apps/notifications/views_sw.py.
+    path("sw-admin.js", service_worker_admin, name="sw-admin"),
     path("api/v1/", include("config.api_urls")),
 ]
 

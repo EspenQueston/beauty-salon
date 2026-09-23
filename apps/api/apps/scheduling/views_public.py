@@ -77,36 +77,57 @@ def _eligible_staff(service, staff_member_id=None):
     return list(queryset.order_by("position", "name"))
 
 
+def creneaux_disponibles(request, *, prestation_active_seulement: bool = True):
+    """Les creneaux reservables, pour la requete en cours.
+
+    Partagee par deux vues qui ne different que par leur porte d'entree :
+    celle des clientes, ou le salon vient du nom d'hote, et celle de
+    l'equipe, ou il vient du membership. Le calcul, lui, est le meme - et
+    il doit le rester : deux moteurs de creneaux finiraient par proposer
+    des horaires differents pour le meme agenda.
+
+    `prestation_active_seulement` est la seule vraie difference. Une cliente
+    ne peut reserver qu'une prestation au catalogue ; le salon, lui, doit
+    pouvoir deplacer un rendez-vous dont la prestation a ete retiree depuis.
+    Le refuser bloquerait un rendez-vous deja pris pour une raison qui ne
+    regarde que le catalogue.
+    """
+    query = AvailabilityQuerySerializer(data=request.query_params)
+    query.is_valid(raise_exception=True)
+    data = query.validated_data
+
+    tenant = get_object_or_404(Tenant, pk=request.tenant_id)
+    filtres = {}
+    if prestation_active_seulement:
+        filtres["active"] = True
+    service = get_object_or_404(Service, pk=data["service"], **filtres)
+    staff_members = _eligible_staff(service, data.get("staff_member"))
+
+    # Le queryset est borne au tenant courant et a cette prestation :
+    # une option devinee, ou empruntee a une autre prestation, ne peut pas
+    # rallonger un creneau qu'elle n'accompagne pas.
+    extra_minutes = _options_duration(service, data.get("options") or [])
+
+    if not staff_members:
+        return Response({"slots": []})
+
+    slots = available_slots(
+        tenant=tenant,
+        service=service,
+        staff_members=staff_members,
+        date_from=data["date_from"],
+        date_to=data["date_to"],
+        extra_minutes=extra_minutes,
+    )
+    return Response({"slots": SlotSerializer(slots, many=True).data})
+
+
 class PublicAvailabilityView(APIView):
     permission_classes = [AllowAny, IsTenantResolved]
     throttle_scope = "public_read"
 
     def get(self, request):
-        query = AvailabilityQuerySerializer(data=request.query_params)
-        query.is_valid(raise_exception=True)
-        data = query.validated_data
-
-        tenant = get_object_or_404(Tenant, pk=request.tenant_id)
-        service = get_object_or_404(Service, pk=data["service"], active=True)
-        staff_members = _eligible_staff(service, data.get("staff_member"))
-
-        # Le queryset est borne au tenant courant et a cette prestation :
-        # une option devinee, ou empruntee a une autre prestation, ne peut pas
-        # rallonger un creneau qu'elle n'accompagne pas.
-        extra_minutes = _options_duration(service, data.get("options") or [])
-
-        if not staff_members:
-            return Response({"slots": []})
-
-        slots = available_slots(
-            tenant=tenant,
-            service=service,
-            staff_members=staff_members,
-            date_from=data["date_from"],
-            date_to=data["date_to"],
-            extra_minutes=extra_minutes,
-        )
-        return Response({"slots": SlotSerializer(slots, many=True).data})
+        return creneaux_disponibles(request)
 
 
 class PublicBookingCreateView(APIView):
@@ -226,6 +247,7 @@ class PublicBookingCreateView(APIView):
                 travel_zone=zone,
                 address=data.get("address", "").strip(),
                 idempotency_key=idempotency_key,
+                language=data.get("language", "fr"),
             )
         except BookingRefused as exc:
             return Response(
@@ -233,9 +255,14 @@ class PublicBookingCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        from apps.notifications import evenements
         from apps.notifications.tasks import send_booking_notifications
 
         send_booking_notifications.delay(str(booking.id), str(tenant.id))
+        # L'e-mail part vers la boite du salon ; la notification, elle,
+        # arrive sur l'ecran verrouille. Les deux, parce qu'une gerante
+        # ne lit pas ses mails entre deux clientes.
+        evenements.nouvelle_reservation(booking)
 
         # Si la cliente est connectee a son espace, le rendez-vous
         # rejoint son historique. Sans ce rattachement il existerait bel et
@@ -348,6 +375,10 @@ class PublicWaitlistView(APIView):
             preferred_to=data["preferred_to"],
             note=data.get("note", "").strip(),
         )
+
+        from apps.notifications import evenements
+
+        evenements.liste_attente(entry)
 
         return Response(
             {

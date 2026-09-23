@@ -351,3 +351,42 @@ def test_the_password_reset_email_is_designed_like_the_others(salon_a):
 
     html = inspecter("password_reset", dernier_html())
     assert "espace professionnel" not in html
+
+
+# ---------------------------------------------------------------------------
+# Les commentaires qui n'en sont pas
+# ---------------------------------------------------------------------------
+
+
+def test_aucun_commentaire_de_gabarit_ne_fuit_dans_la_page():
+    """`{# … #}` ne commente qu'une seule ligne.
+
+    Étalé sur plusieurs, Django ne le reconnaît pas et le rend **tel quel**.
+    Rien n'échoue : le gabarit se rend, l'e-mail part, et la cliente lit une
+    note de développeur au milieu de son rendez-vous.
+
+    C'est arrivé : l'e-mail de report en contenait une de trois lignes,
+    visible par toutes les clientes dont un rendez-vous avait été déplacé.
+    Un commentaire sur plusieurs lignes s'écrit `{% comment %}`.
+    """
+    import re
+    from pathlib import Path
+
+    from django.conf import settings
+
+    racines = [Path(d) for d in settings.TEMPLATES[0]["DIRS"]]
+    fautifs = []
+
+    for racine in racines:
+        for fichier in sorted(racine.rglob("*.html")):
+            texte = fichier.read_text(encoding="utf-8")
+            for ouverture in re.finditer(r"\{#", texte):
+                fermeture = texte.find("#}", ouverture.start())
+                if fermeture == -1 or "\n" in texte[ouverture.start() : fermeture]:
+                    ligne = texte[: ouverture.start()].count("\n") + 1
+                    fautifs.append(f"{fichier.relative_to(racine)}:{ligne}")
+
+    assert not fautifs, (
+        "Ces commentaires s'étalent sur plusieurs lignes et seront affichés "
+        f"tels quels. Utilisez {{% comment %}} : {fautifs}"
+    )

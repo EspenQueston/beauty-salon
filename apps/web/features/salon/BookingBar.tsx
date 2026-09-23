@@ -9,7 +9,9 @@
  * renverrait vers l'écran qu'on est en train de remplir.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { Lien } from "@/features/ui/Lien";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -18,6 +20,8 @@ import { SalonIcon } from "./icons";
 import type { PublicSalon } from "@/lib/types";
 
 export function BookingBar({ salon }: { salon: PublicSalon }) {
+  const t = useTranslations("salon");
+  const c = useTranslations("commun");
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
 
@@ -45,7 +49,7 @@ export function BookingBar({ salon }: { salon: PublicSalon }) {
             {salon.name}
           </p>
           <p className="truncate text-sm text-[var(--site-muted)]">
-            Réservation en ligne, confirmation immédiate
+            {t("reservationImmediate")}
           </p>
         </div>
 
@@ -54,7 +58,7 @@ export function BookingBar({ salon }: { salon: PublicSalon }) {
             href={whatsapp}
             target="_blank"
             rel="noreferrer noopener"
-            aria-label="Écrire sur WhatsApp"
+            aria-label={t("ecrireWhatsApp")}
             tabIndex={visible ? undefined : -1}
             className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-[var(--site-line)] text-[var(--site-muted)] transition hover:border-[var(--salon-primary)] hover:text-[var(--salon-ink)]"
           >
@@ -62,14 +66,14 @@ export function BookingBar({ salon }: { salon: PublicSalon }) {
           </a>
         )}
 
-        <Link
+        <Lien
           href="/reserver"
           tabIndex={visible ? undefined : -1}
           className="salon-gradient flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none"
         >
           <SalonIcon name="calendar" className="size-4.5" />
-          Réserver
-        </Link>
+          {c("reserver")}
+        </Lien>
       </div>
     </div>
   );

@@ -212,7 +212,10 @@ export function MediaPicker({
               Téléverser
             </GhostButton>
 
-            <GhostButton type="button" onClick={() => setLinking((open) => !open)}>
+            <GhostButton
+              type="button"
+              onClick={() => setLinking((open) => !open)}
+            >
               Coller un lien
             </GhostButton>
 

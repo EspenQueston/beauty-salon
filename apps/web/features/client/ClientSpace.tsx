@@ -34,8 +34,9 @@
  * bouton.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 
 import { formatPrice } from "@/lib/format";
 import type { PublicSalon } from "@/lib/types";
@@ -102,39 +103,56 @@ interface ClientProfile {
   preferred_salon_slug: string;
 }
 
+/*
+  La table des états est une **fonction** de la langue.
 
-const STATUS: Record<string, { label: string; className: string }> = {
-  pending_payment: {
-    label: "Acompte à régler",
-    className: "bg-amber-500/20 text-amber-800 dark:text-amber-300",
-  },
-  requested: {
-    label: "Demandé",
-    className: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  },
-  confirmed: {
-    label: "Confirmé",
-    className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  },
-  checked_in: {
-    label: "Vous êtes arrivée",
-    className: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
-  },
-  completed: {
-    label: "Terminé",
-    className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
-  },
-  cancelled: {
-    label: "Annulé",
-    className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
-  },
-  no_show: {
-    label: "Non honoré",
-    className: "bg-red-500/15 text-red-700 dark:text-red-400",
-  },
-};
+  En constante de module, ses libellés se fixaient au démarrage du serveur —
+  en français, pour toutes les pages. Construite à l'appel, elle suit la
+  langue de la requête.
+*/
+function etats(
+  t: (cle: string) => string,
+): Record<string, { label: string; className: string }> {
+  return {
+    pending_payment: {
+      label: t("etat.acompte"),
+      className: "bg-amber-500/20 text-amber-800 dark:text-amber-300",
+    },
+    requested: {
+      label: t("etat.demande"),
+      className: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+    },
+    confirmed: {
+      label: t("etat.confirme"),
+      className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+    },
+    checked_in: {
+      label: t("etat.arrivee"),
+      className: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
+    },
+    completed: {
+      label: t("etat.termine"),
+      className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
+    },
+    cancelled: {
+      label: t("etat.annule"),
+      className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
+    },
+    no_show: {
+      label: t("etat.nonHonore"),
+      className: "bg-red-500/15 text-red-700 dark:text-red-400",
+    },
+  };
+}
 
-export function ClientSpace({ salon, host }: { salon: PublicSalon; host: string }) {
+export function ClientSpace({
+  salon,
+  host,
+}: {
+  salon: PublicSalon;
+  host: string;
+}) {
+  const t = useTranslations("espace");
   const [session, setSession] = useState<Session | null | "anonymous">(null);
 
   // Un jeton plutôt qu'un rappel : après une connexion ou une déconnexion,
@@ -173,20 +191,20 @@ export function ClientSpace({ salon, host }: { salon: PublicSalon; host: string 
   if (!session.is_client) {
     return (
       <div className={`${CARD} mx-auto max-w-md p-6 text-center`}>
-        <p className="font-medium text-[var(--site-ink)]">
-          Ce compte est un compte professionnel.
-        </p>
+        <p className="font-medium text-[var(--site-ink)]">{t("pro.titre")}</p>
         <p className="mt-1.5 text-sm text-[var(--site-muted)]">
-          L&apos;espace cliente est réservé aux personnes qui réservent.
+          {t("pro.corps")}
         </p>
-        <Link href="/dashboard" className={`${PRIMARY} mt-4`}>
-          Aller à mon tableau de bord
-        </Link>
+        <Lien href="/dashboard" className={`${PRIMARY} mt-4`}>
+          {t("pro.tableau")}
+        </Lien>
       </div>
     );
   }
 
-  return <Space session={session} salon={salon} host={host} onChange={refresh} />;
+  return (
+    <Space session={session} salon={salon} host={host} onChange={refresh} />
+  );
 }
 
 /* --------------------------------------------------------------------------
@@ -209,6 +227,7 @@ function Gate({
   host: string;
   onDone: () => void;
 }) {
+  const t = useTranslations("espace");
   /*
     Tant qu'on n'est pas connectée, l'habillage du salon disparaît.
 
@@ -263,7 +282,7 @@ function Gate({
       }
       onDone();
     } catch (caught) {
-      setFailure(caught instanceof Error ? caught.message : "Échec.");
+      setFailure(caught instanceof Error ? caught.message : t("compte.echec"));
     } finally {
       setPending(false);
     }
@@ -272,10 +291,14 @@ function Gate({
   return (
     <AuthShell
       homeHref="/"
-      homeLabel={`Retour chez ${salon.name}`}
+      homeLabel={t("compte.retourChez", { salon: salon.name })}
       brand={
         <>
-          <SalonLogo logo={salon.logo} name={salon.name} className="size-8 text-xs" />
+          <SalonLogo
+            logo={salon.logo}
+            name={salon.name}
+            className="size-8 text-xs"
+          />
           <span className="truncate font-semibold tracking-tight text-ink">
             {salon.name}
           </span>
@@ -301,19 +324,19 @@ function Gate({
         */
         <AuthShowcase
           seed={salon.slug}
-          title="Un compte, tous vos salons."
+          title={t("compte.unCompte")}
           points={[
             {
-              title: "Vos rendez-vous au même endroit",
-              body: `Ceux de ${salon.name} et ceux de vos autres salons, en une liste.`,
+              title: t("compte.rdvAuMemeEndroit"),
+              body: t("compte.ceuxDeListe", { salon: salon.name }),
             },
             {
-              title: "Plus rien à ressaisir",
-              body: "Votre nom et votre téléphone sont déjà là la prochaine fois.",
+              title: t("compte.plusRienARessaisir"),
+              body: t("compte.plusRienCorps"),
             },
             {
-              title: "Vous pouvez réserver sans compte",
-              body: "Le compte sert à retrouver vos rendez-vous, pas à en prendre.",
+              title: t("compte.sansCompteTitre"),
+              body: t("compte.sansCompteCorps"),
             },
           ]}
         />
@@ -333,19 +356,24 @@ function Gate({
       */}
       <div className={authCard}>
         <h1 className={authTitle}>
-          {mode === "login" ? "Retrouvez vos rendez-vous" : "Créer votre compte"}
+          {mode === "login"
+            ? t("compte.retrouvez")
+            : t("compte.creerVotreCompte")}
         </h1>
         <p className={authLead}>
           {mode === "login"
-            ? `Ceux de ${salon.name} et ceux de vos autres salons, au même endroit.`
-            : "Un seul compte pour tous les salons que vous fréquentez."}
+            ? t("compte.ceuxDeMemeEndroit", { salon: salon.name })
+            : t("compte.unSeulCompte")}
         </p>
 
-        <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-4">
+        <form
+          onSubmit={(event) => void submit(event)}
+          className="mt-6 space-y-4"
+        >
           {mode === "signup" && (
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-ink">
-                Votre nom
+                {t("compte.nom")}
               </span>
               <input
                 value={fullName}
@@ -379,7 +407,7 @@ function Gate({
             <>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  Téléphone
+                  {t("compte.telephone")}
                 </span>
                 <input
                   value={phone}
@@ -427,10 +455,12 @@ function Gate({
           )}
 
           <PasswordField
-            label="Mot de passe"
+            label={t("compte.motDePasse")}
             value={password}
             onChange={setPassword}
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            autoComplete={
+              mode === "signup" ? "new-password" : "current-password"
+            }
             inputClassName={authInput}
             action={
               mode === "login" ? (
@@ -445,7 +475,7 @@ function Gate({
                   href={`${platformUrl}/mot-de-passe-oublie`}
                   className={`${authLink} text-sm`}
                 >
-                  Mot de passe oublié ?
+                  {t("compte.motDePasseOublie")}
                 </a>
               ) : undefined
             }
@@ -466,15 +496,15 @@ function Gate({
             className={`${PRIMARY} w-full`}
           >
             {pending
-              ? "Un instant…"
+              ? t("compte.unInstant")
               : mode === "login"
-                ? "Se connecter"
-                : "Créer mon compte"}
+                ? t("compte.seConnecter")
+                : t("compte.creerMonCompte")}
           </button>
         </form>
 
         <p className="mt-5 text-center text-sm text-ink/75">
-          {mode === "login" ? "Pas encore de compte ? " : "Vous en avez déjà un ? "}
+          {mode === "login" ? t("compte.pasEncore") : t("compte.dejaUn")}{" "}
           <button
             type="button"
             onClick={() => {
@@ -483,7 +513,9 @@ function Gate({
             }}
             className={authLink}
           >
-            {mode === "login" ? "Créer un compte" : "Se connecter"}
+            {mode === "login"
+              ? t("compte.creerUnCompte")
+              : t("compte.seConnecter")}
           </button>
         </p>
       </div>
@@ -497,11 +529,11 @@ function Gate({
         plutôt que de s'inscrire. C'est un lien, pas une phrase.
       */}
       <p className="mt-5 text-center text-sm text-ink/75">
-        <Link href="/reserver" className={authLink}>
-          Réserver sans compte
-        </Link>
+        <Lien href="/reserver" className={authLink}>
+          {t("compte.reserverSansCompte")}
+        </Lien>
         <span className="mt-1 block text-xs text-muted">
-          Le compte sert à retrouver vos rendez-vous, pas à en prendre.
+          {t("compte.sansCompteCorps")}
         </span>
       </p>
     </AuthShell>
@@ -523,6 +555,7 @@ function Space({
   host: string;
   onChange: () => void;
 }) {
+  const t = useTranslations("espace");
   const [data, setData] = useState<{
     salons: { slug: string; name: string }[];
     bookings: ClientBooking[];
@@ -540,10 +573,10 @@ function Space({
 
   useEffect(() => {
     let cancelled = false;
-    api<{ salons: { slug: string; name: string }[]; bookings: ClientBooking[] }>(
-      "/api/v1/public/client/bookings",
-      host,
-    )
+    api<{
+      salons: { slug: string; name: string }[];
+      bookings: ClientBooking[];
+    }>("/api/v1/public/client/bookings", host)
       .then((result) => !cancelled && setData(result))
       .catch(() => !cancelled && setFailed(true));
 
@@ -592,7 +625,9 @@ function Space({
     produirait tôt ou tard deux verdicts différents : un bouton proposé sur
     une visite déjà notée, ou refusé sur une visite qui l'accepte encore.
   */
-  const toReview = (data?.bookings ?? []).filter((booking) => booking.can_review);
+  const toReview = (data?.bookings ?? []).filter(
+    (booking) => booking.can_review,
+  );
 
   /*
     Deux listes, deux onglets.
@@ -637,7 +672,7 @@ function Space({
           onClick={() => void logout()}
           className="shrink-0 rounded-xl border border-[var(--site-line)] px-3 py-2 text-sm text-[var(--site-muted)] transition hover:text-[var(--site-ink)]"
         >
-          Se déconnecter
+          {t("compte.seDeconnecter")}
         </button>
       </header>
 
@@ -647,10 +682,13 @@ function Space({
           « À noter » a rejoint les trois autres parce que c'est le seul qui
           appelle un geste : les trois premiers décrivent, celui-là demande. */}
       <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Tile label="À venir" value={String(upcoming.length)} />
-        <Tile label={visits > 1 ? "Visites" : "Visite"} value={String(visits)} />
+        <Tile label={t("liste.aVenir")} value={String(upcoming.length)} />
         <Tile
-          label="À noter"
+          label={visits > 1 ? "Visites" : "Visite"}
+          value={String(visits)}
+        />
+        <Tile
+          label={t("liste.aNoter")}
           value={String(toReview.length)}
           accent={toReview.length > 0}
         />
@@ -663,7 +701,7 @@ function Space({
 
       {failed && (
         <p className="mb-6 rounded-xl bg-red-500/10 p-3.5 text-sm text-red-700">
-          Impossible de charger vos rendez-vous.
+          {t("liste.echec")}
         </p>
       )}
 
@@ -672,22 +710,21 @@ function Space({
         <div className="mb-6 rounded-2xl border-l-4 border-l-amber-500 border-y border-r border-[var(--site-line)] bg-[var(--site-surface)] p-4">
           <p className="font-medium text-[var(--site-ink)]">
             {toSettle.length === 1
-              ? "Un acompte reste à régler"
-              : `${toSettle.length} acomptes restent à régler`}
+              ? t("liste.acompteRestant")
+              : t("liste.acomptesRestants", { n: toSettle.length })}
           </p>
           <p className="mt-1 text-sm text-[var(--site-muted)]">
-            Votre créneau est réservé, mais il se libérera si l&apos;acompte
-            n&apos;arrive pas.
+            {t("liste.acompteRappel")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {toSettle.map((booking) => (
-              <Link
+              <Lien
                 key={booking.id}
                 href={`/paiement?token=${encodeURIComponent(booking.payment_token)}`}
                 className={`${PRIMARY} px-4 py-2.5 text-sm`}
               >
                 Régler {booking.service_name}
-              </Link>
+              </Lien>
             ))}
           </div>
         </div>
@@ -706,12 +743,11 @@ function Space({
           <p className="flex flex-wrap items-center gap-2 font-medium text-[var(--site-ink)]">
             <SalonIcon name="star" className="size-4 text-[var(--salon-ink)]" />
             {toReview.length === 1
-              ? "Une visite attend votre avis"
-              : `${toReview.length} visites attendent votre avis`}
+              ? t("liste.visiteAttendAvis")
+              : t("liste.visitesAvis", { n: toReview.length })}
           </p>
           <p className="mt-1 text-sm text-[var(--site-muted)]">
-            Cinq critères, deux minutes. Votre avis aide les prochaines
-            clientes à choisir — et le salon à s&apos;améliorer là où il faut.
+            {t("liste.avisInvitation")}
           </p>
           <ul className="mt-3 flex flex-wrap gap-2">
             {toReview.map((booking) => (
@@ -722,7 +758,7 @@ function Space({
                 >
                   Noter {booking.service_name}
                   <span className="ml-1.5 font-normal opacity-80">
-                    · {remaining(booking.review_until)}
+                    · {remaining(booking.review_until, t)}
                   </span>
                 </a>
               </li>
@@ -737,21 +773,23 @@ function Space({
 
       {/* Le prochain rendez-vous, en grand : c'est la seule chose qu'on
           vient vérifier neuf fois sur dix. */}
-      {nextOne && <NextBooking booking={nextOne} host={host} onCancelled={relire} />}
+      {nextOne && (
+        <NextBooking booking={nextOne} host={host} onCancelled={relire} />
+      )}
 
       {data !== null && upcoming.length === 0 && (
         <div className={`${CARD} p-6 text-center`}>
           <p className="font-medium text-[var(--site-ink)]">
-            Aucun rendez-vous à venir.
+            {t("liste.aucunAVenir")}
           </p>
           <p className="mt-1 text-sm text-[var(--site-muted)]">
             {visits > 0
-              ? "Reprenez là où vous vous étiez arrêtée."
-              : "Choisissez une prestation pour commencer."}
+              ? t("liste.reprenezLa")
+              : t("liste.choisissezPrestation")}
           </p>
-          <Link href="/reserver" className={`${PRIMARY} mt-4`}>
+          <Lien href="/reserver" className={`${PRIMARY} mt-4`}>
             Réserver chez {salon.name}
-          </Link>
+          </Lien>
         </div>
       )}
 
@@ -762,7 +800,7 @@ function Space({
               l'écran, et ce sont eux qu'on vient voir. */}
           <div
             role="tablist"
-            aria-label="Vos rendez-vous"
+            aria-label={t("liste.vosRdv")}
             className="mb-3 flex rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] p-1"
           >
             {(
@@ -787,7 +825,9 @@ function Space({
                 {count > 0 && (
                   <span
                     className={`tabular text-xs ${
-                      tab === key ? "text-white/75" : "text-[var(--site-subtle)]"
+                      tab === key
+                        ? "text-white/75"
+                        : "text-[var(--site-subtle)]"
                     }`}
                   >
                     {count}
@@ -805,8 +845,10 @@ function Space({
                 ))}
               </ul>
             ) : (
-              <p className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}>
-                Rien d&apos;autre de prévu après votre prochain rendez-vous.
+              <p
+                className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
+              >
+                {t("liste.rienApres")}
               </p>
             )
           ) : past.length > 0 ? (
@@ -823,8 +865,10 @@ function Space({
               ))}
             </ul>
           ) : (
-            <p className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}>
-              Vos visites passées apparaîtront ici.
+            <p
+              className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
+            >
+              {t("liste.passeesIci")}
             </p>
           )}
         </section>
@@ -891,7 +935,8 @@ function BookingCard({
   highlight?: boolean;
   compact?: boolean;
 }) {
-  const status = STATUS[booking.status] ?? {
+  const t = useTranslations("espace");
+  const status = etats(t)[booking.status] ?? {
     label: booking.status,
     className: "bg-black/[0.06] text-[var(--site-muted)]",
   };
@@ -947,13 +992,13 @@ function BookingCard({
             >
               <SalonIcon name="star" className="size-3.5 shrink-0" />
               <span className="truncate">
-                Noter · {remaining(booking.review_until)}
+                Noter · {remaining(booking.review_until, t)}
               </span>
             </a>
           ) : booking.reviewed ? (
             <p className="flex items-center gap-1.5 text-xs text-[var(--site-subtle)]">
               <SalonIcon name="check" className="size-3.5 shrink-0" />
-              Avis déposé
+              {t("liste.avisDepose")}
             </p>
           ) : (
             <a
@@ -961,7 +1006,7 @@ function BookingCard({
               className="flex items-center gap-1.5 text-xs font-medium text-[var(--site-muted)] underline-offset-2 hover:text-[var(--site-ink)] hover:underline"
             >
               <SalonIcon name="calendar" className="size-3.5 shrink-0" />
-              Reprendre rendez-vous
+              {t("liste.reprendre")}
             </a>
           )}
         </div>
@@ -1017,7 +1062,9 @@ function BookingCard({
           <SalonIcon name="store" className="size-3.5" />
           {booking.salon_name}
         </a>
-        {booking.staff_member_name && <span>avec {booking.staff_member_name}</span>}
+        {booking.staff_member_name && (
+          <span>avec {booking.staff_member_name}</span>
+        )}
         <span className="tabular">
           {formatPrice(booking.total_amount, booking.currency)}
         </span>
@@ -1041,7 +1088,7 @@ function BookingCard({
         href={`${salonUrl}/rendez-vous?token=${encodeURIComponent(booking.status_token)}`}
         className="mt-2.5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--salon-ink)] underline-offset-2 hover:underline"
       >
-        Voir le détail
+        {t("liste.voirDetail")}
         <SalonIcon name="arrow" className="size-3.5" />
       </a>
     </li>
@@ -1067,6 +1114,7 @@ function Preferences({
   salons: { slug: string; name: string }[];
   onSaved: () => void;
 }) {
+  const t = useTranslations("espace");
   const profile = session.client;
   const [whatsapp, setWhatsapp] = useState(profile?.whatsapp ?? "");
   const [wechat, setWechat] = useState(profile?.wechat ?? "");
@@ -1115,7 +1163,7 @@ function Preferences({
         <div className="grid grid-cols-2 gap-3">
           <label className="col-span-2 block">
             <span className="mb-1 block text-xs text-[var(--site-muted)]">
-              Téléphone
+              {t("compte.telephone")}
             </span>
             <input
               value={phone}
@@ -1153,7 +1201,7 @@ function Preferences({
           </button>
           {saved && (
             <span role="status" className="text-sm text-emerald-600">
-              Enregistré.
+              {t("liste.enregistre")}
             </span>
           )}
         </div>
@@ -1186,7 +1234,8 @@ function NextBooking({
   host: string;
   onCancelled: () => void;
 }) {
-  const status = STATUS[booking.status] ?? {
+  const t = useTranslations("espace");
+  const status = etats(t)[booking.status] ?? {
     label: booking.status,
     className: "bg-black/[0.06] text-[var(--site-muted)]",
   };
@@ -1210,7 +1259,7 @@ function NextBooking({
       {/* Bandeau de marque : on sait chez qui on va avant même de lire. */}
       <div className="salon-gradient px-4 py-2.5 text-white sm:px-5">
         <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <span className="font-medium">{countdown(start)}</span>
+          <span className="font-medium">{countdown(start, t)}</span>
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
               booking.payment_token ? "bg-white text-amber-700" : "bg-white/20"
@@ -1257,7 +1306,9 @@ function NextBooking({
 
           {booking.staff_member_name && (
             <div className="min-w-0">
-              <dt className="text-xs text-[var(--site-subtle)]">Avec</dt>
+              <dt className="text-xs text-[var(--site-subtle)]">
+                {t("liste.avec")}
+              </dt>
               <dd className="truncate text-[var(--site-ink)]">
                 {booking.staff_member_name}
               </dd>
@@ -1299,7 +1350,9 @@ function NextBooking({
             <SalonIcon name="pin" className="mt-0.5 size-4 shrink-0" />
             <span>
               À domicile · {booking.travel_zone_name}
-              {booking.address && <span className="block">{booking.address}</span>}
+              {booking.address && (
+                <span className="block">{booking.address}</span>
+              )}
             </span>
           </p>
         )}
@@ -1318,12 +1371,12 @@ function NextBooking({
 
         <div className="mt-4 flex flex-wrap gap-2">
           {booking.payment_token && (
-            <Link
+            <Lien
               href={`/paiement?token=${encodeURIComponent(booking.payment_token)}`}
               className={`${PRIMARY} px-4 py-2.5 text-sm`}
             >
-              Régler l&apos;acompte
-            </Link>
+              {t("liste.reglerAcompte")}
+            </Lien>
           )}
 
           {/*
@@ -1341,7 +1394,7 @@ function NextBooking({
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--site-line)] px-4 py-2.5 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
           >
             <SalonIcon name="sparkle" className="size-4" />
-            Suivre mon rendez-vous
+            {t("liste.suivre")}
           </a>
 
           {maps && (
@@ -1352,7 +1405,7 @@ function NextBooking({
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--site-line)] px-4 py-2.5 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
             >
               <SalonIcon name="pin" className="size-4" />
-              Itinéraire
+              {t("liste.itineraire")}
             </a>
           )}
           <a
@@ -1360,7 +1413,7 @@ function NextBooking({
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--site-line)] px-4 py-2.5 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
           >
             <SalonIcon name="store" className="size-4" />
-            Le salon
+            {t("liste.leSalon")}
           </a>
         </div>
 
@@ -1396,16 +1449,21 @@ function salonOrigin(slug: string, host: string): string {
  * Une date se lit, un délai se comprend — et c'est le délai qui fait
  * remarquer qu'un rendez-vous est demain plutôt que la semaine prochaine.
  */
-function countdown(start: Date): string {
+/* Le traducteur arrive en paramètre : ce n'est pas un composant, et un
+   crochet React n'a rien à faire dans une fonction ordinaire. */
+function countdown(
+  start: Date,
+  t: (cle: string, vars?: Record<string, string | number | Date>) => string,
+): string {
   const days = Math.round((start.getTime() - Date.now()) / 86_400_000);
 
-  if (days < 0) return "Passé";
-  if (days === 0) return "Aujourd'hui";
-  if (days === 1) return "Demain";
-  if (days < 7) return `Dans ${days} jours`;
-  if (days < 14) return "Dans une semaine";
-  if (days < 31) return `Dans ${Math.round(days / 7)} semaines`;
-  return `Dans ${Math.round(days / 30)} mois`;
+  if (days < 0) return t("liste.passe");
+  if (days === 0) return t("liste.aujourdhui");
+  if (days === 1) return t("liste.demain");
+  if (days < 7) return t("liste.dansJours", { n: days });
+  if (days < 14) return t("liste.dansUneSemaine");
+  if (days < 31) return t("liste.dansSemaines", { n: Math.round(days / 7) });
+  return t("liste.dansMois", { n: Math.round(days / 30) });
 }
 
 /** « ven. 11 sept. · 14:00 » — assez pour reconnaître une visite passée. */
@@ -1420,12 +1478,15 @@ function countdown(start: Date): string {
  * Le décompte est arrondi au supérieur : une échéance à 6 h ce soir est
  * encore « aujourd'hui », pas « 0 jour ».
  */
-function remaining(iso: string): string {
+function remaining(
+  iso: string,
+  t: (cle: string, vars?: Record<string, string | number | Date>) => string,
+): string {
   if (!iso) return "";
   const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
-  if (days <= 0) return "dernières heures";
-  if (days === 1) return "dernier jour";
-  return `${days} jours`;
+  if (days <= 0) return t("liste.dernieresHeures");
+  if (days === 1) return t("liste.dernierJour");
+  return t("liste.joursRestants", { n: days });
 }
 
 function shortDate(iso: string): string {

@@ -1,0 +1,26 @@
+{% comment %}
+===========================================================================
+Le corps texte des e-mails adressés aux clientes.
+===========================================================================
+
+Chaque message avait sa propre version texte, qui recomposait à la main la
+liste des détails — prestation, date, durée, total. Sept copies de la même
+liste : celle de l'annulation avait déjà perdu la durée, et celle du rappel
+le total, sans que personne ne l'ait décidé.
+
+Elles partagent maintenant ce squelette. Les détails viennent de la même
+`details` que la version HTML, donc les deux disent exactement la même chose,
+et un champ ajouté apparaît des deux côtés sans qu'on y pense.
+
+Le corps texte n'est pas un vestige : il sert de repli quand le client
+n'affiche pas le HTML, il est ce que lisent les lecteurs d'écran quand on le
+leur demande, et un message qui n'a qu'une partie HTML est un signal de
+courrier indésirable pour la plupart des filtres.
+{% endcomment %}{% autoescape off %}{{ salutation }}
+
+{% block intro %}{{ intro }}{% endblock %}
+{% for rangee in details %}{% for fait in rangee %}{{ fait.label }} : {{ fait.value }}
+{% endfor %}{% endfor %}{% block extra %}{% endblock %}
+{% block action %}{% endblock %}{{ t.a_bientot }}
+{{ salon.name }}
+{% endautoescape %}

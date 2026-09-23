@@ -33,8 +33,9 @@
  * cliente qui cherche son mot de passe ne doit pas craindre de le perdre.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 import { useRouter } from "next/navigation";
 
 import { browserRequest, postForm } from "@/lib/api";
@@ -61,12 +62,7 @@ interface Channel {
  * voir diverger au premier ajustement, du côté où personne ne regarde.
  */
 type PaymentPhase =
-  | "payable"
-  | "waiting"
-  | "refused"
-  | "settled"
-  | "expired"
-  | "cancelled";
+  "payable" | "waiting" | "refused" | "settled" | "expired" | "cancelled";
 
 interface PaymentState {
   state: PaymentPhase;
@@ -113,6 +109,7 @@ export function PaymentPage({
   timeZone: string;
   salonName: string;
 }) {
+  const t = useTranslations("reservation");
   const [state, setState] = useState<PaymentState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState(0);
@@ -138,18 +135,14 @@ export function PaymentPage({
       host,
     )
       .then((data) => !cancelled && setState(data))
-      .catch(
-        () =>
-          !cancelled &&
-          setError(
-            "Ce lien n'est plus valable. Contactez le salon pour reprendre votre réservation.",
-          ),
-      );
+      .catch(() => !cancelled && setError(t("paiement.lienMort")));
 
     return () => {
       cancelled = true;
     };
-  }, [host, token, round]);
+    // `t` : stable tant que la langue ne change pas, et une bascule recharge
+    // la page entière — le linter, lui, ne peut pas le savoir.
+  }, [host, token, round, t]);
 
   /*
    * Pendant l'attente, on redemande périodiquement.
@@ -219,7 +212,7 @@ export function PaymentPage({
       {/* 1. Le montant, en premier et en grand. */}
       <div className={`${CARD} p-5 text-center`}>
         <p className="text-xs font-medium uppercase tracking-wide text-[var(--site-subtle)]">
-          Acompte à régler
+          {t("paiement.titre")}
         </p>
         <p className="tabular mt-1 text-3xl font-semibold text-[var(--site-ink)]">
           {formatPrice(booking.deposit_amount, currency)}
@@ -236,7 +229,7 @@ export function PaymentPage({
       {refused && proof && (
         <div className="mt-3 rounded-xl border-l-4 border-l-amber-500 border-y border-r border-[var(--site-line)] bg-[var(--site-surface)] p-3.5">
           <p className="text-sm font-medium text-[var(--site-ink)]">
-            Le salon n&apos;a pas retrouvé votre versement.
+            {t("paiement.refuseTitre")}
           </p>
           {proof.rejection_reason && (
             <p className="mt-1 text-sm text-[var(--site-muted)]">
@@ -244,16 +237,16 @@ export function PaymentPage({
             </p>
           )}
           <p className="mt-1 text-sm text-[var(--site-muted)]">
-            Votre créneau est toujours réservé. Renvoyez une capture plus
-            lisible, ou contactez le salon.
+            {t("paiement.refuseCorps")}
           </p>
         </div>
       )}
 
       {channels.length === 0 ? (
-        <div className={`${CARD} mt-3 p-5 text-center text-sm text-[var(--site-muted)]`}>
-          Le salon n&apos;a pas encore publié de moyen de paiement. Contactez-le
-          directement pour régler votre acompte.
+        <div
+          className={`${CARD} mt-3 p-5 text-center text-sm text-[var(--site-muted)]`}
+        >
+          {t("paiement.aucunMoyen")}
         </div>
       ) : (
         <>
@@ -262,7 +255,7 @@ export function PaymentPage({
           {channels.length > 1 && (
             <div
               role="tablist"
-              aria-label="Moyen de paiement"
+              aria-label={t("paiement.moyenDePaiement")}
               className="mt-4 flex rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] p-0.5"
             >
               {channels.map((entry, index) => (
@@ -284,7 +277,9 @@ export function PaymentPage({
             </div>
           )}
 
-          {channel && <QrPanel channel={channel} single={channels.length === 1} />}
+          {channel && (
+            <QrPanel channel={channel} single={channels.length === 1} />
+          )}
 
           {/* 3. La preuve, seulement après. */}
           <ProofForm
@@ -310,10 +305,7 @@ export function PaymentPage({
       ) : (
         <p className="mt-5 flex items-start justify-center gap-2 px-2 text-center text-xs text-[var(--site-subtle)]">
           <SalonIcon name="clock" className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            Votre créneau reste réservé pendant que le salon vérifie. Prenez
-            le temps qu&apos;il faut.
-          </span>
+          <span>{t("paiement.creneauGarde")}</span>
         </p>
       )}
     </div>
@@ -328,6 +320,7 @@ export function PaymentPage({
  * sinon une page vide en guise de réponse à « ai-je bien payé ».
  */
 function Settled({ href }: { href: string }) {
+  const t = useTranslations("reservation");
   const router = useRouter();
 
   useEffect(() => {
@@ -341,16 +334,15 @@ function Settled({ href }: { href: string }) {
       </span>
 
       <h1 className="text-xl font-semibold text-[var(--site-ink)]">
-        Votre acompte est bien reçu
+        {t("paiement.recuTitre")}
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--site-muted)]">
-        Le salon a confirmé votre rendez-vous. Il n&apos;y a plus rien à régler
-        ici.
+        {t("paiement.recuCorps")}
       </p>
 
-      <Link href={href} className={`${PRIMARY} mt-5 w-full`}>
-        Voir mon rendez-vous
-      </Link>
+      <Lien href={href} className={`${PRIMARY} mt-5 w-full`}>
+        {t("paiement.voirRdv")}
+      </Lien>
     </div>
   );
 }
@@ -363,6 +355,7 @@ function Settled({ href }: { href: string }) {
  * ouvre immédiatement la seule suite utile.
  */
 function Lapsed({ cancelled }: { cancelled: boolean }) {
+  const t = useTranslations("reservation");
   return (
     <div className={`${CARD} mx-auto max-w-md p-6 text-center`}>
       <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-black/[0.06]">
@@ -370,17 +363,15 @@ function Lapsed({ cancelled }: { cancelled: boolean }) {
       </span>
 
       <h1 className="text-xl font-semibold text-[var(--site-ink)]">
-        {cancelled ? "Ce rendez-vous a été annulé" : "Le délai est dépassé"}
+        {cancelled ? t("paiement.annuleTitre") : t("paiement.delaiTitre")}
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--site-muted)]">
-        {cancelled
-          ? "Il n'y a plus d'acompte à régler pour ce rendez-vous."
-          : "Faute de règlement dans les 30 minutes, le créneau a été remis à disposition. Rien ne vous a été débité."}
+        {cancelled ? t("paiement.plusDAcompte") : t("paiement.delaiCorps")}
       </p>
 
-      <Link href="/reserver" className={`${PRIMARY} mt-5 w-full`}>
-        Choisir un nouveau créneau
-      </Link>
+      <Lien href="/reserver" className={`${PRIMARY} mt-5 w-full`}>
+        {t("paiement.nouveauCreneau")}
+      </Lien>
     </div>
   );
 }
@@ -450,6 +441,7 @@ function ProofForm({
   channel: string;
   onSent: () => void;
 }) {
+  const t = useTranslations("reservation");
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -461,7 +453,7 @@ function ProofForm({
   function choose(chosen: File | null) {
     if (!chosen) return;
     if (chosen.size > MAX_BYTES) {
-      setProblem("Cette image dépasse 15 Mo.");
+      setProblem(t("paiement.imageTropGrande"));
       return;
     }
     setProblem(null);
@@ -484,7 +476,9 @@ function ProofForm({
       await postForm("/api/v1/public/payment/proof", host, form);
       onSent();
     } catch (caught) {
-      setProblem(caught instanceof Error ? caught.message : "Envoi impossible.");
+      setProblem(
+        caught instanceof Error ? caught.message : "Envoi impossible.",
+      );
     } finally {
       setBusy(false);
     }
@@ -492,10 +486,11 @@ function ProofForm({
 
   return (
     <div className={`${CARD} mt-3 p-4`}>
-      <p className="font-medium text-[var(--site-ink)]">Une fois le paiement fait</p>
+      <p className="font-medium text-[var(--site-ink)]">
+        {t("paiement.apresPaiement")}
+      </p>
       <p className="mt-1 text-sm text-[var(--site-muted)]">
-        Envoyez la capture d&apos;écran de votre paiement. Le salon la
-        vérifiera et confirmera votre rendez-vous.
+        {t("paiement.apresPaiementCorps")}
       </p>
 
       <button
@@ -516,12 +511,15 @@ function ProofForm({
           />
         ) : (
           <span className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-black/[0.04] dark:bg-white/5">
-            <SalonIcon name="sparkle" className="size-6 text-[var(--site-subtle)]" />
+            <SalonIcon
+              name="sparkle"
+              className="size-6 text-[var(--site-subtle)]"
+            />
           </span>
         )}
         <span className="min-w-0">
           <span className="block text-sm font-medium text-[var(--site-ink)]">
-            {file ? "Changer la capture" : "Choisir une capture d'écran"}
+            {file ? t("paiement.changerCapture") : t("paiement.choisirCapture")}
           </span>
           <span className="block truncate text-xs text-[var(--site-subtle)]">
             {file ? file.name : "JPEG ou PNG, facultatif"}
@@ -542,7 +540,7 @@ function ProofForm({
       <div className="mt-3 grid grid-cols-2 gap-2">
         <label className="col-span-2 sm:col-span-1">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
-            N° de transaction
+            {t("paiement.numeroTransaction")}
           </span>
           <input
             value={reference}
@@ -553,7 +551,7 @@ function ProofForm({
         </label>
         <label className="col-span-2 sm:col-span-1">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
-            Message au salon
+            {t("paiement.messageAuSalon")}
           </span>
           <input
             value={note}
@@ -576,7 +574,7 @@ function ProofForm({
         disabled={busy}
         className={`${PRIMARY} mt-3 w-full`}
       >
-        {busy ? "Envoi…" : "J'ai payé, envoyer la preuve"}
+        {busy ? "Envoi…" : t("paiement.envoyerPreuve")}
       </button>
     </div>
   );
@@ -589,6 +587,7 @@ function Waiting({
   salonName: string;
   statusHref: string;
 }) {
+  const t = useTranslations("reservation");
   return (
     <div className={`${CARD} mx-auto max-w-md p-6 text-center`}>
       <span className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-[var(--salon-primary)]/15">
@@ -596,23 +595,23 @@ function Waiting({
       </span>
 
       <h1 className="text-xl font-semibold text-[var(--site-ink)]">
-        En attente de confirmation
+        {t("paiement.attenteTitre")}
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--site-muted)]">
         {salonName} a reçu votre preuve de versement. Le salon vérifie le
-        paiement et confirme votre rendez-vous — vous recevrez un e-mail dès
-        que c&apos;est fait.
+        paiement et confirme votre rendez-vous — vous recevrez un e-mail dès que
+        c&apos;est fait.
       </p>
       <p className="mt-3 text-sm text-[var(--site-muted)]">
-        Votre créneau reste réservé pendant ce temps.
+        {t("paiement.creneauReserve")}
       </p>
 
       {/* La vérification peut prendre l'après-midi entier : personne ne
           garde cet onglet ouvert jusque-là. Ce lien est celui qu'on met en
           signet, et c'est aussi celui de l'espace cliente. */}
-      <Link href={statusHref} className={`${GHOST} mt-5 w-full`}>
-        Suivre mon rendez-vous
-      </Link>
+      <Lien href={statusHref} className={`${GHOST} mt-5 w-full`}>
+        {t("paiement.suivreRdv")}
+      </Lien>
     </div>
   );
 }

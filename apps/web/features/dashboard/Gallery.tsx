@@ -35,7 +35,16 @@ interface Asset {
   url: string;
   content_type: string;
   byte_size: number;
-  kind: "gallery" | "logo" | "banner" | "service" | "staff" | "payment" | "about" | "product" | "proof";
+  kind:
+    | "gallery"
+    | "logo"
+    | "banner"
+    | "service"
+    | "staff"
+    | "payment"
+    | "about"
+    | "product"
+    | "proof";
   alt_text: string;
   width: number | null;
   height: number | null;
@@ -71,7 +80,10 @@ export function Gallery() {
   const tenantId = membership.tenant.id;
   const canEdit = ["owner", "manager"].includes(membership.role);
 
-  const assets = useResource<Page<Asset>>("/api/v1/media/?page_size=100", tenantId);
+  const assets = useResource<Page<Asset>>(
+    "/api/v1/media/?page_size=100",
+    tenantId,
+  );
   const profile = useResource<Profile>("/api/v1/salon-profile", tenantId);
 
   const all = rows(assets.data);
@@ -122,7 +134,11 @@ export function Gallery() {
   async function remove(asset: Asset) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(`/api/v1/media/${asset.id}/`, { method: "DELETE" }, tenantId),
+        dashboardFetch(
+          `/api/v1/media/${asset.id}/`,
+          { method: "DELETE" },
+          tenantId,
+        ),
       { success: "Photo supprimée." },
     );
     if (ok) {
@@ -189,7 +205,10 @@ export function Gallery() {
       async () => {
         await dashboardFetch(
           `/api/v1/media/${asset.id}/`,
-          { method: "PATCH", body: JSON.stringify({ position: index + direction }) },
+          {
+            method: "PATCH",
+            body: JSON.stringify({ position: index + direction }),
+          },
           tenantId,
         );
         await dashboardFetch(
@@ -210,7 +229,9 @@ export function Gallery() {
         description="Vos réalisations, votre logo et votre bannière. C'est la première chose que voit une cliente."
       />
 
-      {assets.error && <ErrorState>Impossible de charger vos photos.</ErrorState>}
+      {assets.error && (
+        <ErrorState>Impossible de charger vos photos.</ErrorState>
+      )}
 
       {canEdit && (
         <Uploader
@@ -409,7 +430,9 @@ function IdentitySlot({
   choices: Asset[];
   onChange: (assetId: string | null) => void;
 }) {
-  const images = choices.filter((item) => !item.content_type.startsWith("video/"));
+  const images = choices.filter(
+    (item) => !item.content_type.startsWith("video/"),
+  );
 
   return (
     <Card>
@@ -513,7 +536,11 @@ function Uploader({
       form.append("alt_text", "");
 
       try {
-        await dashboardFetch("/api/v1/media/", { method: "POST", body: form }, tenantId);
+        await dashboardFetch(
+          "/api/v1/media/",
+          { method: "POST", body: form },
+          tenantId,
+        );
         succeeded += 1;
         setQueue((current) =>
           current.map((item, position) =>
@@ -529,7 +556,9 @@ function Uploader({
                   ...item,
                   state: "failed",
                   message:
-                    caught instanceof Error ? caught.message : "Envoi impossible",
+                    caught instanceof Error
+                      ? caught.message
+                      : "Envoi impossible",
                 }
               : item,
           ),
@@ -579,9 +608,7 @@ function Uploader({
         }`}
       >
         <Icon name="image" className="mx-auto size-8 text-subtle" />
-        <p className="mt-3 font-medium text-ink">
-          Déposez vos photos ici
-        </p>
+        <p className="mt-3 font-medium text-ink">Déposez vos photos ici</p>
         <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted">
           JPEG, PNG, WebP ou vidéo courte MP4 / WebM. 15 Mo maximum par fichier.
         </p>
@@ -633,7 +660,11 @@ function Uploader({
                       : "text-subtle"
                 }
               >
-                {item.state === "done" ? "✓" : item.state === "failed" ? "✕" : "…"}
+                {item.state === "done"
+                  ? "✓"
+                  : item.state === "failed"
+                    ? "✕"
+                    : "…"}
               </span>
               <span className="truncate text-ink">{item.name}</span>
               {item.message && (

@@ -55,7 +55,9 @@
  * mosaïque, pleine sur les fiches, où rien ne viendrait la révéler.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { Lien } from "@/features/ui/Lien";
 import { useState } from "react";
 
 import type { PublicStaffMember } from "@/lib/types";
@@ -205,7 +207,7 @@ export function TeamShowcase({
  */
 function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
   return (
-    <Link
+    <Lien
       href="/reserver"
       className="group relative block overflow-hidden rounded-xl outline-offset-2"
     >
@@ -255,7 +257,7 @@ function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
           </p>
         )}
       </div>
-    </Link>
+    </Lien>
   );
 }
 
@@ -339,11 +341,12 @@ function Ligne({
   onActif: (id: string | null) => void;
   detailed: boolean;
 }) {
+  const c = useTranslations("commun");
   const estActif = actif === member.id;
   const eteint = actif !== null && !estActif;
 
   return (
-    <Link
+    <Lien
       href="/reserver"
       onMouseEnter={() => onActif(member.id)}
       onMouseLeave={() => onActif(null)}
@@ -386,7 +389,7 @@ function Ligne({
               : "-translate-x-1.5 opacity-0"
           }`}
         >
-          Réserver
+          {c("reserver")}
           <SalonIcon name="arrow" className="size-3" />
         </span>
       </span>
@@ -406,6 +409,6 @@ function Ligne({
           {member.bio}
         </span>
       )}
-    </Link>
+    </Lien>
   );
 }

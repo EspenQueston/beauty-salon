@@ -28,11 +28,13 @@
  * pas nous.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { Lien } from "@/features/ui/Lien";
 
 import { platformUrl } from "@/lib/site";
 import type { PublicSalon } from "@/lib/types";
-import { contactLinks, mapsHref, socialLinks, SERVICE_MODES } from "./contact";
+import { contactLinks, mapsHref, socialLinks } from "./contact";
 import { SalonIcon } from "./icons";
 import { SalonLogo } from "./SalonLogo";
 
@@ -42,6 +44,8 @@ interface Colonne {
 }
 
 export function SalonFooter({ salon }: { salon: PublicSalon }) {
+  const t = useTranslations("salon");
+  const c = useTranslations("commun");
   const contacts = contactLinks(salon);
   const socials = socialLinks(salon);
   const maps = mapsHref(salon);
@@ -57,44 +61,47 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
   */
   const colonnes: Colonne[] = [
     {
-      titre: "Le salon",
+      titre: t("leSalon"),
       liens: [
-        { href: "/prestations", label: "Prestations" },
-        { href: "/realisations", label: "Réalisations" },
-        { href: "/equipe", label: "L'équipe" },
+        { href: "/prestations", label: t("prestations") },
+        { href: "/realisations", label: t("realisations") },
+        { href: "/equipe", label: t("equipe") },
       ],
     },
     {
-      titre: "Pratique",
+      titre: t("pratique"),
       liens: [
         ...(salon.about_content?.trim()
-          ? [{ href: "/a-propos", label: "À propos" }]
+          ? [{ href: "/a-propos", label: t("aPropos") }]
           : []),
-        { href: "/infos", label: "Infos pratiques" },
-        { href: "/reserver", label: "Réserver" },
+        { href: "/infos", label: t("infosPratiques") },
+        { href: "/reserver", label: c("reserver") },
       ],
     },
   ];
 
   if (contacts.length > 0 || maps) {
     colonnes.push({
-      titre: "Contact",
+      titre: t("contact"),
       liens: [
         ...contacts.map((contact) => ({
           href: contact.href,
           label: contact.value,
           external: contact.external,
         })),
-        ...(maps ? [{ href: maps, label: "Itinéraire", external: true }] : []),
+        ...(maps
+          ? [{ href: maps, label: t("itineraire"), external: true }]
+          : []),
       ],
     });
   }
 
   // Deux classes littérales plutôt qu'une chaîne composée : Tailwind lit le
   // source, il ne voit pas les noms fabriqués à l'exécution.
-  const grilleLiens = colonnes.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
+  const grilleLiens =
+    colonnes.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
 
-  const sousTitre = [salon.city, SERVICE_MODES[salon.service_mode]]
+  const sousTitre = [salon.city, t(`modes.${salon.service_mode}`)]
     .filter(Boolean)
     .join(" · ");
 
@@ -183,7 +190,7 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
             du dernier paragraphe de la page.
           */}
           <nav
-            aria-label="Pied de page"
+            aria-label={t("piedDePage")}
             className={`grid grid-cols-2 gap-x-6 gap-y-8 ${grilleLiens}`}
           >
             {colonnes.map((colonne) => (
@@ -204,12 +211,12 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
                           {lien.label}
                         </a>
                       ) : (
-                        <Link
+                        <Lien
                           href={lien.href}
                           className="inline-block text-[0.82rem] text-[var(--site-muted)] transition hover:translate-x-0.5 hover:text-[var(--salon-ink)] sm:text-[0.9rem]"
                         >
                           {lien.label}
-                        </Link>
+                        </Lien>
                       )}
                     </li>
                   ))}
@@ -238,7 +245,7 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
           href={platformUrl}
           className="underline-offset-4 transition hover:text-[var(--site-muted)] hover:underline"
         >
-          Propulsé par Beauty Salon
+          {t("propulsePar")}
         </a>
       </div>
     </footer>

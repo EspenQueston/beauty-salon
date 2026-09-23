@@ -88,6 +88,15 @@ class PublicBookingCreateSerializer(serializers.Serializer):
     # d'annulation en cas de litige.
     accepts_policy = serializers.BooleanField()
 
+    # La langue de lecture du mini-site, transmise par le serveur Next.
+    #
+    # Un choix ferme et non un champ libre : cette valeur finit dans le nom
+    # d un gabarit d e-mail, et une chaine arbitraire y chercherait un fichier
+    # que personne n a ecrit.
+    language = serializers.ChoiceField(
+        choices=[("fr", "fr"), ("en", "en")], default="fr"
+    )
+
     # Champ piege : invisible pour une humaine, rempli par les robots.
     website = serializers.CharField(required=False, allow_blank=True)
 
@@ -109,6 +118,10 @@ class BookingSerializer(serializers.ModelSerializer):
 
     customer_name = serializers.CharField(source="customer.full_name", read_only=True)
     customer_phone = serializers.CharField(source="customer.phone", read_only=True)
+    # L'adresse, pour ecrire depuis l'agenda. Elle peut etre vide : une
+    # cliente peut reserver par telephone sans en donner, et ce n'est pas
+    # une anomalie - l'ecran doit simplement ne rien afficher.
+    customer_email = serializers.CharField(source="customer.email", read_only=True)
     staff_member_name = serializers.CharField(source="staff_member.name", read_only=True)
 
     class Meta:
@@ -126,6 +139,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "customer",
             "customer_name",
             "customer_phone",
+            "customer_email",
             "total_amount",
             "deposit_amount",
             "deposit_paid",

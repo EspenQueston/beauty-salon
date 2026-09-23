@@ -56,7 +56,10 @@ export function SetupChecklist() {
     "/api/v1/staff-members/?page_size=1",
     tenantId,
   );
-  const media = useResource<Page<Counted>>("/api/v1/media/?page_size=1", tenantId);
+  const media = useResource<Page<Counted>>(
+    "/api/v1/media/?page_size=1",
+    tenantId,
+  );
   const hours = useResource<Page<Counted>>("/api/v1/business-hours/", tenantId);
 
   const loaded =
@@ -120,7 +123,13 @@ export function SetupChecklist() {
         waiting: true,
       },
     ];
-  }, [services.data, staff.data, media.data, hours.data, membership.tenant.status]);
+  }, [
+    services.data,
+    staff.data,
+    media.data,
+    hours.data,
+    membership.tenant.status,
+  ]);
 
   const done = steps.filter((step) => step.done).length;
   const percent = Math.round((done / steps.length) * 100);
@@ -136,7 +145,9 @@ export function SetupChecklist() {
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-baseline gap-2">
-          <span className="tabular text-3xl font-semibold text-ink">{percent}</span>
+          <span className="tabular text-3xl font-semibold text-ink">
+            {percent}
+          </span>
           <span className="text-lg text-muted">%</span>
         </div>
 

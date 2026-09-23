@@ -28,14 +28,22 @@ export function Souligne({
   return (
     <span
       className="mot-cle"
-      style={color ? ({ "--mot-cle-couleur": color } as CSSProperties) : undefined}
+      style={
+        color ? ({ "--mot-cle-couleur": color } as CSSProperties) : undefined
+      }
     >
       {children}
     </span>
   );
 }
 
-export function Lettres({ text, className = "" }: { text: string; className?: string }) {
+export function Lettres({
+  text,
+  className = "",
+}: {
+  text: string;
+  className?: string;
+}) {
   return (
     <span className={`lettres ${className}`} aria-label={text}>
       {/* Le mot entier reste lisible pour les lecteurs d'écran grâce à

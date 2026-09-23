@@ -20,7 +20,11 @@
  * remède se contourne en l'ignorant.
  */
 
-import { adjustForContrast, scoreContrast, type ContrastScore } from "@/lib/contrast";
+import {
+  adjustForContrast,
+  scoreContrast,
+  type ContrastScore,
+} from "@/lib/contrast";
 import { Icon } from "./icons";
 
 interface Pair {
@@ -78,8 +82,13 @@ export function ContrastMeter({
   ];
 
   const scores = pairs
-    .map((pair) => ({ pair, score: scoreContrast(pair.foreground, pair.background) }))
-    .filter((row): row is { pair: Pair; score: ContrastScore } => row.score !== null);
+    .map((pair) => ({
+      pair,
+      score: scoreContrast(pair.foreground, pair.background),
+    }))
+    .filter(
+      (row): row is { pair: Pair; score: ContrastScore } => row.score !== null,
+    );
 
   if (scores.length === 0) return null;
 
@@ -215,7 +224,10 @@ function Gauge({ score }: { score: ContrastScore }) {
             <Icon name="check" className="size-6" />
           </span>
         ) : (
-          <span className="tabular text-sm font-semibold" style={{ color: colour }}>
+          <span
+            className="tabular text-sm font-semibold"
+            style={{ color: colour }}
+          >
             {score.percent}
           </span>
         )}

@@ -1,0 +1,693 @@
+{
+  "plateforme": {
+    "nom": "Beauty Salon",
+    "promesse": "La plateforme de réservation des professionnels de la beauté."
+  },
+  "langue": {
+    "etiquette": "Langue",
+    "choisir": "Choisir la langue",
+    "lire": "Lire ce site en…"
+  },
+  "commun": {
+    "creerSalon": "Créer mon salon",
+    "seConnecter": "Se connecter",
+    "reserver": "Réserver",
+    "ouvrirMenu": "Ouvrir le menu",
+    "fermerMenu": "Fermer le menu",
+    "prendreRdv": "Prendre rendez-vous"
+  },
+  "accueil": {
+    "titreOnglet": "Beauty Salon — réservation en ligne pour les professionnels de la beauté",
+    "description": "Mini-site, réservation en ligne et agenda pour coiffeuses, prothésistes ongulaires, maquilleuses et barbiers au Congo, en RDC et dans la diaspora.",
+    "promesse": [
+      "Réservez",
+      "Coiffez",
+      "Encaissez"
+    ],
+    "metiers": [
+      "Coiffure",
+      "Ongles",
+      "Maquillage",
+      "Barbier"
+    ],
+    "territoires": [
+      "Congo-Brazzaville",
+      "RDC",
+      "Chine"
+    ],
+    "intro": "La plateforme de réservation des professionnels de la beauté : coiffure, ongles, maquillage, barbier. Un mini-site, un agenda, zéro double réservation.",
+    "voirFilm": "Voir le film",
+    "dureeFilm": "29 s",
+    "essai": "Essai gratuit. Aucune carte bancaire demandée.",
+    "utilisePar": "Utilisé par des salons au",
+    "atouts": {
+      "titre": "Ce que ça vous apporte",
+      "sous": "Trois choses, et elles tiennent ensemble : une vitrine qui se partage, un agenda qui ne se trompe pas, un fichier clientes qui vous appartient.",
+      "vitrine": {
+        "titre": "Votre mini-site",
+        "corps": "Une page à votre nom, avec vos photos, vos prix et vos horaires. Un seul lien à partager sur WhatsApp, Instagram ou TikTok.",
+        "corpsCourt": "Une page à votre nom, avec vos photos et vos prix. Un seul lien à partager sur WhatsApp ou Instagram.",
+        "etiquette": "Vitrine"
+      },
+      "agenda": {
+        "titre": "Réservation en ligne",
+        "corps": "Vos clientes réservent à toute heure, sur un créneau réellement libre. Deux personnes ne peuvent pas prendre la même place.",
+        "corpsCourt": "Vos clientes réservent à toute heure, sur un créneau réellement libre. Jamais deux fois la même place.",
+        "etiquette": "Agenda"
+      },
+      "gestion": {
+        "titre": "Agenda et clientes",
+        "corps": "Vos rendez-vous, votre équipe et votre fichier clientes au même endroit. Vos données restent les vôtres, exportables à tout moment.",
+        "corpsCourt": "Vos rendez-vous, votre équipe et vos clientes au même endroit. Vos données restent les vôtres.",
+        "etiquette": "Gestion"
+      },
+      "allerA": "Aller à « {titre} »"
+    },
+    "film": {
+      "surtitre": "Vingt-neuf secondes",
+      "titre": "Le produit, en un film",
+      "sous": "Une journée de salon : les demandes qui arrivent, le créneau qui se prend une seule fois, l'agenda qui suit. Musique originale, aucun commentaire."
+    },
+    "apercu": {
+      "surtitre": "Essayez avant de vous inscrire",
+      "titre": "À quoi ressemblera votre page",
+      "sous": "Tapez le nom de votre salon, choisissez vos couleurs. Aucune inscription, aucun e-mail demandé."
+    },
+    "etapes": {
+      "titre": "Comment ça marche",
+      "sous": "Trois étapes. La plus longue dure trois minutes.",
+      "creer": {
+        "titre": "Créez votre salon",
+        "corps": "Nom, adresse de votre mini-site, pays. Trois minutes, sans carte bancaire."
+      },
+      "remplir": {
+        "titre": "Remplissez votre vitrine",
+        "corps": "Prestations, tarifs, horaires, photos. Vous pouvez commencer avec trois prestations."
+      },
+      "partager": {
+        "titre": "Partagez votre lien",
+        "corps": "Sur WhatsApp, en story, ou en QR code affiché au salon. Les réservations arrivent dans votre agenda."
+      }
+    },
+    "questions": {
+      "titre": "Questions fréquentes",
+      "sous": "Cinq réponses, et rien qui vous engage.",
+      "prix": {
+        "q": "Faut-il payer pour commencer ?",
+        "a": "Non. L'inscription est gratuite et sans carte bancaire. Vous disposez d'une période d'essai complète, et aucune facture n'est émise avant sa fin."
+      },
+      "miseEnLigne": {
+        "q": "Mon mini-site est-il en ligne tout de suite ?",
+        "a": "Votre adresse est réservée dès l'inscription, mais la page devient publique après une vérification de notre équipe. Vous pouvez préparer votre catalogue et vos horaires pendant ce temps."
+      },
+      "seule": {
+        "q": "Et si je travaille seule ?",
+        "a": "C'est le cas le plus courant. Créez simplement votre propre fiche de prestataire : ce sont vos horaires et vos rendez-vous qui s'y rattachent."
+      },
+      "paiement": {
+        "q": "Comment mes clientes me paient-elles ?",
+        "a": "Comme aujourd'hui : espèces, Mobile Money ou virement. La plateforme suit les acomptes demandés et vous notez l'encaissement en un clic."
+      },
+      "donnees": {
+        "q": "Puis-je récupérer mes données ?",
+        "a": "Oui, à tout moment. Votre fichier clientes et votre historique de rendez-vous vous appartiennent."
+      }
+    },
+    "appel": {
+      "titre": "Prête à ouvrir votre agenda ?",
+      "sous": "Créez votre salon aujourd'hui, partagez votre lien demain."
+    },
+    "introCourte": "Un mini-site à votre nom, un agenda qui ne se trompe pas, zéro double réservation."
+  },
+  "devise": {
+    "ouvrir": "Afficher les prix en une autre devise (actuellement {devise})",
+    "lire": "Lire les prix en…",
+    "facture": "facturé",
+    "avertissement": "Conversion indicative, au taux du jour. Le salon encaisse en {devise}.",
+    "noms": {
+      "XAF": "Franc CFA",
+      "CNY": "Yuan",
+      "CDF": "Franc congolais",
+      "EUR": "Euro",
+      "USD": "Dollar"
+    }
+  },
+  "site": {
+    "nav": {
+      "principale": "Navigation principale",
+      "fonctionnalites": "Fonctionnalités",
+      "film": "Le film",
+      "apercu": "Aperçu",
+      "etapes": "Comment ça marche",
+      "questions": "Questions"
+    },
+    "pied": {
+      "promesse": "La plateforme de réservation des professionnels de la beauté au Congo-Brazzaville, en RDC et dans la diaspora.",
+      "donnees": "Vos clientes, vos photos, vos rendez-vous : ces données vous appartiennent et restent exportables.",
+      "produit": "Le produit",
+      "monSalon": "Mon salon",
+      "questions": "Questions fréquentes",
+      "motDePasse": "Mot de passe oublié",
+      "revenirEnHaut": "Revenir en haut"
+    },
+    "adresse": {
+      "question": "Votre adresse est-elle libre ?",
+      "aide": "Tapez le nom de votre salon. Aucune inscription demandée.",
+      "exemple": "Blondrose",
+      "reserver": "Réserver cette adresse",
+      "verification": "Vérification…",
+      "tropCourt": "Trois caractères au minimum.",
+      "libre": "{adresse} est disponible. Elle est à vous en trois minutes.",
+      "prise": "{adresse} est déjà pris. Essayez une variante."
+    },
+    "apercu": {
+      "salonParDefaut": "Votre salon",
+      "exemple": "Chez Sandra",
+      "creer": "Créer mon salon"
+    },
+    "film": {
+      "telecharger": "Télécharger le film (3 Mo)",
+      "lancer": "Lancer le film de présentation, 29 secondes, avec le son",
+      "couper": "Couper le son du film",
+      "chapitres": {
+        "demandes": "Les demandes arrivent",
+        "promesse": "Réservez. Coiffez. Encaissez.",
+        "outils": "Les trois outils",
+        "double": "Zéro double réservation"
+      }
+    },
+    "territoiresLus": "Utilisé par des salons au {lieux}.",
+    "apercuVitrine": {
+      "nomChamp": "Le nom de votre salon",
+      "direct": "Aperçu en direct",
+      "reserverAdresse": "Réserver {adresse}",
+      "suivi": "Vos choix vous suivent : le formulaire arrive déjà rempli.",
+      "hoteExemple": "votre-salon.beautysalon",
+      "reserver": "Réserver un rendez-vous",
+      "prestations": {
+        "tresses": "Tresses collées",
+        "soin": "Soin profond"
+      },
+      "salonParDefaut": "Votre salon",
+      "couleurs": "Vos couleurs"
+    },
+    "filmSecours": "Votre navigateur ne peut pas lire cette vidéo.",
+    "essaiCourt": "Essai gratuit · Aucune carte bancaire",
+    "palettes": {
+      "rose": "Rose poudré",
+      "orNuit": "Or et nuit",
+      "terracotta": "Terracotta",
+      "emeraude": "Émeraude",
+      "violet": "Violet",
+      "bleuNuit": "Bleu nuit",
+      "cacao": "Cacao",
+      "corail": "Corail",
+      "prune": "Prune",
+      "encreMenthe": "Encre et menthe"
+    }
+  },
+  "salon": {
+    "sections": "Sections du salon",
+    "piedDePage": "Pied de page",
+    "prestations": "Prestations",
+    "realisations": "Réalisations",
+    "equipe": "L'équipe",
+    "aPropos": "À propos",
+    "infos": "Infos",
+    "infosPratiques": "Infos pratiques",
+    "accueil": "Accueil",
+    "leSalon": "Le salon",
+    "pratique": "Pratique",
+    "contact": "Contact",
+    "itineraire": "Itinéraire",
+    "monEspace": "Mon espace",
+    "reserverRdv": "Réserver un rendez-vous",
+    "ecrireWhatsApp": "Écrire sur WhatsApp",
+    "jours": {
+      "0": "Lundi",
+      "1": "Mardi",
+      "2": "Mercredi",
+      "3": "Jeudi",
+      "4": "Vendredi",
+      "5": "Samedi",
+      "6": "Dimanche"
+    },
+    "statut": {
+      "ouvert": "Ouvert",
+      "ferme": "Fermé",
+      "fermeA": "Ferme à {heure}",
+      "ouvreA": "Ouvre {quand} à {heure}",
+      "aujourdhui": "aujourd'hui",
+      "demain": "demain"
+    },
+    "prix": {
+      "surDevis": "Sur devis",
+      "aPartirDe": "À partir de {prix}",
+      "aPartirDeSeul": "À partir de"
+    },
+    "hero": {
+      "voirPrestations": "Voir les prestations",
+      "avis": "{n, plural, =0 {aucun avis} one {# avis vérifié} other {# avis vérifiés}}",
+      "prestations": "{n, plural, one {prestation} other {prestations}}",
+      "prestataires": "{n, plural, one {prestataire} other {prestataires}}",
+      "aujourdhui": "aujourd'hui"
+    },
+    "joursPhrase": {
+      "0": "lundi",
+      "1": "mardi",
+      "2": "mercredi",
+      "3": "jeudi",
+      "4": "vendredi",
+      "5": "samedi",
+      "6": "dimanche"
+    },
+    "pages": {
+      "aProposSurtitre": "Notre histoire",
+      "aProposVideTitre": "La présentation arrive",
+      "aProposVideCorps": "{salon} n'a pas encore rédigé sa présentation. En attendant, son catalogue et ses horaires sont à jour.",
+      "lecture": "{n} min de lecture",
+      "prestationsTitre": "Nos prestations",
+      "prestationsVideTitre": "Le catalogue arrive",
+      "prestationsVideCorps": "Ce salon prépare ses prestations. Écrivez-lui pour connaître ses tarifs.",
+      "realisationsSurtitre": "Notre travail",
+      "realisationsTitre": "Réalisations",
+      "imagesAmbiance": "Images d'ambiance",
+      "equipeSurtitre": "Qui vous reçoit",
+      "equipeTitre": "L'équipe",
+      "equipeVideTitre": "L'équipe se présente bientôt",
+      "equipeVideCorps": "Ce salon n'a pas encore publié ses prestataires.",
+      "avisSurtitre": "Merci de votre visite",
+      "avisTitre": "Comment ça s'est passé ?",
+      "infosSurtitre": "Nous trouver",
+      "infosTitre": "Infos pratiques",
+      "ouNousSommes": "Où nous sommes",
+      "adresseCachee": "Adresse communiquée à la confirmation du rendez-vous.",
+      "deplacement": "Nous nous déplaçons",
+      "deplacementCorps": "Nous intervenons à domicile dans les quartiers suivants.",
+      "deplacementFrais": "Les frais de déplacement sont convenus avec le salon.",
+      "deplacementForfait": "Forfait de déplacement, annoncé avant de réserver.",
+      "horaires": "Horaires d'ouverture",
+      "nousContacter": "Nous contacter",
+      "reservationAnnulation": "Réservation et annulation",
+      "categories": "Catégories",
+      "photos": "{n, plural, one {# photo} other {# photos}}",
+      "videos": "{n, plural, one {# vidéo} other {# vidéos}}",
+      "prestationsCompte": "{n, plural, one {# prestation} other {# prestations}}",
+      "ambianceAvecTravail": "Ces photos illustrent le métier — elles ne sont pas le travail de {salon}, qui publie ses réalisations au fur et à mesure.",
+      "ambianceSansTravail": "{salon} n'a pas encore publié ses propres photos. Celles-ci illustrent le métier — écrivez au salon pour voir son travail.",
+      "zoneGratuite": "{n, plural, one {Une zone est desservie sans frais.} other {# zones sont desservies sans frais.}}",
+      "offert": "Offert",
+      "annulationGratuite": "Annulation gratuite jusqu'à {heures} h avant le rendez-vous.",
+      "delaiMinimum": "Réservation possible jusqu'à {delai} avant le créneau.",
+      "agendaOuvert": "Agenda ouvert sur {jours} jours à l'avance.",
+      "retardTolere": "Retard toléré : {minutes} minutes",
+      "aucunRetard": "Aucun retard toléré",
+      "nousSuivre": "Nous suivre",
+      "aProposDe": "À propos de {salon}",
+      "reservezChez": "Réservez votre rendez-vous chez {salon}.",
+      "introuvable": "Salon introuvable"
+    },
+    "galerie": {
+      "alt": "Réalisation de {salon}",
+      "altNumerotee": "Réalisation {n} de {salon}",
+      "simple": "Réalisation"
+    },
+    "note": {
+      "surCinq": "{note} sur 5"
+    },
+    "partage": {
+      "scannez": "Scannez le code avec WeChat ou l'appareil photo, ou envoyez le lien.",
+      "copie": "copié",
+      "copier": "Copier le lien",
+      "wechatTitre": "Scannez le code dans WeChat",
+      "wechatBureau": "Découvrir › Scanner. Depuis votre téléphone, recopiez plutôt l’identifiant.",
+      "wechatTelephone": "Ouvrez la recherche et collez l’identifiant ci-dessous.",
+      "message": "Prenez rendez-vous chez {salon} : {url}",
+      "qrWechat": "QR code WeChat de {salon}",
+      "chercher": "Cherchez {salon} dans WeChat"
+    },
+    "etapes": {
+      "choisirTitre": "Choisissez votre prestation",
+      "choisirCorps": "Le tarif et la durée sont affichés. Rien ne se décide sur cette première étape.",
+      "creneauTitre": "Prenez un créneau libre",
+      "creneauCorps": "Seules les heures réellement disponibles apparaissent. Deux personnes ne peuvent pas prendre la même.",
+      "acompteTitre": "Réglez l'acompte",
+      "acompteCorps": "Scannez le QR du salon, envoyez votre capture. Le créneau vous est gardé pendant ce temps.",
+      "confirmeTitre": "C'est réservé",
+      "confirmeCorps": "Vous recevez la confirmation par e-mail, avec votre code d'arrivée à montrer au salon.",
+      "commencer": "Commencer ma réservation"
+    },
+    "avisFormulaire": {
+      "lienIncomplet": "Ce lien est incomplet.",
+      "lienInvalide": "Ce lien n'est plus valide.",
+      "auMoinsUnCritere": "Notez au moins un critère.",
+      "envoiImpossible": "Envoi impossible. Réessayez.",
+      "verification": "Vérification du lien…",
+      "exemple": "Comment ça s'est passé ? Ce qui vous a plu, ce qui pourrait être mieux, ce que vous diriez à une amie…",
+      "envoi": "Envoi…",
+      "publier": "Publier mon avis"
+    },
+    "avisGarantie": "Chaque avis est rattaché à un rendez-vous réellement honoré. Le salon ne peut ni les modifier ni les supprimer.",
+    "propulsePar": "Propulsé par Beauty Salon",
+    "arreterDefilement": "Arrêter le défilement",
+    "relancerDefilement": "Relancer le défilement",
+    "titres": {
+      "aPropos": "À propos",
+      "avis": "Votre avis",
+      "compte": "Mon espace",
+      "equipe": "L'équipe",
+      "infos": "Infos pratiques",
+      "paiement": "Régler l'acompte",
+      "prestations": "Prestations",
+      "realisations": "Réalisations",
+      "rendezVous": "Mon rendez-vous",
+      "reserver": "Réserver"
+    },
+    "modes": {
+      "salon": "Au salon",
+      "home": "À domicile",
+      "hybrid": "Au salon ou à domicile"
+    },
+    "reservationImmediate": "Réservation en ligne, confirmation immédiate",
+    "notes": [
+      "",
+      "Très déçue",
+      "Décevant",
+      "Correct",
+      "Très bien",
+      "Excellent"
+    ],
+    "votreNote": "Votre note",
+    "precedente": "Précédente",
+    "suivante": "Suivante",
+    "chiffres": {
+      "prestataires": "{n, plural, one {prestataire} other {prestataires}}",
+      "specialites": "{n, plural, one {spécialité} other {spécialités}}",
+      "realisations": "réalisations en ligne",
+      "ouRecevoir": "où nous recevoir"
+    },
+    "avis": {
+      "merci": "Merci pour votre avis",
+      "mercicorps": "Il est en ligne. Il aidera les prochaines clientes à choisir en connaissance de cause.",
+      "retourAuSalon": "Retour au salon",
+      "voirLeSalon": "Voir le salon",
+      "votreVisite": "Votre visite",
+      "pointParPoint": "Votre note, point par point",
+      "uneLigneSuffit": "notez ce que vous voulez, une ligne suffit",
+      "criteresNotes": "{n} sur {total} critères"
+    },
+    "titresAccueil": {
+      "prestationsSurtitre": "Ce que nous faisons",
+      "prestationsTitre": "Prestations",
+      "toutesPrestations": "Les {n} prestations",
+      "catalogueVideTitre": "Le catalogue arrive",
+      "catalogueVideCorps": "Ce salon prépare ses prestations. En attendant, écrivez-lui — il répond aux messages.",
+      "etapesSurtitre": "En trois étapes",
+      "etapesTitre": "Comment ça se passe",
+      "galerieSurtitre": "Nos réalisations",
+      "galerieTitre": "Le travail parle",
+      "toutesRealisations": "Les {n} réalisations",
+      "equipeSurtitre": "Qui vous reçoit",
+      "equipeTitre": "L'équipe",
+      "touteEquipe": "Toute l'équipe",
+      "avisSurtitre": "Ce qu'en disent les clientes",
+      "avisTitre": "Avis vérifiés",
+      "infosSurtitre": "Nous trouver",
+      "infosTitre": "Infos pratiques",
+      "toutLeDetail": "Tout le détail",
+      "adresse": "Adresse",
+      "itineraire": "Voir l'itinéraire",
+      "nousJoindre": "Nous joindre",
+      "appelTitre": "Prête à prendre rendez-vous ?",
+      "appelCorps": "Choisissez votre créneau en ligne, à toute heure. Confirmation immédiate, annulation gratuite jusqu'à {heures} h avant.",
+      "reserverMaintenant": "Réserver maintenant"
+    },
+    "prestationsCatalogue": "{n, plural, one {# prestation au catalogue} other {# prestations au catalogue}}",
+    "acompte": "Acompte"
+  },
+  "reservation": {
+    "erreurs": {
+      "nom": "Indiquez votre nom.",
+      "numeroCourt": "Numéro trop court.",
+      "numeroInvalide": "Numéro invalide.",
+      "politique": "Vous devez accepter la politique d'annulation.",
+      "zone": "Choisissez la zone de votre domicile.",
+      "adresse": "Indiquez où le prestataire doit se rendre.",
+      "creneauPris": "Ce créneau vient d'être réservé. Choisissez-en un autre.",
+      "echec": "La réservation a échoué. Réessayez.",
+      "disponibilites": "Impossible de charger les disponibilités.",
+      "inscription": "Inscription impossible pour le moment.",
+      "email": "Adresse e-mail invalide."
+    },
+    "etapes": {
+      "choix": "Votre choix",
+      "creneau": "Créneau",
+      "coordonnees": "Coordonnées"
+    },
+    "catalogue": {
+      "vide": "Ce salon n'a pas encore publié son catalogue. Contactez-le directement.",
+      "avecQui": "Avec qui ?",
+      "plusDeCreneaux": "Plus de créneaux disponibles",
+      "aucunRetard": "Aucun retard toléré.",
+      "itineraire": "itinéraire",
+      "confirmationImmediate": "Confirmation immédiate par e-mail.",
+      "uneQuestion": "Une question ? Écrivez-nous",
+      "retardJusqua": "Retard toléré jusqu'à {minutes} min.",
+      "retardMinutes": "Retard toléré : {minutes} min."
+    },
+    "creneaux": {
+      "titre": "Choisissez un créneau",
+      "chargement": "Chargement des disponibilités…",
+      "ecrireAuSalon": "Écrire au salon",
+      "aucunTroisSemaines": "Aucun créneau sur les trois prochaines semaines.",
+      "listeAttente": "Laissez vos coordonnées : le salon vous préviendra dès qu'une place se libère.",
+      "rienCettePeriode": "Rien sur cette période. Essayez « 30 jours ».",
+      "periode": "Période"
+    },
+    "coordonnees": {
+      "titre": "Vos coordonnées",
+      "offres": "J'accepte de recevoir les offres du salon.",
+      "usage": "Vos coordonnées ne servent qu'à ce rendez-vous.",
+      "telephone": "Téléphone (WhatsApp)",
+      "telephoneAide": "C'est par là que le salon vous confirmera.",
+      "emailAide": "Pour recevoir la confirmation et le rappel de la veille.",
+      "message": "Message au salon (facultatif)",
+      "confirmer": "Confirmer la réservation"
+    },
+    "lieu": {
+      "question": "Où souhaitez-vous être reçue ?",
+      "quartier": "Votre quartier",
+      "deplacementOffert": "Déplacement offert",
+      "deplacementOffertMinuscule": "déplacement offert",
+      "titre": "Lieu du rendez-vous",
+      "auSalon": "Au salon",
+      "surPlace": "Sur place",
+      "prestataireSeDeplace": "Le prestataire se déplace",
+      "adresseAide": "Rue, immeuble, étage — et un point de repère si besoin.",
+      "adresseExemple": "Ex. 12 avenue de la Paix, immeuble bleu, face à la pharmacie"
+    },
+    "attente": {
+      "enregistre": "Rendez-vous enregistré",
+      "mePrevenir": "Me prévenir si une place se libère",
+      "votreNom": "Votre nom",
+      "aPartirDu": "À partir du",
+      "jusquAu": "Jusqu'au",
+      "precision": "Précision (facultatif)",
+      "precisionExemple": "Plutôt le samedi matin…",
+      "avertissement": "Ceci ne réserve aucun créneau : c'est une demande de rappel.",
+      "contacterWhatsApp": "Contacter le salon sur WhatsApp",
+      "revenirAuSalon": "Revenir au salon",
+      "cestNote": "C'est noté."
+    },
+    "options": {
+      "avantDeVenir": "Avant de venir",
+      "uneOption": "Une option ?",
+      "prevoir": "Ce qu'il faut prévoir pour cette prestation, et ce que vous pouvez ajouter.",
+      "facultatif": "Facultatif. Chaque option ajustera le tarif et la durée du rendez-vous.",
+      "sansOption": "Sans option",
+      "repondezCiDessus": "Répondez ci-dessus",
+      "choisirCreneau": "Choisir un créneau",
+      "avecVosOptions": "avec vos options"
+    },
+    "exigences": {
+      "rienAPayer": "rien à payer",
+      "regle": "Réglé",
+      "jeLAchete": "Je l'achète ici",
+      "aApporter": "À apporter",
+      "auSalonJourMeme": "au salon, le jour même",
+      "salonNenVendPas": "le salon n'en vend pas",
+      "retirer": "Retirer un {produit}",
+      "ajouter": "Ajouter un {produit}"
+    },
+    "code": {
+      "titre": "Mon code d'arrivée",
+      "sousTitre": "À montrer en arrivant au salon",
+      "explication": "Montrez ce code à votre arrivée : le salon le scanne et vous êtes enregistrée."
+    },
+    "suivi": {
+      "lienMort": "Ce lien n'est plus valable.",
+      "prendreRdv": "Prendre rendez-vous",
+      "acompteTitre": "Acompte à régler",
+      "acompteCorps": "Votre créneau est réservé le temps que vous régliez.",
+      "attenteTitre": "En attente de confirmation",
+      "attenteCorps": "Le salon vérifie votre versement. Vous recevrez un e-mail dès que c'est fait.",
+      "refuseCorps": "Le salon n'a pas retrouvé votre paiement. Votre créneau est toujours gardé.",
+      "confirmeTitre": "Rendez-vous confirmé",
+      "confirmeCorps": "Tout est réglé. Présentez votre code d'arrivée en arrivant au salon.",
+      "honoreTitre": "Rendez-vous honoré",
+      "honoreCorps": "Merci de votre visite. Tout est réglé, il n'y a rien à faire.",
+      "arriveeTitre": "Vous êtes arrivée",
+      "arriveeCorps": "Le salon vous a enregistrée. Bonne séance.",
+      "absenteTitre": "Vous n'êtes pas venue",
+      "absenteCorps": "Le salon a noté votre absence. Contactez-le pour reprendre rendez-vous.",
+      "expireTitre": "Délai de règlement dépassé",
+      "expireCorps": "Le créneau a été remis à disposition. Vous pouvez en choisir un autre.",
+      "annuleTitre": "Rendez-vous annulé",
+      "annuleCorps": "Ce rendez-vous n'aura pas lieu.",
+      "reprendre": "Reprendre rendez-vous",
+      "itineraire": "Itinéraire",
+      "ecrireAuSalon": "Écrire au salon",
+      "auNomDe": "Au nom de",
+      "avec": "Avec",
+      "gardezLien": "Gardez ce lien : il rouvre cette page à tout moment.",
+      "acompteRecu": "Acompte reçu",
+      "aDomicile": "À domicile",
+      "reglePar": "Réglé par",
+      "reglerAcompte": "Régler l'acompte"
+    },
+    "paiement": {
+      "titre": "Acompte à régler",
+      "lienMort": "Ce lien n'est plus valable. Contactez le salon pour reprendre votre réservation.",
+      "refuseTitre": "Le salon n'a pas retrouvé votre versement.",
+      "refuseCorps": "Votre créneau est toujours réservé. Renvoyez une capture plus lisible, ou contactez le salon.",
+      "aucunMoyen": "Le salon n'a pas encore publié de moyen de paiement. Contactez-le directement pour régler votre acompte.",
+      "creneauGarde": "Votre créneau reste réservé pendant que le salon vérifie. Prenez le temps qu'il faut.",
+      "recuTitre": "Votre acompte est bien reçu",
+      "recuCorps": "Le salon a confirmé votre rendez-vous. Il n'y a plus rien à régler ici.",
+      "voirRdv": "Voir mon rendez-vous",
+      "nouveauCreneau": "Choisir un nouveau créneau",
+      "moyenDePaiement": "Moyen de paiement",
+      "apresPaiement": "Une fois le paiement fait",
+      "apresPaiementCorps": "Envoyez la capture d'écran de votre paiement. Le salon la vérifiera et confirmera votre rendez-vous.",
+      "annuleTitre": "Ce rendez-vous a été annulé",
+      "delaiTitre": "Le délai est dépassé",
+      "plusDAcompte": "Il n'y a plus d'acompte à régler pour ce rendez-vous.",
+      "delaiCorps": "Faute de règlement dans les 30 minutes, le créneau a été remis à disposition. Rien ne vous a été débité.",
+      "numeroTransaction": "N° de transaction",
+      "messageAuSalon": "Message au salon",
+      "attenteTitre": "En attente de confirmation",
+      "creneauReserve": "Votre créneau reste réservé pendant ce temps.",
+      "suivreRdv": "Suivre mon rendez-vous",
+      "imageTropGrande": "Cette image dépasse 15 Mo.",
+      "changerCapture": "Changer la capture",
+      "choisirCapture": "Choisir une capture d'écran",
+      "envoyerPreuve": "J'ai payé, envoyer la preuve"
+    },
+    "creneauGardeEncore": "Créneau gardé encore",
+    "total": "Total",
+    "minutes": "{n} min",
+    "minutesSecondes": "{m} min {s} s",
+    "secondes": "{n} s"
+  },
+  "espace": {
+    "pro": {
+      "titre": "Ce compte est un compte professionnel.",
+      "corps": "L'espace cliente est réservé aux personnes qui réservent.",
+      "tableau": "Aller à mon tableau de bord"
+    },
+    "etat": {
+      "acompte": "Acompte à régler",
+      "demande": "Demandé",
+      "confirme": "Confirmé",
+      "arrivee": "Vous êtes arrivée",
+      "termine": "Terminé",
+      "annule": "Annulé",
+      "nonHonore": "Non honoré"
+    },
+    "compte": {
+      "nom": "Votre nom",
+      "telephone": "Téléphone",
+      "motDePasse": "Mot de passe",
+      "echec": "Échec.",
+      "motDePasseOublie": "Mot de passe oublié ?",
+      "unCompte": "Un compte, tous vos salons.",
+      "rdvAuMemeEndroit": "Vos rendez-vous au même endroit",
+      "reserverSansCompte": "Réserver sans compte",
+      "plusRienARessaisir": "Plus rien à ressaisir",
+      "plusRienCorps": "Votre nom et votre téléphone sont déjà là la prochaine fois.",
+      "sansCompteTitre": "Vous pouvez réserver sans compte",
+      "sansCompteCorps": "Le compte sert à retrouver vos rendez-vous, pas à en prendre.",
+      "retrouvez": "Retrouvez vos rendez-vous",
+      "creerVotreCompte": "Créer votre compte",
+      "unSeulCompte": "Un seul compte pour tous les salons que vous fréquentez.",
+      "seDeconnecter": "Se déconnecter",
+      "unInstant": "Un instant…",
+      "seConnecter": "Se connecter",
+      "creerMonCompte": "Créer mon compte",
+      "pasEncore": "Pas encore de compte ?",
+      "dejaUn": "Vous en avez déjà un ?",
+      "creerUnCompte": "Créer un compte",
+      "ceuxDeListe": "Ceux de {salon} et ceux de vos autres salons, en une liste.",
+      "ceuxDeMemeEndroit": "Ceux de {salon} et ceux de vos autres salons, au même endroit.",
+      "retourChez": "Retour chez {salon}"
+    },
+    "liste": {
+      "echec": "Impossible de charger vos rendez-vous.",
+      "acompteRappel": "Votre créneau est réservé, mais il se libérera si l'acompte n'arrive pas.",
+      "avisInvitation": "Cinq critères, deux minutes. Votre avis aide les prochaines clientes à choisir — et le salon à s'améliorer là où il faut.",
+      "aucunAVenir": "Aucun rendez-vous à venir.",
+      "rienApres": "Rien d'autre de prévu après votre prochain rendez-vous.",
+      "passeesIci": "Vos visites passées apparaîtront ici.",
+      "avisDepose": "Avis déposé",
+      "reprendre": "Reprendre rendez-vous",
+      "aVenir": "À venir",
+      "aNoter": "À noter",
+      "acompteRestant": "Un acompte reste à régler",
+      "voirDetail": "Voir le détail",
+      "visiteAttendAvis": "Une visite attend votre avis",
+      "reprenezLa": "Reprenez là où vous vous étiez arrêtée.",
+      "choisissezPrestation": "Choisissez une prestation pour commencer.",
+      "enregistre": "Enregistré.",
+      "vosRdv": "Vos rendez-vous",
+      "avec": "Avec",
+      "reglerAcompte": "Régler l'acompte",
+      "suivre": "Suivre mon rendez-vous",
+      "itineraire": "Itinéraire",
+      "leSalon": "Le salon",
+      "passe": "Passé",
+      "dansUneSemaine": "Dans une semaine",
+      "dernieresHeures": "dernières heures",
+      "aujourdhui": "Aujourd'hui",
+      "demain": "Demain",
+      "dansJours": "Dans {n} jours",
+      "dansSemaines": "Dans {n} semaines",
+      "dansMois": "Dans {n} mois",
+      "dernierJour": "dernier jour",
+      "joursRestants": "{n} jours",
+      "acomptesRestants": "{n, plural, one {# acompte reste à régler} other {# acomptes restent à régler}}",
+      "visitesAvis": "{n, plural, one {# visite attend votre avis} other {# visites attendent votre avis}}"
+    },
+    "annuler": {
+      "leContacter": "Le contacter",
+      "annuler": "Annuler ce rendez-vous",
+      "confirmer": "Annuler ce rendez-vous ?",
+      "mot": "Un mot pour le salon (facultatif)",
+      "echec": "Annulation impossible. Contactez le salon.",
+      "exemple": "Empêchement de dernière minute",
+      "unInstant": "Un instant…"
+    },
+    "suivi": {
+      "acompteCorps": "Réglez l'acompte pour que votre créneau soit tenu.",
+      "aValider": "À valider",
+      "aValiderCorps": "Le salon vérifie votre versement. Vous recevrez un e-mail.",
+      "demande": "Demandé",
+      "demandeCorps": "Le salon vous confirme sous peu. Vous recevrez un e-mail.",
+      "confirme": "Confirmé",
+      "confirmeCorps": "C'est réservé. Présentez votre code en arrivant au salon.",
+      "arrivee": "Arrivée",
+      "arriveeCorps": "Le salon vous a enregistrée. Bonne séance.",
+      "termine": "Terminé",
+      "termineCorps": "C'est fait. Votre avis aiderait les prochaines clientes."
+    }
+  }
+}

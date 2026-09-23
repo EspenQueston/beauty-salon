@@ -39,6 +39,16 @@
   --ui-info-bg: #eaf1fd;
 
   --salon-primary: #b4436c;
+  /*
+   * L'encre de marque : la couleur telle quelle en thème clair, éclaircie
+   * en thème sombre.
+   *
+   * `--salon-primary` reste la couleur de remplissage — boutons, pastilles,
+   * dégradés — où seul compte le contraste du texte posé dessus. `--salon-ink`
+   * est ce qu'on écrit **avec**. Les deux ne peuvent pas être la même valeur :
+   * en sombre, #b4436c plafonne à 4,07:1 même sur du noir pur.
+   */
+  --salon-ink: var(--salon-primary);
   --salon-primary-soft: #f7e9ef;
   --salon-accent: #f2c4ce;
   --salon-surface: #faf7f8;
@@ -85,6 +95,9 @@
     --ui-info-bg: #101c30;
 
     --salon-primary-soft: #2a1620;
+    /* 70 % de marque, 30 % de blanc : 5,7:1 sur le fond du produit et
+       5,1:1 sur la surface douce, en restant franchement rose. */
+    --salon-ink: color-mix(in srgb, var(--salon-primary) 70%, white);
     /* --salon-surface n'est pas inversé : il n'habille que le mini-site,
        qui reste clair pour toutes les visiteuses. */
 
@@ -118,6 +131,7 @@
   --ui-info-bg: #101c30;
 
   --salon-primary-soft: #2a1620;
+  --salon-ink: color-mix(in srgb, var(--salon-primary) 70%, white);
 
   --ui-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
   --ui-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
@@ -146,6 +160,7 @@
   --color-info-bg: var(--ui-info-bg);
 
   --color-salon: var(--salon-primary);
+  --color-salon-ink: var(--salon-ink);
   --color-salon-soft: var(--salon-primary-soft);
   --color-salon-accent: var(--salon-accent);
   --color-salon-surface: var(--salon-surface);
@@ -292,53 +307,6 @@ body {
 /* Mini-site : relief et matière                                            */
 /* ------------------------------------------------------------------------ */
 
-/*
- * Inclinaison 3D pilotée par `features/salon/Tilt.tsx`.
- *
- * La perspective vit sur le conteneur et la rotation sur l'enfant : c'est
- * ce qui donne une profondeur réaliste plutôt qu'un simple cisaillement.
- * Au repos les variables valent zéro, donc la carte est parfaitement plate
- * tant que rien ne la survole.
- */
-.tilt {
-  perspective: 900px;
-}
-
-.tilt > * {
-  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-  transform-style: preserve-3d;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform;
-}
-
-/* Pendant le survol, la carte suit le curseur sans amortissement : un délai
-   ici donnerait une impression de latence. */
-.tilt[data-tilting="true"] > * {
-  transition: transform 0.08s linear;
-}
-
-.tilt--glare > * {
-  position: relative;
-}
-
-.tilt--glare > *::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  background: radial-gradient(
-    22rem circle at var(--glare-x, 50%) var(--glare-y, 50%),
-    rgb(255 255 255 / 0.5),
-    transparent 55%
-  );
-}
-
-.tilt[data-tilting="true"].tilt--glare > *::after {
-  opacity: 1;
-}
 
 /* Dégradé de marque, utilisé sur les surfaces d'accent du mini-site. */
 .salon-gradient {
@@ -430,16 +398,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .salon-site .salon-social:hover {
     transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tilt > * {
-    transform: none !important;
-  }
-
-  .tilt--glare > *::after {
-    opacity: 0 !important;
   }
 }
 
@@ -835,6 +793,71 @@ html[data-js] .tilt[data-visible="true"] {
    recalculer la mise en page, ce qui rend l'animation gratuite même sur un
    téléphone d'entrée de gamme.
 --------------------------------------------------------------------------- */
+
+/*
+ * Le fond des écrans d'accès : trois taches qui dérivent, puis un voile
+ * teinté par-dessus.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi le voile porte lui-même le dégradé
+ * ---------------------------------------------------------------------------
+ *
+ * Il valait `bg-bg/80` : un aplat dont le seul rôle était de calmer les
+ * taches. Résultat, le fond ne montrait plus qu'un blanc à peine rosé — la
+ * couleur avait été payée en performance et n'arrivait pas à l'écran.
+ *
+ * La couleur de fond et l'image de fond se peignent dans cet ordre sur un
+ * même élément : le voile atténue donc les taches, puis pose par-dessus un
+ * dégradé choisi, à une densité qu'on maîtrise. Une couche au lieu de deux,
+ * et une teinte qu'on peut mesurer plutôt que subir.
+ *
+ * `--auth-teinte` règle cette densité par thème. Sur fond clair, une même
+ * valeur salit ; sur fond noir, elle ne se voit pas.
+ */
+.auth-voile {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--ui-bg) 82%, transparent);
+  background-image:
+    radial-gradient(
+      70rem 46rem at 8% -12%,
+      color-mix(in srgb, var(--salon-primary) var(--auth-teinte), transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      52rem 40rem at 96% 6%,
+      color-mix(in srgb, var(--salon-accent) calc(var(--auth-teinte) * 1.8), transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      58rem 48rem at 76% 106%,
+      color-mix(in srgb, #e0845f var(--auth-teinte), transparent),
+      transparent 70%
+    );
+}
+
+/*
+ * La densité du dégradé, par thème.
+ *
+ * Elle a d'abord été baissée à 13 % parce que la mention « 30 jours
+ * gratuits », posée sur le fond, y tombait à 4,37:1. La vraie réponse était
+ * ailleurs : ce texte n'avait rien à faire sur le décor. Depuis qu'il est
+ * dans la carte, plus aucun texte courant ne repose sur le dégradé, et sa
+ * densité redevient une question d'allure — pas de lisibilité.
+ */
+:root {
+  --auth-teinte: 22%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --auth-teinte: 26%;
+  }
+}
+
+:root[data-theme="dark"] {
+  --auth-teinte: 26%;
+}
 
 .auth-blob {
   position: absolute;
@@ -1340,4 +1363,1321 @@ html[data-js] .mots-mot {
 body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/*
+ * Barre de défilement discrète, pour les rubans horizontaux.
+ *
+ * Le ruban des jours du panneau « Déplacer » affichait la barre épaisse du
+ * système, posée en travers sous les dates : sur une carte de 512 px, elle
+ * pèse autant que le contenu qu’elle sert.
+ *
+ * On l’amincit, on ne la supprime pas. C’est la seule chose qui dit qu’il y a
+ * d’autres jours à droite : sans elle, on ne fait pas le geste.
+ */
+/*
+ * Deux implémentations, et une seule s’applique à la fois.
+ *
+ * Chromium **ignore** `::-webkit-scrollbar-*` dès que `scrollbar-width` est
+ * déclaré sur le même élément. Les deux ensemble donnaient donc la barre fine
+ * du système — avec ses deux petites flèches aux extrémités, que rien ne
+ * permet de retirer par la propriété standard.
+ *
+ * Les pseudo-éléments passent donc en premier, et la propriété standard est
+ * réservée aux navigateurs qui ne les connaissent pas : Firefox.
+ */
+.barre-discrete::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .barre-discrete {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-border-strong) transparent;
+  }
+}
+
+.barre-discrete::-webkit-scrollbar {
+  height: 6px;
+}
+
+.barre-discrete::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+.barre-discrete::-webkit-scrollbar-thumb {
+  background: var(--ui-border-strong);
+  border-radius: 999px;
+}
+
+.barre-discrete::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-text-subtle);
+}
+
+/* ========================================================================== */
+/* Matière, profondeur, lumière                                               */
+/* ========================================================================== */
+
+@property --tour {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@property --halo {
+  syntax: "<color>";
+  initial-value: rgb(0 0 0 / 0);
+  inherits: false;
+}
+
+:root {
+  --lueur: 0.5;
+  --verre-fond: 78%;
+  --verre-bord: rgb(23 23 28 / 0.08);
+  --verre-reflet: rgb(255 255 255 / 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lueur: 0.9;
+    --verre-fond: 72%;
+    --verre-bord: rgb(255 255 255 / 0.09);
+    --verre-reflet: rgb(255 255 255 / 0.12);
+  }
+}
+
+:root[data-theme="dark"] {
+  --lueur: 0.9;
+  --verre-fond: 72%;
+  --verre-bord: rgb(255 255 255 / 0.09);
+  --verre-reflet: rgb(255 255 255 / 0.12);
+}
+
+/*
+ * Sur téléphone, l'aurore se retient — et cette règle doit rester **hors
+ * couche**, avec les autres jetons.
+ *
+ * Sur un grand écran le texte du haut de page occupe une colonne et
+ * l'aurore l'autre ; sur un téléphone il n'y a qu'une colonne, et le texte
+ * repose donc directement dessus. Mesurée au pixel, la teinte la plus dense
+ * donnait rgb(244, 229, 234) : la couleur de marque en 11 px y tombait à
+ * 4,35:1, sous le seuil.
+ *
+ * Placée dans `@layer components`, cette correction n'avait aucun effet —
+ * une déclaration hors couche l'emporte sur n'importe quelle couche, et le
+ * `:root` ci-dessus est hors couche.
+ */
+@media (max-width: 639.98px) {
+  :root {
+    --lueur: 0.26;
+  }
+}
+
+/*
+ * Et la même retenue en thème sombre, où il faut la répéter.
+ *
+ * Les deux règles sombres ci-dessus emploient `:root:not([data-theme="light"])`
+ * et `:root[data-theme="dark"]`, de spécificité (0,2,0) : un simple `:root`
+ * dans une requête de média ne les corrige pas, quel que soit son rang dans le
+ * fichier. La valeur de 0,26 n'agissait donc qu'en thème clair, et la mesure
+ * en thème sombre le montrait — 3,96:1 sur l'aurore la plus dense.
+ *
+ * 0,55 plutôt que 0,26 : sur un fond noir la même densité se voit beaucoup
+ * moins, et elle laisse le rapport à 4,7:1.
+ */
+@media (max-width: 639.98px) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lueur: 0.55;
+  }
+}
+
+@media (max-width: 639.98px) {
+  :root[data-theme="dark"] {
+    --lueur: 0.55;
+  }
+}
+
+/*
+ * Tout ce qui suit est en `@layer components`, et c'est nécessaire.
+ *
+ * Du CSS écrit hors de toute couche l'emporte sur n'importe quelle couche,
+ * quelle que soit la spécificité. Sans cette ligne, `.verre { position:
+ * relative }` battait `absolute` posé par Tailwind — et les pastilles du haut
+ * de page tombaient en flux normal, sans qu'aucune erreur ne le signale.
+ *
+ * En couche `components`, une classe utilitaire peut de nouveau corriger une
+ * classe de composant, ce qui est le contrat de Tailwind.
+ *
+ * Restent au-dessus, hors couche : les `@property`, qui enregistrent un type
+ * plutôt qu'une règle, et les jetons posés sur `:root`.
+ */
+@layer components {
+
+/*
+ * Le vocabulaire « futuriste » de la page d'accueil.
+ *
+ * ---------------------------------------------------------------------------
+ * Ce que ces classes ont le droit de faire
+ * ---------------------------------------------------------------------------
+ *
+ * Une page de présentation doit se voir. Mais une page de présentation qui
+ * clignote ne se lit pas, et ce qu'on vend ici n'est pas un effet : c'est un
+ * agenda qui ne se trompe pas. Chaque classe ci-dessous suit donc trois
+ * règles, sans exception :
+ *
+ *   1. **Elle ne touche jamais au texte.** Tout le mouvement vit sur des
+ *      calques posés derrière ou devant le contenu, jamais sur les caractères
+ *      eux-mêmes. Un titre qui bouge pendant qu'on le lit ne se lit pas.
+ *   2. **Elle se compose.** `transform`, `opacity`, `filter` — rien qui force
+ *      le navigateur à recalculer la mise en page. Les appareils visés sont
+ *      des Android d'entrée de gamme, et un effet qui coûte des images par
+ *      seconde coûte des inscriptions.
+ *   3. **Elle s'arrête sous `prefers-reduced-motion`, sans disparaître.**
+ *      L'aurore garde ses couleurs, elle cesse seulement de dériver. Couper
+ *      l'effet entier laisserait une page différente selon le réglage, donc
+ *      deux pages à maintenir.
+ *
+ * ---------------------------------------------------------------------------
+ * Une intensité, deux thèmes
+ * ---------------------------------------------------------------------------
+ *
+ * En clair, ces lumières se posent sur du blanc : au-delà de 12 % d'opacité
+ * elles deviennent du sale. En sombre elles se posent sur du noir, où 12 % ne
+ * se voit plus du tout. D'où un seul réglage, `--lueur`, redéfini par thème :
+ * les classes ne connaissent pas le thème, elles lisent ce nombre.
+ */
+
+
+
+
+/* -------------------------------------------------------------------------- */
+/* L'aurore                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Trois masses de couleur très floues qui dérivent lentement derrière la page.
+ *
+ * Pourquoi trois et pas une : une seule tache se lit comme une tache. Trois
+ * qui se recouvrent partiellement produisent des teintes intermédiaires qui
+ * ne sont dans aucune d'elles, et c'est ce mélange qu'on perçoit comme de la
+ * profondeur plutôt que comme un fond coloré.
+ *
+ * Les périodes — 19 s, 23 s, 29 s — sont premières entre elles : le motif
+ * combiné ne se répète qu'au bout de plus de trois heures. Avec 20/24/28 s on
+ * reverrait la même image toutes les deux minutes, et on la reconnaîtrait.
+ */
+.aurore {
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 130%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  /* Le fond s'éteint vers le bas : la lumière doit sortir du haut de page,
+     pas border la section suivante d'un trait de couleur. */
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+
+.aurore span {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: var(--lueur);
+  will-change: transform;
+}
+
+.aurore span:nth-child(1) {
+  width: 46rem;
+  height: 34rem;
+  left: -8rem;
+  top: -6rem;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--salon-primary) 55%, transparent) 0%,
+    transparent 70%
+  );
+  animation: aurore-1 19s ease-in-out infinite alternate;
+}
+
+.aurore span:nth-child(2) {
+  width: 40rem;
+  height: 40rem;
+  right: -10rem;
+  top: -12rem;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--salon-accent) 70%, transparent) 0%,
+    transparent 70%
+  );
+  animation: aurore-2 23s ease-in-out infinite alternate;
+}
+
+.aurore span:nth-child(3) {
+  width: 52rem;
+  height: 30rem;
+  left: 28%;
+  top: 22%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, #e0845f 42%, transparent) 0%,
+    transparent 72%
+  );
+  animation: aurore-3 29s ease-in-out infinite alternate;
+}
+
+@keyframes aurore-1 {
+  to { transform: translate3d(14vw, 6vh, 0) scale(1.18); }
+}
+@keyframes aurore-2 {
+  to { transform: translate3d(-12vw, 10vh, 0) scale(0.86); }
+}
+@keyframes aurore-3 {
+  to { transform: translate3d(8vw, -8vh, 0) scale(1.24); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* La couleur reste, la dérive s'arrête. */
+  .aurore span {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le sol en perspective                                                       */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Une grille inclinée qui fuit vers l'horizon.
+ *
+ * C'est un vrai `rotateX` sur un plan, pas une image en dégradé : les lignes
+ * se resserrent donc réellement avec la distance, comme le ferait un sol. Une
+ * fausse perspective dessinée se repère tout de suite, parce que l'espacement
+ * y est linéaire là où l'œil en attend un resserrement.
+ *
+ * Le défilement se fait sur un seul pas de grille (64 px), donc la boucle est
+ * invisible : l'image au bout du cycle est exactement l'image de départ.
+ */
+.sol {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 22rem;
+  overflow: hidden;
+  pointer-events: none;
+  perspective: 22rem;
+  perspective-origin: 50% 0%;
+  z-index: 0;
+  mask-image: linear-gradient(to top, #000 0%, transparent 92%);
+}
+
+.sol i {
+  position: absolute;
+  inset: 0 -60% -60% -60%;
+  display: block;
+  transform: rotateX(72deg);
+  transform-origin: 50% 0%;
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--salon-primary) 45%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--salon-primary) 45%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 64px 64px;
+  opacity: calc(var(--lueur) * 0.55);
+  animation: sol-defile 6s linear infinite;
+}
+
+@keyframes sol-defile {
+  to { background-position: 0 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sol i {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le verre                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Surface translucide, floutée, avec un liseré de lumière en haut.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi 78 % d'opacité et pas 40
+ * ---------------------------------------------------------------------------
+ *
+ * Un verre à 40 % laisse passer l'aurore, et le texte se retrouve sur un fond
+ * qui change de couleur selon l'endroit de l'écran — le contraste varie donc
+ * d'un mot à l'autre, et aucun réglage ne peut le garantir. À 78 % le fond
+ * reste celui de la surface à 2 % près : le contraste est celui du thème,
+ * mesurable, et il reste juste ce qu'il faut de transparence pour que la
+ * lumière de derrière se devine.
+ *
+ * La bordure est un dégradé, pas une couleur : une vraie arête de verre est
+ * brillante en haut et sombre en bas, et c'est ce dégradé qui fait qu'on lit
+ * un volume et pas un rectangle.
+ */
+.verre {
+  position: relative;
+  /* `background-color` et non `background` : le raccourci remettrait à
+     `none` l'image de fond que `.halo` pose par-dessus. */
+  background-color: color-mix(in srgb, var(--ui-surface) var(--verre-fond), transparent);
+  border: 1px solid var(--verre-bord);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+/* Le reflet du haut : une ligne d'un pixel, plus claire au centre. */
+.verre::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--verre-reflet) 20%,
+    var(--verre-reflet) 80%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/*
+ * Repli : sans `backdrop-filter`, un fond translucide laisse voir la page
+ * derrière **sans la flouter**, et le texte devient illisible. On repasse
+ * alors à une surface pleine.
+ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .verre {
+    background-color: var(--ui-surface);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* La bordure qui tourne                                                       */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Un liseré de lumière qui fait le tour de la carte.
+ *
+ * `@property` déclare `--tour` comme un angle, ce qui le rend interpolable :
+ * sans cette déclaration le navigateur traiterait la valeur comme une chaîne
+ * et passerait de 0deg à 360deg d'un coup, à mi-parcours. C'est la seule
+ * façon d'animer un `conic-gradient` en CSS pur.
+ *
+ * Le liseré ne s'allume qu'au survol et seulement sur les pointeurs fins :
+ * une bordure qui tourne en permanence sur six cartes est une distraction, et
+ * sur un écran tactile personne ne la déclenche jamais.
+ */
+
+.lisere {
+  position: relative;
+  isolation: isolate;
+}
+
+/*
+ * `inset: 0` et non `-1px`.
+ *
+ * Un pseudo-élément absolu se cale sur la boîte de remplissage de son
+ * ancêtre positionné — et `overflow: hidden`, que portent toutes les cartes
+ * qui emploient cette classe, rogne exactement à cette boîte. À `-1px`
+ * l'anneau tombait donc entièrement dans la zone rognée : l'effet était
+ * écrit, chargé, et invisible partout.
+ */
+.lisere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: -1;
+  background: conic-gradient(
+    from var(--tour),
+    transparent 0deg,
+    var(--salon-primary) 60deg,
+    color-mix(in srgb, var(--salon-primary) 40%, #e0845f) 120deg,
+    transparent 200deg,
+    transparent 360deg
+  );
+  /* Ne garder que le contour : le masque évide l'intérieur du rectangle. */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lisere:hover::after,
+  .lisere:focus-within::after {
+    opacity: 1;
+    animation: lisere-tourne 3.5s linear infinite;
+  }
+}
+
+@keyframes lisere-tourne {
+  to { --tour: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lisere:hover::after,
+  .lisere:focus-within::after {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le relief                                                                   */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Inclinaison 3D au survol, pilotée par `features/ui/Relief.tsx`.
+ *
+ * La perspective vit sur le conteneur et la rotation sur l'enfant : c'est ce
+ * qui donne une profondeur réaliste plutôt qu'un simple cisaillement. Au repos
+ * les variables valent zéro, donc la carte est parfaitement plate tant que
+ * rien ne la survole.
+ *
+ * (Cette classe s'appelait `.tilt`, du même nom que la variante d'apparition
+ * de `Reveal` — deux effets différents sous un seul nom, et leurs règles se
+ * recouvraient dès qu'on les employait ensemble.)
+ */
+.relief {
+  perspective: 900px;
+}
+
+.relief > * {
+  transform: rotateX(var(--relief-x, 0deg)) rotateY(var(--relief-y, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* Pendant le survol, la carte suit le curseur sans amortissement : un délai
+   ici donnerait une impression de latence. */
+.relief[data-incline="true"] > * {
+  transition: transform 0.08s linear;
+}
+
+/*
+ * Les calques qui décollent.
+ *
+ * `translateZ` sur un enfant du plan incliné : il se déplace alors dans
+ * l'image d'autant plus que la carte est tournée, ce qui produit la parallaxe.
+ * Sans profondeur déclarée, tout le contenu reste collé au plan et la carte
+ * ne se lit que comme une image penchée.
+ */
+.relief .couche-1 { transform: translateZ(18px); }
+.relief .couche-2 { transform: translateZ(36px); }
+.relief .couche-3 { transform: translateZ(58px); }
+
+/*
+ * Attention : ce reflet vit sur le `::after` de l'enfant, pas sur celui de
+ * `.relief`. Il entre donc en concurrence avec `.lisere`, à spécificité
+ * égale — et comme ce bloc vient après, c'est lui qui gagne, en silence.
+ *
+ * Une carte qui porte `.lisere` doit être posée dans un `<Relief reflet={false}>`.
+ * De toute façon `.halo` fait déjà le même travail par le fond : deux
+ * lumières qui suivent le curseur sur une seule carte, c'est une de trop.
+ */
+.relief--reflet > * {
+  position: relative;
+}
+
+.relief--reflet > *::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    22rem circle at var(--reflet-x, 50%) var(--reflet-y, 50%),
+    rgb(255 255 255 / 0.28),
+    transparent 55%
+  );
+}
+
+.relief[data-incline="true"].relief--reflet > *::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .relief > * {
+    transform: none;
+  }
+  .relief .couche-1,
+  .relief .couche-2,
+  .relief .couche-3 {
+    transform: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le halo qui suit le curseur                                                 */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Une lueur posée sous le curseur, à l'intérieur de la carte.
+ *
+ * Les coordonnées viennent de `Relief.tsx`, qui les écrit déjà pour le reflet.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi un calque de fond, et pas un pseudo-élément
+ * ---------------------------------------------------------------------------
+ *
+ * Les trois matières s'emploient ensemble — une carte est `verre lisere halo`.
+ * Or un élément n'a qu'un `::before` et qu'un `::after` : `.verre` tient le
+ * premier pour son reflet de bord, `.lisere` le second pour son anneau. Un
+ * troisième effet en pseudo-élément écraserait silencieusement l'un des deux,
+ * et le reflet du verre disparaîtrait sans que rien ne le signale.
+ *
+ * Le halo passe donc par `background-image`, qui se superpose à la couleur de
+ * fond posée par `.verre` sans lui prendre sa place — à condition que `.verre`
+ * écrive `background-color` et non le raccourci `background`, qui remettrait
+ * l'image à `none`.
+ *
+ * L'apparition se fait en interpolant la **couleur** du dégradé, ce que seul
+ * `@property` rend possible : sans déclaration de syntaxe, le navigateur
+ * traiterait `--halo` comme une chaîne et basculerait d'un coup, à mi-course.
+ */
+
+.halo {
+  --halo: rgb(0 0 0 / 0);
+  background-image: radial-gradient(
+    16rem circle at var(--reflet-x, 50%) var(--reflet-y, 50%),
+    var(--halo),
+    transparent 62%
+  );
+  background-repeat: no-repeat;
+  transition: --halo 0.4s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .halo:hover,
+  .halo:focus-within {
+    --halo: color-mix(in srgb, var(--salon-primary) 22%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo {
+    transition: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le grain                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Un bruit très fin posé sur les grandes surfaces colorées.
+ *
+ * Un dégradé pur sur 1 200 px produit des bandes visibles : l'écran ne peut
+ * pas représenter assez de valeurs intermédiaires entre deux teintes proches.
+ * Un bruit de 3 % casse ces bandes en les tramant, exactement comme le grain
+ * d'une photo argentique. C'est l'un des rares effets qui rend une surface
+ * *plus* propre en y ajoutant du désordre.
+ *
+ * La texture est générée par le navigateur (`feTurbulence`) : aucun fichier à
+ * télécharger, et elle reste nette à n'importe quelle densité d'écran.
+ */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23b)'/%3E%3C/svg%3E");
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le texte en aurore                                                          */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Un dégradé qui traverse lentement le titre.
+ *
+ * `background-clip: text` seul donnerait un dégradé figé. En animant la
+ * position du fond sur une bande deux fois plus large que le texte, la
+ * lumière le traverse — et comme seule la position du fond bouge, les lettres
+ * ne bougent pas d'un pixel. C'est la condition pour que ça reste lisible.
+ */
+.texte-aurore {
+  background-image: linear-gradient(
+    100deg,
+    var(--ui-text) 0%,
+    var(--ui-text) 35%,
+    var(--salon-ink) 50%,
+    color-mix(in srgb, var(--salon-ink) 55%, #e0845f) 62%,
+    var(--ui-text) 78%,
+    var(--ui-text) 100%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: texte-aurore 9s ease-in-out infinite;
+}
+
+@keyframes texte-aurore {
+  0%, 100% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .texte-aurore {
+    animation: none;
+    background-position: 30% 50%;
+  }
+}
+
+/*
+ * Repli : si `background-clip: text` n'est pas géré, `color: transparent`
+ * rendrait le titre invisible. Le test porte sur la propriété préfixée parce
+ * que c'est elle que reconnaissent les navigateurs concernés.
+ */
+@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
+  .texte-aurore {
+    color: var(--ui-text);
+    background-image: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le chiffre fantôme                                                          */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Le grand numéro en contour, posé derrière une carte.
+ *
+ * En contour plutôt qu'en aplat : un chiffre plein à cette taille entre en
+ * concurrence avec le titre qu'il accompagne. Vidé, il reste une structure —
+ * on le lit comme un repère, pas comme un mot.
+ */
+.chiffre-fantome {
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--salon-primary) 35%, transparent);
+  color: transparent;
+  line-height: 0.8;
+  user-select: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le scintillement d'une pastille d'état                                      */
+/* -------------------------------------------------------------------------- */
+
+.pouls {
+  position: relative;
+}
+
+.pouls::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: pouls 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@keyframes pouls {
+  0% { opacity: 0.7; transform: scale(1); }
+  70%, 100% { opacity: 0; transform: scale(2.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pouls::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le pied de page                                                             */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Le pied reste sombre dans les deux thèmes, et c'est délibéré.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi ne pas suivre le thème
+ * ---------------------------------------------------------------------------
+ *
+ * Un pied de page a un travail de ponctuation : il dit que la page est finie.
+ * Une surface qui change de valeur avec le corps du site ne le dit pas — en
+ * thème sombre, un pied sombre sur un fond sombre ne se distingue plus, et la
+ * page semble s'arrêter n'importe où.
+ *
+ * L'autre raison est mesurable : ces couleurs-ci sont vérifiées une fois pour
+ * toutes. Le texte courant donne 8,1:1 sur le fond, les liens 11,6:1, et ces
+ * chiffres ne dépendent d'aucun réglage de la visiteuse.
+ *
+ * `color-scheme: dark` est nécessaire, pas décoratif : sans lui, un champ ou
+ * une barre de défilement native à l'intérieur du pied serait dessiné clair
+ * par le système, sur un fond noir.
+ */
+.pied {
+  color-scheme: dark;
+
+  --pied-fond: #0b0b10;
+  --pied-surface: rgb(255 255 255 / 0.045);
+  --pied-ligne: rgb(255 255 255 / 0.1);
+  --pied-encre: #f4f4f7;
+  --pied-doux: #a9a9b7;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--pied-fond);
+  color: var(--pied-encre);
+}
+
+/* Même raison qu'au-dessus, et la spécificité rend l'oubli plus coûteux
+   ici : `.pied .verre` l'emporterait sur `.halo`. */
+.pied .verre {
+  background-color: var(--pied-surface);
+  border-color: var(--pied-ligne);
+}
+
+/*
+ * Le nom en très grand, en contour, coupé par le bas du cadre.
+ *
+ * Coupé et non entier : une marque écrite en entier dans un pied de page est
+ * une signature, et une signature se lit. Coupée, elle devient une matière —
+ * on la reconnaît sans la lire, ce qui est exactement ce qu'on demande au
+ * dernier élément d'une page.
+ *
+ * `clamp` plutôt qu'une taille en vw seule : à 320 px la borne basse garde
+ * le mot lisible, à 2 560 px la borne haute l'empêche de dépasser la moitié
+ * de la hauteur de l'écran.
+ */
+/* Le cadre déclare un contexte de conteneur : la signature se mesure alors
+   sur la largeur disponible et non sur celle de la fenêtre. En `vw`, elle
+   débordait de 366 px dès que le contenu atteignait sa largeur maximale —
+   la fenêtre continuait de grandir, le conteneur non. */
+.pied-signature-cadre {
+  container-type: inline-size;
+}
+
+.pied-signature {
+  /* 7,07 em pour « BEAUTY SALON » dans cette graisse : 13,8 % de la largeur
+     du conteneur remplit 97,5 % de celle-ci, mesuré dans le navigateur. */
+  font-size: 13.8cqw;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 0.78;
+  white-space: nowrap;
+  user-select: none;
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(255 255 255 / 0.13);
+  /* Le bas du mot se fond dans le fond : il sort du cadre au lieu d'y buter. */
+  mask-image: linear-gradient(to bottom, #000 35%, transparent 96%);
+}
+
+@supports not (-webkit-text-stroke: 1px #000) {
+  .pied-signature {
+    color: rgb(255 255 255 / 0.07);
+  }
+}
+
+/* Sans requêtes de conteneur : la fenêtre, avec une borne haute qui tient
+   dans la largeur maximale du contenu (1 104 px / 7,07 = 156 px). */
+@supports not (container-type: inline-size) {
+  .pied-signature {
+    font-size: clamp(2.25rem, 10.5vw, 9.5rem);
+  }
+}
+
+/* ========================================================================== */
+/* Téléphone — ce que la page devient sous 640 px                             */
+/* ========================================================================== */
+
+/*
+ * La page d'accueil a deux mises en page, et c'est délibéré.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi deux, et pas une qui s'adapte
+ * ---------------------------------------------------------------------------
+ *
+ * La version qui se contentait de rétrécir donnait ceci : deux écrans à
+ * parcourir avant le premier bouton, des cartes à deux colonnes où le texte
+ * se serrait sur quatre mots par ligne, et un configurateur de couleurs pensé
+ * pour une souris. Chaque élément était juste, et l'ensemble ne convertissait
+ * pas — parce qu'une colonne étroite ne demande pas les mêmes gestes qu'un
+ * écran large, pas les mêmes tailles.
+ *
+ * Sous 640 px la page prend donc une autre forme : un seul écran d'accroche,
+ * des cartes qui défilent au pouce plutôt que de se serrer, une frise
+ * verticale pour les étapes, et un bouton d'action qui ne quitte jamais le
+ * bas de l'écran. Au-dessus de 640 px, rien ne change.
+ *
+ * Les classes ci-dessous ne servent qu'à cette version-là. Les blocs sont
+ * choisis par `sm:hidden` / `hidden sm:block` dans le JSX, donc le
+ * basculement se lit dans la page et non ici.
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Le fil de progression                                                       */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Une ligne de deux pixels en haut de l'écran, qui se remplit au défilement.
+ *
+ * Sur un long écran vertical on perd la notion d'avancement : la barre de
+ * défilement native d'Android disparaît après une seconde, et rien ne dit
+ * combien il reste. Deux pixels le disent en continu, sans rien occuper.
+ *
+ * La largeur vient d'une variable posée en JavaScript plutôt que d'un style
+ * en ligne recalculé : le navigateur la traite comme une animation composée,
+ * sans repasser par la mise en page.
+ */
+.progression {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 60;
+  height: 2px;
+  width: 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--avance, 0));
+  background: linear-gradient(
+    90deg,
+    var(--salon-primary),
+    color-mix(in srgb, var(--salon-primary) 50%, #e0845f)
+  );
+  pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* L'éclat qui traverse un bouton                                              */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Une bande de lumière passe sur le bouton principal toutes les cinq secondes.
+ *
+ * Sur un écran tactile il n'y a pas de survol : un bouton y reste une forme
+ * inerte jusqu'à ce qu'on le touche. L'éclat lui redonne ce que le survol
+ * donne ailleurs — le signe qu'il est vivant et qu'il attend un geste.
+ *
+ * Cinq secondes, et non deux : à deux il clignote et devient une publicité.
+ */
+.eclat {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.eclat::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.38) 50%,
+    transparent 65%
+  );
+  transform: translateX(-100%);
+  animation: eclat 5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes eclat {
+  0%, 62% { transform: translateX(-100%); }
+  92%, 100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eclat::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Le rail à défilement par crans                                              */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Les trois atouts, en cartes qu'on fait défiler au pouce.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi un rail plutôt qu'une grille à deux colonnes
+ * ---------------------------------------------------------------------------
+ *
+ * À 375 px, deux colonnes laissent 160 px par carte, soit quatre mots par
+ * ligne : le texte s'y hache et la carte devient un pavé gris. Une seule
+ * colonne, elle, oblige à faire défiler trois écrans pour trois idées.
+ *
+ * Le rail donne 82 % de la largeur à chaque carte — assez pour une vraie
+ * ligne de texte — et laisse voir le bord de la suivante. Ce bord est
+ * l'essentiel : il dit qu'il y en a d'autres, ce qu'aucune pastille de
+ * pagination ne dit aussi bien.
+ *
+ * `scroll-snap-type: x mandatory` fait que le rail s'arrête toujours sur une
+ * carte entière, jamais entre deux.
+ */
+.rail {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  /* Le rail va d'un bord à l'autre de l'écran, mais ses cartes s'alignent sur
+     la marge du texte : d'où le débord négatif compensé par le remplissage. */
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  padding-block: 0.25rem 1rem;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.rail > * {
+  flex: 0 0 82%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* La dernière carte doit pouvoir venir se caler à gauche comme les autres :
+   sans cette cale, le rail bute avant et la carte reste décalée. */
+.rail::after {
+  content: "";
+  flex: 0 0 0.25rem;
+}
+
+/* Les pastilles de position sous le rail. */
+.rail-points {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.rail-point {
+  height: 0.3rem;
+  width: 0.3rem;
+  border-radius: 999px;
+  background: var(--ui-border-strong);
+  transition:
+    width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.35s ease;
+}
+
+.rail-point[data-actif="true"] {
+  width: 1.15rem;
+  background: var(--salon-primary);
+}
+
+/* -------------------------------------------------------------------------- */
+/* La frise des étapes                                                         */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Trois étapes en colonne, reliées par un trait qui se dessine au défilement.
+ *
+ * Trois cartes côte à côte disent « voici trois choses ». Un trait qui les
+ * traverse dit « voici trois choses dans cet ordre », ce qui est l'information
+ * qu'on veut faire passer ici — la troisième n'a aucun sens avant la première.
+ *
+ * Le trait se remplit avec le défilement quand le navigateur sait le faire
+ * (`animation-timeline`), et reste plein sinon : le repli n'enlève que le
+ * mouvement, jamais le trait.
+ */
+.frise {
+  position: relative;
+  padding-left: 2.75rem;
+}
+
+/*
+ * Le trait est découpé en segments, un par intervalle, plutôt que tiré
+ * d'un bout à l'autre de la liste.
+ *
+ * Un trait unique doit s'arrêter quelque part, et ce quelque part ne se
+ * calcule pas en CSS : il dépend de la hauteur de la dernière carte, qui
+ * dépend de la longueur de son texte. Posé à une valeur fixe, il finissait
+ * au milieu de la troisième carte — ni au dernier point, ni au bout.
+ *
+ * Un segment par élément, sauf le dernier, tombe juste par construction :
+ * il va du point courant au point suivant, quelle que soit la hauteur.
+ */
+.frise > li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  /* Le milieu du noyau, moins la moitié de l'épaisseur du trait. */
+  left: calc(-1.675rem - 1px);
+  top: 2.45rem;
+  /* `space-y-4` pose 1 rem entre les éléments : le segment traverse cet
+     espace pour rejoindre le noyau suivant. */
+  bottom: -1rem;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom,
+    var(--salon-primary),
+    color-mix(in srgb, var(--salon-primary) 55%, transparent)
+  );
+  transform-origin: 50% 0;
+}
+
+/* Chaque segment se trace à l'arrivée de sa propre carte. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .frise > li:not(:last-child)::before {
+      animation: frise-trace linear both;
+      animation-timeline: view();
+      animation-range: entry 25% cover 45%;
+    }
+  }
+}
+
+@keyframes frise-trace {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+/* Le noyau se cale sur l'élément de liste, qui vit après le remplissage de
+   la frise : d'où le retrait négatif, qui le ramène exactement sur le trait
+   (2,75 rem de remplissage moins 1,075 rem de demi-noyau = 1,075 rem, soit
+   le milieu du trait posé à 1,05 rem). */
+.frise > li {
+  position: relative;
+}
+
+.frise-noeud {
+  position: absolute;
+  left: -2.75rem;
+  top: 0.2rem;
+  display: grid;
+  place-items: center;
+  height: 2.15rem;
+  width: 2.15rem;
+  border-radius: 999px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--salon-ink);
+  box-shadow: 0 0 0 5px var(--ui-bg);
+}
+
+/* -------------------------------------------------------------------------- */
+/* La barre d'action                                                           */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Le bouton d'inscription, fixé au bas de l'écran.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi il est fixe
+ * ---------------------------------------------------------------------------
+ *
+ * Sur un téléphone, l'appel à l'action du haut de page disparaît au premier
+ * geste et le suivant arrive six écrans plus loin. Entre les deux, la personne
+ * qui vient d'être convaincue par le film n'a rien à toucher — il lui faudrait
+ * remonter ou continuer à chercher. C'est là que se perdent les inscriptions.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi il n'est pas là tout de suite, ni jusqu'au bout
+ * ---------------------------------------------------------------------------
+ *
+ * Il apparaît quand le haut de page est passé, parce qu'avant il doublerait
+ * un bouton déjà visible. Il s'efface quand le grand appel final entre à
+ * l'écran, pour la même raison. Deux fois le même bouton au même moment ne
+ * donne pas deux chances de cliquer : ça donne une page qui insiste.
+ *
+ * `env(safe-area-inset-bottom)` tient compte de la barre d'accueil des
+ * téléphones sans bouton : sans elle, le bouton se glisse dessous.
+ */
+.barre-action {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 40;
+  padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  /*
+   * 95 % et non 82 %.
+   *
+   * La barre passe au-dessus de tout, y compris de l'affiche du film, qui
+   * est presque noire. À 82 % sa mention tombait à 3,58:1 au-dessus de
+   * cette affiche — le fond d'une surface fixe n'est pas celui qu'on a
+   * choisi, c'est celui qui défile dessous.
+   */
+  background: color-mix(in srgb, var(--ui-surface) 95%, transparent);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-top: 1px solid var(--ui-border);
+  transform: translateY(110%);
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+  opacity: 0;
+}
+
+.barre-action[data-visible="true"] {
+  transform: none;
+  opacity: 1;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .barre-action {
+    background: var(--ui-surface);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barre-action {
+    transition: opacity 0.2s ease;
+    transform: none;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* La dérive de la photo                                                       */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * La photo du haut de page avance très lentement dans son cadre.
+ *
+ * Trente secondes pour un déplacement de 6 % : on ne voit pas l'image bouger,
+ * on constate seulement qu'elle n'est plus tout à fait au même endroit. C'est
+ * la différence entre une page et une photographie de page.
+ */
+.derive {
+  animation: derive 30s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes derive {
+  from { transform: scale(1.06) translate3d(-1.5%, 1%, 0); }
+  to { transform: scale(1.14) translate3d(1.5%, -1.5%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .derive {
+    animation: none;
+    transform: scale(1.06);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pleine largeur                                                              */
+/* -------------------------------------------------------------------------- */
+
+/* Sortir des marges du contenu pour aller d'un bord à l'autre de l'écran. */
+.pleine-largeur {
+  margin-inline: -1rem;
+}
+
+
+
+/* -------------------------------------------------------------------------- */
+/* L'inscription en étapes                                                     */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * L'entrée d'une étape.
+ *
+ * Il n'y a rien à déclencher en JavaScript : un groupe qui passe de
+ * `display: none` à visible rejoue ses animations tout seul. La classe est
+ * posée une fois pour toutes sur les trois groupes, et c'est le changement
+ * d'étape qui la rejoue.
+ *
+ * Le mouvement est court — 0,32 s — et horizontal : il dit qu'on avance dans
+ * une suite, là où un fondu dirait seulement que le contenu a changé.
+ */
+@media (max-width: 639.98px) {
+  .groupe {
+    animation: groupe-entre 0.32s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+}
+
+@keyframes groupe-entre {
+  from {
+    opacity: 0;
+    transform: translateX(1.25rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .groupe {
+    animation: none;
+  }
+}
+
+/*
+ * La ligne de confirmation qui apparaît sous un champ rempli.
+ *
+ * Elle arrive par en dessous et en grandissant très peu : à cette échelle,
+ * on ne voit pas l'agrandissement, on sent seulement que quelque chose vient
+ * de se poser. C'est l'accusé de réception qui manquait — sans lui, un champ
+ * correct et un champ ignoré se ressemblent exactement.
+ */
+.acquis {
+  animation: acquis 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes acquis {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acquis {
+    animation: none;
+  }
+}
+
+/* Les segments du parcours. Un par groupe de champs, rempli à sa propre
+   proportion : trois barres disent où l'on en est, une seule dit seulement
+   combien il reste. */
+.segment {
+  flex: 1 1 0;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: var(--ui-surface-muted);
+  overflow: hidden;
+}
+
+.segment > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--salon-primary),
+    color-mix(in srgb, var(--salon-primary) 55%, #e0845f)
+  );
+  transform-origin: 0 50%;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment > i {
+    transition: none;
+  }
+}
 }

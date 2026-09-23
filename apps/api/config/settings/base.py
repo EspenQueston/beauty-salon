@@ -92,6 +92,7 @@ LOCAL_APPS = [
     "apps.platformledger",
     "apps.store",
     "apps.payments",
+    "apps.translations",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -176,6 +177,32 @@ ADMIN_PATH = env("ADMIN_PATH", default="admin/")
 # qu'effectue a un taux devine — convertir toute une grille tarifaire avec
 # dix pour cent d'erreur ne se rattrape pas.
 CURRENCY_API_KEY = env("CURRENCY_API_KEY", default="")
+
+# Traduction du contenu des salons vers l anglais, a l ecriture.
+#
+# Sans cle : rien n est appele, aucune traduction n est ecrite, et les
+# mini-sites servent le francais. C est une degradation, pas une panne — et
+# c est ce qui permet aux tests et au developpement de tourner sans reseau.
+OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+
+# ---------------------------------------------------------------------------
+# Notifications push (Web Push, norme VAPID)
+# ---------------------------------------------------------------------------
+#
+# La paire de cles identifie ce serveur aupres des services de push des
+# navigateurs — ceux de Google, Mozilla et Apple. Il n'y a ni compte a
+# ouvrir ni quota facture : c'est le navigateur de la personne qui relaie.
+#
+# Vides par defaut, et c'est deliberement inoffensif : sans elles, aucun
+# abonnement n'est propose et aucun envoi n'est tente. Le centre de
+# notifications, lui, continue de fonctionner dans l'onglet ouvert. Une
+# installation sans cles perd le telephone verrouille, pas la fonction.
+VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
+
+# Exigee par la norme : le service de push s'en sert pour joindre le
+# responsable du serveur quand un envoi pose probleme. Une adresse `mailto:`.
+VAPID_SUBJECT = env("VAPID_SUBJECT", default=f"mailto:{env('DEFAULT_FROM_EMAIL', default='')}")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"

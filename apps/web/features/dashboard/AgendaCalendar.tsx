@@ -92,7 +92,10 @@ export function addDays(date: Date, count: number): Date {
 }
 
 /** Bornes chargées depuis l'API pour une vue donnée. */
-export function rangeFor(view: AgendaView, anchor: Date): { from: Date; to: Date } {
+export function rangeFor(
+  view: AgendaView,
+  anchor: Date,
+): { from: Date; to: Date } {
   if (view === "day") {
     const from = startOfDay(anchor);
     return { from, to: addDays(from, 1) };
@@ -115,7 +118,9 @@ function dayKey(date: Date): string {
   ).padStart(2, "0")}`;
 }
 
-function groupByDay(bookings: CalendarBooking[]): Map<string, CalendarBooking[]> {
+function groupByDay(
+  bookings: CalendarBooking[],
+): Map<string, CalendarBooking[]> {
   const map = new Map<string, CalendarBooking[]>();
   for (const booking of bookings) {
     const key = dayKey(new Date(booking.starts_at));
@@ -173,7 +178,8 @@ export function AgendaToolbar({
   }
 
   const isToday =
-    dayKey(startOfDay(new Date())) === dayKey(startOfDay(anchor)) && view === "day";
+    dayKey(startOfDay(new Date())) === dayKey(startOfDay(anchor)) &&
+    view === "day";
 
   return (
     /*
@@ -268,7 +274,9 @@ export function AgendaToolbar({
       */}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:justify-end">
         <label className="relative min-w-0 flex-1 sm:max-w-56">
-          <span className="sr-only">Rechercher une cliente ou une prestation</span>
+          <span className="sr-only">
+            Rechercher une cliente ou une prestation
+          </span>
           <Icon
             name="search"
             className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-subtle"
@@ -347,12 +355,16 @@ function periodLabel(view: AgendaView, anchor: Date, timeZone: string): string {
   if (view === "week") {
     const from = startOfWeek(anchor);
     const to = addDays(from, 6);
-    const short = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+    const short = new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "short",
+    });
     return `${short.format(from)} – ${short.format(to)}`;
   }
-  return new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(
-    anchor,
-  );
+  return new Intl.DateTimeFormat("fr-FR", {
+    month: "long",
+    year: "numeric",
+  }).format(anchor);
 }
 
 /* --------------------------------------------------------------------------
@@ -464,7 +476,10 @@ export function MonthView({
   const busiest = useMemo(() => {
     let most = 0;
     for (const rows of byDay.values()) {
-      most = Math.max(most, rows.filter((row) => ACTIVE.has(row.status)).length);
+      most = Math.max(
+        most,
+        rows.filter((row) => ACTIVE.has(row.status)).length,
+      );
     }
     return most;
   }, [byDay]);

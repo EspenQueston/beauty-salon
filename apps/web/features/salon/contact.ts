@@ -24,11 +24,14 @@ const NETWORKS: { key: string; label: string; icon: SalonIconName }[] = [
   { key: "facebook", label: "Facebook", icon: "facebook" },
 ];
 
-export const SERVICE_MODES: Record<string, string> = {
-  salon: "Au salon",
-  home: "À domicile",
-  hybrid: "Au salon ou à domicile",
-};
+/**
+ * Les trois façons de recevoir, en **clés**.
+ *
+ * L'API rend `salon`, `home` ou `hybrid` ; ce sont ces mots-là qui
+ * voyagent. Le libellé, lui, se traduit — il vit sous `salon.modes` dans
+ * les catalogues, et le composant qui l'affiche va l'y chercher.
+ */
+export const SERVICE_MODES = ["salon", "home", "hybrid"] as const;
 
 /** Le numéro WhatsApp doit être réduit aux chiffres pour wa.me. */
 export function whatsappHref(number: string): string | null {

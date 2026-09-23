@@ -31,6 +31,18 @@ CACHES = {
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
+# Aucun envoi push reel pendant la suite.
+#
+# Les taches s'executent en direct sous `ALWAYS_EAGER`, et les cles VAPID de
+# `.env` sont bien la : sans ces deux lignes, chaque test qui cree une
+# reservation tenterait de joindre les serveurs de Google. Vides, elles font
+# repondre `push.configure()` False et la tache s'arrete d'elle-meme.
+#
+# Les tests qui exercent reellement le push posent leurs propres cles avec
+# `override_settings`, et remplacent l'envoi par un double.
+VAPID_PUBLIC_KEY = ""
+VAPID_PRIVATE_KEY = ""
+
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

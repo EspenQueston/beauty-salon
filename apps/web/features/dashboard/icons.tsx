@@ -12,6 +12,8 @@ export type IconName =
   | "bag"
   | "calendar"
   | "users"
+  | "phone"
+  | "mail"
   | "sparkles"
   | "scissors"
   | "clock"
@@ -103,6 +105,18 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M3 10h18M8 3v4M16 3v4" />
     </>
   ),
+  /* Le combiné et l’enveloppe : joindre une cliente depuis l’agenda. */
+  phone: (
+    <path d="M6.5 3.5h3l1.5 3.8-2 1.5a12 12 0 0 0 5.2 5.2l1.5-2 3.8 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z" />
+  ),
+
+  mail: (
+    <>
+      <rect x="2.75" y="5" width="18.5" height="14" rx="2.5" />
+      <path d="m3.5 7.5 8.5 6 8.5-6" />
+    </>
+  ),
+
   users: (
     <>
       <circle cx="9" cy="8" r="3.2" />

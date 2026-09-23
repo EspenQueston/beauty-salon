@@ -16,7 +16,7 @@ from apps.accounts.models import Membership
 from apps.audit.models import AuditLog
 from apps.billing.serializers import DepositSerializer
 from apps.common.exceptions import SlotUnavailable
-from apps.common.permissions import IsTenantResolved
+from apps.common.permissions import IsTenantMember, IsTenantResolved
 from apps.common.viewsets import TenantModelViewSet
 from apps.customers.models import Customer
 from apps.payments.views import DepositReviewSerializer
@@ -91,6 +91,26 @@ class BookingViewSet(TenantModelViewSet):
             queryset = queryset.filter(staff_member_id=staff_member)
         if statuses := params.get("status"):
             queryset = queryset.filter(status__in=statuses.split(","))
+
+        # Un seul rendez-vous, nomme par son identifiant.
+        #
+        # C'est la ou menent les notifications : « Acompte a verifier - Aicha »
+        # ouvre l'agenda sur *ce* rendez-vous, pas sur la semaine ou il se
+        # trouve. Sans cela, il faut le chercher a l'oeil dans une grille.
+        if booking_id := params.get("id"):
+            queryset = queryset.filter(pk=booking_id)
+
+        # Les trois listes de « ce qui attend un geste ». La definition vient
+        # d'`overview.py`, la meme qui alimente les compteurs de la cloche :
+        # un compteur qui annonce deux acomptes et une liste qui en montre
+        # trois discreditent les deux.
+        #
+        # Une cle inconnue ne rend rien, plutot que l'agenda entier : un
+        # signet garde apres qu'on a renomme une liste montrerait sinon tous
+        # les rendez-vous du salon sous le titre « acomptes a verifier ».
+        if attente := params.get("attente"):
+            filtre = overview.FILTRES_ATTENTION.get(attente)
+            queryset = filtre(queryset) if filtre else queryset.none()
 
         # Recherche libre : nom, telephone, prestation.
         #
@@ -256,6 +276,49 @@ class BookingViewSet(TenantModelViewSet):
                 {"detail": "Statut non autorisé par cette route.",
                  "code": "invalid_status"},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # -----------------------------------------------------------------
+        # Un acompte en attente bloque la sortie de « demandee »
+        # -----------------------------------------------------------------
+        #
+        # Deux chemins menaient a « confirmee » : ce bouton-ci, et
+        # « J'ai recu l'acompte - accepter » sur la preuve de versement.
+        # Le second fait trois choses d'un coup : il tranche la preuve,
+        # encaisse l'acompte et confirme. Le premier ne faisait que
+        # confirmer.
+        #
+        # Passer par celui-ci laissait donc un rendez-vous confirme, une
+        # preuve eternellement « a verifier », et surtout **un acompte
+        # jamais entre en caisse**. L'argent etait bien sur le compte du
+        # salon, mais dans aucun livre - et la seule route capable de
+        # l'enregistrer refusait desormais de s'executer, puisque le
+        # rendez-vous n'etait plus en attente.
+        #
+        # On ferme ici plutot que dans le navigateur : c'est la seule
+        # place ou la regle tient quel que soit l'appelant.
+        from apps.payments.models import DepositProof
+
+        proof = getattr(booking, "deposit_proof", None)
+        en_attente = (
+            proof is not None and proof.status == DepositProof.Status.SUBMITTED
+        )
+        if en_attente and booking.status in (
+            Booking.Status.REQUESTED,
+            Booking.Status.PENDING_PAYMENT,
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "Une preuve de versement attend votre verdict. "
+                        "Repondez d'abord a « J'ai recu l'acompte » ou "
+                        "« Versement introuvable » : c'est ce geste qui "
+                        "enregistre l'argent en caisse."
+                    ),
+                    "code": "deposit_pending",
+                    "booking": BookingSerializer(booking).data,
+                },
+                status=status.HTTP_409_CONFLICT,
             )
 
         previous = booking.status
@@ -511,6 +574,7 @@ class BookingViewSet(TenantModelViewSet):
             booking_from_checkin,
             booking_from_code,
             checkin_code_is_wellformed,
+            code_du_rendez_vous,
             normalize_checkin_code,
         )
 
@@ -536,7 +600,29 @@ class BookingViewSet(TenantModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            booking, ambiguous = booking_from_code(typed, request.tenant_id)
+            # Le rendez-vous vise, quand le panneau a ete ouvert depuis
+            # une ligne de l'agenda.
+            #
+            # Compare directement a lui, le code n'a pas besoin d'etre
+            # cherche : on sait deja de quel rendez-vous on parle.
+            # La recherche par fenetre de +/- deux jours existe pour que
+            # deux codes a six caracteres ne puissent pas se croiser -
+            # une precaution qui n'a aucun objet quand il n'y a qu'un
+            # seul candidat.
+            #
+            # Elle refusait par ailleurs tout rendez-vous plus lointain :
+            # une cliente attendue dans deux jours et demi, affichee a
+            # l'ecran, nommee dans le panneau, recevait « aucun
+            # rendez-vous ne porte ce code ». La fenetre, faite pour
+            # eviter les collisions, se comportait comme une regle
+            # metier qu'on n'avait jamais ecrite.
+            vise = str(request.data.get("booking", "")).strip()
+            if vise:
+                booking, ambiguous = code_du_rendez_vous(
+                    typed, vise, request.tenant_id
+                )
+            else:
+                booking, ambiguous = booking_from_code(typed, request.tenant_id)
             if ambiguous:
                 return Response(
                     {
@@ -549,8 +635,8 @@ class BookingViewSet(TenantModelViewSet):
             if booking is None:
                 return Response(
                     {
-                        "detail": "Aucun rendez-vous des deux prochains jours "
-                        "ne porte ce code.",
+                        "detail": "Aucun rendez-vous des deux jours passés "
+                        "ou à venir ne porte ce code.",
                         "code": "unknown_code",
                     },
                     status=status.HTTP_404_NOT_FOUND,
@@ -734,6 +820,45 @@ class WaitlistViewSet(TenantModelViewSet):
         )
         entry.save(update_fields=["status", "updated_at"])
         return Response(WaitlistEntrySerializer(entry).data)
+
+
+class AvailabilityView(APIView):
+    """Les creneaux libres, vus depuis le tableau de bord.
+
+    -----------------------------------------------------------------------
+    Pourquoi cette route existe, alors qu'il y en a deja une
+    -----------------------------------------------------------------------
+
+    Le panneau « Deplacer le rendez-vous » interrogeait
+    `/api/v1/public/availability`. Cette route-la deduit le salon du **nom
+    d'hote** - c'est ce qui permet a un mini-site de servir ses creneaux sans
+    aucun compte. Or le tableau de bord vit sur `app.<domaine>` et s'adresse
+    a l'API sur son propre hote : aucun des deux n'est le sous-domaine d'un
+    salon.
+
+    Le middleware repondait donc « Salon introuvable » (404) a chaque
+    ouverture du panneau, et l'ecran affichait « Impossible de lire les
+    disponibilites ». Pas par intermittence : **toujours**.
+
+    Le prefixe `public/` n'est pas une convention de nommage, c'est ce sur
+    quoi le middleware decide a qui faire confiance. Une route du tableau de
+    bord doit vivre hors de ce prefixe, et tirer son salon du membership -
+    ce que fait celle-ci.
+    """
+
+    permission_classes = [IsAuthenticated, IsTenantMember]
+    # Pas de portee de limitation : `public_read` borne les visiteuses
+    # anonymes d'un mini-site, pas une gerante qui fait defiler un ruban de
+    # dates dans son agenda.
+    throttle_scope = None
+
+    def get(self, request):
+        from .views_public import creneaux_disponibles
+
+        # Le meme moteur que le mini-site, a une exception pres : une
+        # prestation retiree du catalogue n'empeche pas de deplacer les
+        # rendez-vous deja pris.
+        return creneaux_disponibles(request, prestation_active_seulement=False)
 
 
 class OverviewView(APIView):

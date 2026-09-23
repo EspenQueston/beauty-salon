@@ -13,13 +13,17 @@
  * geste.
  */
 
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { SalonIcon } from "./icons";
 import { SalonLogo } from "./SalonLogo";
 import { DeviseToggle } from "./Devise";
+import { useTranslations } from "next-intl";
+
+import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
+import { decouper } from "@/i18n/langues";
 import { SiteModeToggle } from "./SiteMode";
 import type { MediaAsset } from "@/lib/types";
 
@@ -38,6 +42,8 @@ interface Props {
 }
 
 export function SalonNav({ name, slug, logo, show }: Props) {
+  const t = useTranslations("salon");
+  const c = useTranslations("commun");
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
 
@@ -67,15 +73,24 @@ export function SalonNav({ name, slug, logo, show }: Props) {
   }, []);
 
   const links = [
-    show.prestations && { href: "/prestations", label: "Prestations" },
-    show.realisations && { href: "/realisations", label: "Réalisations" },
-    show.equipe && { href: "/equipe", label: "L'équipe" },
-    show.apropos && { href: "/a-propos", label: "À propos" },
-    { href: "/infos", label: "Infos" },
-  ].filter(Boolean) as { href: string; label: string }[];
+    show.prestations && { href: "/prestations", cle: "prestations" },
+    show.realisations && { href: "/realisations", cle: "realisations" },
+    show.equipe && { href: "/equipe", cle: "equipe" },
+    show.apropos && { href: "/a-propos", cle: "aPropos" },
+    { href: "/infos", cle: "infos" },
+  ].filter(Boolean) as { href: string; cle: string }[];
 
+  /*
+    Le chemin est comparé **sans son préfixe de langue**.
+
+    `usePathname` rend l'adresse du navigateur, donc `/en/prestations` en
+    anglais, alors que les liens s'écrivent `/prestations` — c'est `Lien`
+    qui leur pose le préfixe. Sans `decouper`, aucune section n'aurait
+    jamais été marquée comme courante sur la version anglaise.
+  */
+  const chemin = decouper(pathname).reste;
   const isCurrent = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+    href === "/" ? chemin === "/" : chemin.startsWith(href);
 
   /*
    * Sur l'accueil, le menu se pose sur la photo du haut de page plutôt que
@@ -100,18 +115,18 @@ export function SalonNav({ name, slug, logo, show }: Props) {
       }`}
     >
       <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+        <Lien href="/" className="flex min-w-0 items-center gap-2.5">
           <SalonLogo logo={logo} name={name} className="size-9 text-sm" />
           <span className={`truncate font-semibold tracking-tight ${strong}`}>
             {name}
           </span>
-        </Link>
+        </Lien>
 
-        <nav aria-label="Sections du salon" className="ml-auto hidden lg:block">
+        <nav aria-label={t("sections")} className="ml-auto hidden lg:block">
           <ul className="flex items-center gap-1">
             {links.map((link) => (
               <li key={link.href}>
-                <Link
+                <Lien
                   href={link.href}
                   aria-current={isCurrent(link.href) ? "page" : undefined}
                   className={`relative rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -124,7 +139,7 @@ export function SalonNav({ name, slug, logo, show }: Props) {
                         : "text-[var(--site-muted)] hover:text-[var(--site-ink)]"
                   }`}
                 >
-                  {link.label}
+                  {t(link.cle)}
                   {isCurrent(link.href) && (
                     <span
                       className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full"
@@ -133,7 +148,7 @@ export function SalonNav({ name, slug, logo, show }: Props) {
                       }}
                     />
                   )}
-                </Link>
+                </Lien>
               </li>
             ))}
           </ul>
@@ -148,6 +163,32 @@ export function SalonNav({ name, slug, logo, show }: Props) {
             bouton n'occupe que trois caractères : cette barre compte déjà
             quatre éléments sur téléphone.
           */}
+          {/*
+            La langue, hors de la barre sous 640 px.
+
+            Elle y compterait un sixième élément à côté du logo, du nom du
+            salon, des prix, du clair/sombre, du compte et du menu — sur un
+            écran de 360 px, c'est le nom du salon qui se serait tronqué
+            pour lui faire place. Elle passe alors dans le menu, en pleine
+            largeur, où elle se touche mieux qu'une pastille de 32 px.
+          */}
+          <SelecteurLangue
+            className={`hidden sm:inline-flex ${
+              overlay
+                ? "border-white/30 bg-white/10"
+                : "border-[var(--site-line)] bg-[var(--site-surface)]"
+            }`}
+            classeActive={
+              overlay
+                ? "bg-white/25 text-white"
+                : "bg-[var(--salon-primary)] text-white"
+            }
+            classeInactive={
+              overlay
+                ? "text-white/70 hover:text-white"
+                : "text-[var(--site-muted)] hover:text-[var(--site-ink)]"
+            }
+          />
           <DeviseToggle />
           <SiteModeToggle
             slug={slug}
@@ -166,10 +207,10 @@ export function SalonNav({ name, slug, logo, show }: Props) {
             surtout pas concurrencer « Réserver », qui reste la seule action
             que la page cherche à obtenir.
           */}
-          <Link
+          <Lien
             href="/compte"
-            aria-label="Mon espace"
-            title="Mon espace"
+            aria-label={t("monEspace")}
+            title={t("monEspace")}
             className={`inline-flex size-9 items-center justify-center rounded-full border transition ${
               overlay
                 ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
@@ -177,22 +218,22 @@ export function SalonNav({ name, slug, logo, show }: Props) {
             }`}
           >
             <SalonIcon name="user" className="size-4" />
-          </Link>
+          </Lien>
 
-          <Link
+          <Lien
             href="/reserver"
             className="salon-gradient hidden items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex"
           >
             <SalonIcon name="calendar" className="size-4" />
-            Réserver
-          </Link>
+            {c("reserver")}
+          </Lien>
 
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-controls="menu-salon"
-            aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-label={open ? c("fermerMenu") : c("ouvrirMenu")}
             className={`inline-flex size-9 items-center justify-center rounded-lg border transition lg:hidden ${
               overlay
                 ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
@@ -212,9 +253,9 @@ export function SalonNav({ name, slug, logo, show }: Props) {
         className="border-t border-[var(--site-line)] bg-[var(--site-surface)] px-4 py-3 lg:hidden"
       >
         <ul className="space-y-1">
-          {[{ href: "/", label: "Accueil" }, ...links].map((link) => (
+          {[{ href: "/", cle: "accueil" }, ...links].map((link) => (
             <li key={link.href}>
-              <Link
+              <Lien
                 href={link.href}
                 aria-current={isCurrent(link.href) ? "page" : undefined}
                 className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
@@ -223,19 +264,31 @@ export function SalonNav({ name, slug, logo, show }: Props) {
                     : "text-[var(--site-ink)] hover:bg-black/[0.03]"
                 }`}
               >
-                {link.label}
-              </Link>
+                {t(link.cle)}
+              </Lien>
             </li>
           ))}
         </ul>
 
-        <Link
+        {/* La langue, en pleine largeur : sous 640 px elle n'est nulle
+            part ailleurs, et deux cibles de la moitié de l'écran se
+            touchent sans viser. */}
+        <div className="mt-3 border-t border-[var(--site-line)] pt-3 sm:hidden">
+          <SelecteurLangue
+            large
+            className="border-[var(--site-line)] bg-[var(--site-surface)]"
+            classeActive="bg-[var(--salon-primary)] text-white"
+            classeInactive="text-[var(--site-muted)]"
+          />
+        </div>
+
+        <Lien
           href="/reserver"
           className="salon-gradient mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white sm:hidden"
         >
           <SalonIcon name="calendar" className="size-4" />
-          Réserver un rendez-vous
-        </Link>
+          {t("reserverRdv")}
+        </Lien>
       </div>
     </header>
   );

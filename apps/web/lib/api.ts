@@ -8,6 +8,7 @@
  * domaine personnalise en production.
  */
 
+import { LANGUE_PAR_DEFAUT, type Langue } from "@/i18n/langues";
 import type {
   BookingConfirmation,
   PublicReview,
@@ -56,9 +57,25 @@ export class ApiRequestError extends Error {
   }
 }
 
-/** Contenu complet d'un mini-site, en une requete. */
-export async function fetchSalon(host: string): Promise<PublicSalon | null> {
-  const response = await fetch(`${SERVER_API}/api/v1/public/salon`, {
+/**
+ * Contenu complet d'un mini-site, en une requete.
+ *
+ * La langue est un **parametre**, et non une valeur devinee ici.
+ *
+ * Ce module est importe par des composants client — le parcours de
+ * reservation, l espace cliente. Y lire `next/root-params`, qui n existe que
+ * sur le serveur, casse leur compilation entiere. C est `lib/salon-serveur.ts`
+ * qui connait la langue du rendu et la passe ici.
+ *
+ * Elle entre dans la cle de cache de Next : deux langues, deux entrees.
+ */
+export async function fetchSalon(
+  host: string,
+  langue: Langue = LANGUE_PAR_DEFAUT,
+): Promise<PublicSalon | null> {
+  const response = await fetch(
+    `${SERVER_API}/api/v1/public/salon?lang=${langue}`,
+    {
     headers: { "X-Tenant-Host": host },
     // Le contenu vitrine bouge rarement, et un cache court absorbe un pic de
     // trafic apres un post Instagram. Mais 60 s, c'est trop long pour la
@@ -66,7 +83,8 @@ export async function fetchSalon(host: string): Promise<PublicSalon | null> {
     // conclut que le reglage ne marche pas. Quinze secondes protegent
     // toujours du pic, sans donner cette impression.
     next: { revalidate: 15 },
-  });
+    },
+  );
 
   if (response.status === 404) return null;
   if (!response.ok) {

@@ -46,6 +46,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { useTranslations } from "next-intl";
+
 import { browserApi } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import { SalonIcon } from "./icons";
@@ -68,7 +70,8 @@ async function lireTaux(vers: string): Promise<number> {
   if (!reponse.ok) throw new Error("taux indisponible");
   const data = await reponse.json();
   const valeur = Number(data.taux);
-  if (!valeur || !Number.isFinite(valeur)) throw new Error("taux inexploitable");
+  if (!valeur || !Number.isFinite(valeur))
+    throw new Error("taux inexploitable");
   return valeur;
 }
 
@@ -111,7 +114,11 @@ function lirePreference(cle: string, devise: string): string {
   let preference: Preference | null = null;
   try {
     const decode = JSON.parse(brut);
-    if (decode && typeof decode.lue === "string" && typeof decode.base === "string") {
+    if (
+      decode &&
+      typeof decode.lue === "string" &&
+      typeof decode.base === "string"
+    ) {
       preference = decode;
     }
   } catch {
@@ -128,7 +135,10 @@ function lirePreference(cle: string, devise: string): string {
 
 function ecrirePreference(cle: string, lue: string, base: string) {
   try {
-    localStorage.setItem(cle, JSON.stringify({ lue, base } satisfies Preference));
+    localStorage.setItem(
+      cle,
+      JSON.stringify({ lue, base } satisfies Preference),
+    );
   } catch {
     // Sans stockage, le choix ne survit pas au changement de page. Il vaut
     // mieux que rien.
@@ -143,13 +153,18 @@ function oublierPreference(cle: string) {
   }
 }
 
-/** Ce qu'on propose de lire, au-delà de la devise du salon. */
+/*
+  Ce qu'on propose de lire, au-delà de la devise du salon.
+
+  Le symbole ne se traduit pas — « ¥ » est « ¥ » dans toutes les langues — mais
+  le nom, si : le catalogue le porte sous `devise.noms`.
+*/
 const PROPOSEES = [
-  { code: "XAF", label: "Franc CFA", court: "FCFA" },
-  { code: "CNY", label: "Yuan", court: "¥" },
-  { code: "CDF", label: "Franc congolais", court: "FC" },
-  { code: "EUR", label: "Euro", court: "€" },
-  { code: "USD", label: "Dollar", court: "$" },
+  { code: "XAF", court: "FCFA" },
+  { code: "CNY", court: "¥" },
+  { code: "CDF", court: "FC" },
+  { code: "EUR", court: "€" },
+  { code: "USD", court: "$" },
 ];
 
 function court(code: string): string {
@@ -299,6 +314,7 @@ export function DeviseProvider({
  * en compte déjà quatre éléments sur téléphone.
  */
 export function DeviseToggle({ className = "" }: { className?: string }) {
+  const t = useTranslations("devise");
   const { reelle, affichee, choisir, occupe } = useDevise();
   const [ouvert, setOuvert] = useState(false);
 
@@ -308,7 +324,6 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
     const autres = PROPOSEES.filter((d) => d.code !== reelle);
     const sienne = PROPOSEES.find((d) => d.code === reelle) ?? {
       code: reelle,
-      label: reelle,
       court: reelle,
     };
     return [sienne, ...autres];
@@ -320,14 +335,21 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
         type="button"
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
-        aria-label={`Afficher les prix en une autre devise (actuellement ${court(affichee)})`}
+        aria-label={t("ouvrir", { devise: court(affichee) })}
         className={`flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition ${
           affichee === reelle
             ? "border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--salon-primary)] hover:text-[var(--salon-ink)]"
             : "border-[var(--salon-primary)] text-[var(--salon-ink)]"
         }`}
       >
-        <SalonIcon name="sparkle" className={`size-3.5 ${occupe ? "animate-pulse" : ""}`} />
+        {/* L'échange, pas l'étincelle : ce bouton ne montre pas une
+            monnaie, il en substitue une à une autre le temps d'une
+            lecture. L'étincelle, elle, marque un soin partout ailleurs
+            sur le mini-site. */}
+        <SalonIcon
+          name="echange"
+          className={`size-3.5 ${occupe ? "animate-pulse" : ""}`}
+        />
         {court(affichee)}
       </button>
 
@@ -344,7 +366,7 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
           />
           <div className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] shadow-lg">
             <p className="border-b border-[var(--site-line)] px-3 py-2 text-[0.7rem] leading-snug text-[var(--site-subtle)]">
-              Lire les prix en…
+              {t("lire")}
             </p>
             <ul>
               {options.map((option) => (
@@ -361,9 +383,16 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
                         : "text-[var(--site-ink)]"
                     }`}
                   >
-                    <span className="truncate">{option.label}</span>
+                    {/* Le nom peut manquer pour une devise qu'un salon a
+                        choisie hors de la liste : son code fait alors office
+                        de nom, ce qui vaut mieux qu'une case vide. */}
+                    <span className="truncate">
+                      {t.has(`noms.${option.code}`)
+                        ? t(`noms.${option.code}`)
+                        : option.code}
+                    </span>
                     <span className="shrink-0 text-xs text-[var(--site-subtle)]">
-                      {option.code === reelle ? "facturé" : option.court}
+                      {option.code === reelle ? t("facture") : option.court}
                     </span>
                   </button>
                 </li>
@@ -371,8 +400,7 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
             </ul>
             {affichee !== reelle && (
               <p className="border-t border-[var(--site-line)] px-3 py-2 text-[0.68rem] leading-snug text-[var(--site-subtle)]">
-                Conversion indicative, au taux du jour. Le salon encaisse en{" "}
-                {court(reelle)}.
+                {t("avertissement", { devise: court(reelle) })}
               </p>
             )}
           </div>

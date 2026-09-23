@@ -46,7 +46,9 @@ export function Waitlist() {
   const toast = useToast();
   const tenantId = membership.tenant.id;
   const timeZone = membership.tenant.timezone;
-  const canEdit = ["owner", "manager", "receptionist"].includes(membership.role);
+  const canEdit = ["owner", "manager", "receptionist"].includes(
+    membership.role,
+  );
 
   const entries = useResource<Page<Entry>>("/api/v1/waitlist/", tenantId);
   const list = rows(entries.data);
@@ -57,7 +59,12 @@ export function Waitlist() {
     timeZone,
   });
 
-  async function act(entry: Entry, path: string, body: object, success: string) {
+  async function act(
+    entry: Entry,
+    path: string,
+    body: object,
+    success: string,
+  ) {
     const ok = await toast.run(
       () =>
         dashboardFetch(
@@ -77,7 +84,9 @@ export function Waitlist() {
         description="Les clientes à rappeler quand une place se libère. Rien n'est réservé pour elles."
       />
 
-      {entries.error && <ErrorState>Impossible de charger la liste.</ErrorState>}
+      {entries.error && (
+        <ErrorState>Impossible de charger la liste.</ErrorState>
+      )}
       {entries.data === null && !entries.error && <Skeleton rows={3} />}
 
       {entries.data !== null && list.length === 0 && (
@@ -142,7 +151,12 @@ export function Waitlist() {
                     <GhostButton
                       type="button"
                       onClick={() =>
-                        act(entry, "contacted", {}, `${entry.full_name} marquée comme contactée.`)
+                        act(
+                          entry,
+                          "contacted",
+                          {},
+                          `${entry.full_name} marquée comme contactée.`,
+                        )
                       }
                     >
                       J&apos;ai rappelé
@@ -151,7 +165,12 @@ export function Waitlist() {
                   <GhostButton
                     type="button"
                     onClick={() =>
-                      act(entry, "close", { booked: true }, "Rendez-vous pris : demande classée.")
+                      act(
+                        entry,
+                        "close",
+                        { booked: true },
+                        "Rendez-vous pris : demande classée.",
+                      )
                     }
                   >
                     Rendez-vous pris

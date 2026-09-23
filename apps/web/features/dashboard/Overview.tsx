@@ -301,9 +301,7 @@ function Highlight({
         )}
       </p>
 
-      <p
-        className={`mt-2 text-sm ${filled ? "text-white/85" : "text-muted"}`}
-      >
+      <p className={`mt-2 text-sm ${filled ? "text-white/85" : "text-muted"}`}>
         {footer}
       </p>
     </div>
@@ -336,7 +334,9 @@ function Tile({
       <p className="tabular mt-1.5 text-xl font-semibold tracking-tight text-ink sm:text-2xl">
         {value}
       </p>
-      {hint && <p className="mt-0.5 text-xs leading-snug text-subtle">{hint}</p>}
+      {hint && (
+        <p className="mt-0.5 text-xs leading-snug text-subtle">{hint}</p>
+      )}
     </Card>
   );
 }

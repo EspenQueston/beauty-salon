@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 
-from apps.common.admin import TenantScopedAdmin
+from apps.common.admin import ADMIN_DB, SuppressionTracee, TenantScopedAdmin
 
 from .models import AvailabilityException, Booking, BusinessHours
 from .waitlist import WaitlistEntry
@@ -30,7 +30,7 @@ class AvailabilityExceptionAdmin(TenantScopedAdmin):
 
 
 @admin.register(Booking)
-class BookingAdmin(TenantScopedAdmin):
+class BookingAdmin(SuppressionTracee, TenantScopedAdmin):
     """Toutes les commandes des salons, en lecture seule.
 
     -----------------------------------------------------------------------
@@ -139,9 +139,75 @@ class BookingAdmin(TenantScopedAdmin):
     def has_change_permission(self, request, obj=None) -> bool:
         return False
 
-    def has_delete_permission(self, request, obj=None) -> bool:
-        # Les lignes de recette pointent vers ces rendez-vous.
-        return False
+    # -----------------------------------------------------------------
+    # La suppression emporte les ecritures comptables
+    # -----------------------------------------------------------------
+    #
+    # Elle etait fermee parce que les lignes de recette pointent vers le
+    # rendez-vous. Le risque etait reel, mais mal traite : `on_delete` vaut
+    # SET_NULL, donc supprimer aurait laisse une recette **sans origine** -
+    # un montant dans les comptes que plus rien ne justifie.
+    #
+    # Interdire tout court ne tenait pas non plus : pres de la moitie des
+    # rendez-vous portent une ecriture, et l'equipe qui exploite la
+    # plateforme doit pouvoir effacer une donnee de test ou repondre a une
+    # demande de suppression de compte.
+    #
+    # On supprime donc les deux ensemble, et on le **dit** : la page de
+    # confirmation liste les ecritures et leur total. Django ne les
+    # montrerait pas seul - son collecteur affiche les cascades, pas les
+    # mises a NULL.
+
+    def ecritures_liees(self, objs):
+        from apps.finance.models import Transaction
+
+        return (
+            Transaction.all_tenants.using(ADMIN_DB)
+            .filter(booking__in=objs)
+            .order_by("occurred_on")
+        )
+
+    def get_deleted_objects(self, objs, request):
+        """Ajoute les ecritures a ce que la confirmation annonce."""
+        a_supprimer, comptes, permissions, proteges = super().get_deleted_objects(
+            objs, request
+        )
+
+        ecritures = list(self.ecritures_liees(objs))
+        if ecritures:
+            total = sum(ecriture.amount for ecriture in ecritures)
+            a_supprimer = list(a_supprimer) + [
+                format_html(
+                    "<strong>Écritures comptables supprimées avec : "
+                    "{} ligne{}, {} {}</strong>",
+                    len(ecritures),
+                    "s" if len(ecritures) > 1 else "",
+                    total,
+                    ecritures[0].currency,
+                ),
+                [str(ecriture) for ecriture in ecritures],
+            ]
+            comptes["écritures comptables"] = len(ecritures)
+
+        return a_supprimer, comptes, permissions, proteges
+
+    def supprimer_les_ecritures(self, request, objs) -> None:
+        ecritures = list(self.ecritures_liees(objs))
+        if not ecritures:
+            return
+        for ecriture in ecritures:
+            self.tracer_suppression(request, ecriture)
+        type(ecritures[0]).all_tenants.using(ADMIN_DB).filter(
+            pk__in=[ecriture.pk for ecriture in ecritures]
+        ).delete()
+
+    def delete_model(self, request, obj):
+        self.supprimer_les_ecritures(request, [obj])
+        super().delete_model(request, obj)
+
+    def delete_queryset(self, request, queryset):
+        self.supprimer_les_ecritures(request, list(queryset))
+        super().delete_queryset(request, queryset)
 
 
 @admin.register(WaitlistEntry)

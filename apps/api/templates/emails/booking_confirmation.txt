@@ -1,28 +1,16 @@
-{% autoescape off %}Bonjour {{ customer.full_name }},
+{% extends "emails/base_client.txt" %}
 
-Votre rendez-vous chez {{ salon.name }} est enregistré.
-
-Prestation : {{ booking.service_name }}
-Avec : {{ staff_member.name }}
-Date : {{ date_label }} à {{ time_label }}
-Durée : {{ duration_label }}
-{% for option in booking.options_snapshot %}Option : {{ option.name }}{% if option.price != "0.00" %} (+ {{ option.price }} {{ salon.currency }}){% endif %}
-{% endfor %}{% if booking.travel_zone_name %}À domicile : {{ booking.travel_zone_name }}{% if booking.travel_fee_amount %} (+ {{ booking.travel_fee_amount }} {{ salon.currency }}){% endif %}
-Adresse : {{ booking.address }}
-{% endif %}Montant : {{ booking.total_amount }} {{ salon.currency }}
-{% if booking.deposit_amount %}Acompte : {{ booking.deposit_amount }} {{ salon.currency }}
+{% block extra %}{% if booking.deposit_amount %}
+{{ t.acompte_demande }} : {{ deposit_label }}{% if deposit_hint %} ({{ deposit_hint }}){% endif %}
 {% endif %}{% if profile.late_policy %}
-En cas de retard
-Merci d'arriver à l'heure. Au-delà de {{ profile.late_tolerance_minutes }} minutes de retard :
+{{ late_title }}
 {{ profile.late_policy }}
-{% endif %}{% if payment_url %}
-Réglez votre acompte ici — votre créneau est gardé le temps du
-règlement :
+{% endif %}{% endblock %}
 
+{% block action %}{% if payment_url %}
+{{ t.regler_acompte }} :
 {{ payment_url }}
 {% endif %}
-Pour annuler ou déplacer votre rendez-vous, contactez directement le salon.
+{{ t.confirmation_pied }}
 
-À bientôt,
-{{ salon.name }}
-{% endautoescape %}
+{% endblock %}

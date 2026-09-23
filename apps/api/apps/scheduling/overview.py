@@ -133,6 +133,69 @@ def _today(bookings, day_start, day_end) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Ce qui attend un geste
+# ---------------------------------------------------------------------------
+#
+# Ces trois filtres sont definis **une seule fois**, et servent deux fois :
+# ici pour compter, et dans `BookingViewSet` pour lister quand la cloche
+# renvoie vers l'agenda (`?attente=acomptes`).
+#
+# Deux definitions auraient diverge au premier changement de regle, et la
+# divergence se serait vue : la pastille annoncerait deux acomptes, l'ecran
+# en montrerait trois, et plus personne ne croirait ni l'une ni l'autre.
+
+
+def _acomptes(queryset):
+    """Une preuve de versement deposee, que personne n'a encore regardee.
+
+    Le statut du rendez-vous compte autant que celui de la preuve : une
+    preuve ne peut recevoir un verdict que tant que le rendez-vous attend
+    d'etre accepte (voir `payments.services.accept`). Au-dela, le bouton
+    n'existe plus - et compter une ligne sur laquelle on ne peut plus rien
+    ferait une pastille qui ne retombe jamais.
+
+    Cet etat ne peut plus se produire : `change_status` refuse desormais de
+    quitter « demandee » tant qu'une preuve attend. Il reste les lignes
+    creees avant ce garde-fou, qui portent leur propre avertissement sur la
+    fiche du rendez-vous.
+    """
+    return queryset.filter(
+        deposit_proof__status="submitted",
+        status__in=(Booking.Status.REQUESTED, Booking.Status.PENDING_PAYMENT),
+    )
+
+
+def _demandes(queryset):
+    """Un creneau reserve mais pas encore accepte par le salon."""
+    return queryset.filter(status=Booking.Status.REQUESTED)
+
+
+def _a_noter(queryset):
+    """Un rendez-vous passe dont on n'a jamais dit s'il avait eu lieu."""
+    return queryset.filter(
+        ends_at__lt=timezone.now(),
+        status__in=(Booking.Status.REQUESTED, Booking.Status.CONFIRMED),
+    )
+
+
+# Les cles sont celles de l'URL : elles apparaissent dans la barre
+# d'adresse, donc en francais et sans jargon technique.
+FILTRES_ATTENTION = {
+    "acomptes": _acomptes,
+    "demandes": _demandes,
+    "a-noter": _a_noter,
+}
+
+# Ce que le tableau de bord affiche, et sous quel nom. L'ordre compte : c'est
+# celui des pastilles, du plus urgent au moins urgent.
+LIBELLES_ATTENTION = {
+    "acomptes": "Acomptes à vérifier",
+    "demandes": "Demandes à accepter",
+    "a-noter": "Rendez-vous à noter",
+}
+
+
 def attention() -> dict:
     """Ce qui attend un geste, et coute tant qu'on ne le fait pas.
 
@@ -143,15 +206,15 @@ def attention() -> dict:
       - un creneau passe sans rien de note, c'est une statistique d'absence
         qui ne veut plus rien dire - et une cliente qu'on ne sait pas si
         elle est venue.
+
+    Les cles restent en anglais : elles sont lues par du code frontend qui
+    existe deja, et les renommer casserait la pastille sans rien apporter.
     """
     bookings = Booking.objects.all()
     return {
-        "deposits": bookings.filter(deposit_proof__status="submitted").count(),
-        "requests": bookings.filter(status=Booking.Status.REQUESTED).count(),
-        "overdue": bookings.filter(
-            ends_at__lt=timezone.now(),
-            status__in=(Booking.Status.REQUESTED, Booking.Status.CONFIRMED),
-        ).count(),
+        "deposits": _acomptes(bookings).count(),
+        "requests": _demandes(bookings).count(),
+        "overdue": _a_noter(bookings).count(),
     }
 
 

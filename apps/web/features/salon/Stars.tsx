@@ -10,16 +10,8 @@
  * supplémentaire, là où une rangée de `<div>` cliquables ne donne rien.
  */
 
+import { useTranslations } from "next-intl";
 import { SalonIcon } from "./icons";
-
-const LABELS = [
-  "",
-  "Très déçue",
-  "Décevant",
-  "Correct",
-  "Très bien",
-  "Excellent",
-];
 
 export function Stars({
   value,
@@ -28,10 +20,11 @@ export function Stars({
   value: number;
   size?: string;
 }) {
+  const t = useTranslations("salon");
   return (
     <span
       className="inline-flex items-center gap-0.5 text-[var(--salon-ink)]"
-      aria-label={`${value} sur 5`}
+      aria-label={t("note.surCinq", { note: value })}
     >
       {[1, 2, 3, 4, 5].map((step) => (
         <SalonIcon
@@ -49,7 +42,7 @@ export function StarInput({
   value,
   onChange,
   name = "rating",
-  label = "Votre note",
+  label,
   compact = false,
 }: {
   value: number;
@@ -68,17 +61,21 @@ export function StarInput({
    */
   compact?: boolean;
 }) {
+  const t = useTranslations("salon");
+  /* Les six libellés, de « » à « Excellent » : leur ordre est l'échelle. */
+  const notes = t.raw("notes") as string[];
+  const intitule = label ?? t("votreNote");
   return (
     <div>
       <fieldset className="flex items-center gap-0.5">
-        <legend className="sr-only">{label}</legend>
+        <legend className="sr-only">{intitule}</legend>
         {[1, 2, 3, 4, 5].map((step) => (
           <label
             key={step}
             className={`cursor-pointer transition hover:scale-110 ${
               compact ? "p-0.5" : "p-1"
             }`}
-            title={LABELS[step]}
+            title={notes[step]}
           >
             <input
               type="radio"
@@ -101,7 +98,7 @@ export function StarInput({
               }`}
               filled={step <= value}
             />
-            <span className="sr-only">{LABELS[step]}</span>
+            <span className="sr-only">{notes[step]}</span>
           </label>
         ))}
       </fieldset>
@@ -111,7 +108,7 @@ export function StarInput({
           premier clic. */}
       {!compact && (
         <p className="mt-1 h-5 text-sm font-medium text-[var(--salon-ink)]">
-          {value > 0 ? LABELS[value] : ""}
+          {value > 0 ? notes[value] : ""}
         </p>
       )}
     </div>

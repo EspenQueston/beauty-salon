@@ -113,7 +113,8 @@ function depositHint(
     return "Votre règle ne demande rien : réglez un pourcentage ou un minimum dans Profil du salon → Acompte.";
   }
 
-  const price = values.price_kind === "quote" ? 0 : Number(values.price_amount) || 0;
+  const price =
+    values.price_kind === "quote" ? 0 : Number(values.price_amount) || 0;
   const due = Math.floor(Math.max(minimum, (price * rate) / 100));
 
   if (values.price_kind === "quote") {
@@ -166,7 +167,10 @@ export function Services() {
     "/api/v1/service-categories/?page_size=100",
     tenantId,
   );
-  const services = useResource<Page<Service>>("/api/v1/services/?page_size=200", tenantId);
+  const services = useResource<Page<Service>>(
+    "/api/v1/services/?page_size=200",
+    tenantId,
+  );
   // Les photos déjà téléversées : le formulaire en rattache une sans quitter
   // l'écran.
   const media = useResource<Page<PickableMedia>>(
@@ -237,7 +241,8 @@ export function Services() {
   const needle = filter.query.trim().toLowerCase();
   const visible = serviceRows.filter((service) => {
     if (filter.activeOnly && !service.active) return false;
-    if (filter.categoryId && service.category !== filter.categoryId) return false;
+    if (filter.categoryId && service.category !== filter.categoryId)
+      return false;
     if (!needle) return true;
     return (
       service.name.toLowerCase().includes(needle) ||
@@ -261,7 +266,11 @@ export function Services() {
   async function remove(service: Service) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(`/api/v1/services/${service.id}/`, { method: "DELETE" }, tenantId),
+        dashboardFetch(
+          `/api/v1/services/${service.id}/`,
+          { method: "DELETE" },
+          tenantId,
+        ),
       {
         success: `« ${service.name} » supprimée.`,
         error:
@@ -276,7 +285,10 @@ export function Services() {
       () =>
         dashboardFetch(
           `/api/v1/services/${service.id}/`,
-          { method: "PATCH", body: JSON.stringify({ active: !service.active }) },
+          {
+            method: "PATCH",
+            body: JSON.stringify({ active: !service.active }),
+          },
           tenantId,
         ),
       {
@@ -380,118 +392,128 @@ export function Services() {
 
       {tab === "catalogue" && (
         <>
-      {services.data === null && !services.error && <Skeleton rows={3} />}
+          {services.data === null && !services.error && <Skeleton rows={3} />}
 
-      {categoryRows.length === 0 && categories.data !== null && (
-        <EmptyState title="Commencez par une catégorie">
-          Coiffure, ongles, maquillage, soins… Les catégories organisent votre
-          mini-site et aident vos clientes à s&apos;y retrouver.
-        </EmptyState>
-      )}
+          {categoryRows.length === 0 && categories.data !== null && (
+            <EmptyState title="Commencez par une catégorie">
+              Coiffure, ongles, maquillage, soins… Les catégories organisent
+              votre mini-site et aident vos clientes à s&apos;y retrouver.
+            </EmptyState>
+          )}
 
-      {categoryRows.length > 0 && serviceRows.length === 0 && services.data !== null && (
-        <EmptyState
-          title="Aucune prestation"
-          action={
-            canEdit && (
-              <Button
-                type="button"
-                onClick={() => setEditing(nouvelle())}
+          {categoryRows.length > 0 &&
+            serviceRows.length === 0 &&
+            services.data !== null && (
+              <EmptyState
+                title="Aucune prestation"
+                action={
+                  canEdit && (
+                    <Button
+                      type="button"
+                      onClick={() => setEditing(nouvelle())}
+                    >
+                      Créer ma première prestation
+                    </Button>
+                  )
+                }
               >
-                Créer ma première prestation
-              </Button>
-            )
-          }
-        >
-          Sans prestation, vos clientes n&apos;ont rien à réserver.
-        </EmptyState>
-      )}
+                Sans prestation, vos clientes n&apos;ont rien à réserver.
+              </EmptyState>
+            )}
 
-      {serviceRows.length > 3 && (
-        <CatalogFilter
-          categories={categoryRows}
-          counts={counts}
-          value={filter}
-          onChange={setFilter}
-          total={serviceRows.length}
-          shown={visible.length}
-        />
-      )}
+          {serviceRows.length > 3 && (
+            <CatalogFilter
+              categories={categoryRows}
+              counts={counts}
+              value={filter}
+              onChange={setFilter}
+              total={serviceRows.length}
+              shown={visible.length}
+            />
+          )}
 
-      {visible.length === 0 && serviceRows.length > 0 && (
-        <EmptyState title="Aucun résultat">
-          Aucune prestation ne correspond à cette recherche. Essayez une autre
-          orthographe, ou retirez les filtres.
-        </EmptyState>
-      )}
+          {visible.length === 0 && serviceRows.length > 0 && (
+            <EmptyState title="Aucun résultat">
+              Aucune prestation ne correspond à cette recherche. Essayez une
+              autre orthographe, ou retirez les filtres.
+            </EmptyState>
+          )}
 
-      <div className="mt-7 space-y-8">
-        {categoryRows.map((category) => {
-          const list = visible.filter((s) => s.category === category.id);
-          if (list.length === 0) return null;
+          <div className="mt-7 space-y-8">
+            {categoryRows.map((category) => {
+              const list = visible.filter((s) => s.category === category.id);
+              if (list.length === 0) return null;
 
-          return (
-            <div key={category.id}>
-              <SectionTitle>{category.name}</SectionTitle>
-              <ul className="space-y-2.5">
-                {list.map((service) => (
-                  <li key={service.id}>
-                    <Card>
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
-                            {service.name}
-                            {!service.active && <Badge>Inactive</Badge>}
-                          </p>
-                          <p className="mt-1 text-sm text-muted">
-                            {formatDuration(service.duration_minutes)}
-                            {/* Le montant réel, calculé avec la règle du
+              return (
+                <div key={category.id}>
+                  <SectionTitle>{category.name}</SectionTitle>
+                  <ul className="space-y-2.5">
+                    {list.map((service) => (
+                      <li key={service.id}>
+                        <Card>
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
+                                {service.name}
+                                {!service.active && <Badge>Inactive</Badge>}
+                              </p>
+                              <p className="mt-1 text-sm text-muted">
+                                {formatDuration(service.duration_minutes)}
+                                {/* Le montant réel, calculé avec la règle du
                                 salon — et non le montant de la fiche, qui
                                 n'était pas celui qu'on facturait. */}
-                            {service.requires_deposit &&
-                              ` · acompte ${depositLabel(service, rule.data, currency)}`}
-                            {service.location_mode !== "salon" &&
-                              ` · ${LOCATIONS.find((l) => l.value === service.location_mode)?.label}`}
-                          </p>
-                          {service.description && (
-                            <p className="mt-1.5 text-sm leading-relaxed text-subtle">
-                              {service.description}
-                            </p>
+                                {service.requires_deposit &&
+                                  ` · acompte ${depositLabel(service, rule.data, currency)}`}
+                                {service.location_mode !== "salon" &&
+                                  ` · ${LOCATIONS.find((l) => l.value === service.location_mode)?.label}`}
+                              </p>
+                              {service.description && (
+                                <p className="mt-1.5 text-sm leading-relaxed text-subtle">
+                                  {service.description}
+                                </p>
+                              )}
+                            </div>
+
+                            <span className="tabular shrink-0 font-semibold text-salon">
+                              {service.price_kind === "quote"
+                                ? "Sur devis"
+                                : `${service.price_kind === "from" ? "dès " : ""}${formatPrice(
+                                    service.price_amount,
+                                    currency,
+                                  )}`}
+                            </span>
+                          </div>
+
+                          {canEdit && (
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              <GhostButton
+                                type="button"
+                                onClick={() => setEditing(service)}
+                              >
+                                Modifier
+                              </GhostButton>
+                              <GhostButton
+                                type="button"
+                                onClick={() => toggle(service)}
+                              >
+                                {service.active ? "Désactiver" : "Activer"}
+                              </GhostButton>
+                              <DangerButton
+                                type="button"
+                                onClick={() => remove(service)}
+                              >
+                                Supprimer
+                              </DangerButton>
+                            </div>
                           )}
-                        </div>
-
-                        <span className="tabular shrink-0 font-semibold text-salon">
-                          {service.price_kind === "quote"
-                            ? "Sur devis"
-                            : `${service.price_kind === "from" ? "dès " : ""}${formatPrice(
-                                service.price_amount,
-                                currency,
-                              )}`}
-                        </span>
-                      </div>
-
-                      {canEdit && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <GhostButton type="button" onClick={() => setEditing(service)}>
-                            Modifier
-                          </GhostButton>
-                          <GhostButton type="button" onClick={() => toggle(service)}>
-                            {service.active ? "Désactiver" : "Activer"}
-                          </GhostButton>
-                          <DangerButton type="button" onClick={() => remove(service)}>
-                            Supprimer
-                          </DangerButton>
-                        </div>
-                      )}
-                    </Card>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
-
+                        </Card>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         </>
       )}
 
@@ -524,7 +546,10 @@ function CategoryManager({
       () =>
         dashboardFetch(
           "/api/v1/service-categories/",
-          { method: "POST", body: JSON.stringify({ name, position: categories.length }) },
+          {
+            method: "POST",
+            body: JSON.stringify({ name, position: categories.length }),
+          },
           tenantId,
         ),
       {
@@ -579,8 +604,17 @@ function CategoryManager({
                 aria-label={`Supprimer la catégorie ${category.name}`}
                 className="rounded-full p-1 text-subtle transition hover:bg-danger-bg hover:text-danger"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-3.5">
-                  <path d="m6 6 12 12M18 6 6 18" strokeWidth="2.5" strokeLinecap="round" />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  className="size-3.5"
+                >
+                  <path
+                    d="m6 6 12 12M18 6 6 18"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </li>
@@ -652,7 +686,8 @@ function ServiceForm({
               description: values.description ?? "",
               duration_minutes: Number(values.duration_minutes),
               price_kind: values.price_kind,
-              price_amount: values.price_kind === "quote" ? "0" : values.price_amount,
+              price_amount:
+                values.price_kind === "quote" ? "0" : values.price_amount,
               requires_deposit: values.requires_deposit ?? false,
               location_mode: values.location_mode,
               active: values.active ?? true,
@@ -717,13 +752,18 @@ function ServiceForm({
             </select>
           </Field>
 
-          <Field label="Durée (minutes)" hint="Temps réellement bloqué dans l'agenda.">
+          <Field
+            label="Durée (minutes)"
+            hint="Temps réellement bloqué dans l'agenda."
+          >
             <input
               type="number"
               min={5}
               step={5}
               value={values.duration_minutes ?? 60}
-              onChange={(event) => set("duration_minutes", Number(event.target.value))}
+              onChange={(event) =>
+                set("duration_minutes", Number(event.target.value))
+              }
               required
               className={inputClass}
             />
@@ -792,7 +832,10 @@ function ServiceForm({
             <select
               value={values.location_mode ?? "salon"}
               onChange={(event) =>
-                set("location_mode", event.target.value as Service["location_mode"])
+                set(
+                  "location_mode",
+                  event.target.value as Service["location_mode"],
+                )
               }
               className={inputClass}
             >
@@ -853,11 +896,7 @@ function ServiceForm({
             currency={currency}
             canEdit
           />
-          <ServiceResources
-            tenantId={tenantId}
-            serviceId={values.id}
-            canEdit
-          />
+          <ServiceResources tenantId={tenantId} serviceId={values.id} canEdit />
         </div>
       )}
     </Card>

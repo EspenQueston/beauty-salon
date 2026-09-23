@@ -7,7 +7,9 @@
  * tarif qu'on doit chercher est un tarif dont on se méfie.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { Lien } from "@/features/ui/Lien";
 
 import { formatDuration } from "@/lib/format";
 import { Prix } from "./Devise";
@@ -19,7 +21,7 @@ import {
 } from "@/lib/illustrations";
 import type { PublicService } from "@/lib/types";
 import { SalonIcon, type SalonIconName } from "./icons";
-import { Tilt } from "./Tilt";
+import { Relief } from "@/features/ui/Relief";
 import { Pill, SURFACE } from "./ui";
 
 export function ServiceCard({
@@ -43,6 +45,8 @@ export function ServiceCard({
    */
   fallback?: Illustration;
 }) {
+  const t = useTranslations("salon");
+  const c = useTranslations("commun");
   const deposit = service.requires_deposit;
 
   // Une carte sans visuel casse la grille et se lit comme une fiche
@@ -53,8 +57,8 @@ export function ServiceCard({
     : (fallback ?? pickIllustration(service.id, theme));
 
   return (
-    <Tilt className="h-full">
-      <Link
+    <Relief className="h-full">
+      <Lien
         href={`/reserver?service=${service.id}`}
         className={`${SURFACE} group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-[0_14px_32px_-10px_rgb(23_23_28_/_0.22)]`}
       >
@@ -72,7 +76,10 @@ export function ServiceCard({
           <span className="relative block aspect-[16/10] overflow-hidden bg-black/[0.04]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={illustrationUrl(illustration!.id, { width: 640, ratio: 0.63 })}
+              src={illustrationUrl(illustration!.id, {
+                width: 640,
+                ratio: 0.63,
+              })}
               alt=""
               loading="lazy"
               className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
@@ -115,12 +122,14 @@ export function ServiceCard({
             */}
             {service.price_kind === "quote" ? (
               <span className="shrink-0 text-sm font-semibold text-[var(--salon-ink)] sm:text-base">
-                Sur devis
+                {t("prix.surDevis")}
               </span>
             ) : (
               <Prix
                 montant={service.price_amount}
-                prefixe={service.price_kind === "from" ? "À partir de" : ""}
+                prefixe={
+                  service.price_kind === "from" ? t("prix.aPartirDeSeul") : ""
+                }
                 className="tabular shrink-0 text-sm font-semibold text-[var(--salon-ink)] sm:text-base"
               />
             )}
@@ -131,7 +140,7 @@ export function ServiceCard({
               <SalonIcon name="clock" className="size-3.5" />
               {formatDuration(service.duration_minutes)}
             </Pill>
-            {deposit && <Pill tone="accent">Acompte</Pill>}
+            {deposit && <Pill tone="accent">{t("acompte")}</Pill>}
           </span>
 
           {service.description && (
@@ -141,14 +150,14 @@ export function ServiceCard({
           )}
 
           <span className="mt-3 flex items-center gap-1.5 pt-1 text-[0.8rem] font-medium text-[var(--salon-ink)] sm:mt-4 sm:text-sm">
-            Réserver
+            {c("reserver")}
             <SalonIcon
               name="arrow"
               className="size-4 transition-transform group-hover:translate-x-1"
             />
           </span>
         </span>
-      </Link>
-    </Tilt>
+      </Lien>
+    </Relief>
   );
 }

@@ -11,6 +11,7 @@ from apps.catalog.models import Service, ServiceCategory, ServiceOption
 from apps.media.models import MediaAsset
 from apps.scheduling.models import BusinessHours
 from apps.staff.models import StaffMember
+from apps.translations.serializers import Traduit
 
 from .models import SalonProfile, TravelZone
 
@@ -41,9 +42,11 @@ class MediaAssetSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(url) if request else url
 
 
-class PublicServiceOptionSerializer(serializers.ModelSerializer):
+class PublicServiceOptionSerializer(Traduit, serializers.ModelSerializer):
     """Options proposees a la cliente, avec ce qu'elles coutent en argent et
     en temps. Les deux comptent : le second decide du creneau."""
+
+    champs_traduits = ("name", "description")
 
     class Meta:
         model = ServiceOption
@@ -72,7 +75,8 @@ class PublicRequirementSerializer(serializers.Serializer):
     products = serializers.ListField()
 
 
-class PublicServiceSerializer(serializers.ModelSerializer):
+class PublicServiceSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("name", "description")
     image = MediaAssetSerializer(read_only=True)
     staff_member_ids = serializers.SerializerMethodField()
     options = serializers.SerializerMethodField()
@@ -112,7 +116,8 @@ class PublicServiceSerializer(serializers.ModelSerializer):
         return [str(value) for value in mapping.get(service.id, [])]
 
 
-class PublicCategorySerializer(serializers.ModelSerializer):
+class PublicCategorySerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("name",)
     services = serializers.SerializerMethodField()
 
     class Meta:
@@ -126,7 +131,8 @@ class PublicCategorySerializer(serializers.ModelSerializer):
         ).data
 
 
-class PublicStaffSerializer(serializers.ModelSerializer):
+class PublicStaffSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("specialty", "bio")
     photo = MediaAssetSerializer(read_only=True)
 
     class Meta:
@@ -148,7 +154,14 @@ class PublicTravelZoneSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "fee_amount")
 
 
-class PublicSalonSerializer(serializers.ModelSerializer):
+class PublicSalonSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = (
+        "description",
+        "about_title",
+        "about_content",
+        "cancellation_policy",
+        "late_policy",
+    )
     name = serializers.CharField(source="tenant.name", read_only=True)
     slug = serializers.CharField(source="tenant.slug", read_only=True)
     currency = serializers.CharField(source="tenant.currency", read_only=True)

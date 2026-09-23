@@ -37,8 +37,9 @@
  * cette page pour vérifier une chose, pas pour la lire.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 
 import { browserRequest } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
@@ -50,12 +51,7 @@ import { CheckinCode } from "./CheckinCode";
 import { Countdown } from "./Countdown";
 
 type PaymentPhase =
-  | "payable"
-  | "waiting"
-  | "refused"
-  | "settled"
-  | "expired"
-  | "cancelled";
+  "payable" | "waiting" | "refused" | "settled" | "expired" | "cancelled";
 
 interface StatusState {
   booking: {
@@ -130,58 +126,69 @@ function banniere(phase: PaymentPhase, status: string): BannerKey {
   return "settled";
 }
 
-const BANNERS: Record<
+/*
+  Les bandeaux sont une **fonction** de la langue.
+
+  Écrits en constante de module, leurs textes se figeaient au démarrage du
+  serveur — en français, pour toutes les pages. Construits à l'appel, ils
+  suivent la langue de la requête.
+*/
+function bannieres(
+  t: (cle: string) => string,
+): Record<
   BannerKey,
   { title: string; body: string; tone: "ok" | "warn" | "wait" | "off" }
-> = {
-  payable: {
-    title: "Acompte à régler",
-    body: "Votre créneau est réservé le temps que vous régliez.",
-    tone: "warn",
-  },
-  waiting: {
-    title: "En attente de confirmation",
-    body: "Le salon vérifie votre versement. Vous recevrez un e-mail dès que c'est fait.",
-    tone: "wait",
-  },
-  refused: {
-    title: "Versement introuvable",
-    body: "Le salon n'a pas retrouvé votre paiement. Votre créneau est toujours gardé.",
-    tone: "warn",
-  },
-  settled: {
-    title: "Rendez-vous confirmé",
-    body: "Tout est réglé. Présentez votre code d'arrivée en arrivant au salon.",
-    tone: "ok",
-  },
-  // Le rendez-vous a eu lieu, ou n'aura plus lieu. Voir `banniere()` :
-  // « réglé » ne suffit pas à décrire ces trois moments.
-  honoured: {
-    title: "Rendez-vous honoré",
-    body: "Merci de votre visite. Tout est réglé, il n'y a rien à faire.",
-    tone: "ok",
-  },
-  arrived: {
-    title: "Vous êtes arrivée",
-    body: "Le salon vous a enregistrée. Bonne séance.",
-    tone: "ok",
-  },
-  missed: {
-    title: "Vous n'êtes pas venue",
-    body: "Le salon a noté votre absence. Contactez-le pour reprendre rendez-vous.",
-    tone: "off",
-  },
-  expired: {
-    title: "Délai de règlement dépassé",
-    body: "Le créneau a été remis à disposition. Vous pouvez en choisir un autre.",
-    tone: "off",
-  },
-  cancelled: {
-    title: "Rendez-vous annulé",
-    body: "Ce rendez-vous n'aura pas lieu.",
-    tone: "off",
-  },
-};
+> {
+  return {
+    payable: {
+      title: t("suivi.acompteTitre"),
+      body: t("suivi.acompteCorps"),
+      tone: "warn",
+    },
+    waiting: {
+      title: t("suivi.attenteTitre"),
+      body: t("suivi.attenteCorps"),
+      tone: "wait",
+    },
+    refused: {
+      title: "Versement introuvable",
+      body: t("suivi.refuseCorps"),
+      tone: "warn",
+    },
+    settled: {
+      title: t("suivi.confirmeTitre"),
+      body: t("suivi.confirmeCorps"),
+      tone: "ok",
+    },
+    // Le rendez-vous a eu lieu, ou n'aura plus lieu. Voir `banniere()` :
+    // « réglé » ne suffit pas à décrire ces trois moments.
+    honoured: {
+      title: t("suivi.honoreTitre"),
+      body: t("suivi.honoreCorps"),
+      tone: "ok",
+    },
+    arrived: {
+      title: t("suivi.arriveeTitre"),
+      body: t("suivi.arriveeCorps"),
+      tone: "ok",
+    },
+    missed: {
+      title: t("suivi.absenteTitre"),
+      body: t("suivi.absenteCorps"),
+      tone: "off",
+    },
+    expired: {
+      title: t("suivi.expireTitre"),
+      body: t("suivi.expireCorps"),
+      tone: "off",
+    },
+    cancelled: {
+      title: t("suivi.annuleTitre"),
+      body: t("suivi.annuleCorps"),
+      tone: "off",
+    },
+  };
+}
 
 const TONES: Record<string, string> = {
   ok: "border-l-emerald-500",
@@ -199,6 +206,7 @@ export function BookingStatus({
   host: string;
   token: string;
 }) {
+  const t = useTranslations("reservation");
   const [state, setState] = useState<StatusState | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -226,12 +234,10 @@ export function BookingStatus({
   if (failed) {
     return (
       <div className={`${CARD} mx-auto max-w-md p-6 text-center`}>
-        <p className="text-sm text-[var(--site-ink)]">
-          Ce lien n&apos;est plus valable.
-        </p>
-        <Link href="/reserver" className={`${PRIMARY} mt-4`}>
-          Prendre rendez-vous
-        </Link>
+        <p className="text-sm text-[var(--site-ink)]">{t("suivi.lienMort")}</p>
+        <Lien href="/reserver" className={`${PRIMARY} mt-4`}>
+          {t("suivi.prendreRdv")}
+        </Lien>
       </div>
     );
   }
@@ -245,9 +251,15 @@ export function BookingStatus({
     );
   }
 
-  const { booking, payment, checkin_token: checkin, checkin_code: shortCode } = state;
+  const {
+    booking,
+    payment,
+    checkin_token: checkin,
+    checkin_code: shortCode,
+  } = state;
+  const table = bannieres(t);
   const banner =
-    BANNERS[banniere(payment.state, booking.status)] ?? BANNERS.payable;
+    table[banniere(payment.state, booking.status)] ?? table.payable;
   const start = new Date(booking.starts_at);
   const when = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
@@ -265,9 +277,7 @@ export function BookingStatus({
   return (
     <div className="mx-auto max-w-md">
       {/* ----- Ce qui se passe, en premier ---------------------------- */}
-      <div
-        className={`${CARD} border-l-4 ${TONES[banner.tone]} p-4 sm:p-5`}
-      >
+      <div className={`${CARD} border-l-4 ${TONES[banner.tone]} p-4 sm:p-5`}>
         <p className="text-base font-semibold text-[var(--site-ink)]">
           {banner.title}
         </p>
@@ -313,18 +323,20 @@ export function BookingStatus({
           </p>
 
           <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2.5 text-sm">
-            <Pair label="Au nom de" value={booking.customer_name} />
+            <Pair label={t("suivi.auNomDe")} value={booking.customer_name} />
             {booking.staff_member_name && (
-              <Pair label="Avec" value={booking.staff_member_name} />
+              <Pair label={t("suivi.avec")} value={booking.staff_member_name} />
             )}
             <Pair
-              label="Total"
+              label={t("total")}
               value={formatPrice(booking.total_amount, salon.currency)}
               strong
             />
             {Number(payment.deposit_amount) > 0 && (
               <Pair
-                label={payment.deposit_paid ? "Acompte reçu" : "Acompte"}
+                label={
+                  payment.deposit_paid ? t("suivi.acompteRecu") : "Acompte"
+                }
                 value={formatPrice(
                   payment.deposit_paid
                     ? payment.deposit_received
@@ -334,10 +346,16 @@ export function BookingStatus({
               />
             )}
             {booking.travel_zone_name && (
-              <Pair label="À domicile" value={booking.travel_zone_name} />
+              <Pair
+                label={t("suivi.aDomicile")}
+                value={booking.travel_zone_name}
+              />
             )}
             {payment.deposit_method && payment.deposit_paid && (
-              <Pair label="Réglé par" value={payment.deposit_method} />
+              <Pair
+                label={t("suivi.reglePar")}
+                value={payment.deposit_method}
+              />
             )}
           </dl>
 
@@ -392,21 +410,21 @@ export function BookingStatus({
           {/* ----- Ce qu'on peut faire d'ici ------------------------- */}
           <div className="mt-4 flex flex-wrap gap-2">
             {payment.payment_token && (
-              <Link
+              <Lien
                 href={`/paiement?token=${encodeURIComponent(payment.payment_token)}`}
                 className={PRIMARY}
               >
                 <SalonIcon name="sparkle" className="size-4" />
                 {payment.state === "refused"
                   ? "Renvoyer ma preuve"
-                  : "Régler l'acompte"}
-              </Link>
+                  : t("suivi.reglerAcompte")}
+              </Lien>
             )}
 
             {overdue && (
-              <Link href="/reserver" className={PRIMARY}>
-                Reprendre rendez-vous
-              </Link>
+              <Lien href="/reserver" className={PRIMARY}>
+                {t("suivi.reprendre")}
+              </Lien>
             )}
 
             {maps && !overdue && (
@@ -417,7 +435,7 @@ export function BookingStatus({
                 className={GHOST}
               >
                 <SalonIcon name="pin" className="size-4" />
-                Itinéraire
+                {t("suivi.itineraire")}
               </a>
             )}
 
@@ -429,12 +447,15 @@ export function BookingStatus({
                 className={GHOST}
               >
                 <SalonIcon name="whatsapp" className="size-4" />
-                Écrire au salon
+                {t("suivi.ecrireAuSalon")}
               </a>
             )}
 
             {salon.phone && (
-              <a href={`tel:${salon.phone.replace(/\s/g, "")}`} className={GHOST}>
+              <a
+                href={`tel:${salon.phone.replace(/\s/g, "")}`}
+                className={GHOST}
+              >
                 <SalonIcon name="phone" className="size-4" />
                 Appeler
               </a>
@@ -444,7 +465,7 @@ export function BookingStatus({
       </section>
 
       <p className="mt-4 px-2 text-center text-xs text-[var(--site-subtle)]">
-        Gardez ce lien : il rouvre cette page à tout moment.
+        {t("suivi.gardezLien")}
       </p>
     </div>
   );

@@ -40,7 +40,9 @@ export type SalonIconName =
   | "sun"
   | "moon"
   | "user"
-  | "store";
+  | "store"
+  | "echange"
+  | "globe";
 
 const PATHS: Record<SalonIconName, ReactNode> = {
   user: (
@@ -173,6 +175,34 @@ const PATHS: Record<SalonIconName, ReactNode> = {
     </>
   ),
   moon: <path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />,
+
+  /*
+    Deux flèches opposées : « convertis ceci en cela ».
+
+    Le bouton de devise portait une étincelle, qui ne dit ni argent, ni
+    change, ni menu — et qui sert partout ailleurs à marquer un soin. Une
+    pièce aurait dit « de l'argent » : juste, et inerte. Ce bouton ne
+    montre pas une monnaie, il en substitue une à une autre le temps
+    d'une lecture ; c'est un geste, pas une matière.
+
+    Deux traits seulement, et des pointes ouvertes : à 14 px une tête de
+    flèche pleine se remplit et la flèche devient un pâté.
+  */
+  echange: (
+    <>
+      <path d="M4.5 9.2h13.2M14.4 5.9l3.3 3.3-3.3 3.3" />
+      <path d="M19.5 14.8H6.3M9.6 11.5l-3.3 3.3 3.3 3.3" />
+    </>
+  ),
+
+  /* Le méridien courbe, et non trois traits droits : à cette taille un
+     globe quadrillé se lit comme un tableur. */
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="8.2" />
+      <path d="M3.8 12h16.4M12 3.8c2.2 2.3 3.3 5.1 3.3 8.2S14.2 17.9 12 20.2c-2.2-2.3-3.3-5.1-3.3-8.2S9.8 6.1 12 3.8z" />
+    </>
+  ),
 };
 
 /**
@@ -230,7 +260,8 @@ export function categoryIcon(name: string): SalonIconName {
   if (/perruque|tissage|wig|extension|meche/.test(key)) return "dryer";
   if (/coupe|coiffure|barbe|barbier|rasage/.test(key)) return "scissors";
   if (/maquillage|makeup|levre|teint|sourcil|cil/.test(key)) return "lipstick";
-  if (/soin|masque|traitement|hydrat|defris|lissage/.test(key)) return "sparkle";
+  if (/soin|masque|traitement|hydrat|defris|lissage/.test(key))
+    return "sparkle";
   if (/epilation|cire|wax/.test(key)) return "razor";
   return "sparkle";
 }

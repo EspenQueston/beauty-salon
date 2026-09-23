@@ -43,8 +43,8 @@ export function ForgotPasswordForm() {
           Vérifiez votre boîte mail
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Si un compte existe pour <strong className="text-ink">{email}</strong>,
-          un lien vient d&apos;être envoyé. Il est valable 24 heures et ne
+          Si un compte existe pour <strong className="text-ink">{email}</strong>
+          , un lien vient d&apos;être envoyé. Il est valable 24 heures et ne
           fonctionne qu&apos;une fois.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-muted">
@@ -131,10 +131,13 @@ export function NewPasswordForm() {
     }
     setPending(true);
 
-    const ok = await toast.run(() => confirmPasswordReset({ uid, token, password }), {
-      success: "Mot de passe mis à jour.",
-      error: "Ce lien n'est plus valable. Demandez-en un nouveau.",
-    });
+    const ok = await toast.run(
+      () => confirmPasswordReset({ uid, token, password }),
+      {
+        success: "Mot de passe mis à jour.",
+        error: "Ce lien n'est plus valable. Demandez-en un nouveau.",
+      },
+    );
 
     setPending(false);
     if (ok) setDone(true);
@@ -164,7 +167,12 @@ export function NewPasswordForm() {
     return (
       <Card>
         <span className="inline-flex size-11 items-center justify-center rounded-2xl bg-success-bg text-success">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-6">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            className="size-6"
+          >
             <path
               d="M20 6 9 17l-5-5"
               strokeWidth="2.2"
@@ -178,8 +186,8 @@ export function NewPasswordForm() {
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           Vous pouvez maintenant vous connecter. Les autres sessions ouvertes
-          restent valides ; changez-le à nouveau si vous soupçonnez un accès
-          non autorisé.
+          restent valides ; changez-le à nouveau si vous soupçonnez un accès non
+          autorisé.
         </p>
         <Link
           href="/"

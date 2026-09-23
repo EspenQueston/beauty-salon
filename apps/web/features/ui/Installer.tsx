@@ -165,9 +165,7 @@ export function Installer({ nom }: { nom: string }) {
           className="size-10 shrink-0 rounded-xl"
         />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-ink">
-            Installer {nom}
-          </p>
+          <p className="text-sm font-semibold text-ink">Installer {nom}</p>
           <p className="mt-1 text-[0.8rem] leading-relaxed text-muted">
             {ios ? (
               <>

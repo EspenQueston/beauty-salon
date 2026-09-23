@@ -17,6 +17,10 @@ dependencies = [
     "django-otp>=1.7.3",
     "qrcode>=8.2",
     "openpyxl>=3.1.5",
+    "pywebpush>=2.5.0",
+    # Traduction du contenu des salons. Sans cle, le paquet n est jamais
+    # importe : voir apps/translations/traducteur.py.
+    "openai>=1.60",
 ]
 
 [dependency-groups]

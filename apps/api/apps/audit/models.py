@@ -22,6 +22,11 @@ class AuditLog(UUIDModel, TimeStampedModel):
         TENANT_STATUS_CHANGED = "tenant.status_changed", _("Statut du salon modifié")
         MEMBERSHIP_CHANGED = "membership.changed", _("Membership modifié")
         TENANT_ACCESS_DENIED = "tenant.access_denied", _("Accès croisé refusé")
+        # Suppression depuis l'administration plateforme. C'est la trace
+        # qui rend cette permission acceptable : l'equipe SaaS peut effacer
+        # la donnee d'un salon, mais jamais sans laisser dire qui, quand et
+        # quoi.
+        PLATFORM_DELETED = "platform.deleted", _("Supprimé depuis l'administration")
 
     tenant = models.ForeignKey(
         "tenants.Tenant",

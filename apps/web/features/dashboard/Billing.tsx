@@ -132,7 +132,10 @@ export function Billing() {
   const invoiceRows = rows(invoices.data);
   const unpaid = invoiceRows.filter((invoice) => invoice.status === "issued");
   const overdue = unpaid.filter((invoice) => invoice.is_overdue);
-  const due = unpaid.reduce((total, invoice) => total + Number(invoice.amount), 0);
+  const due = unpaid.reduce(
+    (total, invoice) => total + Number(invoice.amount),
+    0,
+  );
 
   return (
     <section>
@@ -142,7 +145,9 @@ export function Billing() {
       />
 
       {error && <ErrorState>{error}</ErrorState>}
-      {invoices.error && <ErrorState>Impossible de charger les factures.</ErrorState>}
+      {invoices.error && (
+        <ErrorState>Impossible de charger les factures.</ErrorState>
+      )}
 
       {subscription === null && !error && <Skeleton rows={3} />}
 
@@ -166,7 +171,8 @@ export function Billing() {
               }
               value={dateFormat.format(
                 new Date(
-                  subscription.status === "trialing" && subscription.trial_ends_at
+                  subscription.status === "trialing" &&
+                    subscription.trial_ends_at
                     ? subscription.trial_ends_at
                     : subscription.current_period_end,
                 ),
@@ -181,7 +187,9 @@ export function Billing() {
             <StatTile
               label="Reste à régler"
               value={
-                due > 0 ? formatPrice(due, subscription.currency) : "Rien à régler"
+                due > 0
+                  ? formatPrice(due, subscription.currency)
+                  : "Rien à régler"
               }
               hint={
                 overdue.length > 0
@@ -195,13 +203,18 @@ export function Billing() {
           <Card className="mb-8">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-semibold text-ink">{subscription.plan.name}</p>
+                <p className="font-semibold text-ink">
+                  {subscription.plan.name}
+                </p>
                 <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted">
                   {subscription.plan.description}
                 </p>
               </div>
-              <Badge tone={SUBSCRIPTION[subscription.status]?.tone ?? "neutral"}>
-                {SUBSCRIPTION[subscription.status]?.label ?? subscription.status}
+              <Badge
+                tone={SUBSCRIPTION[subscription.status]?.tone ?? "neutral"}
+              >
+                {SUBSCRIPTION[subscription.status]?.label ??
+                  subscription.status}
               </Badge>
             </div>
 
@@ -210,10 +223,15 @@ export function Billing() {
                 <span>
                   Frais de mise en route :{" "}
                   <span className="font-medium text-ink">
-                    {formatPrice(subscription.setup_fee_amount, subscription.currency)}
+                    {formatPrice(
+                      subscription.setup_fee_amount,
+                      subscription.currency,
+                    )}
                   </span>
                 </span>
-                <Badge tone={subscription.setup_fee_paid ? "success" : "warning"}>
+                <Badge
+                  tone={subscription.setup_fee_paid ? "success" : "warning"}
+                >
                   {subscription.setup_fee_paid ? "Réglés" : "À régler"}
                 </Badge>
               </p>
@@ -258,7 +276,10 @@ export function Billing() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-ink">
                       <span className="tabular">{invoice.number}</span>
-                      <span className="font-normal text-muted"> — {invoice.label}</span>
+                      <span className="font-normal text-muted">
+                        {" "}
+                        — {invoice.label}
+                      </span>
                     </p>
                     <p className="mt-0.5 text-sm text-muted">
                       Émise le {dateFormat.format(new Date(invoice.issued_at))}

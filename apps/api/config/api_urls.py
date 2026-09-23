@@ -34,6 +34,11 @@ from apps.clients.views import (
 from apps.customers.views import CustomerViewSet
 from apps.finance.views import TransactionViewSet
 from apps.media.views import MediaAssetViewSet, PrivateMediaView
+from apps.notifications.views import (
+    NotificationView,
+    PlatformNotificationView,
+    PushView,
+)
 from apps.payments.views import (
     PaymentChannelViewSet,
     PublicBookingCancelView,
@@ -51,6 +56,7 @@ from apps.salons.views import PublicSalonView
 from apps.salons.views_dashboard import SalonProfileView, TravelZoneViewSet
 from apps.scheduling.views import (
     AvailabilityExceptionViewSet,
+    AvailabilityView,
     BookingViewSet,
     BusinessHoursViewSet,
     OverviewView,
@@ -174,6 +180,10 @@ urlpatterns = [
     path("salon-currency", SalonCurrencyView.as_view(), name="salon-currency"),
     # Accueil du tableau de bord. Une seule lecture pour douze chiffres :
     # en six appels, l'ecran s'assemble par morceaux sur un reseau mobile.
+    # Creneaux libres, cote equipe. Jumelle de `public/availability`, dont
+    # elle ne differe que par la facon de determiner le salon : ici le
+    # membership, la-bas le nom d'hote. Voir `AvailabilityView`.
+    path("availability", AvailabilityView.as_view(), name="availability"),
     path("overview", OverviewView.as_view(), name="overview"),
     # Lecture d'un media prive. C'est la seule sortie des fichiers ranges
     # sous `prive/` : le serveur de fichiers statiques ne les sert pas, et
@@ -188,5 +198,20 @@ urlpatterns = [
         name="media-fichier",
     ),
     path("subscription", SubscriptionView.as_view(), name="subscription"),
+    # Cloche du tableau de bord. GET pour lire, POST pour marquer lu :
+    # deux gestes sur la meme boite, pas deux ressources.
+    path("notifications", NotificationView.as_view(), name="notifications"),
+    # La meme boite, cote plateforme. Route distincte et non un drapeau
+    # sur la precedente : ce qui separe les donnees d'un salon de celles
+    # de la plateforme ne doit pas tenir dans un `if`.
+    path(
+        "plateforme/notifications",
+        PlatformNotificationView.as_view(),
+        name="platform-notifications",
+    ),
+    # Declaration d'un appareil aupres du serveur. Hors du routeur :
+    # il n'y a rien a lister ni a modifier, seulement a s'inscrire et a
+    # se retirer.
+    path("push", PushView.as_view(), name="push"),
     path("", include(router.urls)),
 ]
