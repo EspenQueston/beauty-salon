@@ -1,0 +1,105 @@
+# ---------------------------------------------------------------------------
+# Le seul point d'entree depuis Internet.
+#
+# Caddy termine HTTPS, obtient et renouvelle les certificats tout seul, et
+# aiguille par nom d'hote :
+#
+#   <domaine>, app.<domaine>   ->  web:3000   (plateforme, espace pro)
+#   <salon>.<domaine>          ->  web:3000   (mini-sites, certificat a la demande)
+#   api.<domaine>              ->  api:8000   (API, administration, medias)
+#
+# Le domaine vient de la variable PLATFORM_DOMAIN (fichier .env) : passer a
+# un vrai nom de domaine ne demande aucune modification ici.
+# ---------------------------------------------------------------------------
+{
+	email {$ACME_EMAIL}
+
+	# Les sous-domaines de salon naissent a l'inscription : aucun certificat
+	# ne peut etre prepare a l'avance. Caddy l'obtient a la premiere visite,
+	# apres avoir demande a l'API si le nom appartient bien a un salon. Sans
+	# cette question, n'importe quel nom pointe vers le serveur ferait
+	# travailler Let's Encrypt, jusqu'a epuiser le quota de tous.
+	on_demand_tls {
+		ask http://api:8000/interne/certificat
+	}
+}
+
+# En-tetes communs aux pages. HSTS couvre les sous-domaines : chacun est un
+# salon, et en laisser un hors de HTTPS rouvrirait ce qu'on vient de fermer.
+# L'API pose le sien elle-meme (config/settings/production.py).
+(pages) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	# Next compresse deja ses reponses : pas de `encode` ici, il ne ferait
+	# que verifier qu'il n'a rien a faire.
+	reverse_proxy web:3000
+}
+
+# ---------------------------------------------------------------------------
+# API, administration plateforme, fichiers
+# ---------------------------------------------------------------------------
+api.{$PLATFORM_DOMAIN} {
+	encode zstd gzip
+	header -Server
+
+	# Un televersement de media plafonne a 15 Mo cote Django ; au-dela,
+	# inutile de laisser le corps traverser jusqu'a lui.
+	request_body {
+		max_size 25MB
+	}
+
+	# Preuves de versement : elles ne sortent que par la route authentifiee
+	# `/api/v1/media/<id>/fichier`, qui verifie l'appartenance au salon.
+	# Servies ici, elles seraient lisibles par quiconque devine un nom.
+	#
+	# Les blocs `handle` s'excluent mutuellement et Caddy essaie d'abord le
+	# chemin le plus long : `/media/prive/*` passe donc avant `/media/*`.
+	handle /media/prive/* {
+		respond 404
+	}
+
+	# La question des certificats ne vient que du reseau interne.
+	handle /interne/* {
+		respond 404
+	}
+
+	handle /media/* {
+		root * /srv
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	# Feuilles de style et scripts de l'administration Django.
+	handle /static/* {
+		root * /srv
+		header Cache-Control "public, max-age=604800"
+		file_server
+	}
+
+	handle {
+		reverse_proxy api:8000
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Plateforme et espace professionnel : certificats obtenus au demarrage
+# ---------------------------------------------------------------------------
+{$PLATFORM_DOMAIN}, app.{$PLATFORM_DOMAIN} {
+	import pages
+}
+
+www.{$PLATFORM_DOMAIN} {
+	redir https://{$PLATFORM_DOMAIN}{uri} permanent
+}
+
+# ---------------------------------------------------------------------------
+# Mini-sites des salons : tout autre nom, certificat a la premiere visite
+# ---------------------------------------------------------------------------
+https:// {
+	tls {
+		on_demand
+	}
+	import pages
+}

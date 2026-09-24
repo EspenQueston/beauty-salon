@@ -21,6 +21,9 @@ dependencies = [
     # Traduction du contenu des salons. Sans cle, le paquet n est jamais
     # importe : voir apps/translations/traducteur.py.
     "openai>=1.60",
+    # Serveur de production (infra/production). `runserver` ne sert qu'au
+    # developpement : un seul processus, et Django lui-meme le deconseille.
+    "gunicorn>=23",
 ]
 
 [dependency-groups]

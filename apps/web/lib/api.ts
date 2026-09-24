@@ -20,6 +20,35 @@ import type {
 // cote navigateur on passe par l'URL publique.
 const SERVER_API = process.env.INTERNAL_API_URL ?? "http://127.0.0.1:8001";
 
+/**
+ * En-tetes des appels faits par le serveur Next, et non par un navigateur.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi le serveur se presente
+ * ---------------------------------------------------------------------------
+ *
+ * L'API limite le debit par adresse IP. Tout ce que le serveur Next demande
+ * pour rendre une page part de la meme adresse — la sienne — quel que soit
+ * le visiteur a l'origine du rendu. Sans distinction, tous les mini-sites se
+ * partagent donc un seul compteur de lecture publique : au-dela de 120 rendus
+ * par minute, plateforme entiere, les pages de salon tombaient en 429.
+ *
+ * Le jeton dit a l'API « c'est le serveur de rendu », qui n'est alors pas
+ * compte. Le transmettre ne change pas la cle de cache de Next : il est le
+ * meme pour toutes les requetes.
+ *
+ * Jamais `NEXT_PUBLIC_` : ce nom-la serait recopie dans le JavaScript envoye
+ * au navigateur, et n'importe qui pourrait alors contourner la limite. Sous
+ * ce nom, la valeur n'existe que dans le processus serveur ; dans le code qui
+ * part vers le navigateur, elle vaut `undefined`.
+ */
+function serverHeaders(host: string): HeadersInit {
+  const token = process.env.INTERNAL_API_TOKEN;
+  return token
+    ? { "X-Tenant-Host": host, "X-Internal-Token": token }
+    : { "X-Tenant-Host": host };
+}
+
 
 const API_PORT = process.env.NEXT_PUBLIC_API_PORT ?? "8001";
 
@@ -76,7 +105,7 @@ export async function fetchSalon(
   const response = await fetch(
     `${SERVER_API}/api/v1/public/salon?lang=${langue}`,
     {
-    headers: { "X-Tenant-Host": host },
+    headers: serverHeaders(host),
     // Le contenu vitrine bouge rarement, et un cache court absorbe un pic de
     // trafic apres un post Instagram. Mais 60 s, c'est trop long pour la
     // gerante qui vient de changer ses couleurs et recharge sa page : elle
@@ -270,7 +299,7 @@ export async function fetchReviews(
   host: string,
 ): Promise<{ average: number | null; count: number; results: PublicReview[] }> {
   const response = await fetch(`${SERVER_API}/api/v1/public/reviews`, {
-    headers: { "X-Tenant-Host": host },
+    headers: serverHeaders(host),
     next: { revalidate: 15 },
   });
 

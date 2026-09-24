@@ -132,6 +132,20 @@ const nextConfig: NextConfig = {
   // cherche une faille connue contre la version exacte qu'on execute.
   poweredByHeader: false,
 
+  /*
+    Sortie autonome, pour l'image Docker seulement.
+
+    `.next/standalone` ne contient que les fichiers que le serveur charge
+    reellement, `node_modules` compris : l'image de production passe ainsi
+    d'environ un giga-octet a deux cents mega-octets, et ne transporte
+    aucune dependance de developpement.
+
+    Activee par une variable plutot qu'en permanence : `next start`, que le
+    developpement et la CI utilisent, previent qu'il ne sert pas cette sortie.
+    Seul `infra/production/web.Dockerfile` la pose.
+  */
+  output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
+
   async headers() {
     return [{ source: "/:path*", headers: HEADERS }];
   },

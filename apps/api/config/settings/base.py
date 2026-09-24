@@ -185,6 +185,11 @@ CURRENCY_API_KEY = env("CURRENCY_API_KEY", default="")
 # c est ce qui permet aux tests et au developpement de tourner sans reseau.
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 
+# Jeton partage avec le serveur Next : ses appels internes ne sont pas
+# comptes dans les limites de debit par IP. Vide, personne n'est exempte.
+# Voir apps/common/throttling.py.
+INTERNAL_API_TOKEN = env("INTERNAL_API_TOKEN", default="")
+
 # ---------------------------------------------------------------------------
 # Notifications push (Web Push, norme VAPID)
 # ---------------------------------------------------------------------------
@@ -314,8 +319,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.DefaultPagination",
     "PAGE_SIZE": 25,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Celle de DRF, moins les appels du serveur de rendu Next : voir
+    # apps/common/throttling.py pour la panne qu'elle evite en production.
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.ScopedRateThrottle",
+        "apps.common.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "public_read": "120/min",
