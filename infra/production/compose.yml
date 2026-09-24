@@ -95,8 +95,11 @@ services:
     environment:
       PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:?}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL manquant dans .env}
+      # `direct` ou `coolify` : voir caddy/*.caddy et compose.coolify.yml.
+      ENTREE: ${ENTREE:-direct}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy:/etc/caddy/entree:ro
       # Certificats et cles : les perdre force a tout redemander, et
       # Let's Encrypt limite les demandes par semaine.
       - caddy_data:/data

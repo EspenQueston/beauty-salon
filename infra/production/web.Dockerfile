@@ -43,6 +43,10 @@ RUN npm run build
 FROM node:22-bookworm-slim
 WORKDIR /app
 
+# Permet a `deployer.sh` de ne nettoyer que nos anciennes images, jamais
+# celles des autres services de la machine.
+LABEL salon.plateforme="web"
+
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \

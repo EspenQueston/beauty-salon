@@ -14,6 +14,10 @@
 {
 	email {$ACME_EMAIL}
 
+	# Seul ou derriere le proxy de Coolify : voir caddy/direct.caddy et
+	# caddy/coolify.caddy. La variable ENTREE vient de .env.
+	import /etc/caddy/entree/{$ENTREE:direct}.caddy
+
 	# Les sous-domaines de salon naissent a l'inscription : aucun certificat
 	# ne peut etre prepare a l'avance. Caddy l'obtient a la premiere visite,
 	# apres avoir demande a l'API si le nom appartient bien a un salon. Sans

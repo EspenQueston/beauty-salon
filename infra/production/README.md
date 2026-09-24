@@ -1,23 +1,34 @@
 # Mise en production
 
 Tout tient sur une machine : le serveur Hetzner CX33 (4 vCPU, 8 Go, 40 Go),
-`65.21.157.38`. Docker Compose y fait tourner sept conteneurs ; seul Caddy
-est expose a Internet.
+`65.21.157.38`. Docker Compose y fait tourner sept conteneurs.
+
+Ce serveur fait deja tourner **Coolify**, et avec lui n8n et Evolution API :
+le Traefik de Coolify tient les ports 80 et 443. La plateforme passe donc
+par lui (mode `coolify`), sans toucher a ses autres services — voir « Sur un
+serveur Coolify ». Sur une machine vierge, Caddy prend lui-meme les ports
+(mode `direct`). `generer-env.sh` detecte le cas tout seul.
 
 ```
-Internet ──> caddy :80 :443 ──┬──> web :3000     Next.js — plateforme, espace pro, mini-sites
-             HTTPS automatique│
-                              └──> api :8000     Django — API, administration, medias
-                                     │
-                     worker, beat ───┤           Celery — e-mails, traductions, rappels
-                                     ├──> postgres     deux roles RLS
-                                     └──> redis        cache, file de taches
+Internet ──> Traefik de Coolify :80 :443          (mode coolify ; absent en mode direct)
+               │ notre domaine : relais TCP, sans dechiffrer
+               v
+             caddy ──┬──> web :3000     Next.js — plateforme, espace pro, mini-sites
+     HTTPS, un certif│
+     par salon       └──> api :8000     Django — API, administration, medias
+                            │
+            worker, beat ───┤           Celery — e-mails, traductions, rappels
+                            ├──> postgres     deux roles RLS
+                            └──> redis        cache, file de taches
 ```
 
 | Fichier | Role |
 | --- | --- |
 | `compose.yml` | les sept services, leurs volumes et leurs variables |
+| `compose.coolify.yml` | le complement du mode `coolify` : pas de port publie, reseau de Coolify |
 | `Caddyfile` | HTTPS, certificats, aiguillage par nom d'hote |
+| `caddy/direct.caddy`, `caddy/coolify.caddy` | ce qui change pour Caddy d'un mode a l'autre |
+| `caddy/traefik-coolify.yaml` | la route posee dans le Traefik de Coolify |
 | `api.Dockerfile`, `web.Dockerfile` | les deux images construites |
 | `postgres/01-roles.sh` | les roles `salon_app` et `salon_admin`, a la creation de la base |
 | `env.exemple` | modele de `.env` — la seule configuration a tenir |
@@ -77,9 +88,9 @@ entrante pour **22/TCP** (SSH), **80/TCP**, **443/TCP** et **443/UDP**
 
 Ce pare-feu s'applique hors de la machine, et c'est pourquoi on le prefere a
 `ufw` : Docker contourne `ufw` pour les ports qu'il publie, si bien que la
-regle ecrite n'est pas la regle appliquee. **Si le serveur heberge deja un
-autre service** (il s'appelle « WhatsApp »), ajoutez aussi ses ports, sinon
-il sera coupe.
+regle ecrite n'est pas la regle appliquee. **Si Coolify tourne sur le
+serveur**, ajoutez **8000/TCP** (son tableau de bord) et **6001-6002/TCP**
+(ses mises a jour en direct), sinon son interface sera coupee.
 
 ### 1. Preparer la machine
 
@@ -89,8 +100,10 @@ curl -fsSL https://raw.githubusercontent.com/EspenQueston/beauty-salon/main/infr
 bash preparer-serveur.sh main
 ```
 
-Le script **s'arrete sans rien modifier** si les ports 80 ou 443 sont deja
-occupes, et dit par quel programme. Voir « Le serveur heberge deja un site ».
+Si les ports 80 et 443 sont tenus par le proxy de Coolify, le script le dit
+et continue : la plateforme passera par lui. S'ils sont tenus par autre
+chose, il **s'arrete sans rien modifier** et dit par quel programme. Voir
+« Le serveur heberge deja un site ».
 
 ### 2. Configurer
 
@@ -197,10 +210,41 @@ chacun se reconnecte une fois.
 
 ---
 
+## Sur un serveur Coolify
+
+C'est le cas de `65.21.157.38`. Le Traefik de Coolify tient les ports 80 et
+443 et sert d'autres applications ; il ne sait pas obtenir de certificat « a
+la demande », or chaque salon inscrit cree un sous-domaine nouveau. Le
+partage des roles :
+
+- **Traefik** reconnait notre domaine au nom demande (SNI) et transmet la
+  connexion a Caddy **sans la dechiffrer**. Tout autre nom continue d'etre
+  servi par Traefik, exactement comme avant. La route tient dans un fichier,
+  `/data/coolify/proxy/dynamic/salon.yaml`, que `deployer.sh` ecrit et que
+  Coolify affiche dans *Proxy > Dynamic configurations* ; le supprimer
+  retire la plateforme d'Internet sans rien toucher d'autre.
+- **Caddy** garde les certificats de salon. Il prouve la possession d'un nom
+  par le port 443 (defi TLS-ALPN) : sur le port 80, Traefik repond lui-meme
+  a toutes les validations Let's Encrypt.
+- **L'adresse des visiteurs** arrive jusqu'a Django : Traefik l'annonce a
+  Caddy en tete de connexion (protocole PROXY). Sans cela, tous les
+  visiteurs auraient l'adresse de Traefik et partageraient une seule limite
+  de debit.
+
+Les noms que Coolify attribue s'ecrivent avec des points
+(`x.65.21.157.38.sslip.io`), les notres avec des tirets
+(`x.65-21-157-38.sslip.io`) : ils ne peuvent pas se recouvrir.
+
+Dans ce mode, `.env` contient `COMPOSE_FILE=compose.yml:compose.coolify.yml` :
+toute commande `docker compose` lancee dans ce dossier prend les deux
+fichiers, comme `deployer.sh`. Ne pas la retirer — sans elle, un
+`docker compose up -d` tape a la main relancerait Caddy sur les ports de
+Coolify.
+
 ## Le serveur heberge deja un site
 
-Si `preparer-serveur.sh` s'arrete sur les ports 80/443, un autre programme
-les tient. Deux voies :
+Si `preparer-serveur.sh` s'arrete sur les ports 80/443, un programme autre
+que Coolify les tient. Deux voies :
 
 - **Il peut s'arreter ou changer de port** : faites-le, puis relancez.
 - **Il doit rester sur ces ports** : Caddy devient alors le seul point

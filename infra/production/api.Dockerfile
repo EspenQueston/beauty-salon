@@ -9,6 +9,10 @@
 
 FROM python:3.13-slim-bookworm
 
+# Permet a `deployer.sh` de ne nettoyer que nos anciennes images, jamais
+# celles des autres services de la machine.
+LABEL salon.plateforme="api"
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \

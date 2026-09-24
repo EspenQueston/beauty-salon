@@ -54,10 +54,19 @@ esac
 # ---------------------------------------------------------------------------
 etape "1. Ports 80 et 443"
 # ---------------------------------------------------------------------------
-# Un conteneur de cette plateforme qui les occupe deja n'est pas un conflit :
-# c'est un redeploiement.
+# Deux occupants ne sont pas un conflit :
+#   - un conteneur de cette plateforme : c'est un redeploiement ;
+#   - le proxy de Coolify : la plateforme passera par lui (ENTREE=coolify,
+#     voir compose.coolify.yml), sans toucher a ses autres services.
 occupants="$(ss -Htlnp '( sport = :80 or sport = :443 )' 2>/dev/null || true)"
-if [ -n "$occupants" ] && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^salon-caddy'; then
+conteneurs="$(docker ps --format '{{.Names}}' 2>/dev/null || true)"
+if [ -z "$occupants" ]; then
+  echo "Libres."
+elif printf '%s\n' "$conteneurs" | grep -qx coolify-proxy; then
+  echo "Tenus par le proxy de Coolify : la plateforme passera par lui."
+elif printf '%s\n' "$conteneurs" | grep -q '^salon-caddy'; then
+  echo "Tenus par la plateforme elle-meme : redeploiement."
+else
   echo "Les ports 80/443 sont deja utilises sur cette machine :"
   echo "$occupants"
   echo
@@ -66,7 +75,6 @@ if [ -n "$occupants" ] && ! docker ps --format '{{.Names}}' 2>/dev/null | grep -
   echo "« Le serveur heberge deja un site » de infra/production/README.md."
   exit 1
 fi
-echo "Libres."
 
 # ---------------------------------------------------------------------------
 etape "2. Docker"

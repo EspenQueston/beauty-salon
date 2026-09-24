@@ -26,12 +26,32 @@ RACINE="$(cd "$ICI/../.." && pwd)"
 cd "$ICI"
 
 etape() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
-compose() { docker compose --file "$ICI/compose.yml" --env-file "$ICI/.env" "$@"; }
 
 if [ ! -f "$ICI/.env" ]; then
   echo "Pas de .env : lancez d'abord bash scripts/generer-env.sh" >&2
   exit 1
 fi
+valeur() { grep -E "^$1=" "$ICI/.env" | head -n 1 | cut -d= -f2- || true; }
+
+# Seul sur la machine, ou derriere le proxy de Coolify (voir compose.coolify.yml).
+ENTREE="$(valeur ENTREE)"
+ENTREE="${ENTREE:-direct}"
+fichiers=(--file "$ICI/compose.yml")
+case "$ENTREE" in
+  direct) ;;
+  coolify)
+    fichiers+=(--file "$ICI/compose.coolify.yml")
+    DYNAMIQUE=/data/coolify/proxy/dynamic
+    if ! docker network inspect coolify >/dev/null 2>&1 || [ ! -d "$DYNAMIQUE" ]; then
+      echo "ENTREE=coolify, mais ni le reseau « coolify » ni $DYNAMIQUE n'existent." >&2
+      echo "Coolify tourne-t-il sur cette machine ? Sinon : ENTREE=direct dans .env." >&2
+      exit 1
+    fi
+    ;;
+  *) echo "ENTREE doit valoir « direct » ou « coolify », pas « $ENTREE »." >&2; exit 1 ;;
+esac
+compose() { docker compose "${fichiers[@]}" --env-file "$ICI/.env" "$@"; }
+echo "Entree : $ENTREE"
 
 # ---------------------------------------------------------------------------
 etape "Code"
@@ -79,11 +99,31 @@ etape "Demarrage"
 compose up --detach --remove-orphans --wait
 compose ps
 
-# Les images remplacees ne servent plus a rien ; sur 40 Go, elles comptent.
-docker image prune --force >/dev/null
+domaine="$(valeur PLATFORM_DOMAIN)"
+admin="$(valeur ADMIN_PATH)"
 
-domaine="$(grep -E '^PLATFORM_DOMAIN=' "$ICI/.env" | cut -d= -f2-)"
-admin="$(grep -E '^ADMIN_PATH=' "$ICI/.env" | cut -d= -f2-)"
+if [ "$ENTREE" = "coolify" ]; then
+  # -------------------------------------------------------------------------
+  etape "Route dans le proxy de Coolify"
+  # -------------------------------------------------------------------------
+  # Posee apres le demarrage : Traefik n'aiguille vers Caddy qu'une fois
+  # Caddy la pour repondre. Ecriture atomique (fichier temporaire, puis
+  # renommage) : Traefik surveille le dossier et ne doit jamais lire un
+  # fichier a moitie ecrit.
+  #
+  # Les points du domaine sont echappes pour l'expression de Traefik (`\.`),
+  # et chaque barre oblique doublee une fois de plus pour `sed`, qui mange
+  # la premiere dans un texte de remplacement.
+  motif="$(printf '%s' "$domaine" | sed 's/\./\\\\./g')"
+  sed "s/DOMAINE_REGEX/$motif/g" "$ICI/caddy/traefik-coolify.yaml" > "$DYNAMIQUE/.salon.yaml.tmp"
+  mv "$DYNAMIQUE/.salon.yaml.tmp" "$DYNAMIQUE/salon.yaml"
+  echo "Route posee : $DYNAMIQUE/salon.yaml"
+fi
+
+# Les images remplacees ne servent plus a rien ; sur 40 Go, elles comptent.
+# Seulement les notres : la machine peut en heberger d'autres (Coolify garde
+# les siennes pour revenir en arriere).
+docker image prune --force --filter label=salon.plateforme >/dev/null
 cat <<FIN
 
 En ligne :

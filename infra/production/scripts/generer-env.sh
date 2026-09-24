@@ -64,6 +64,25 @@ if [ -z "$(valeur VAPID_PUBLIC_KEY)" ] && [ -z "$(valeur VAPID_PRIVATE_KEY)" ]; 
   rm -f "$cle"
 fi
 
+# Seul sur la machine, ou derriere le proxy de Coolify s'il tient deja les
+# ports 80 et 443 (voir compose.coolify.yml).
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx coolify-proxy; then
+  poser ENTREE coolify
+else
+  poser ENTREE direct
+fi
+
+# Docker Compose lit COMPOSE_FILE dans ce fichier : un simple
+# `docker compose up -d`, tape a la main, reprend alors le complement
+# Coolify. Sans lui, Caddy repartirait sur les ports 80 et 443 — ceux de
+# Coolify — et refuserait de demarrer. Toujours renseigne : vide, il casse
+# toutes les commandes `docker compose` du dossier.
+if [ "$(valeur ENTREE)" = "coolify" ]; then
+  poser COMPOSE_FILE "compose.yml:compose.coolify.yml"
+else
+  poser COMPOSE_FILE "compose.yml"
+fi
+
 acme="$(valeur ACME_EMAIL)"
 if [ -n "$acme" ]; then
   poser VAPID_SUBJECT "mailto:$acme"
