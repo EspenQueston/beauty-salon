@@ -45,10 +45,9 @@ const metadata: Metadata = {
   // 512), iOS (180) et le masque circulaire d'Android (`maskable`).
   icons: {
     icon: [
-      { url: "/icones/192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icones/512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icones/beauty-salon-symbol.png", sizes: "1254x1254", type: "image/png" },
     ],
-    apple: [{ url: "/icones/apple-180.png", sizes: "180x180" }],
+    apple: [{ url: "/icones/beauty-salon-symbol.png", sizes: "1254x1254" }],
   },
   appleWebApp: {
     // iOS ignore le manifeste : ces trois balises sont sa seule façon de

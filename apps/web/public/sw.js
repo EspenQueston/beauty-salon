@@ -276,7 +276,7 @@ function montrer(donnees) {
 
   const options = {
     body: donnees.corps,
-    icon: donnees.icone || "/icones/192.png",
+    icon: donnees.icone || "/icones/beauty-salon-symbol.png",
     // Le badge est la petite forme monochrome de la barre d'état Android.
     // Sans lui, le système affiche un carré gris générique.
     badge: "/icones/badge.png",

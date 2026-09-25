@@ -158,7 +158,7 @@ export function Installer({ nom }: { nom: string }) {
       <div className="flex items-start gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/icones/192.png"
+          src="/icones/beauty-salon-symbol.png"
           alt=""
           width={40}
           height={40}

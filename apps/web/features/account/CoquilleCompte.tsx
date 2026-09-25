@@ -28,6 +28,7 @@
 import type { ReactNode } from "react";
 
 import { AuthShell } from "@/features/ui/AuthShell";
+import { BeautySalonBrand } from "@/features/ui/BeautySalonBrand";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { ToastProvider } from "@/features/ui/Toast";
 import { platformUrl } from "@/lib/site";
@@ -46,16 +47,7 @@ export function CoquilleCompte({
         homeHref={platformUrl}
         action={<ThemeToggle />}
         aside={aside}
-        brand={
-          <>
-            <span className="inline-flex size-8 items-center justify-center rounded-xl bg-salon text-sm font-semibold text-white">
-              BS
-            </span>
-            <span className="font-semibold tracking-tight text-ink">
-              Beauty Salon
-            </span>
-          </>
-        }
+        brand={<BeautySalonBrand />}
       >
         {children}
       </AuthShell>

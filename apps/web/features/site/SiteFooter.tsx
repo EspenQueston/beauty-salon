@@ -29,6 +29,7 @@
  */
 
 import { Horloges } from "@/features/site/Horloges";
+import { BeautySalonLockup, BeautySalonSymbol } from "@/features/ui/BeautySalonBrand";
 import { getTranslations } from "next-intl/server";
 
 import { appUrl } from "@/lib/site";
@@ -87,13 +88,11 @@ export async function SiteFooter() {
         <div className="grid gap-8 md:grid-cols-[1.15fr_0.85fr] md:gap-12">
           {/* ------------------------------------------------- la marque */}
           <div>
-            <span className="flex items-center gap-3">
-              <span className="salon-gradient grid size-11 place-items-center rounded-2xl text-sm font-bold text-white shadow-[0_10px_30px_-8px_rgb(180_67_108/0.8)]">
-                BS
-              </span>
-              <span className="text-lg font-semibold tracking-tight text-[var(--pied-encre)]">
-                Beauty Salon
-              </span>
+            <span role="img" aria-label="Beauty Salon" className="sm:hidden">
+              <BeautySalonSymbol className="size-12" />
+            </span>
+            <span className="hidden rounded-xl bg-[#fff7fa] px-2 shadow-[0_10px_30px_-12px_rgb(180_67_108/0.6)] sm:inline-flex">
+              <BeautySalonLockup />
             </span>
 
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-[var(--pied-doux)]">

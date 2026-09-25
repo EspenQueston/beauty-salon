@@ -32,6 +32,7 @@ import {
 } from "@/lib/dashboard";
 import { ToastProvider, useToast } from "@/features/ui/Toast";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
+import { BeautySalonBrand, BeautySalonSymbol } from "@/features/ui/BeautySalonBrand";
 
 import { Notifications } from "./Notifications";
 import { LoginForm } from "./LoginForm";
@@ -456,23 +457,7 @@ function Sidebar({
         <div
           className={`flex items-center gap-3 py-6 ${tight ? "justify-center px-3" : "px-6"}`}
         >
-          <span
-            aria-hidden
-            // `salon-gradient` et non un dégradé posé à la main : depuis que
-            // l'accent redéfinit `--salon-primary` sur la coquille, les deux
-            // donnent la même couleur. Passer par la classe supprime le
-            // risque qu'ils divergent un jour.
-            className="salon-gradient flex size-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-white"
-          >
-            BS
-          </span>
-          {!tight && (
-            <span
-              className={`whitespace-nowrap text-[1.05rem] font-semibold tracking-tight ${skin.brand}`}
-            >
-              Beauty Salon
-            </span>
-          )}
+          {tight ? <span role="img" aria-label="Beauty Salon"><BeautySalonSymbol className="size-10" /></span> : <BeautySalonBrand />}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">

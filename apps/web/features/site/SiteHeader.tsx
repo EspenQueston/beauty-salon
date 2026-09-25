@@ -33,6 +33,7 @@ import { useTranslations } from "next-intl";
 
 import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
+import { BeautySalonBrand } from "@/features/ui/BeautySalonBrand";
 
 const LINKS = [
   /* Les libellés viennent du catalogue : seule l'ancre est écrite ici,
@@ -66,12 +67,7 @@ export function SiteHeader() {
       >
         <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4 xl:gap-4">
           <a href="#haut" className="flex shrink-0 items-center gap-2.5">
-            <span className="salon-gradient inline-flex size-8 items-center justify-center rounded-xl text-sm font-semibold text-white">
-              BS
-            </span>
-            <span className="whitespace-nowrap font-semibold tracking-tight text-ink">
-              Beauty Salon
-            </span>
+            <BeautySalonBrand compact />
           </a>
 
           <nav
@@ -105,11 +101,13 @@ export function SiteHeader() {
               une pastille, non. L'aplat de marque donne 5,6:1 d'un bord à
               l'autre.
             */}
-            <SelecteurLangue
-              className="hidden border-line bg-surface sm:inline-flex"
-              classeActive="bg-salon text-white"
-              classeInactive="text-muted hover:text-ink"
-            />
+            <span className="hidden sm:block">
+              <SelecteurLangue
+                className="border-line bg-surface"
+                classeActive="bg-salon text-white"
+                classeInactive="text-muted hover:text-ink"
+              />
+            </span>
             <ThemeToggle />
 
             <a

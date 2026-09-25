@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* Keep the supplied pink artwork readable on dark UI surfaces. The footer's
+   full lockup sits on a light plate and intentionally keeps its original hue. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .platform-logo {
+    filter: brightness(1.45) saturate(0.9);
+  }
+}
+
+:root[data-theme="dark"] .platform-logo {
+  filter: brightness(1.45) saturate(0.9);
+}
+
 /*
  * Fondations visuelles.
  *
