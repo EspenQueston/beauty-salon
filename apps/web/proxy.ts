@@ -173,7 +173,12 @@ export const config = {
       depuis que toutes les routes vivent sous `[locale]`, il lui faut au
       contraire passer par ici pour recevoir sa langue. Le proxy le traite à
       part : jamais de redirection, seulement une réécriture.
+
+      `notification-image/` non plus : c'est le système d'exploitation qui
+      télécharge cette image, sans langue ni session. Réécrite vers
+      `/fr/dashboard/notification-image/…`, elle n'existerait pas, et chaque
+      notification arriverait sans son image.
     */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|notification-image/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
   ],
 };

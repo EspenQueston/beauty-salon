@@ -54,6 +54,7 @@ import {
   type Basket,
 } from "./Requirements";
 import { SalonLogo } from "@/features/salon/SalonLogo";
+import { BeautySalonCredit } from "@/features/salon/BeautySalonCredit";
 import { contactLinks, mapsHref, whatsappHref } from "@/features/salon/contact";
 
 /**
@@ -64,6 +65,17 @@ import { contactLinks, mapsHref, whatsappHref } from "@/features/salon/contact";
  * plus ferait transiter des journées vides sur un forfait mobile.
  */
 const HORIZON_DAYS = 30;
+
+function bookingDateTime(iso: string, timeZone: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(iso));
+}
 
 /**
  * L'acompte annoncé sur une carte de prestation.
@@ -84,7 +96,7 @@ const HORIZON_DAYS = 30;
  * inclure ici annoncerait une somme qu'on ne peut pas tenir. Le détail
  * complet apparaît à l'étape du récapitulatif, avant tout engagement.
  */
-function serviceDeposit(service: PublicService, salon: PublicSalon): string {
+function serviceDeposit(service: PublicService, salon: PublicSalon, locale = "fr-FR"): string {
   const rate = salon.deposit_rate || 0;
   const minimum = Number(salon.deposit_minimum) || 0;
 
@@ -94,7 +106,7 @@ function serviceDeposit(service: PublicService, salon: PublicSalon): string {
 
   const price = Number(service.price_amount) || 0;
   const due = Math.floor(Math.max(minimum, (price * rate) / 100));
-  return formatPrice(String(due), salon.currency);
+  return formatPrice(String(due), salon.currency, locale);
 }
 
 const CARD =
@@ -417,6 +429,7 @@ function TrustPanel({
   service: PublicService | null;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   const contacts = contactLinks(salon);
   const maps = mapsHref(salon);
   const whatsapp = whatsappHref(salon.whatsapp_number);
@@ -468,7 +481,7 @@ function TrustPanel({
               {salon.rating.average.toFixed(1)}
             </span>
             <span className="text-[var(--site-muted)]">
-              · {salon.rating.count} avis
+              · {t("catalogue.avis", { n: salon.rating.count })}
             </span>
           </p>
         )}
@@ -504,7 +517,7 @@ function TrustPanel({
               </p>
               <p className="mt-0.5 text-sm text-[var(--site-muted)]">
                 {formatDuration(service.duration_minutes)} ·{" "}
-                {formatServicePrice(service, salon.currency)}
+                {formatServicePrice(service, salon.currency, locale)}
               </p>
             </div>
           </div>
@@ -569,8 +582,9 @@ function TrustPanel({
               className="mt-0.5 size-4 shrink-0 text-[var(--salon-ink)]"
             />
             <span className="text-[var(--site-muted)]">
-              Annulation gratuite jusqu&apos;à{" "}
-              {salon.cancellation_deadline_hours} h avant.
+              {t("catalogue.annulationGratuite", {
+                hours: salon.cancellation_deadline_hours,
+              })}
             </span>
           </li>
 
@@ -631,16 +645,16 @@ function Steps({
   // affichées : montrer « 4 » puis sauter directement à « 5 » ferait croire
   // à une erreur, et allonger la barre décourage avant de commencer.
   const labels: [Step, string][] = [
-    ["service", "Prestation"],
-    ...(hasStaffStep ? ([["staff", "Prestataire"]] as [Step, string][]) : []),
-    ...(hasOptionsStep ? ([["options", "Options"]] as [Step, string][]) : []),
+    ["service", t("etapes.prestation")],
+    ...(hasStaffStep ? ([["staff", t("etapes.prestataire")]] as [Step, string][]) : []),
+    ...(hasOptionsStep ? ([["options", t("etapes.options")]] as [Step, string][]) : []),
     ["slot", t("etapes.creneau")],
     ["contact", t("etapes.coordonnees")],
   ];
   const index = labels.findIndex(([key]) => key === current);
 
   return (
-    <nav aria-label="Progression" className="mb-7">
+    <nav aria-label={t("etapes.progression")} className="mb-7">
       <ol className="flex items-center gap-2">
         {labels.map(([key, label], position) => {
           const reached = position <= index;
@@ -693,10 +707,11 @@ function ServiceStep({
   onChoose: (service: PublicService) => void;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   return (
     <section>
       <h1 className="mb-5 text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
-        Quelle prestation ?
+        {t("catalogue.quellePrestation")}
       </h1>
 
       {services.length === 0 ? (
@@ -726,7 +741,7 @@ function ServiceStep({
                       {service.name}
                     </span>
                     <span className="tabular shrink-0 font-semibold text-[var(--salon-ink)]">
-                      {formatServicePrice(service, salon.currency)}
+                      {formatServicePrice(service, salon.currency, locale)}
                     </span>
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-[var(--site-muted)]">
@@ -739,7 +754,7 @@ function ServiceStep({
                     {service.requires_deposit && (
                       <>
                         <span aria-hidden>·</span>
-                        <span>acompte de {serviceDeposit(service, salon)}</span>
+                        <span>{t("catalogue.acompteDe", { amount: serviceDeposit(service, salon, locale) })}</span>
                       </>
                     )}
                   </span>
@@ -814,7 +829,7 @@ function StaffStep({
             className={CHOICE}
           >
             <span className="font-medium text-[var(--site-ink)]">
-              Peu importe
+              {t("catalogue.peuImporte")}
             </span>
             <span className="mt-0.5 block text-sm text-[var(--site-muted)]">
               {t("catalogue.plusDeCreneaux")}
@@ -881,6 +896,7 @@ function SlotStep({
   onBack: () => void;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [horizon, setHorizon] = useState<Horizon>("month");
@@ -1024,14 +1040,14 @@ function SlotStep({
             className={`${CARD} border-l-4 border-l-amber-500 p-5 text-sm text-[var(--site-ink)]`}
           >
             <p className="font-medium">
-              Aucun créneau ne contient{" "}
-              {formatDuration(service.duration_minutes + extraMinutes)}.
+              {t("creneaux.aucunAvecOptions", {
+                duration: formatDuration(service.duration_minutes + extraMinutes),
+              })}
             </p>
             <p className="mt-1.5 text-[var(--site-muted)]">
-              Vos options allongent la prestation de{" "}
-              {formatDuration(extraMinutes)}, et les journées du salon
-              n&apos;ont plus de plage assez longue. Retirez-en une, ou écrivez
-              au salon qui vous placera à la main.
+              {t("creneaux.optionsTropLongues", {
+                duration: formatDuration(extraMinutes),
+              })}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
@@ -1039,7 +1055,7 @@ function SlotStep({
                 onClick={onBack}
                 className={`${PRIMARY} px-5 py-2.5`}
               >
-                Revoir mes options
+                {t("creneaux.revoirOptions")}
               </button>
               {whatsappHref(salon.whatsapp_number) && (
                 <a
@@ -1070,14 +1086,13 @@ function SlotStep({
             className={`${CARD} border-l-4 border-l-amber-500 p-5 text-sm text-[var(--site-ink)] sm:p-6`}
           >
             <p className="font-medium">
-              {service.name} demande{" "}
-              {formatDuration(service.duration_minutes + extraMinutes)}{" "}
-              d&apos;affilée.
+              {t("creneaux.prestationTropLongue", {
+                service: service.name,
+                duration: formatDuration(service.duration_minutes + extraMinutes),
+              })}
             </p>
             <p className="mt-1.5 text-[var(--site-muted)]">
-              Les journées de {salon.name} n&apos;ont pas de plage aussi longue
-              en ce moment. Le salon peut vous proposer un autre créneau ou un
-              autre format — écrivez-lui.
+              {t("creneaux.journeesTropCourtes", { salon: salon.name })}
             </p>
             {whatsappHref(salon.whatsapp_number) && (
               <a
@@ -1118,9 +1133,9 @@ function SlotStep({
           >
             {(
               [
-                ["day", "Aujourd'hui"],
-                ["week", "7 jours"],
-                ["month", "30 jours"],
+                ["day", t("creneaux.aujourdhui")],
+                ["week", t("creneaux.septJours")],
+                ["month", t("creneaux.trenteJours")],
               ] as [Horizon, string][]
             ).map(([key, label]) => {
               const count = countWithin(byDay, key, salon.timezone);
@@ -1162,9 +1177,9 @@ function SlotStep({
         {visibleDays.map(([day, daySlots]) => (
           <div key={day}>
             <h2 className="mb-2.5 text-sm font-semibold text-[var(--site-ink)] first-letter:uppercase">
-              {formatDate(daySlots[0].starts_at, salon.timezone)}
+              {formatDate(daySlots[0].starts_at, salon.timezone, locale)}
               <span className="ml-2 font-normal text-[var(--site-subtle)]">
-                {daySlots.length} créneau{daySlots.length > 1 ? "x" : ""}
+                {t("creneaux.nombre", { n: daySlots.length })}
               </span>
             </h2>
 
@@ -1354,10 +1369,7 @@ function ContactStep({
         <div className="min-w-0 text-sm">
           <p className="font-medium text-[var(--site-ink)]">{service.name}</p>
           <p className="mt-1 text-[var(--site-muted)] first-letter:uppercase">
-            {formatDate(slot.starts_at, salon.timezone)} à{" "}
-            <span className="tabular">
-              {formatTime(slot.starts_at, salon.timezone)}
-            </span>
+            {bookingDateTime(slot.starts_at, salon.timezone, langue)}
           </p>
           {/*
             Le total se recompose sous les yeux de la cliente.
@@ -1368,7 +1380,7 @@ function ContactStep({
             du prestataire.
           */}
           <p className="mt-1 tabular font-medium text-[var(--salon-ink)]">
-            {formatServicePrice(service, salon.currency)}
+            {formatServicePrice(service, salon.currency, langue)}
           </p>
 
           {/* Les options sont rappelées ligne par ligne, pas fondues dans un
@@ -1384,8 +1396,8 @@ function ContactStep({
                   <span className="min-w-0">{option.name}</span>
                   <span className="tabular">
                     {Number(option.price_delta) === 0
-                      ? "inclus"
-                      : `+ ${formatPrice(option.price_delta, salon.currency)}`}
+                      ? t("attente.inclus")
+                      : `+ ${formatPrice(option.price_delta, salon.currency, langue)}`}
                   </span>
                 </li>
               ))}
@@ -1413,6 +1425,7 @@ function ContactStep({
                     {formatPrice(
                       String(Number(product.price) * basket.items[product.id]),
                       salon.currency,
+                      langue,
                     )}
                   </span>
                 </p>
@@ -1425,7 +1438,9 @@ function ContactStep({
                 <span>
                   {Number(zone.fee_amount) === 0
                     ? t("lieu.deplacementOffert")
-                    : `+ ${formatPrice(zone.fee_amount, salon.currency)} de déplacement`}
+                    : t("lieu.fraisDeplacement", {
+                        amount: formatPrice(zone.fee_amount, salon.currency, langue),
+                      })}
                 </span>
                 <span className="text-[var(--site-subtle)]">· {zone.name}</span>
               </p>
@@ -1442,6 +1457,7 @@ function ContactStep({
                         Number(zone.fee_amount),
                     ),
                     salon.currency,
+                    langue,
                   )}
                 </p>
               )}
@@ -1480,7 +1496,7 @@ function ContactStep({
           />
         )}
 
-        <Field label="Nom complet" error={errors.full_name?.message}>
+        <Field label={t("coordonnees.nomComplet")} error={errors.full_name?.message}>
           <input
             {...register("full_name")}
             autoComplete="name"
@@ -1503,7 +1519,7 @@ function ContactStep({
         </Field>
 
         <Field
-          label="E-mail (facultatif)"
+          label={t("coordonnees.emailFacultatif")}
           hint={t("coordonnees.emailAide")}
           error={errors.email?.message}
         >
@@ -1521,7 +1537,7 @@ function ContactStep({
 
         {/* Piège à robots : masqué visuellement et retiré du parcours clavier. */}
         <div aria-hidden className="absolute left-[-9999px]">
-          <label htmlFor="website">Site web</label>
+          <label htmlFor="website">{t("coordonnees.siteWeb")}</label>
           <input
             id="website"
             tabIndex={-1}
@@ -1538,7 +1554,7 @@ function ContactStep({
               className="mt-0.5 size-4 accent-[var(--salon-primary)]"
             />
             <span className="text-[var(--site-ink)]">
-              J&apos;accepte la politique d&apos;annulation du salon.
+              {t("coordonnees.acceptePolitique")}
               {salon.cancellation_policy && (
                 <span className="mt-1 block text-[var(--site-muted)]">
                   {salon.cancellation_policy}
@@ -1592,7 +1608,7 @@ function ContactStep({
           disabled={isSubmitting}
           className={`${PRIMARY} w-full`}
         >
-          {isSubmitting ? "Envoi…" : t("coordonnees.confirmer")}
+          {isSubmitting ? t("coordonnees.envoi") : t("coordonnees.confirmer")}
         </button>
 
         <p className="text-center text-xs text-[var(--site-subtle)]">
@@ -1611,7 +1627,9 @@ function Confirmation({
   confirmation: BookingConfirmation;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   const whatsapp = salon.whatsapp_number.replace(/[^0-9]/g, "");
+  const when = bookingDateTime(confirmation.starts_at, salon.timezone, locale);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 text-center">
@@ -1635,7 +1653,7 @@ function Confirmation({
         {t("attente.enregistre")}
       </h1>
       <p className="mt-2 text-[var(--site-muted)]">
-        {salon.name} a bien reçu votre demande.
+        {t("attente.demandeRecue", { salon: salon.name })}
       </p>
 
       <div className={`${CARD} mx-auto mt-7 max-w-sm p-5 text-left`}>
@@ -1643,13 +1661,10 @@ function Confirmation({
           {confirmation.service_name}
         </p>
         <p className="mt-1.5 text-sm text-[var(--site-muted)] first-letter:uppercase">
-          {formatDate(confirmation.starts_at, salon.timezone)} à{" "}
-          <span className="tabular">
-            {formatTime(confirmation.starts_at, salon.timezone)}
-          </span>
+          {when}
         </p>
         <p className="mt-1 text-sm text-[var(--site-muted)]">
-          Avec {confirmation.staff_member_name}
+          {t("attente.avec")} {confirmation.staff_member_name}
         </p>
 
         {confirmation.options_snapshot.length > 0 && (
@@ -1662,8 +1677,8 @@ function Confirmation({
                 <span className="min-w-0">{option.name}</span>
                 <span className="tabular">
                   {Number(option.price) === 0
-                    ? "inclus"
-                    : `+ ${formatPrice(option.price, salon.currency)}`}
+                    ? t("attente.inclus")
+                    : `+ ${formatPrice(option.price, salon.currency, locale)}`}
                 </span>
               </li>
             ))}
@@ -1692,7 +1707,7 @@ function Confirmation({
                   </span>
                 </span>
                 <span className="tabular">
-                  {formatPrice(item.total, salon.currency)}
+                  {formatPrice(item.total, salon.currency, locale)}
                 </span>
               </li>
             ))}
@@ -1706,9 +1721,9 @@ function Confirmation({
           confirmation.options_snapshot.length > 0 ||
           Number(confirmation.travel_fee_amount ?? 0) > 0) && (
           <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-[var(--site-line)] pt-3 text-sm font-medium text-[var(--site-ink)]">
-            <span>Total</span>
+            <span>{t("total")}</span>
             <span className="tabular">
-              {formatPrice(confirmation.total_amount, salon.currency)}
+              {formatPrice(confirmation.total_amount, salon.currency, locale)}
             </span>
           </p>
         )}
@@ -1723,17 +1738,19 @@ function Confirmation({
               className="mt-0.5 size-4 shrink-0 text-[var(--salon-ink)]"
             />
             <span>
-              À domicile · {confirmation.travel_zone_name}
+              {t("attente.aDomicile")} · {confirmation.travel_zone_name}
               {Number(confirmation.travel_fee_amount) > 0 && (
                 <>
                   {" — "}
                   <span className="tabular font-medium text-[var(--site-ink)]">
-                    {formatPrice(
-                      confirmation.travel_fee_amount,
-                      salon.currency,
-                    )}
-                  </span>{" "}
-                  de déplacement, inclus dans le total
+                    {t("attente.deplacementInclus", {
+                      amount: formatPrice(
+                        confirmation.travel_fee_amount,
+                        salon.currency,
+                        locale,
+                      ),
+                    })}
+                  </span>
                 </>
               )}
             </span>
@@ -1742,11 +1759,9 @@ function Confirmation({
 
         {Number(confirmation.deposit_amount) > 0 && (
           <p className="mt-4 rounded-xl bg-[var(--salon-accent)]/40 p-3 text-sm text-[var(--site-ink)]">
-            Un acompte de{" "}
-            <strong className="tabular">
-              {formatPrice(confirmation.deposit_amount, salon.currency)}
-            </strong>{" "}
-            est demandé. Le salon vous indiquera comment le régler.
+            {t("attente.acompteDemande", {
+              amount: formatPrice(confirmation.deposit_amount, salon.currency, locale),
+            })}
           </p>
         )}
       </div>
@@ -1768,6 +1783,9 @@ function Confirmation({
         >
           {t("attente.revenirAuSalon")}
         </Lien>
+      </div>
+      <div className="mt-8">
+        <BeautySalonCredit />
       </div>
     </div>
   );
@@ -1805,6 +1823,7 @@ function Field({
 }
 
 function BackLink({ onClick }: { onClick: () => void }) {
+  const t = useTranslations("reservation");
   return (
     <button
       type="button"
@@ -1825,7 +1844,7 @@ function BackLink({ onClick }: { onClick: () => void }) {
           strokeLinejoin="round"
         />
       </svg>
-      Retour
+      {t("retour")}
     </button>
   );
 }
@@ -1878,6 +1897,7 @@ function LocationStep({
   onChangeZone: (id: string) => void;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   return (
     <div className={`${CARD} space-y-4 p-4`}>
       <p className="text-sm font-medium text-[var(--site-ink)]">
@@ -1903,7 +1923,7 @@ function LocationStep({
           <ModeChoice
             selected={atHome}
             icon="home"
-            label="Chez moi"
+            label={t("lieu.chezMoi")}
             hint={t("lieu.prestataireSeDeplace")}
             onSelect={() => onChangeMode(true)}
           />
@@ -1943,8 +1963,8 @@ function LocationStep({
                         }`}
                       >
                         {free
-                          ? "Offert"
-                          : formatPrice(entry.fee_amount, salon.currency)}
+                          ? t("lieu.offert")
+                          : formatPrice(entry.fee_amount, salon.currency, locale)}
                       </span>
                     </button>
                   );
@@ -1961,17 +1981,17 @@ function LocationStep({
           {/* Zone unique : on l'annonce au lieu de la faire choisir. */}
           {zones.length === 1 && (
             <p className="text-sm text-[var(--site-muted)]">
-              Zone desservie : {zones[0].name} ·{" "}
+              {t("lieu.zoneDesservie", { zone: zones[0].name })} ·{" "}
               <span className="tabular font-semibold text-[var(--salon-ink)]">
                 {Number(zones[0].fee_amount) === 0
                   ? t("lieu.deplacementOffertMinuscule")
-                  : formatPrice(zones[0].fee_amount, salon.currency)}
+                  : formatPrice(zones[0].fee_amount, salon.currency, locale)}
               </span>
             </p>
           )}
 
           <Field
-            label="Adresse"
+            label={t("lieu.adresse")}
             hint={t("lieu.adresseAide")}
             error={addressError}
           >
@@ -2081,6 +2101,7 @@ function OptionsStep({
   onBack: () => void;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   const chosen = service.options.filter((option) =>
     selected.includes(option.id),
   );
@@ -2129,7 +2150,7 @@ function OptionsStep({
 
       {service.options.length > 0 && requirements.length > 0 && (
         <h2 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-[var(--site-subtle)]">
-          Options
+          {t("options.titre")}
         </h2>
       )}
 
@@ -2183,8 +2204,8 @@ function OptionsStep({
                     }`}
                   >
                     {free
-                      ? "Inclus"
-                      : `+ ${formatPrice(option.price_delta, salon.currency)}`}
+                      ? t("options.inclus")
+                      : `+ ${formatPrice(option.price_delta, salon.currency, locale)}`}
                   </span>
                   {option.duration_delta_minutes > 0 && (
                     <span className="tabular text-xs text-[var(--site-subtle)]">
@@ -2217,7 +2238,7 @@ function OptionsStep({
               className="flex flex-wrap items-baseline gap-x-2 text-sm"
             >
               <span className="tabular text-lg font-semibold text-[var(--site-ink)]">
-                {formatPrice(String(totalPrice), salon.currency)}
+                {formatPrice(String(totalPrice), salon.currency, locale)}
               </span>
               <span className="tabular text-[var(--site-muted)]">
                 {" · "}
@@ -2227,17 +2248,18 @@ function OptionsStep({
             <p className="mt-0.5 text-xs text-[var(--site-subtle)]">
               {blocking.length > 0 ? (
                 <span className="font-medium text-amber-600">
-                  {blocking.map((item) => item.label).join(", ")} : apportez-le
-                  ou achetez-le
+                  {t("options.fournituresRequises", {
+                    items: blocking.map((item) => item.label).join(", "),
+                  })}
                 </span>
               ) : chosen.length === 0 && supplies === 0 ? (
                 t("options.sansOption")
               ) : (
                 [
-                  chosen.length > 0 &&
-                    `${chosen.length} option${chosen.length > 1 ? "s" : ""}`,
-                  supplies > 0 && "fournitures comprises",
-                  extraMinutes > 0 && `${formatDuration(extraMinutes)} de plus`,
+                  chosen.length > 0 && t("options.nombre", { n: chosen.length }),
+                  supplies > 0 && t("options.fournituresCompris"),
+                  extraMinutes > 0 &&
+                    t("options.tempsAjoute", { duration: formatDuration(extraMinutes) }),
                 ]
                   .filter(Boolean)
                   .join(" · ")
@@ -2254,7 +2276,7 @@ function OptionsStep({
             {blocking.length > 0
               ? t("options.repondezCiDessus")
               : chosen.length === 0 && supplies === 0
-                ? "Continuer"
+                ? t("options.continuer")
                 : t("options.choisirCreneau")}
           </button>
         </div>
@@ -2350,9 +2372,8 @@ function WaitlistForm({
         role="status"
         className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-[var(--site-ink)]"
       >
-        <span className="font-medium">{t("attente.cestNote")}</span> Le salon
-        vous appellera au {phone} si une place se libère. Vous n&apos;avez pas
-        de rendez-vous pour l&apos;instant.
+        <span className="font-medium">{t("attente.cestNote")}</span>{" "}
+        {t("attente.rappel", { phone })}
       </p>
     );
   }
@@ -2449,14 +2470,14 @@ function WaitlistForm({
           disabled={pending || !name.trim() || !phone.trim()}
           className={`${PRIMARY} px-5 py-2.5 disabled:opacity-60`}
         >
-          {pending ? "Envoi…" : "M'inscrire"}
+          {pending ? t("coordonnees.envoi") : t("attente.inscrire")}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="px-2 py-2 text-sm text-[var(--site-muted)] transition hover:text-[var(--site-ink)]"
         >
-          Annuler
+          {t("attente.annuler")}
         </button>
       </div>
 

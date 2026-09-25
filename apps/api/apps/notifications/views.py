@@ -38,8 +38,8 @@ from rest_framework.views import APIView
 
 from apps.common.permissions import IsPlatformAdmin, IsTenantResolved
 
-from . import push
-from .models import Notification, PlatformNotification, PushSubscription
+from . import habillage, push
+from .models import Genre, Notification, PlatformNotification, PushSubscription
 from .serializers import (
     AbonnementSerializer,
     NotificationSerializer,
@@ -233,3 +233,104 @@ class PushView(APIView):
             user=request.user, endpoint=endpoint
         ).delete()
         return Response({"supprimes": supprimes})
+
+
+class NotificationEssaiView(APIView):
+    """Une notification d'essai, sur les appareils de la personne qui la demande.
+
+    -----------------------------------------------------------------------
+    Pourquoi elle existe
+    -----------------------------------------------------------------------
+
+    Sans elle, la seule facon de voir a quoi ressemble une alerte etait
+    d'attendre une vraie reservation — et de decouvrir ce jour-la que le
+    navigateur les mettait en sourdine. L'essai montre le rendu reel, image
+    et boutons compris, au moment ou l'on vient d'activer les notifications.
+
+    -----------------------------------------------------------------------
+    Ce qu'elle ne fait pas
+    -----------------------------------------------------------------------
+
+    Elle ne s'inscrit pas dans la cloche : un essai n'est pas un evenement.
+    Elle ne part que vers les appareils du compte qui la demande, jamais vers
+    ceux d'une collegue. Elle est envoyee tout de suite, sans passer par
+    Celery : on veut savoir, en revenant de ce clic, si elle est partie.
+    """
+
+    permission_classes = [IsAuthenticated, IsTenantResolved]
+    throttle_scope = "notification_essai"
+
+    def post(self, request):
+        if not push.configure():
+            return Response(
+                {
+                    "detail": (
+                        "Les notifications sur appareil ne sont pas configurées "
+                        "sur ce serveur."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        appareils = list(
+            PushSubscription.objects.filter(
+                user=request.user, portee=PushSubscription.Portee.SALON
+            )
+        )
+        if not appareils:
+            return Response(
+                {"detail": "Aucun appareil n'est inscrit pour ce compte."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        charge = self._charge(request.tenant_id)
+        envoyes, echecs, disparus = 0, 0, []
+        for abonnement in appareils:
+            try:
+                if push.envoyer(abonnement, charge):
+                    envoyes += 1
+                else:
+                    disparus.append(abonnement.pk)
+            except Exception:
+                echecs += 1
+
+        # Meme regle que la tache : une boite disparue ne reviendra pas.
+        if disparus:
+            PushSubscription.objects.filter(pk__in=disparus).delete()
+
+        return Response({"envoyes": envoyes, "echecs": echecs, "retires": len(disparus)})
+
+    @staticmethod
+    def _charge(tenant_id) -> dict:
+        """Une reservation plausible, avec une vraie prestation du salon.
+
+        Le titre dit que c'est un essai : une gerante qui la verrait sur son
+        telephone une heure plus tard ne doit pas chercher cette cliente dans
+        son agenda.
+        """
+        from django.db.models import F
+
+        from apps.catalog.models import Service
+
+        # Une prestation avec photo d'abord : c'est elle qui montre le mieux
+        # a quoi ressemblera une vraie alerte.
+        prestation = (
+            Service.objects.filter(active=True)
+            .select_related("image")
+            .order_by(F("image").asc(nulls_last=True), "name")
+            .first()
+        )
+        nom = prestation.name if prestation else "Votre prestation"
+        lien = "/agenda"
+        return habillage.habiller(
+            {
+                "genre": Genre.RESERVATION,
+                "titre": "Essai · Une cliente a réservé",
+                "corps": f"{nom} — demain à 10:00. Voici à quoi ressembleront vos alertes.",
+                "lien": lien,
+            },
+            genre=Genre.RESERVATION,
+            lien=lien,
+            image=habillage.url_publique(prestation.image) if prestation else "",
+            salon=habillage.apparence(tenant_id),
+        )

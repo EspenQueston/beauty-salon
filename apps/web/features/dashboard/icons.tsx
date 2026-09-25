@@ -47,7 +47,12 @@ export type IconName =
   | "close"
   | "scan";
 
-const PATHS: Record<IconName, ReactNode> = {
+/*
+  Exportés pour l'image des notifications (app/notification-image), qui
+  dessine le même pictogramme en grand : une alerte doit ressembler à l'écran
+  qu'elle ouvre.
+*/
+export const PATHS: Record<IconName, ReactNode> = {
   edit: (
     <>
       <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" />

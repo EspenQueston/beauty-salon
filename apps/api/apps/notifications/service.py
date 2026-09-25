@@ -37,6 +37,7 @@ from django.db import transaction
 from apps.accounts.models import Membership, User
 from apps.common.db import tenant_context
 
+from . import habillage
 from .models import Notification, PlatformNotification, PushSubscription
 
 logger = logging.getLogger(__name__)
@@ -58,12 +59,16 @@ def prevenir_salon(
     titre: str,
     corps: str = "",
     lien: str = "",
+    image: str = "",
 ) -> int:
     """Depose une notification pour l'encadrement d'un salon.
 
     Rend le nombre de personnes prevenues. Zero n'est pas une erreur : un
     salon dont la gerante a ete desactivee n'a personne a prevenir, et ce
     n'est pas a cette fonction de s'en emouvoir.
+
+    `image` est la photo propre a l'evenement — celle de la prestation
+    reservee. Elle ne sert qu'au push : la cloche n'affiche pas d'image.
     """
     with tenant_context(tenant_id):
         comptes = list(
@@ -93,10 +98,18 @@ def prevenir_salon(
             ]
         )
 
+        salon = _apparence(tenant_id)
+
     _pousser_apres_commit(
         comptes,
         PushSubscription.Portee.SALON,
-        {"genre": genre, "titre": titre, "corps": corps, "lien": lien},
+        habillage.habiller(
+            {"genre": genre, "titre": titre, "corps": corps, "lien": lien},
+            genre=genre,
+            lien=lien,
+            image=image,
+            salon=salon,
+        ),
     )
     return len(comptes)
 
@@ -137,12 +150,50 @@ def prevenir_plateforme(
         ]
     )
 
+    # Le salon dont il est question, s'il y en a un : son logo et ses
+    # couleurs disent d'un coup d'oeil de qui l'on parle. Son profil est
+    # protege par RLS, d'ou le contexte a poser.
+    salon = _apparence(tenant_id, poser_le_contexte=True) if tenant_id else None
+
     _pousser_apres_commit(
         comptes,
         PushSubscription.Portee.PLATEFORME,
-        {"genre": genre, "titre": titre, "corps": corps, "lien": lien},
+        habillage.habiller(
+            {"genre": genre, "titre": titre, "corps": corps, "lien": lien},
+            genre=genre,
+            lien=lien,
+            salon=salon,
+        ),
     )
     return len(comptes)
+
+
+def _apparence(tenant_id, *, poser_le_contexte: bool = False) -> dict | None:
+    """L'apparence d'un salon, sans jamais faire echouer la notification.
+
+    Le logo et la couleur habillent le push ; ils ne sont pas le message. Une
+    lecture qui echoue ici laisse partir une notification plus sobre plutot
+    que pas de notification du tout.
+
+    Le point de sauvegarde n'est pas une precaution de style. L'appelant est
+    souvent dans une transaction — celle qui enregistre la reservation — et
+    sous PostgreSQL une requete en echec y bloque toutes les suivantes :
+    rattraper l'exception sans lui ferait echouer la reservation plus loin.
+
+    Le contexte du salon est pose ici, a l'interieur du filet, et non par
+    l'appelant : `tenant_context` refuse d'imbriquer deux salons differents,
+    et ce refus doit donner une notification sans logo, pas pas de
+    notification du tout.
+    """
+    try:
+        with transaction.atomic():
+            if poser_le_contexte:
+                with tenant_context(tenant_id):
+                    return habillage.apparence(tenant_id)
+            return habillage.apparence(tenant_id)
+    except Exception:
+        logger.exception("Apparence du salon %s illisible pour le push.", tenant_id)
+        return None
 
 
 def _pousser_apres_commit(comptes: list, portee: str, charge: dict) -> None:

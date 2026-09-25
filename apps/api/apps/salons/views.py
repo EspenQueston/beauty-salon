@@ -60,6 +60,13 @@ class PublicSalonView(APIView):
                 status=404,
             )
 
+        traductions = table_pour(request, profile.tenant_id)
+
+        def traduit(objet, champ):
+            return traductions.get(
+                (objet._meta.label_lower, str(objet.pk), champ)
+            ) or getattr(objet, champ)
+
         services = list(
             Service.objects.filter(active=True)
             .select_related("image")
@@ -89,14 +96,14 @@ class PublicSalonView(APIView):
             requirements_by_service.setdefault(requirement.service_id, []).append(
                 {
                     "id": str(requirement.id),
-                    "label": requirement.label,
-                    "detail": requirement.detail,
+                    "label": traduit(requirement, "label"),
+                    "detail": traduit(requirement, "detail"),
                     "mandatory": requirement.mandatory,
                     "products": [
                         {
                             "id": str(offer.product.id),
-                            "name": offer.product.name,
-                            "description": offer.product.description,
+                            "name": traduit(offer.product, "name"),
+                            "description": traduit(offer.product, "description"),
                             "price": str(offer.product.price),
                             "unit": offer.product.unit,
                             "available": offer.product.available,
@@ -174,7 +181,7 @@ class PublicSalonView(APIView):
             # page qui doit s ouvrir le plus vite du produit. Vide quand la
             # langue demandee est le francais : il n y a alors rien a
             # remplacer, et la requete serait perdue.
-            "traductions": table_pour(request, profile.tenant_id),
+            "traductions": traductions,
         }
 
         return Response(PublicSalonSerializer(profile, context=context).data)

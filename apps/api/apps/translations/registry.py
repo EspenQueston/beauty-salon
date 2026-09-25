@@ -43,7 +43,8 @@ TRADUISIBLES: dict[str, tuple[str, ...]] = {
     # `specialty` et `bio` seulement : `name` est le nom d'une personne.
     "staff.staffmember": ("specialty", "bio"),
     "store.product": ("name", "description"),
-    "store.requirement": ("label",),
+    "store.requirement": ("label", "detail"),
+    "payments.paymentchannel": ("instructions",),
 }
 
 

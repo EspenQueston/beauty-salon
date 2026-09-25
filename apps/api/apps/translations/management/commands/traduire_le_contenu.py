@@ -19,6 +19,7 @@ from apps.translations.services import a_traduire, traducteur, traduire_le_salon
 def _modeles():
     """Les modeles a parcourir, importes tard pour ne pas figer le registre."""
     from apps.catalog.models import Service, ServiceCategory, ServiceOption
+    from apps.payments.models import PaymentChannel
     from apps.salons.models import SalonProfile
     from apps.staff.models import StaffMember
     from apps.store.models import Product, Requirement
@@ -31,6 +32,7 @@ def _modeles():
         StaffMember,
         Product,
         Requirement,
+        PaymentChannel,
     )
 
 
@@ -58,7 +60,7 @@ class Command(BaseCommand):
 
         if not options["a_blanc"] and not traducteur().disponible():
             self.stderr.write(
-                "aucune cle ANTHROPIC_API_KEY : rien ne serait traduit. "
+                "aucune cle OPENAI_API_KEY : rien ne serait traduit. "
                 "Posez-la dans apps/api/.env, ou relancez avec --a-blanc."
             )
             return

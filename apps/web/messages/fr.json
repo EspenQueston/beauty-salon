@@ -353,6 +353,8 @@
     },
     "avisGarantie": "Chaque avis est rattaché à un rendez-vous réellement honoré. Le salon ne peut ni les modifier ni les supprimer.",
     "propulsePar": "Propulsé par Beauty Salon",
+    "creeAvec": "Créé avec",
+    "tousDroitsReserves": "Tous droits réservés.",
     "arreterDefilement": "Arrêter le défilement",
     "relancerDefilement": "Relancer le défilement",
     "titres": {
@@ -427,9 +429,23 @@
       "reserverMaintenant": "Réserver maintenant"
     },
     "prestationsCatalogue": "{n, plural, one {# prestation au catalogue} other {# prestations au catalogue}}",
-    "acompte": "Acompte"
+    "acompte": "Acompte",
+    "filtre": {
+      "toutes": "Toutes",
+      "parCategorie": "Filtrer par catégorie",
+      "rechercher": "Rechercher une prestation",
+      "exemple": "Rechercher : tresses, pose gel…",
+      "effacer": "Effacer la recherche",
+      "resultats": "{n, plural, =0 {Aucune prestation} one {# prestation} other {# prestations}}",
+      "aucunTitre": "Aucune prestation ne correspond",
+      "aucunCorps": "Cette catégorie ne propose rien pour l'instant.",
+      "aucunCorpsRecherche": "Rien pour « {q} ». Essayez un autre mot, ou parcourez toutes les prestations.",
+      "toutAfficher": "Tout afficher",
+      "voirCategorie": "{n, plural, one {Voir la prestation « {categorie} »} other {Voir les # prestations « {categorie} »}}"
+    }
   },
   "reservation": {
+    "retour": "Retour",
     "erreurs": {
       "nom": "Indiquez votre nom.",
       "numeroCourt": "Numéro trop court.",
@@ -445,10 +461,19 @@
     },
     "etapes": {
       "choix": "Votre choix",
+      "prestation": "Prestation",
+      "prestataire": "Prestataire",
+      "options": "Options",
+      "progression": "Progression de la réservation",
       "creneau": "Créneau",
       "coordonnees": "Coordonnées"
     },
     "catalogue": {
+      "avis": "{n, plural, one {# avis} other {# avis}}",
+      "annulationGratuite": "Annulation gratuite jusqu'à {hours} h avant.",
+      "quellePrestation": "Quelle prestation ?",
+      "acompteDe": "Acompte de {amount}",
+      "peuImporte": "Peu importe",
       "vide": "Ce salon n'a pas encore publié son catalogue. Contactez-le directement.",
       "avecQui": "Avec qui ?",
       "plusDeCreneaux": "Plus de créneaux disponibles",
@@ -460,6 +485,15 @@
       "retardMinutes": "Retard toléré : {minutes} min."
     },
     "creneaux": {
+      "aucunAvecOptions": "Aucun créneau ne contient {duration}.",
+      "optionsTropLongues": "Vos options allongent la prestation de {duration}, et les journées du salon n'ont plus de plage assez longue. Retirez-en une, ou écrivez au salon qui vous placera à la main.",
+      "revoirOptions": "Revoir mes options",
+      "prestationTropLongue": "{service} demande {duration} d'affilée.",
+      "journeesTropCourtes": "Les journées de {salon} n'ont pas de plage aussi longue en ce moment. Le salon peut vous proposer un autre créneau ou un autre format — écrivez-lui.",
+      "aujourdhui": "Aujourd'hui",
+      "septJours": "7 jours",
+      "trenteJours": "30 jours",
+      "nombre": "{n, plural, one {# créneau} other {# créneaux}}",
       "titre": "Choisissez un créneau",
       "chargement": "Chargement des disponibilités…",
       "ecrireAuSalon": "Écrire au salon",
@@ -469,6 +503,11 @@
       "periode": "Période"
     },
     "coordonnees": {
+      "siteWeb": "Site web",
+      "nomComplet": "Nom complet",
+      "emailFacultatif": "E-mail (facultatif)",
+      "acceptePolitique": "J'accepte la politique d'annulation du salon.",
+      "envoi": "Envoi…",
       "titre": "Vos coordonnées",
       "offres": "J'accepte de recevoir les offres du salon.",
       "usage": "Vos coordonnées ne servent qu'à ce rendez-vous.",
@@ -479,6 +518,11 @@
       "confirmer": "Confirmer la réservation"
     },
     "lieu": {
+      "fraisDeplacement": "+ {amount} de déplacement",
+      "chezMoi": "Chez moi",
+      "offert": "Offert",
+      "zoneDesservie": "Zone desservie : {zone}",
+      "adresse": "Adresse",
       "question": "Où souhaitez-vous être reçue ?",
       "quartier": "Votre quartier",
       "deplacementOffert": "Déplacement offert",
@@ -491,7 +535,16 @@
       "adresseExemple": "Ex. 12 avenue de la Paix, immeuble bleu, face à la pharmacie"
     },
     "attente": {
+      "rappel": "Le salon vous appellera au {phone} si une place se libère. Vous n'avez pas de rendez-vous pour l'instant.",
+      "inscrire": "M'inscrire",
+      "annuler": "Annuler",
       "enregistre": "Rendez-vous enregistré",
+      "demandeRecue": "{salon} a bien reçu votre demande.",
+      "avec": "Avec",
+      "inclus": "inclus",
+      "aDomicile": "À domicile",
+      "deplacementInclus": "{amount} de déplacement, inclus dans le total",
+      "acompteDemande": "Un acompte de {amount} est demandé. Le salon vous indiquera comment le régler.",
       "mePrevenir": "Me prévenir si une place se libère",
       "votreNom": "Votre nom",
       "aPartirDu": "À partir du",
@@ -504,6 +557,13 @@
       "cestNote": "C'est noté."
     },
     "options": {
+      "titre": "Options",
+      "inclus": "Inclus",
+      "fournituresRequises": "{items} : apportez-les ou achetez-les",
+      "nombre": "{n, plural, one {# option} other {# options}}",
+      "fournituresCompris": "fournitures comprises",
+      "tempsAjoute": "{duration} de plus",
+      "continuer": "Continuer",
       "avantDeVenir": "Avant de venir",
       "uneOption": "Une option ?",
       "prevoir": "Ce qu'il faut prévoir pour cette prestation, et ce que vous pouvez ajouter.",
@@ -514,6 +574,10 @@
       "avecVosOptions": "avec vos options"
     },
     "exigences": {
+      "indispensable": "Indispensable",
+      "facultatif": "Facultatif",
+      "jeLapporte": "Je l'apporte",
+      "enRupture": "en rupture",
       "rienAPayer": "rien à payer",
       "regle": "Réglé",
       "jeLAchete": "Je l'achète ici",
@@ -529,6 +593,10 @@
       "explication": "Montrez ce code à votre arrivée : le salon le scanne et vous êtes enregistrée."
     },
     "suivi": {
+      "versementIntrouvable": "Versement introuvable",
+      "acompte": "Acompte",
+      "renvoyerPreuve": "Renvoyer ma preuve",
+      "appeler": "Appeler",
       "lienMort": "Ce lien n'est plus valable.",
       "prendreRdv": "Prendre rendez-vous",
       "acompteTitre": "Acompte à régler",
@@ -560,6 +628,14 @@
       "reglerAcompte": "Régler l'acompte"
     },
     "paiement": {
+      "aHeure": "à",
+      "surUnTotal": "Sur un total de {amount}",
+      "scannerAvec": "Scannez ce code depuis {channel}",
+      "sansQr": "Le salon n'a pas mis de QR code pour {channel}.",
+      "envoiImpossible": "Envoi impossible.",
+      "formatsFacultatifs": "JPEG ou PNG, facultatif",
+      "facultatif": "Facultatif",
+      "preuveRecue": "{salon} a reçu votre preuve de versement. Le salon vérifie le paiement et confirme votre rendez-vous — vous recevrez un e-mail dès que c'est fait.",
       "titre": "Acompte à régler",
       "lienMort": "Ce lien n'est plus valable. Contactez le salon pour reprendre votre réservation.",
       "refuseTitre": "Le salon n'a pas retrouvé votre versement.",

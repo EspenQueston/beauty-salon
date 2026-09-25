@@ -58,6 +58,33 @@ def _cliente(booking) -> str:
     return getattr(client, "full_name", "") or "Une cliente"
 
 
+def _photo(objet) -> str:
+    """La photo de la prestation concernee, pour l'image du push ; chaine
+    vide sinon.
+
+    Lue sur la relation et non figee sur la reservation : c'est la photo du
+    catalogue d'aujourd'hui qu'on veut montrer, et une prestation supprimee
+    depuis n'en a simplement plus.
+
+    Rien ici ne doit empecher la notification de partir. Une tache qui
+    tourne hors du contexte du salon ne voit pas la prestation — la
+    politique RLS la masque, et Django leve `DoesNotExist` en suivant la
+    relation. Le point de sauvegarde protege la transaction de l'appelant
+    si c'est la base elle-meme qui refuse.
+    """
+    from django.db import transaction
+
+    from .habillage import url_publique
+
+    try:
+        with transaction.atomic(using=objet._state.db or "default"):
+            service = getattr(objet, "service", None)
+            return url_publique(getattr(service, "image", None)) if service else ""
+    except Exception:
+        logger.warning("Photo de prestation illisible pour le push.", exc_info=True)
+        return ""
+
+
 def _lien(booking) -> str:
     """L'agenda, ouvert sur ce rendez-vous precis.
 
@@ -80,6 +107,7 @@ def nouvelle_reservation(booking) -> None:
         titre=f"{_cliente(booking)} a réservé",
         corps=f"{booking.service_name} {_quand(booking)}".strip(),
         lien=_lien(booking),
+        image=_photo(booking),
     )
 
 
@@ -96,6 +124,7 @@ def acompte_a_verifier(booking) -> None:
         titre="Acompte à vérifier",
         corps=f"{_cliente(booking)} a envoyé sa preuve de versement.",
         lien=_lien(booking),
+        image=_photo(booking),
     )
 
 
@@ -111,6 +140,7 @@ def acompte_expire(booking) -> None:
             f"({_quand(booking)})."
         ),
         lien=_lien(booking),
+        image=_photo(booking),
     )
 
 
@@ -132,6 +162,7 @@ def rendez_vous_annule(booking, *, par_le_salon: bool) -> None:
         titre=f"{_cliente(booking)} a annulé",
         corps=f"{booking.service_name} {_quand(booking)}".strip(),
         lien=_lien(booking),
+        image=_photo(booking),
     )
 
 
@@ -164,6 +195,7 @@ def liste_attente(entree) -> None:
         titre=f"{entree.full_name} attend une place",
         corps=prestation,
         lien="/liste-attente",
+        image=_photo(entree),
     )
 
 
@@ -173,13 +205,20 @@ def liste_attente(entree) -> None:
 
 
 def salon_inscrit(tenant) -> None:
-    """Un salon vient de rejoindre la plateforme."""
+    """Un salon vient de rejoindre la plateforme.
+
+    Le lien mene a sa fiche dans l'administration : c'est la qu'on le publie,
+    et c'est donc la seule chose qu'on vient faire en ouvrant ce message.
+    """
+    from django.urls import reverse
+
     ville = getattr(tenant, "city", "") or ""
     _sans_casser(
         prevenir_plateforme,
         genre=Genre.SALON_INSCRIT,
         titre=f"Nouveau salon : {tenant.name}",
         corps=ville,
+        lien=reverse("admin:tenants_tenant_change", args=[tenant.id]),
         tenant_id=tenant.id,
     )
 

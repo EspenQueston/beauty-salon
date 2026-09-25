@@ -120,6 +120,7 @@ MEDIA_URL = env("MEDIA_URL", default=f"https://api.{PLATFORM_DOMAIN}/media/")
 # une adresse morte.
 APP_BASE_URL = env("APP_BASE_URL", default=f"https://app.{PLATFORM_DOMAIN}")
 SITE_BASE_URL = env("SITE_BASE_URL", default=f"https://{PLATFORM_DOMAIN}")
+API_BASE_URL = env("API_BASE_URL", default=f"https://api.{PLATFORM_DOMAIN}")
 
 # ---------------------------------------------------------------------------
 # Cookies

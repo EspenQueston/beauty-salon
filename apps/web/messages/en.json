@@ -353,6 +353,8 @@
     },
     "avisGarantie": "Every review is tied to an appointment that was actually kept. The salon can neither edit nor delete them.",
     "propulsePar": "Powered by Beauty Salon",
+    "creeAvec": "Created with",
+    "tousDroitsReserves": "All rights reserved.",
     "arreterDefilement": "Stop the scrolling",
     "relancerDefilement": "Resume the scrolling",
     "titres": {
@@ -427,9 +429,23 @@
       "reserverMaintenant": "Book now"
     },
     "prestationsCatalogue": "{n, plural, one {# service in the catalogue} other {# services in the catalogue}}",
-    "acompte": "Deposit"
+    "acompte": "Deposit",
+    "filtre": {
+      "toutes": "All",
+      "parCategorie": "Filter by category",
+      "rechercher": "Search services",
+      "exemple": "Search: braids, gel nails…",
+      "effacer": "Clear search",
+      "resultats": "{n, plural, =0 {No services} one {# service} other {# services}}",
+      "aucunTitre": "No matching services",
+      "aucunCorps": "This category has nothing on offer yet.",
+      "aucunCorpsRecherche": "Nothing for “{q}”. Try another word, or browse all services.",
+      "toutAfficher": "Show everything",
+      "voirCategorie": "{n, plural, one {See the “{categorie}” service} other {See all # “{categorie}” services}}"
+    }
   },
   "reservation": {
+    "retour": "Back",
     "erreurs": {
       "nom": "Enter your name.",
       "numeroCourt": "Number too short.",
@@ -445,10 +461,19 @@
     },
     "etapes": {
       "choix": "Your choice",
+      "prestation": "Service",
+      "prestataire": "Stylist",
+      "options": "Extras",
+      "progression": "Booking progress",
       "creneau": "Slot",
       "coordonnees": "Your details"
     },
     "catalogue": {
+      "avis": "{n, plural, one {# review} other {# reviews}}",
+      "annulationGratuite": "Free cancellation up to {hours} hours before.",
+      "quellePrestation": "Which service?",
+      "acompteDe": "Deposit of {amount}",
+      "peuImporte": "No preference",
       "vide": "This salon has not published its catalogue yet. Contact them directly.",
       "avecQui": "With whom?",
       "plusDeCreneaux": "No slots left",
@@ -460,6 +485,15 @@
       "retardMinutes": "Lateness allowed: {minutes} min."
     },
     "creneaux": {
+      "aucunAvecOptions": "No slot is long enough for {duration}.",
+      "optionsTropLongues": "Your extras add {duration} to this service, and the salon has no long enough opening. Remove an extra, or contact the salon to arrange a time.",
+      "revoirOptions": "Review my extras",
+      "prestationTropLongue": "{service} needs {duration} without a break.",
+      "journeesTropCourtes": "{salon} has no opening that long right now. The salon may be able to offer another time or format — please contact them.",
+      "aujourdhui": "Today",
+      "septJours": "7 days",
+      "trenteJours": "30 days",
+      "nombre": "{n, plural, one {# slot} other {# slots}}",
       "titre": "Choose a slot",
       "chargement": "Loading availability…",
       "ecrireAuSalon": "Write to the salon",
@@ -469,6 +503,11 @@
       "periode": "Period"
     },
     "coordonnees": {
+      "siteWeb": "Website",
+      "nomComplet": "Full name",
+      "emailFacultatif": "Email (optional)",
+      "acceptePolitique": "I accept the salon's cancellation policy.",
+      "envoi": "Sending…",
       "titre": "Your details",
       "offres": "I agree to receive the salon's offers.",
       "usage": "Your details are used for this appointment only.",
@@ -479,6 +518,11 @@
       "confirmer": "Confirm the booking"
     },
     "lieu": {
+      "fraisDeplacement": "+ {amount} travel fee",
+      "chezMoi": "At my place",
+      "offert": "Free",
+      "zoneDesservie": "Service area: {zone}",
+      "adresse": "Address",
       "question": "Where would you like to be seen?",
       "quartier": "Your neighbourhood",
       "deplacementOffert": "Travel included",
@@ -491,7 +535,16 @@
       "adresseExemple": "E.g. 12 avenue de la Paix, blue building, opposite the pharmacy"
     },
     "attente": {
+      "rappel": "The salon will call you on {phone} if a slot opens up. You do not have an appointment yet.",
+      "inscrire": "Join the waitlist",
+      "annuler": "Cancel",
       "enregistre": "Request recorded",
+      "demandeRecue": "{salon} has received your booking request.",
+      "avec": "With",
+      "inclus": "included",
+      "aDomicile": "At your place",
+      "deplacementInclus": "{amount} travel fee, included in the total",
+      "acompteDemande": "A deposit of {amount} is required. The salon will let you know how to pay it.",
       "mePrevenir": "Tell me if a place opens up",
       "votreNom": "Your name",
       "aPartirDu": "From",
@@ -504,6 +557,13 @@
       "cestNote": "Noted."
     },
     "options": {
+      "titre": "Extras",
+      "inclus": "Included",
+      "fournituresRequises": "{items}: bring or buy them before booking",
+      "nombre": "{n, plural, one {# extra} other {# extras}}",
+      "fournituresCompris": "supplies included",
+      "tempsAjoute": "{duration} extra",
+      "continuer": "Continue",
       "avantDeVenir": "Before you come",
       "uneOption": "An extra?",
       "prevoir": "What to bring for this service, and what you can add to it.",
@@ -514,6 +574,10 @@
       "avecVosOptions": "with your extras"
     },
     "exigences": {
+      "indispensable": "Required",
+      "facultatif": "Optional",
+      "jeLapporte": "I'll bring it",
+      "enRupture": "out of stock",
       "rienAPayer": "nothing to pay",
       "regle": "Paid",
       "jeLAchete": "I buy it here",
@@ -529,6 +593,10 @@
       "explication": "Show this code when you arrive: the salon scans it and you are checked in."
     },
     "suivi": {
+      "versementIntrouvable": "Payment not found",
+      "acompte": "Deposit",
+      "renvoyerPreuve": "Resend payment proof",
+      "appeler": "Call",
       "lienMort": "This link is no longer valid.",
       "prendreRdv": "Book an appointment",
       "acompteTitre": "Deposit to pay",
@@ -560,6 +628,14 @@
       "reglerAcompte": "Pay the deposit"
     },
     "paiement": {
+      "aHeure": "at",
+      "surUnTotal": "Of a total of {amount}",
+      "scannerAvec": "Scan this code with {channel}",
+      "sansQr": "The salon has not added a QR code for {channel}.",
+      "envoiImpossible": "Unable to send. Please try again.",
+      "formatsFacultatifs": "JPEG or PNG, optional",
+      "facultatif": "Optional",
+      "preuveRecue": "{salon} has received your payment proof. The salon will check it and confirm your appointment — you'll get an email when it's done.",
       "titre": "Deposit to pay",
       "lienMort": "This link is no longer valid. Contact the salon to book again.",
       "refuseTitre": "The salon could not find your payment.",

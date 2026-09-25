@@ -42,7 +42,9 @@ export type SalonIconName =
   | "user"
   | "store"
   | "echange"
-  | "globe";
+  | "globe"
+  | "search"
+  | "grid";
 
 const PATHS: Record<SalonIconName, ReactNode> = {
   user: (
@@ -163,6 +165,23 @@ const PATHS: Record<SalonIconName, ReactNode> = {
   arrow: <path d="M5 12h13M13 6.5l5.5 5.5L13 17.5" />,
   play: <path d="M9 6.8v10.4l8.4-5.2z" />,
   close: <path d="m6.5 6.5 11 11M17.5 6.5l-11 11" />,
+  // La loupe de la recherche du catalogue : un cercle et son manche.
+  search: (
+    <>
+      <circle cx="10.8" cy="10.8" r="6.3" />
+      <path d="m15.5 15.5 4.5 4.5" />
+    </>
+  ),
+  // « Toutes les catégories » : quatre carreaux, l'ensemble plutôt qu'une
+  // famille.
+  grid: (
+    <>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" />
+    </>
+  ),
   menu: <path d="M4 7.5h16M4 12h16M4 16.5h16" />,
   check: <path d="m20 6.5-10.6 11L4 12" />,
   star: (

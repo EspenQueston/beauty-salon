@@ -244,6 +244,13 @@ class PublicBookingConfirmationSerializer(serializers.ModelSerializer):
 
         return payment_token(booking)
 
+    def to_representation(self, instance):
+        from apps.translations.booking import public_booking_labels
+
+        data = super().to_representation(instance)
+        data.update(public_booking_labels(instance, instance.language))
+        return data
+
 
 class BusinessHoursSerializer(serializers.ModelSerializer):
     class Meta:

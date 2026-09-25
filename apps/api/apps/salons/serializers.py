@@ -103,7 +103,7 @@ class PublicServiceSerializer(Traduit, serializers.ModelSerializer):
         # Pre-groupees par la vue : evite une requete par prestation.
         grouped = self.context.get("options_by_service", {})
         return PublicServiceOptionSerializer(
-            grouped.get(service.id, []), many=True
+            grouped.get(service.id, []), many=True, context=self.context
         ).data
 
     def get_requirements(self, service) -> list:

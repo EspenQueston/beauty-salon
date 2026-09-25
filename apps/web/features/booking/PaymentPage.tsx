@@ -33,7 +33,7 @@
  * cliente qui cherche son mot de passe ne doit pas craindre de le perdre.
  */
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Lien } from "@/features/ui/Lien";
 import { useRouter } from "next/navigation";
@@ -110,6 +110,7 @@ export function PaymentPage({
   salonName: string;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   const [state, setState] = useState<PaymentState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState(0);
@@ -131,7 +132,7 @@ export function PaymentPage({
     let cancelled = false;
 
     browserRequest<PaymentState>(
-      `/api/v1/public/payment?token=${encodeURIComponent(token)}`,
+      `/api/v1/public/payment?token=${encodeURIComponent(token)}&lang=${locale}`,
       host,
     )
       .then((data) => !cancelled && setState(data))
@@ -142,7 +143,7 @@ export function PaymentPage({
     };
     // `t` : stable tant que la langue ne change pas, et une bascule recharge
     // la page entière — le linter, lui, ne peut pas le savoir.
-  }, [host, token, round, t]);
+  }, [host, token, round, t, locale]);
 
   /*
    * Pendant l'attente, on redemande périodiquement.
@@ -215,14 +216,14 @@ export function PaymentPage({
           {t("paiement.titre")}
         </p>
         <p className="tabular mt-1 text-3xl font-semibold text-[var(--site-ink)]">
-          {formatPrice(booking.deposit_amount, currency)}
+          {formatPrice(booking.deposit_amount, currency, locale)}
         </p>
         <p className="mt-1.5 text-sm text-[var(--site-muted)]">
-          {booking.service_name} · {formatDate(booking.starts_at, timeZone)} à{" "}
+          {booking.service_name} · {formatDate(booking.starts_at, timeZone, locale)} {t("paiement.aHeure")}{" "}
           {formatTime(booking.starts_at, timeZone)}
         </p>
         <p className="tabular mt-2 text-xs text-[var(--site-subtle)]">
-          Sur un total de {formatPrice(booking.total_amount, currency)}
+          {t("paiement.surUnTotal", { amount: formatPrice(booking.total_amount, currency, locale) })}
         </p>
       </div>
 
@@ -377,6 +378,7 @@ function Lapsed({ cancelled }: { cancelled: boolean }) {
 }
 
 function QrPanel({ channel, single }: { channel: Channel; single: boolean }) {
+  const t = useTranslations("reservation");
   return (
     <div className={`${CARD} mt-3 p-5 text-center`}>
       {single && (
@@ -399,12 +401,12 @@ function QrPanel({ channel, single }: { channel: Channel; single: boolean }) {
             />
           </span>
           <p className="mt-3 text-sm text-[var(--site-muted)]">
-            Scannez ce code depuis {channel.kind_label}
+            {t("paiement.scannerAvec", { channel: channel.kind_label })}
           </p>
         </>
       ) : (
         <p className="text-sm text-[var(--site-muted)]">
-          Le salon n&apos;a pas mis de QR code pour {channel.kind_label}.
+          {t("paiement.sansQr", { channel: channel.kind_label })}
         </p>
       )}
 
@@ -477,7 +479,7 @@ function ProofForm({
       onSent();
     } catch (caught) {
       setProblem(
-        caught instanceof Error ? caught.message : "Envoi impossible.",
+        caught instanceof Error ? caught.message : t("paiement.envoiImpossible"),
       );
     } finally {
       setBusy(false);
@@ -522,7 +524,7 @@ function ProofForm({
             {file ? t("paiement.changerCapture") : t("paiement.choisirCapture")}
           </span>
           <span className="block truncate text-xs text-[var(--site-subtle)]">
-            {file ? file.name : "JPEG ou PNG, facultatif"}
+            {file ? file.name : t("paiement.formatsFacultatifs")}
           </span>
         </span>
       </button>
@@ -545,7 +547,7 @@ function ProofForm({
           <input
             value={reference}
             onChange={(event) => setReference(event.target.value)}
-            placeholder="Facultatif"
+            placeholder={t("paiement.facultatif")}
             className="w-full rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-2.5 text-sm text-[var(--site-ink)]"
           />
         </label>
@@ -556,7 +558,7 @@ function ProofForm({
           <input
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="Facultatif"
+            placeholder={t("paiement.facultatif")}
             className="w-full rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-2.5 text-sm text-[var(--site-ink)]"
           />
         </label>
@@ -574,7 +576,7 @@ function ProofForm({
         disabled={busy}
         className={`${PRIMARY} mt-3 w-full`}
       >
-        {busy ? "Envoi…" : t("paiement.envoyerPreuve")}
+        {busy ? t("coordonnees.envoi") : t("paiement.envoyerPreuve")}
       </button>
     </div>
   );
@@ -598,9 +600,7 @@ function Waiting({
         {t("paiement.attenteTitre")}
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--site-muted)]">
-        {salonName} a reçu votre preuve de versement. Le salon vérifie le
-        paiement et confirme votre rendez-vous — vous recevrez un e-mail dès que
-        c&apos;est fait.
+        {t("paiement.preuveRecue", { salon: salonName })}
       </p>
       <p className="mt-3 text-sm text-[var(--site-muted)]">
         {t("paiement.creneauReserve")}

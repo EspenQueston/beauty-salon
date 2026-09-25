@@ -35,7 +35,7 @@
  * avoir la semaine suivante.
  */
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/format";
 import type { ServiceRequirement } from "@/lib/types";
 import { SalonIcon } from "@/features/salon/icons";
@@ -94,6 +94,7 @@ export function RequirementsStep({
   onChange: (basket: Basket) => void;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   // Tous les articles de l'étape, toutes exigences confondues : deux
   // fournitures voisines ne doivent pas porter la même photo.
   const fallbacks = productIllustrations(
@@ -147,11 +148,11 @@ export function RequirementsStep({
                   {requirement.label}
                   {requirement.mandatory ? (
                     <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[0.7rem] font-medium text-amber-700 dark:text-amber-400">
-                      Indispensable
+                      {t("exigences.indispensable")}
                     </span>
                   ) : (
                     <span className="rounded-full bg-black/[0.06] px-2 py-0.5 text-[0.7rem] text-[var(--site-muted)] dark:bg-white/10">
-                      Facultatif
+                      {t("exigences.facultatif")}
                     </span>
                   )}
                 </p>
@@ -185,7 +186,7 @@ export function RequirementsStep({
                     : "border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--salon-primary)]/50"
                 }`}
               >
-                <span className="block font-medium">Je l&apos;apporte</span>
+                <span className="block font-medium">{t("exigences.jeLapporte")}</span>
                 <span className="text-xs text-[var(--site-subtle)]">
                   {t("exigences.rienAPayer")}
                 </span>
@@ -246,10 +247,10 @@ export function RequirementsStep({
                           {product.name}
                         </p>
                         <p className="tabular text-sm text-[var(--salon-ink)]">
-                          {formatPrice(product.price, currency)}
+                          {formatPrice(product.price, currency, locale)}
                           {!product.available && (
                             <span className="ml-2 text-xs font-medium text-[var(--site-subtle)]">
-                              en rupture
+                              {t("exigences.enRupture")}
                             </span>
                           )}
                         </p>

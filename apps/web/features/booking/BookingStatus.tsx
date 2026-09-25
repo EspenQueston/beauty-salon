@@ -37,7 +37,7 @@
  * cette page pour vérifier une chose, pas pour la lire.
  */
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Lien } from "@/features/ui/Lien";
 
@@ -151,7 +151,7 @@ function bannieres(
       tone: "wait",
     },
     refused: {
-      title: "Versement introuvable",
+      title: t("suivi.versementIntrouvable"),
       body: t("suivi.refuseCorps"),
       tone: "warn",
     },
@@ -207,6 +207,7 @@ export function BookingStatus({
   token: string;
 }) {
   const t = useTranslations("reservation");
+  const locale = useLocale();
   const [state, setState] = useState<StatusState | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -220,7 +221,7 @@ export function BookingStatus({
     let cancelled = false;
 
     browserRequest<StatusState>(
-      `/api/v1/public/booking-status?token=${encodeURIComponent(token)}`,
+      `/api/v1/public/booking-status?token=${encodeURIComponent(token)}&lang=${locale}`,
       host,
     )
       .then((data) => !cancelled && setState(data))
@@ -229,7 +230,7 @@ export function BookingStatus({
     return () => {
       cancelled = true;
     };
-  }, [host, token, round]);
+  }, [host, token, round, locale]);
 
   if (failed) {
     return (
@@ -261,7 +262,7 @@ export function BookingStatus({
   const banner =
     table[banniere(payment.state, booking.status)] ?? table.payable;
   const start = new Date(booking.starts_at);
-  const when = new Intl.DateTimeFormat("fr-FR", {
+  const when = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -329,19 +330,20 @@ export function BookingStatus({
             )}
             <Pair
               label={t("total")}
-              value={formatPrice(booking.total_amount, salon.currency)}
+              value={formatPrice(booking.total_amount, salon.currency, locale)}
               strong
             />
             {Number(payment.deposit_amount) > 0 && (
               <Pair
                 label={
-                  payment.deposit_paid ? t("suivi.acompteRecu") : "Acompte"
+                  payment.deposit_paid ? t("suivi.acompteRecu") : t("suivi.acompte")
                 }
                 value={formatPrice(
                   payment.deposit_paid
                     ? payment.deposit_received
                     : payment.deposit_amount,
                   salon.currency,
+                  locale,
                 )}
               />
             )}
@@ -383,7 +385,7 @@ export function BookingStatus({
                     {item.name} × {item.quantity}
                   </span>
                   <span className="tabular shrink-0">
-                    {formatPrice(item.total, salon.currency)}
+                    {formatPrice(item.total, salon.currency, locale)}
                   </span>
                 </li>
               ))}
@@ -416,7 +418,7 @@ export function BookingStatus({
               >
                 <SalonIcon name="sparkle" className="size-4" />
                 {payment.state === "refused"
-                  ? "Renvoyer ma preuve"
+                  ? t("suivi.renvoyerPreuve")
                   : t("suivi.reglerAcompte")}
               </Lien>
             )}
@@ -457,7 +459,7 @@ export function BookingStatus({
                 className={GHOST}
               >
                 <SalonIcon name="phone" className="size-4" />
-                Appeler
+                {t("suivi.appeler")}
               </a>
             )}
           </div>

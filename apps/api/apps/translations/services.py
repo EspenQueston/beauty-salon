@@ -121,6 +121,7 @@ def traduire_le_salon(tenant, langue: str) -> int:
     un deuxieme passage ne refait que ce qui a change depuis le premier.
     """
     from apps.catalog.models import Service, ServiceCategory, ServiceOption
+    from apps.payments.models import PaymentChannel
     from apps.salons.models import SalonProfile
     from apps.staff.models import StaffMember
     from apps.store.models import Product, Requirement
@@ -135,6 +136,7 @@ def traduire_le_salon(tenant, langue: str) -> int:
             StaffMember,
             Product,
             Requirement,
+            PaymentChannel,
         ):
             for objet in modele.objects.all():
                 total += traduire(objet, langue)

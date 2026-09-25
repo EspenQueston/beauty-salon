@@ -35,6 +35,7 @@ from apps.customers.views import CustomerViewSet
 from apps.finance.views import TransactionViewSet
 from apps.media.views import MediaAssetViewSet, PrivateMediaView
 from apps.notifications.views import (
+    NotificationEssaiView,
     NotificationView,
     PlatformNotificationView,
     PushView,
@@ -201,6 +202,12 @@ urlpatterns = [
     # Cloche du tableau de bord. GET pour lire, POST pour marquer lu :
     # deux gestes sur la meme boite, pas deux ressources.
     path("notifications", NotificationView.as_view(), name="notifications"),
+    # Un essai, envoye tout de suite sur les appareils de qui le demande.
+    path(
+        "notifications/essai",
+        NotificationEssaiView.as_view(),
+        name="notification-essai",
+    ),
     # La meme boite, cote plateforme. Route distincte et non un drapeau
     # sur la precedente : ce qui separe les donnees d'un salon de celles
     # de la plateforme ne doit pas tenir dans un `if`.

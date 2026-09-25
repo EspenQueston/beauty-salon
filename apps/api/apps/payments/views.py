@@ -11,6 +11,9 @@ from apps.common.permissions import IsTenantResolved
 from apps.common.viewsets import TenantModelViewSet
 from apps.media.models import MediaAsset
 from apps.scheduling.models import Booking
+from apps.translations.booking import public_booking_labels
+from apps.translations.langue import table_pour
+from apps.translations.serializers import Traduit
 
 from . import services
 from .models import DepositProof, PaymentChannel
@@ -34,7 +37,8 @@ EVERYONE = (*FRONT_DESK, Membership.Role.STAFF)
 # ---------------------------------------------------------------------------
 
 
-class PaymentChannelSerializer(serializers.ModelSerializer):
+class PaymentChannelSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("instructions",)
     kind_label = serializers.CharField(source="get_kind_display", read_only=True)
     qr_url = serializers.SerializerMethodField()
     usable = serializers.BooleanField(read_only=True)
@@ -106,6 +110,8 @@ class PublicPaymentView(APIView):
 
         channels = services.channels_for(request.tenant_id)
         proof = getattr(booking, "deposit_proof", None)
+        language = request.query_params.get("lang", booking.language)
+        labels = public_booking_labels(booking, language)
 
         return Response(
             {
@@ -121,14 +127,19 @@ class PublicPaymentView(APIView):
                 "status_token": status_token(booking),
                 "booking": {
                     "id": str(booking.id),
-                    "service_name": booking.service_name,
+                    "service_name": labels["service_name"],
                     "starts_at": booking.starts_at,
                     "status": booking.status,
                     "deposit_amount": str(booking.deposit_amount),
                     "total_amount": str(booking.total_amount),
                 },
                 "channels": PaymentChannelSerializer(
-                    channels, many=True, context={"request": request}
+                    channels,
+                    many=True,
+                    context={
+                        "request": request,
+                        "traductions": table_pour(request, booking.tenant_id),
+                    },
                 ).data,
                 "proof": (
                     {
@@ -216,12 +227,14 @@ class PublicBookingStatusView(APIView):
 
         state = services.payment_state(booking)
         proof = getattr(booking, "deposit_proof", None)
+        language = request.query_params.get("lang", booking.language)
+        labels = public_booking_labels(booking, language)
 
         return Response(
             {
                 "booking": {
                     "id": str(booking.id),
-                    "service_name": booking.service_name,
+                    "service_name": labels["service_name"],
                     "starts_at": booking.starts_at,
                     "ends_at": booking.ends_at,
                     "status": booking.status,
@@ -231,8 +244,8 @@ class PublicBookingStatusView(APIView):
                     ),
                     "customer_name": booking.customer.full_name,
                     "total_amount": str(booking.total_amount),
-                    "options_snapshot": booking.options_snapshot,
-                    "items_snapshot": booking.items_snapshot,
+                    "options_snapshot": labels["options_snapshot"],
+                    "items_snapshot": labels["items_snapshot"],
                     "travel_zone_name": booking.travel_zone_name,
                     "address": booking.address,
                     "cancellation_reason": booking.cancellation_reason,

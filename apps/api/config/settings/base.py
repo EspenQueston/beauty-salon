@@ -44,6 +44,14 @@ APP_BASE_URL = env("APP_BASE_URL", default=f"http://app.{PLATFORM_DOMAIN}:{WEB_P
 # racine de l'API, qui ne rend aucune page.
 SITE_BASE_URL = env("SITE_BASE_URL", default=f"http://{PLATFORM_DOMAIN}:{WEB_PORT}")
 
+# Adresse publique de l'API, la ou les medias sont servis. Sert a rendre
+# absolue l'adresse d'une image qui ne l'est pas deja : une notification est
+# affichee par le systeme, hors de toute page, et une adresse relative n'y
+# designe rien. En production, `MEDIA_URL` est deja absolue.
+API_BASE_URL = env(
+    "API_BASE_URL", default=f"http://{PLATFORM_DOMAIN}:{env('API_PORT', default='8001')}"
+)
+
 # Duree de validite des liens de reinitialisation de mot de passe.
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24
 
@@ -341,6 +349,10 @@ REST_FRAMEWORK = {
         "signup": "5/hour",
         "password_reset": "5/hour",
         "invitation_accept": "10/hour",
+        # Notification d'essai : chaque clic sollicite les services de push
+        # de Google, Mozilla ou Apple. Dix par heure suffisent a regler un
+        # appareil ; au-dela, c'est un clic en boucle.
+        "notification_essai": "10/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

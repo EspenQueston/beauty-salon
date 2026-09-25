@@ -47,6 +47,13 @@ TTL = 12 * 3600
 # comme passager.
 DISPARUS = frozenset({404, 410})
 
+# Delai maximal d'un depot, en secondes. Sans lui, pywebpush transmet
+# `timeout=None` a sa requete HTTP : un service de push qui ne repond plus
+# retiendrait pour toujours l'un des deux processus du worker Celery — et,
+# derriere lui, tous les e-mails de confirmation en file. Passe ce delai,
+# l'echec est traite comme passager et la tache reessaie plus tard.
+DELAI = 10
+
 
 class NonConfigure(RuntimeError):
     """Les cles VAPID manquent : aucun envoi n'est possible."""
@@ -100,6 +107,7 @@ def envoyer(abonnement, charge: dict) -> bool:
             # element que la norme nous demande de fournir.
             vapid_claims={"sub": settings.VAPID_SUBJECT},
             ttl=TTL,
+            timeout=DELAI,
         )
         return True
 

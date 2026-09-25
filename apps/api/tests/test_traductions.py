@@ -36,10 +36,14 @@ raison qui n'a rien à voir avec le code.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
-from apps.catalog.models import Service, ServiceCategory
+from apps.catalog.models import Service, ServiceCategory, ServiceOption
 from apps.staff.models import StaffMember
+from apps.store.models import Product, Requirement, RequirementProduct
+from apps.translations.booking import public_booking_labels
 from apps.translations.models import Origin, Translation, empreinte
 from apps.translations.registry import TRADUISIBLES
 from apps.translations.services import (
@@ -283,6 +287,65 @@ def test_l_api_publique_sert_la_langue_demandee(api_client, tenant_a, catalogue)
     assert anglais["name"] == francais["name"], "le nom du salon est une marque"
     assert anglais["currency"] == francais["currency"]
 
+
+@pytest.mark.django_db
+def test_l_api_traduit_options_et_fournitures(api_client, tenant_a, catalogue):
+    """Le parcours de réservation lit aussi les champs imbriqués du catalogue."""
+    _, service = catalogue
+    with as_tenant(tenant_a):
+        option = ServiceOption.objects.create(
+            tenant=tenant_a,
+            service=service,
+            name="Mèches longues",
+            description="Jusqu'à la taille",
+        )
+        requirement = Requirement.objects.create(
+            tenant=tenant_a,
+            service=service,
+            label="Trois paquets de mèches",
+            detail="Couleur au choix",
+        )
+        product = Product.objects.create(
+            tenant=tenant_a,
+            name="Mèches naturelles",
+            description="Paquet de vingt pouces",
+            price="2000.00",
+        )
+        RequirementProduct.objects.create(
+            tenant=tenant_a, requirement=requirement, product=product
+        )
+        for objet in (service, option, requirement, product):
+            traduire(objet, "en")
+
+    response = api_client.get(
+        "/api/v1/public/salon",
+        {"lang": "en"},
+        HTTP_X_TENANT_HOST=salon_host(tenant_a.slug),
+    )
+    assert response.status_code == 200
+    translated = _prestation(response.json(), "Pose de gel")
+    assert translated["options"][0]["name"] == "[en] Mèches longues"
+    assert translated["options"][0]["description"] == "[en] Jusqu'à la taille"
+    supply = translated["requirements"][0]
+    assert supply["label"] == "[en] Trois paquets de mèches"
+    assert supply["detail"] == "[en] Couleur au choix"
+    assert supply["products"][0]["name"] == "[en] Mèches naturelles"
+    assert supply["products"][0]["description"] == "[en] Paquet de vingt pouces"
+
+    snapshot = SimpleNamespace(
+        tenant_id=tenant_a.id,
+        service=service,
+        service_id=service.id,
+        service_name=service.name,
+        options_snapshot=[{"name": option.name, "price": "0.00", "minutes": 0}],
+        items_snapshot=[{"name": product.name, "quantity": 1, "total": "2000.00"}],
+    )
+    with as_tenant(tenant_a):
+        labels = public_booking_labels(snapshot, "en")
+    assert labels["service_name"] == "[en] Pose de gel"
+    assert labels["options_snapshot"][0]["name"] == "[en] Mèches longues"
+    assert labels["items_snapshot"][0]["name"] == "[en] Mèches naturelles"
+    assert snapshot.options_snapshot[0]["name"] == "Mèches longues"
 
 @pytest.mark.django_db
 def test_une_langue_inconnue_rend_le_francais(api_client, tenant_a, catalogue):

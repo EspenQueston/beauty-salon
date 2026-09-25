@@ -141,6 +141,7 @@ export function Notifications({ tenantId }: { tenantId: string }) {
   const [attention, setAttention] = useState<Attention | null>(null);
   const [push, setPush] = useState<EtatPush | null>(null);
   const [occupe, setOccupe] = useState(false);
+  const [essai, setEssai] = useState<Essai | null>(null);
   const panneau = useRef<HTMLDivElement>(null);
   const bouton = useRef<HTMLButtonElement>(null);
   const maintenant = useNow();
@@ -292,6 +293,41 @@ export function Notifications({ tenantId }: { tenantId: string }) {
     ).catch(charger);
   }
 
+  /*
+    Une notification d'essai, sur les appareils de la personne.
+
+    Sans elle, on ne découvrait l'allure d'une alerte — ou le fait que le
+    navigateur les mettait en sourdine — qu'à la première vraie réservation.
+    Le serveur l'envoie tout de suite et dit combien d'appareils l'ont
+    acceptée : la réponse arrive avant la notification elle-même.
+  */
+  async function envoyerEssai() {
+    setEssai({ etat: "envoi", texte: "" });
+    try {
+      const reponse = await dashboardFetch<{ envoyes: number; echecs: number }>(
+        "/api/v1/notifications/essai",
+        { method: "POST" },
+        tenantId,
+      );
+      setEssai(
+        reponse.envoyes > 0
+          ? {
+              etat: "fait",
+              texte:
+                reponse.envoyes > 1
+                  ? `Envoyée sur ${reponse.envoyes} appareils. Elle arrive dans quelques secondes.`
+                  : "Envoyée. Elle arrive dans quelques secondes.",
+            }
+          : { etat: "echec", texte: "Aucun appareil n'a accepté la notification." },
+      );
+    } catch (erreur) {
+      setEssai({
+        etat: "echec",
+        texte: erreur instanceof Error ? erreur.message : "Envoi impossible.",
+      });
+    }
+  }
+
   async function basculerPush() {
     setOccupe(true);
     try {
@@ -426,6 +462,8 @@ export function Notifications({ tenantId }: { tenantId: string }) {
               actifCoteServeur={boite?.push_actif ?? false}
               occupe={occupe}
               onBasculer={basculerPush}
+              essai={essai}
+              onEssayer={envoyerEssai}
             />
           </div>
         </>
@@ -600,16 +638,22 @@ function Fil({
  * proposer. Un bouton absent laisse chercher ; un bouton qui ne fait rien
  * fait accuser le produit.
  */
+type Essai = { etat: "envoi" | "fait" | "echec"; texte: string };
+
 function ReglagePush({
   etat,
   actifCoteServeur,
   occupe,
   onBasculer,
+  essai,
+  onEssayer,
 }: {
   etat: EtatPush | null;
   actifCoteServeur: boolean;
   occupe: boolean;
   onBasculer: () => void;
+  essai: Essai | null;
+  onEssayer: () => void;
 }) {
   if (!actifCoteServeur || etat === null || etat === "desactive") return null;
 
@@ -637,27 +681,57 @@ function ReglagePush({
   };
 
   const { texte, action } = messages[etat];
+  const envoi = essai?.etat === "envoi";
 
   return (
-    <div className="flex items-center gap-3 border-t border-line bg-surface-muted/50 px-4 py-3">
-      <Icon
-        name="bell"
-        aria-hidden
-        className={`size-4 shrink-0 ${etat === "pret" ? "text-success" : "text-muted"}`}
-      />
-      <p className="min-w-0 flex-1 text-[0.72rem] leading-snug text-muted">
-        {texte}
+    <div className="border-t border-line bg-surface-muted/50 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <Icon
+          name="bell"
+          aria-hidden
+          className={`size-4 shrink-0 ${etat === "pret" ? "text-success" : "text-muted"}`}
+        />
+        <p className="min-w-0 flex-1 text-[0.72rem] leading-snug text-muted">
+          {texte}
+        </p>
+        {/*
+          « Essayer » avant « Désactiver » : c'est le geste qu'on fait juste
+          après avoir activé, et le plus fréquent des deux.
+        */}
+        {etat === "pret" && (
+          <button
+            type="button"
+            onClick={onEssayer}
+            disabled={envoi || occupe}
+            className="shrink-0 rounded-lg bg-ink px-2.5 py-1 text-[0.7rem] font-semibold text-surface transition hover:opacity-90 disabled:opacity-50"
+          >
+            {envoi ? "Envoi…" : "Essayer"}
+          </button>
+        )}
+        {action && (
+          <button
+            type="button"
+            onClick={onBasculer}
+            disabled={occupe}
+            className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[0.7rem] font-semibold text-ink transition hover:bg-surface-hover disabled:opacity-50"
+          >
+            {occupe ? "…" : action}
+          </button>
+        )}
+      </div>
+      {/*
+        Le résultat de l'essai, annoncé aux lecteurs d'écran. Une réussite
+        dit « elle arrive » et non « elle est arrivée » : le serveur sait
+        que le service de push l'a acceptée, pas que le téléphone l'affiche.
+      */}
+      <p
+        aria-live="polite"
+        className={`text-[0.7rem] leading-snug empty:hidden ${
+          essai?.etat === "echec" ? "text-danger" : "text-success"
+        } ${essai && essai.texte ? "mt-2 pl-7" : ""}`}
+      >
+        {essai?.texte ?? ""}
       </p>
-      {action && (
-        <button
-          type="button"
-          onClick={onBasculer}
-          disabled={occupe}
-          className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[0.7rem] font-semibold text-ink transition hover:bg-surface-hover disabled:opacity-50"
-        >
-          {occupe ? "…" : action}
-        </button>
-      )}
     </div>
   );
 }

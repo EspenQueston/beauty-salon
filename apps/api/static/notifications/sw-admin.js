@@ -37,41 +37,88 @@ self.addEventListener("activate", (evenement) =>
 );
 
 self.addEventListener("push", (evenement) => {
-  let donnees = REPLI;
+  let donnees = lire({});
   try {
-    if (evenement.data) {
-      const lu = evenement.data.json();
-      donnees = {
-        titre: lu.titre || REPLI.titre,
-        corps: lu.corps || "",
-        lien: lu.lien || REPLI.lien,
-      };
-    }
+    if (evenement.data) donnees = lire(evenement.data.json());
   } catch {
     // Charge illisible : on affiche le repli. Ne rien montrer ferait perdre
     // au site le droit d'envoyer des notifications, définitivement.
   }
 
-  evenement.waitUntil(
-    Promise.all([
-      prevenirLesOnglets(),
-      self.registration.showNotification(donnees.titre, {
-        body: donnees.corps,
-        icon: "/static/notifications/icone-192.png",
-        badge: "/static/notifications/badge.png",
-        lang: "fr",
-        data: { lien: donnees.lien },
-      }),
-    ]),
-  );
+  evenement.waitUntil(Promise.all([prevenirLesOnglets(), montrer(donnees)]));
 });
+
+/*
+ * Lecture et affichage : la même forme que le service worker du tableau de
+ * bord (apps/web/public/sw.js), qui en explique chaque champ. Les deux
+ * fichiers vivent sur deux sites distincts et ne peuvent pas partager de
+ * code ; ils doivent en revanche rester d'accord sur la charge, que le
+ * serveur compose une seule fois (apps/notifications/habillage.py).
+ */
+function lire(lu) {
+  const chaine = (valeur) => (typeof valeur === "string" ? valeur : "");
+  const actions = Array.isArray(lu.actions)
+    ? lu.actions
+        .filter((a) => a && chaine(a.id) && chaine(a.titre) && chaine(a.lien))
+        .map((a) => ({ id: a.id, titre: a.titre, lien: a.lien }))
+    : [];
+
+  return {
+    titre: chaine(lu.titre) || REPLI.titre,
+    corps: chaine(lu.corps) || (lu.titre ? "" : REPLI.corps),
+    lien: chaine(lu.lien) || REPLI.lien,
+    image: adresseWeb(lu.image),
+    icone: adresseWeb(lu.icone),
+    horodatage: Number.isFinite(lu.horodatage) ? lu.horodatage : Date.now(),
+    actions,
+  };
+}
+
+function adresseWeb(valeur) {
+  if (typeof valeur !== "string" || !valeur) return "";
+  try {
+    const url = new URL(valeur, self.location.origin);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function montrer(donnees) {
+  const maximum = (self.Notification && self.Notification.maxActions) || 2;
+  const actions = donnees.actions.slice(0, maximum);
+
+  const options = {
+    body: donnees.corps,
+    // Le logo du salon dont il est question, s'il en a un : on sait d'un
+    // coup d'oeil de qui l'on parle.
+    icon: donnees.icone || "/static/notifications/icone-192.png",
+    badge: "/static/notifications/badge.png",
+    lang: "fr",
+    timestamp: donnees.horodatage,
+    actions: actions.map((a) => ({ action: a.id, title: a.titre })),
+    data: {
+      lien: donnees.lien,
+      liens: Object.fromEntries(actions.map((a) => [a.id, a.lien])),
+    },
+  };
+  if (donnees.image) options.image = donnees.image;
+
+  return self.registration.showNotification(donnees.titre, options);
+}
 
 self.addEventListener("notificationclick", (evenement) => {
   evenement.notification.close();
 
+  // Le bouton touché décide de la destination, et jamais hors de ce site.
+  const donnees = evenement.notification.data || {};
   const lien =
-    (evenement.notification.data && evenement.notification.data.lien) || "/";
-  const cible = new URL(lien, self.location.origin).href;
+    (evenement.action && donnees.liens && donnees.liens[evenement.action]) ||
+    donnees.lien ||
+    "/";
+  let url = new URL(lien, self.location.origin);
+  if (url.origin !== self.location.origin) url = new URL("/", self.location.origin);
+  const cible = url.href;
 
   evenement.waitUntil(
     self.clients

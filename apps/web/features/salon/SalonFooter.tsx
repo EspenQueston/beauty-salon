@@ -32,8 +32,8 @@ import { useTranslations } from "next-intl";
 
 import { Lien } from "@/features/ui/Lien";
 
-import { platformUrl } from "@/lib/site";
 import type { PublicSalon } from "@/lib/types";
+import { BeautySalonCredit } from "./BeautySalonCredit";
 import { contactLinks, mapsHref, socialLinks } from "./contact";
 import { SalonIcon } from "./icons";
 import { SalonLogo } from "./SalonLogo";
@@ -106,7 +106,7 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
     .join(" · ");
 
   return (
-    <footer className="mt-20 px-3 pb-8 sm:px-5 sm:pb-10">
+    <footer className="mt-20 px-3 pb-28 sm:px-5 sm:pb-28">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-[var(--site-line)] bg-[var(--site-surface)] px-5 py-10 sm:rounded-[2rem] sm:px-8 sm:py-12 lg:px-12">
         {/*
           Le halo, en deux foyers venus du bas.
@@ -225,6 +225,9 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
             ))}
           </nav>
         </div>
+        <div className="relative mt-8 flex justify-center border-t border-[var(--site-line)] pt-5 sm:mt-10 sm:pt-6">
+          <BeautySalonCredit />
+        </div>
       </div>
 
       {/* ── La mention légale, hors du panneau ─────────────────────── */}
@@ -234,19 +237,10 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
         un texte de cette taille. La mention doit rester secondaire, pas
         devenir décorative.
       */}
-      <div className="mt-6 flex flex-col items-center gap-1 text-center text-xs text-[var(--site-muted)] sm:flex-row sm:justify-center sm:gap-2 sm:text-[0.8rem]">
+      <div className="mt-5 text-center text-xs text-[var(--site-muted)] sm:text-[0.8rem]">
         <span>
-          © {new Date().getFullYear()} {salon.name}. Tous droits réservés.
+          © {new Date().getFullYear()} {salon.name}. {t("tousDroitsReserves")}
         </span>
-        <span aria-hidden className="hidden opacity-45 sm:inline">
-          ·
-        </span>
-        <a
-          href={platformUrl}
-          className="underline-offset-4 transition hover:text-[var(--site-muted)] hover:underline"
-        >
-          {t("propulsePar")}
-        </a>
       </div>
     </footer>
   );

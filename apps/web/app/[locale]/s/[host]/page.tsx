@@ -1,11 +1,14 @@
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
-
-import { Lien } from "@/features/ui/Lien";
 import { notFound } from "next/navigation";
 
 import { ANCRE_CONTENU, Hero } from "@/features/salon/Hero";
 import { ServiceCard } from "@/features/salon/ServiceCard";
+import {
+  VitrinePrestations,
+  type CarteRendue,
+} from "@/features/salon/VitrinePrestations";
+import { slugCategorie, type CategorieFiltre } from "@/features/salon/catalogue";
 import { TeamShowcase } from "@/features/salon/TeamShowcase";
 import { GalleryGrid } from "@/features/salon/GalleryGrid";
 import { SalonIcon, categoryIcon } from "@/features/salon/icons";
@@ -84,6 +87,49 @@ export default async function SalonHome({ params }: Props) {
       id: service.id,
       theme: themeFromCategory(category.name),
     })),
+  );
+
+  /*
+   * Le filtre par catégorie de la section prestations.
+   *
+   * Quatre cartes au plus par catégorie, comme la sélection en vedette, et
+   * leurs illustrations réparties catégorie par catégorie : c'est au sein
+   * d'une même grille qu'une image répétée se remarque.
+   */
+  const categoriesAvecPrestations = salon.categories.filter(
+    (category) => category.services.length > 0,
+  );
+  const categoriesFiltre: CategorieFiltre[] = categoriesAvecPrestations.map(
+    (category) => ({
+      id: category.id,
+      slug: slugCategorie(category.name),
+      nom: category.name,
+      icone: categoryIcon(category.name),
+      compte: category.services.length,
+    }),
+  );
+  const parCategorie: Record<string, CarteRendue[]> = Object.fromEntries(
+    categoriesAvecPrestations.map((category) => {
+      const quatre = category.services.slice(0, 4);
+      const theme = themeFromCategory(category.name);
+      const illustrations = serviceIllustrations(
+        quatre.map((service) => ({ id: service.id, theme })),
+      );
+      return [
+        slugCategorie(category.name),
+        quatre.map((service) => ({
+          id: service.id,
+          carte: (
+            <ServiceCard
+              service={service}
+              icon={categoryIcon(category.name)}
+              theme={theme}
+              fallback={illustrations.get(service.id)}
+            />
+          ),
+        })),
+      ];
+    }),
   );
 
   /*
@@ -188,47 +234,29 @@ export default async function SalonHome({ params }: Props) {
 
               Quatre prestations en vedette ne disent pas l'étendue du
               catalogue : un salon qui fait aussi les ongles et le maquillage
-              passait pour un salon de tresses. Les puces le disent en une
-              ligne, avec le compte de chacune, et mènent au catalogue
-              complet. C'est aussi la seule navigation de cette section pour
-              qui cherche une prestation précise.
+              passait pour un salon de tresses. La rangée de catégories le dit
+              en une ligne, avec le compte de chacune — et, touchée, montre
+              sur place les prestations de la famille choisie au lieu
+              d'envoyer en haut du catalogue (voir `VitrinePrestations`).
             */}
-            {salon.categories.length > 1 && (
-              <Reveal>
-                <ul className="mb-5 flex flex-wrap gap-2">
-                  {salon.categories.map((category) => (
-                    <li key={category.id}>
-                      <Lien
-                        href="/prestations"
-                        className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-1.5 text-xs font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)] sm:text-sm"
-                      >
-                        <SalonIcon
-                          name={categoryIcon(category.name)}
-                          className="size-3.5 text-[var(--salon-ink)]"
-                        />
-                        {category.name}
-                        <span className="tabular text-[var(--site-subtle)]">
-                          {category.services.length}
-                        </span>
-                      </Lien>
-                    </li>
-                  ))}
-                </ul>
-              </Reveal>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {featured.map(({ service, category }, index) => (
-                <Reveal key={service.id} delay={Math.min(index, 5) * 80}>
-                  <ServiceCard
-                    service={service}
-                    icon={categoryIcon(category.name)}
-                    theme={themeFromCategory(category.name)}
-                    fallback={visuels.get(service.id)}
-                  />
-                </Reveal>
-              ))}
-            </div>
+            <VitrinePrestations
+              categories={categoriesFiltre}
+              total={totalServices}
+              vedette={featured.map(({ service, category }, index) => ({
+                id: service.id,
+                carte: (
+                  <Reveal delay={Math.min(index, 5) * 80}>
+                    <ServiceCard
+                      service={service}
+                      icon={categoryIcon(category.name)}
+                      theme={themeFromCategory(category.name)}
+                      fallback={visuels.get(service.id)}
+                    />
+                  </Reveal>
+                ),
+              }))}
+              parCategorie={parCategorie}
+            />
           </section>
         ) : (
           <Reveal as="section" className="pt-4">
