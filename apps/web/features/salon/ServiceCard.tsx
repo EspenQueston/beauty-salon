@@ -24,6 +24,7 @@ import { SalonIcon, type SalonIconName } from "./icons";
 import { Relief } from "@/features/ui/Relief";
 import { Pill, SURFACE } from "./ui";
 import { photo, TAILLES } from "./images";
+import { TeinteDeMarque } from "./Teinte";
 
 export function ServiceCard({
   service,
@@ -69,7 +70,7 @@ export function ServiceCard({
         className={`${SURFACE} group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-[0_14px_32px_-10px_rgb(23_23_28_/_0.22)]`}
       >
         {service.image ? (
-          <span className="block aspect-[16/10] overflow-hidden bg-black/[0.04]">
+          <span className="relative block aspect-[16/10] overflow-hidden bg-black/[0.04]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               {...photo(service.image, TAILLES.cartes)}
@@ -77,6 +78,7 @@ export function ServiceCard({
               loading="lazy"
               className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
+            <TeinteDeMarque />
           </span>
         ) : (
           <span className="relative block aspect-[16/10] overflow-hidden bg-black/[0.04]">
@@ -92,11 +94,7 @@ export function ServiceCard({
             />
             {/* Teinte de marque : l'illustration reste au service du salon,
                 elle ne prend pas le dessus sur son identité. */}
-            <span
-              aria-hidden
-              className="absolute inset-0 opacity-30 mix-blend-multiply"
-              style={{ background: "var(--salon-primary)" }}
-            />
+            <TeinteDeMarque />
             <span
               aria-hidden
               className="absolute bottom-2 left-2 flex size-8 items-center justify-center rounded-lg bg-white/85 text-[var(--salon-ink-white)] backdrop-blur"

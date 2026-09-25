@@ -57,6 +57,7 @@ import { SalonLogo } from "@/features/salon/SalonLogo";
 import { BeautySalonCredit } from "@/features/salon/BeautySalonCredit";
 import { contactLinks, mapsHref, whatsappHref } from "@/features/salon/contact";
 import { photo, TAILLES } from "@/features/salon/images";
+import { TeinteDeMarque } from "@/features/salon/Teinte";
 
 /**
  * Fenêtre demandée au serveur.
@@ -490,7 +491,7 @@ function TrustPanel({
         {preview.length > 0 && (
           <ul className="mt-4 grid grid-cols-3 gap-1.5">
             {preview.map((asset) => (
-              <li key={asset.id}>
+              <li key={asset.id} className="relative overflow-hidden rounded-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   {...photo(asset, TAILLES.vignette)}
@@ -498,6 +499,7 @@ function TrustPanel({
                   loading="lazy"
                   className="aspect-square w-full rounded-lg object-cover"
                 />
+                <TeinteDeMarque />
               </li>
             ))}
           </ul>
@@ -794,13 +796,7 @@ function ServiceThumb({ service }: { service: PublicService }) {
         loading="lazy"
         className="size-full object-cover"
       />
-      {!service.image && (
-        <span
-          aria-hidden
-          className="absolute inset-0 opacity-25 mix-blend-multiply"
-          style={{ background: "var(--salon-primary)" }}
-        />
-      )}
+      <TeinteDeMarque />
     </span>
   );
 }

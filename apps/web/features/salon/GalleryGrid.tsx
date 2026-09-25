@@ -24,6 +24,7 @@ import { Reveal } from "@/features/ui/Reveal";
 import { isVideo, type MediaAsset } from "@/lib/types";
 import { SalonIcon } from "./icons";
 import { photo, TAILLES } from "./images";
+import { TeinteDeMarque } from "./Teinte";
 
 /** Motif de tailles répété : la 1re et la 6e occupent deux colonnes. */
 function spanOf(index: number): string {
@@ -132,15 +133,18 @@ export function GalleryGrid({
                     </span>
                   </>
                 ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    {...photo(asset, TAILLES.grille)}
-                    alt={
-                      asset.alt_text || t("galerie.alt", { salon: salonName })
-                    }
-                    loading="lazy"
-                    className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      {...photo(asset, TAILLES.grille)}
+                      alt={
+                        asset.alt_text || t("galerie.alt", { salon: salonName })
+                      }
+                      loading="lazy"
+                      className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <TeinteDeMarque />
+                  </>
                 )}
               </span>
 
