@@ -11,12 +11,6 @@
   filter: brightness(1.45) saturate(0.9);
 }
 
-/* The footer is dark in both UI modes. Brighten the artwork itself rather
-   than putting a white plate behind it. */
-.platform-logo-footer {
-  filter: brightness(1.7) saturate(0.85) drop-shadow(0 2px 10px rgb(220 103 150 / 0.18));
-}
-
 /*
  * Fondations visuelles.
  *

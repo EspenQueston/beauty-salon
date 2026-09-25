@@ -47,11 +47,43 @@ def upload_to(instance, filename: str) -> str:
 
     Le tenant reste dans le chemin des deux cotes : un fichier mal reference
     reste tracable.
+
+    -----------------------------------------------------------------------
+    Pourquoi l'extension ne vient jamais du nom televerse
+    -----------------------------------------------------------------------
+
+    Le serveur de fichiers deduit le type servi de l'extension. Le type
+    verifie a l'envoi est celui qu'annonce le navigateur ; le nom, lui, est
+    libre. `page.html` annonce `image/png` passait donc la verification et
+    sortait en page HTML sur le domaine de l'API — celui de la session et de
+    l'administration. L'extension est ici tiree du type verifie, et le nom
+    reduit a des caracteres sans danger.
     """
-    base = f"tenants/{instance.tenant_id}/media/{instance.id}/{filename}"
+    nom = f"{_radical(filename)}{EXTENSIONS.get((instance.content_type or '').lower(), '.bin')}"
+    base = f"tenants/{instance.tenant_id}/media/{instance.id}/{nom}"
     if instance.visibility == MediaAsset.Visibility.PRIVATE:
         return f"{PRIVATE_PREFIX}/{base}"
     return base
+
+
+# L'extension de chaque type accepte : c'est elle qui decidera du type servi.
+EXTENSIONS = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "video/mp4": ".mp4",
+    "video/webm": ".webm",
+}
+
+
+def _radical(filename: str) -> str:
+    """Le nom sans extension, reduit a des lettres, chiffres, `-` et `_`."""
+    import os
+    import re
+
+    radical = os.path.splitext(os.path.basename(filename or ""))[0]
+    radical = re.sub(r"[^A-Za-z0-9_-]+", "-", radical).strip("-")[:60]
+    return radical or "media"
 
 
 class MediaAsset(TenantOwnedModel):

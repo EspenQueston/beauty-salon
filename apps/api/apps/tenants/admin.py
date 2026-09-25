@@ -72,6 +72,18 @@ class TenantAdmin(admin.ModelAdmin):
         # crée dès la première sauvegarde.
         if not change:
             ensure_platform_domain(obj)
+            # Et son essai, comme a l'inscription : un salon cree ici sans
+            # abonnement echapperait aux regles d'acces.
+            from apps.billing.services import BillingError, start_trial
+
+            try:
+                start_trial(obj)
+            except BillingError:
+                self.message_user(
+                    request,
+                    "Aucune offre d'essai n'est configurée : lancez bootstrap_platform.",
+                    messages.WARNING,
+                )
 
     @admin.action(description="Valider et publier le mini-site")
     def action_publish(self, request, queryset):

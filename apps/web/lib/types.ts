@@ -174,6 +174,13 @@ export interface PublicSalon {
   travel_zones: TravelZone[];
   gallery: MediaAsset[];
   rating: RatingSummary;
+  /**
+   * Faux quand l'abonnement du salon est échu (grâce passée) ou suspendu.
+   * Le mini-site reste en ligne mais ne propose plus de réserver ; le
+   * serveur refuse de toute façon la réservation. Absent d'une réponse
+   * antérieure à ce champ : traité comme ouvert.
+   */
+  reservations_ouvertes?: boolean;
 }
 
 export interface TravelZone {

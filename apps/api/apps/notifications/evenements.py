@@ -223,6 +223,60 @@ def salon_inscrit(tenant) -> None:
     )
 
 
+def paiement_abonnement_a_verifier(demande) -> None:
+    """Un salon declare avoir paye son abonnement : quelqu'un doit verifier.
+
+    Le lien ouvre la demande dans l'administration, preuve et reference
+    comprises : c'est la seule chose qu'on vient faire en ouvrant ce message.
+    """
+    from django.urls import reverse
+
+    from apps.notifications.tasks import _money
+
+    salon = getattr(demande.tenant, "name", "") or "Un salon"
+    _sans_casser(
+        prevenir_plateforme,
+        genre=Genre.PAIEMENT_ABONNEMENT,
+        titre=f"Paiement à vérifier — {salon}",
+        corps=(
+            f"{demande.plan.name} · {_money(demande.amount, demande.currency)} · "
+            f"{demande.method_label} · réf. {demande.reference}"
+        ),
+        lien=reverse("admin:billing_subscriptionpaymentrequest_change", args=[demande.id]),
+        tenant_id=demande.tenant_id,
+    )
+
+
+def abonnement_decide(demande) -> None:
+    """Le salon apprend ce qu'il est advenu de son paiement.
+
+    Approuve : jusqu'a quand il est couvert, dans son fuseau. Refuse : le
+    motif, tel que l'administrateur l'a ecrit — c'est ce qui lui permet de
+    corriger et de renvoyer.
+    """
+    from apps.notifications.tasks import _money, _tenant_timezone
+
+    if demande.status == demande.Status.APPROVED and demande.period_end:
+        fin = demande.period_end.astimezone(_tenant_timezone(demande.tenant))
+        titre = f"Abonnement actif jusqu'au {fin:%d/%m/%Y}"
+        corps = (
+            f"{demande.plan.name} · paiement de "
+            f"{_money(demande.amount, demande.currency)} vérifié."
+        )
+    else:
+        titre = "Paiement d'abonnement refusé"
+        corps = demande.rejection_reason or "Consultez la page Abonnement."
+
+    _sans_casser(
+        prevenir_salon,
+        demande.tenant_id,
+        genre=Genre.ABONNEMENT,
+        titre=titre,
+        corps=corps[:280],
+        lien="/abonnement",
+    )
+
+
 def incident_facturation(tenant, detail: str) -> None:
     """Une facture n'a pas pu etre honoree."""
     _sans_casser(

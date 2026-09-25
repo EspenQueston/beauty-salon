@@ -121,6 +121,9 @@ MIDDLEWARE = [
     # Doit venir apres AuthenticationMiddleware : la resolution du tenant
     # depend de l'utilisateur connecte pour les routes du dashboard.
     "apps.common.middleware.TenantContextMiddleware",
+    # Apres le tenant : l'abonnement se lit dans le contexte du salon. Voir
+    # apps/billing/middleware.py pour ce qui se ferme sans abonnement actif.
+    "apps.billing.middleware.AccesAbonnementMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -281,6 +284,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.billing.tasks.run_billing_cycle",
         "schedule": crontab(hour=3, minute=0),
     },
+    # Rappels d'abonnement par e-mail : horaires, pour tomber dans la journee
+    # de chaque salon (8 h - 20 h, heure locale) ; jamais deux fois le meme.
+    "subscription-reminders": {
+        "task": "apps.billing.tasks.envoyer_rappels_abonnement",
+        "schedule": crontab(minute=20),
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -353,6 +362,9 @@ REST_FRAMEWORK = {
         # de Google, Mozilla ou Apple. Dix par heure suffisent a regler un
         # appareil ; au-dela, c'est un clic en boucle.
         "notification_essai": "10/hour",
+        # Declaration d'un paiement d'abonnement. Une seule peut attendre a
+        # la fois ; dix envois par heure couvrent les corrections apres refus.
+        "subscription_payment": "10/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

@@ -184,7 +184,15 @@ class PublicSalonView(APIView):
             "traductions": traductions,
         }
 
-        return Response(PublicSalonSerializer(profile, context=context).data)
+        donnees = PublicSalonSerializer(profile, context=context).data
+        # Le mini-site reste en ligne sans abonnement actif, mais ne prend
+        # plus de reservation : il doit le dire, plutot que de laisser une
+        # cliente remplir un formulaire que le serveur refusera. Le refus
+        # lui-meme est applique cote serveur (billing/middleware.py).
+        from apps.billing.services import acces_du_salon
+
+        donnees["reservations_ouvertes"] = acces_du_salon(tenant.id).ouvert
+        return Response(donnees)
 
 
 def _gallery() -> list:

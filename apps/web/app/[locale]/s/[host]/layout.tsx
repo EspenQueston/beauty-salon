@@ -8,6 +8,10 @@ import { adresses, ENTETE_CHEMIN } from "@/i18n/adresses";
 import { estLangue, LANGUE_PAR_DEFAUT } from "@/i18n/langues";
 
 import { BookingBar } from "@/features/salon/BookingBar";
+import {
+  BandeauFermeture,
+  reservationsFermees,
+} from "@/features/salon/ReservationsFermees";
 import { SalonFooter } from "@/features/salon/SalonFooter";
 import { DeviseProvider } from "@/features/salon/Devise";
 import { SalonNav } from "@/features/salon/SalonNav";
@@ -81,6 +85,7 @@ export default async function SiteLayout({ children, params }: Props) {
   const salon = await fetchSalon(host);
   if (!salon) notFound();
 
+  const ferme = reservationsFermees(salon);
   const show = {
     prestations: salon.categories.length > 0,
     realisations: salon.gallery.length > 0,
@@ -113,9 +118,15 @@ export default async function SiteLayout({ children, params }: Props) {
     rappelle : il suffirait qu'on assouplisse un jour la règle des adresses
     pour ouvrir une faille sans que personne ne relie les deux. L'échappement
     est donc fait ici, où l'injection a lieu.
+
+    `JSON.stringify` seul n'y suffit pas : il laisse passer `</script>`, que
+    l'analyseur HTML lit avant le JavaScript. Les chevrons ouvrants sont donc
+    écrits en séquence d'échappement Unicode, que le JavaScript relit à
+    l'identique.
   */
+  const slug = JSON.stringify(salon.slug).replace(/</g, "\\u003c");
   const boot =
-    `(function(){try{var k="beauty-salon.mode."+${JSON.stringify(salon.slug)},v=localStorage.getItem(k);` +
+    `(function(){try{var k="beauty-salon.mode."+${slug},v=localStorage.getItem(k);` +
     `if(v!=="light"&&v!=="dark"){v=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}` +
     `document.currentScript.parentElement.dataset.mode=v}catch(e){}})()`;
 
@@ -146,6 +157,10 @@ export default async function SiteLayout({ children, params }: Props) {
           show={show}
         />
 
+        {/* Réservations fermées : dit dès le haut de page, et la barre de
+            réservation du bas disparaît — elle mènerait à un refus. */}
+        {ferme && <BandeauFermeture />}
+
         {/* La marge basse laisse la place à la barre de réservation fixe. */}
         <div className="flex-1 pb-24">{children}</div>
 
@@ -155,9 +170,11 @@ export default async function SiteLayout({ children, params }: Props) {
       {/* Marqués comme habillage : ils disparaissent sur l'écran
           d'identification, où toute sortie autre que « retour au site »
           fait abandonner le formulaire. */}
-      <div data-site-chrome>
-        <BookingBar salon={salon} />
-      </div>
+      {!ferme && (
+        <div data-site-chrome>
+          <BookingBar salon={salon} />
+        </div>
+      )}
 
       {/* Décalé de la hauteur de la barre de réservation, pour ne pas la
           recouvrir sur mobile. */}

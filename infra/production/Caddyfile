@@ -71,7 +71,17 @@ api.{$PLATFORM_DOMAIN} {
 
 	handle /media/* {
 		root * /srv
-		header Cache-Control "public, max-age=86400"
+		# Des fichiers televerses par les salons, servis sur le domaine de
+		# l'API : celui de la session et de l'administration. Quoi qu'un
+		# fichier contienne, il ne s'execute jamais ici — pas de devinette de
+		# type, et un document ouvert directement est mis en bac a sable,
+		# sans script (c'est la politique des contenus bruts de GitHub). Une
+		# image ou une video integree a une page s'affiche comme avant.
+		header {
+			Cache-Control "public, max-age=86400"
+			X-Content-Type-Options "nosniff"
+			Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+		}
 		file_server
 	}
 

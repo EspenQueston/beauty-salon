@@ -2,7 +2,7 @@ import Image from "next/image";
 
 const SYMBOL = "/icones/beauty-salon-symbol.png";
 const WORDMARK = "/icones/beauty-salon-wordmark.png";
-const LOCKUP = "/icones/beauty-salon-bs-monogram-logo.png";
+const WORDMARK_CLAIR = "/icones/beauty-salon-wordmark-clair.png";
 
 /** The source artwork has transparent margins; these wrappers crop only those margins. */
 export function BeautySalonSymbol({ className = "size-8" }: { className?: string }) {
@@ -36,32 +36,29 @@ export function BeautySalonBrand({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Complete mark for spacious placements, such as the platform footer. */
-export function BeautySalonLockup() {
-  return (
-    <span className="relative inline-block h-12 w-[250px] overflow-hidden sm:w-[270px]" role="img" aria-label="Beauty Salon">
-      <Image
-        src={LOCKUP}
-        alt=""
-        width={2172}
-        height={724}
-        className="platform-logo-footer absolute left-1/2 top-1/2 !h-auto !w-[285px] max-w-none -translate-x-1/2 -translate-y-1/2 sm:!w-[310px]"
-      />
-    </span>
-  );
-}
-
-/** Wordmark alone leaves the mobile footer compact without losing the brand name. */
+/**
+ * The wordmark of the platform footer, which is dark in both UI modes.
+ *
+ * `beauty-salon-wordmark-clair.png` is the same artwork, trimmed to the
+ * letters and recoloured in a lighter tint of the brand hue (343°): the
+ * original berry reaches only 3.0:1 on the footer background (#0b0b10), this
+ * one 7.25:1. The previous version brightened the berry with a CSS filter and
+ * a blurred glow, inside a box narrower than the image — the letters looked
+ * soft and the final "n" was cut off.
+ *
+ * Displayed at its true ratio (1200 × 228), with no crop and no filter: Next
+ * serves 1× and 2× versions of the fixed width, sharp on high-density screens.
+ */
 export function BeautySalonFooterWordmark() {
   return (
-    <span className="relative inline-block h-10 w-48 overflow-hidden" role="img" aria-label="Beauty Salon">
-      <Image
-        src={WORDMARK}
-        alt=""
-        width={2172}
-        height={724}
-        className="platform-logo-footer absolute left-1/2 top-1/2 !h-auto !w-[215px] max-w-none -translate-x-1/2 -translate-y-1/2"
-      />
-    </span>
+    <Image
+      src={WORDMARK_CLAIR}
+      alt="Beauty Salon"
+      width={1200}
+      height={228}
+      sizes="(min-width: 640px) 220px, 176px"
+      className="h-auto w-44 select-none sm:w-[220px]"
+      draggable={false}
+    />
   );
 }

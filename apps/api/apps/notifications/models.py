@@ -65,9 +65,12 @@ class Genre(models.TextChoices):
     ANNULATION = "annulation", _("Rendez-vous annulé")
     AVIS = "avis", _("Nouvel avis")
     LISTE_ATTENTE = "liste_attente", _("Liste d'attente")
+    # La decision sur un paiement d'abonnement : approuve ou refuse.
+    ABONNEMENT = "abonnement", _("Abonnement")
 
     # --- Plateforme --------------------------------------------------------
     SALON_INSCRIT = "salon_inscrit", _("Nouveau salon")
+    PAIEMENT_ABONNEMENT = "paiement_abonnement", _("Paiement d'abonnement à vérifier")
     FACTURE = "facture", _("Facturation")
     INCIDENT = "incident", _("Incident")
 

@@ -69,6 +69,8 @@ ACTIONS: dict[str, tuple[tuple[str, str, str], ...]] = {
     Genre.SALON_INSCRIT: (("ouvrir", "Examiner le salon", ""),),
     Genre.FACTURE: (("ouvrir", "Voir le détail", ""),),
     Genre.INCIDENT: (("ouvrir", "Voir le détail", ""),),
+    Genre.ABONNEMENT: (("ouvrir", "Voir l'abonnement", ""),),
+    Genre.PAIEMENT_ABONNEMENT: (("ouvrir", "Vérifier le paiement", ""),),
 }
 
 #: Les genres pour lesquels le site sait composer une image. Tenu en phase

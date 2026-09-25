@@ -34,6 +34,7 @@ import { ToastProvider, useToast } from "@/features/ui/Toast";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { BeautySalonBrand, BeautySalonSymbol } from "@/features/ui/BeautySalonBrand";
 
+import { AccesProvider, AccessBanner, UpgradeButton } from "./AccessBanner";
 import { Notifications } from "./Notifications";
 import { LoginForm } from "./LoginForm";
 import { Icon, type IconName } from "./icons";
@@ -325,45 +326,50 @@ function ShellContent({ children }: { children: ReactNode }) {
         main quand le réglage vaut « Couleur du salon », et rien de ce qui
         vit hors de l'espace professionnel n'est touché.
       */}
-      <div className="flex h-dvh overflow-hidden">
-        <Sidebar
-          membership={membership}
-          memberships={user.memberships}
-          onSelect={setTenantId}
-          pathname={pathname}
-          open={menuOpen}
-          collapsed={collapsed}
-          hidden={prefs.sidebarHidden}
-          skin={skin}
-          onClose={() => setMenuOpen(false)}
-        />
+      {/* L'accès de l'abonnement, lu une fois pour le bandeau, le bouton de
+          la barre du haut et la page Abonnement. */}
+      <AccesProvider tenantId={membership.tenant.id}>
+        <div className="flex h-dvh overflow-hidden">
+          <Sidebar
+            membership={membership}
+            memberships={user.memberships}
+            onSelect={setTenantId}
+            pathname={pathname}
+            open={menuOpen}
+            collapsed={collapsed}
+            hidden={prefs.sidebarHidden}
+            skin={skin}
+            onClose={() => setMenuOpen(false)}
+          />
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/*
-            La barre du haut change de place selon le réglage, et c'est bien
-            un changement de place — pas une classe `sticky` qu'on ajoute.
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            {/*
+              La barre du haut change de place selon le réglage, et c'est bien
+              un changement de place — pas une classe `sticky` qu'on ajoute.
 
-            Fixe : elle est posée *hors* de la zone qui défile, donc elle ne
-            bouge pas, sans superposition ni décalage à compenser sous elle.
+              Fixe : elle est posée *hors* de la zone qui défile, donc elle ne
+              bouge pas, sans superposition ni décalage à compenser sous elle.
 
-            Libre : elle est le premier enfant de la zone qui défile, donc
-            elle remonte avec la page et rend sa hauteur au contenu. Sur un
-            portable 13 pouces en vue mois, ces 60 pixels sont une ligne de
-            créneaux de plus.
-          */}
-          {prefs.navbarFixed && bar}
+              Libre : elle est le premier enfant de la zone qui défile, donc
+              elle remonte avec la page et rend sa hauteur au contenu. Sur un
+              portable 13 pouces en vue mois, ces 60 pixels sont une ligne de
+              créneaux de plus.
+            */}
+            {prefs.navbarFixed && bar}
 
-          <div className="flex-1 overflow-y-auto">
-            {!prefs.navbarFixed && bar}
+            <div className="flex-1 overflow-y-auto">
+              {!prefs.navbarFixed && bar}
 
-            {membership.tenant.status === "pending" && <PendingBanner />}
+              {membership.tenant.status === "pending" && <PendingBanner />}
+              <AccessBanner pathname={pathname} />
 
-            <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-              {children}
-            </main>
+              <main className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+                {children}
+              </main>
+            </div>
           </div>
         </div>
-      </div>
+      </AccesProvider>
 
       <Configurator />
     </DashboardContext.Provider>
@@ -759,6 +765,10 @@ function TopBar({
         </span>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          {/* L'action d'abonnement du moment — choisir, passer à l'annuel,
+              régler — à portée de clic depuis n'importe quel écran. */}
+          <UpgradeButton />
+
           <ThemeToggle />
 
           <Notifications tenantId={membership.tenant.id} />

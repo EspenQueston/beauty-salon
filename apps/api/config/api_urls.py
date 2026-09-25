@@ -16,7 +16,14 @@ from rest_framework.routers import DefaultRouter
 
 from apps.accounts.urls import account_urlpatterns
 from apps.accounts.views import InvitationViewSet, MembershipViewSet
-from apps.billing.views import InvoiceViewSet, SubscriptionView
+from apps.billing.views import (
+    AccesView,
+    InvoiceViewSet,
+    OffresView,
+    PaiementsView,
+    QrCodeView,
+    SubscriptionView,
+)
 from apps.catalog.views import (
     ResourceViewSet,
     ServiceCategoryViewSet,
@@ -199,6 +206,17 @@ urlpatterns = [
         name="media-fichier",
     ),
     path("subscription", SubscriptionView.as_view(), name="subscription"),
+    # Abonnement payant : l'etat de l'acces (tous les membres), les offres et
+    # leurs moyens de reglement, les QR codes, et les paiements declares
+    # (proprietaire). Voir apps/billing/views.py.
+    path("subscription/acces", AccesView.as_view(), name="subscription-access"),
+    path("subscription/offres", OffresView.as_view(), name="subscription-offers"),
+    path(
+        "subscription/moyens/<uuid:pk>/qr",
+        QrCodeView.as_view(),
+        name="subscription-method-qr",
+    ),
+    path("subscription/paiements", PaiementsView.as_view(), name="subscription-payments"),
     # Cloche du tableau de bord. GET pour lire, POST pour marquer lu :
     # deux gestes sur la meme boite, pas deux ressources.
     path("notifications", NotificationView.as_view(), name="notifications"),

@@ -29,7 +29,7 @@
  */
 
 import { Horloges } from "@/features/site/Horloges";
-import { BeautySalonFooterWordmark, BeautySalonLockup } from "@/features/ui/BeautySalonBrand";
+import { BeautySalonFooterWordmark } from "@/features/ui/BeautySalonBrand";
 import { getTranslations } from "next-intl/server";
 
 import { appUrl } from "@/lib/site";
@@ -88,12 +88,7 @@ export async function SiteFooter() {
         <div className="grid gap-8 md:grid-cols-[1.15fr_0.85fr] md:gap-12">
           {/* ------------------------------------------------- la marque */}
           <div>
-            <span className="sm:hidden">
-              <BeautySalonFooterWordmark />
-            </span>
-            <span className="hidden sm:inline-flex">
-              <BeautySalonLockup />
-            </span>
+            <BeautySalonFooterWordmark />
 
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-[var(--pied-doux)]">
               {t("pied.promesse")}

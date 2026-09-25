@@ -27,6 +27,28 @@ class AuditLog(UUIDModel, TimeStampedModel):
         # la donnee d'un salon, mais jamais sans laisser dire qui, quand et
         # quoi.
         PLATFORM_DELETED = "platform.deleted", _("Supprimé depuis l'administration")
+        # Abonnements : chaque decision qui touche a l'acces d'un salon ou a
+        # un montant laisse une trace nominative.
+        SUBSCRIPTION_PAYMENT_SUBMITTED = (
+            "subscription.payment_submitted",
+            _("Paiement d'abonnement déclaré"),
+        )
+        SUBSCRIPTION_PAYMENT_APPROVED = (
+            "subscription.payment_approved",
+            _("Paiement d'abonnement approuvé"),
+        )
+        SUBSCRIPTION_PAYMENT_REJECTED = (
+            "subscription.payment_rejected",
+            _("Paiement d'abonnement refusé"),
+        )
+        SUBSCRIPTION_MANUAL_CHANGE = (
+            "subscription.manual_change",
+            _("Abonnement modifié à la main"),
+        )
+        BILLING_SETTINGS_CHANGED = (
+            "billing.settings_changed",
+            _("Tarifs ou moyens de règlement modifiés"),
+        )
 
     tenant = models.ForeignKey(
         "tenants.Tenant",

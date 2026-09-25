@@ -313,6 +313,18 @@ class DepositProofSerializer(serializers.Serializer):
     note = serializers.CharField(required=False, allow_blank=True, default="")
     image = serializers.ImageField(required=False, allow_null=True)
 
+    def validate_image(self, fichier):
+        # La meme borne que tout autre televersement : cette route est
+        # ouverte sans compte, elle n'a pas a accepter davantage.
+        from apps.media.models import MAX_UPLOAD_BYTES
+
+        if fichier is not None and fichier.size > MAX_UPLOAD_BYTES:
+            limite = MAX_UPLOAD_BYTES // (1024 * 1024)
+            raise serializers.ValidationError(
+                f"La capture dépasse {limite} Mo. Envoyez une image plus légère."
+            )
+        return fichier
+
 
 class PublicDepositProofView(APIView):
     """La cliente declare avoir paye, capture d'ecran a l'appui.

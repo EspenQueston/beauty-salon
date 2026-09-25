@@ -2725,3 +2725,141 @@ input[type="submit"].default:hover,
     font-size: 1.5rem;
   }
 }
+
+/* --------------------------------------------------------------------- */
+/* Abonnements : moyens de reglement et verification des paiements        */
+/* --------------------------------------------------------------------- */
+
+.pill--ok {
+  background: var(--bs-ok-bg);
+  color: var(--bs-ok);
+}
+
+.pill--info {
+  background: var(--bs-info-bg);
+  color: var(--bs-info);
+}
+
+/* Un QR code se lit sur fond blanc, meme en theme sombre : c'est ce que
+   verra le telephone qui le scanne. */
+.qr-vignette {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.qr-apercu {
+  max-width: 240px;
+  max-height: 240px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--bs-line);
+}
+
+.paiement-preuve {
+  max-width: min(320px, 100%);
+  max-height: 420px;
+  border-radius: 10px;
+  border: 1px solid var(--bs-line);
+}
+
+/* Le panneau de decision, au-dessus du detail d'une demande. */
+.paiement-decision {
+  margin: 0 0 1.25rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  background: var(--bs-surface);
+  box-shadow: var(--bs-shadow-sm);
+}
+
+.paiement-decision h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.paiement-decision__resume {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+  margin: 0.9rem 0 1rem;
+}
+
+.paiement-decision__fait {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: var(--bs-surface-sunken);
+}
+
+.paiement-decision__fait span {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bs-ink-muted);
+}
+
+.paiement-decision__fait strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  color: var(--bs-ink);
+  overflow-wrap: anywhere;
+}
+
+.paiement-decision__choix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.9rem;
+}
+
+.paiement-decision__choix form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--bs-line);
+  border-radius: 10px;
+}
+
+.paiement-decision__choix label {
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.paiement-decision__choix textarea,
+.paiement-decision__choix input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.paiement-decision__approuver {
+  border-color: var(--bs-ok-bg);
+}
+
+.paiement-decision__refuser {
+  border-color: var(--bs-bad-bg);
+}
+
+/* Teintes fixes, et non les jetons du theme : en sombre, --bs-ok devient un
+   vert clair ou le blanc tombe sous 2:1. Ces deux-la tiennent 5,1:1 et
+   6,6:1 avec le blanc, dans les deux themes. */
+.paiement-decision .button.approuver {
+  background: #1a7f4b;
+  color: #fff;
+}
+
+.paiement-decision .button.refuser {
+  background: #b42318;
+  color: #fff;
+}
+
+.paiement-decision__aide {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--bs-ink-muted);
+}

@@ -3,6 +3,10 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { BookingFlow } from "@/features/booking/BookingFlow";
+import {
+  ReservationsFermees,
+  reservationsFermees,
+} from "@/features/salon/ReservationsFermees";
 import { fetchSalon } from "@/lib/salon-serveur";
 
 type Props = {
@@ -21,6 +25,7 @@ export default async function BookingPage({ params, searchParams }: Props) {
   const [{ host }, query] = await Promise.all([params, searchParams]);
   const salon = await fetchSalon(host);
   if (!salon) notFound();
+  if (reservationsFermees(salon)) return <ReservationsFermees salon={salon} />;
 
   // Arriver depuis une carte du catalogue évite de rechoisir la prestation
   // qu'on vient justement de désigner.

@@ -189,6 +189,65 @@ def _contexte(nom: str, langue: str) -> dict:
     }
 
 
+def _abonnements() -> list[tuple[str, object]]:
+    """Les e-mails d'abonnement, sur un salon et un paiement de démonstration.
+
+    Les rappels lisent les tarifs configurés : ils ne sont rendus que si la
+    base répond. Les autres n'en ont pas besoin.
+    """
+    from datetime import UTC, datetime
+
+    from apps.billing import courriers
+
+    fin = datetime(2026, 10, 9, 10, 0, tzinfo=UTC)
+    salon = SimpleNamespace(name="Blond Rose", timezone="Africa/Brazzaville")
+    aucune = SimpleNamespace(filter=lambda **_: SimpleNamespace(exists=lambda: False))
+    abonnement = SimpleNamespace(
+        tenant=salon,
+        plan=SimpleNamespace(code="monthly", name="Mensuel"),
+        currency="CNY",
+        current_period_end=fin,
+        payment_requests=aucune,
+    )
+    plan = SimpleNamespace(code="monthly", name="Mensuel")
+    demande = SimpleNamespace(
+        id="00000000-0000-0000-0000-000000000000",
+        tenant=salon,
+        subscription=abonnement,
+        plan=plan,
+        billing_months=1,
+        amount=Decimal("99"),
+        currency="CNY",
+        method_label="WeChat Pay",
+        method_account_number="",
+        reference="4200001234202609251234",
+        created_at=datetime(2026, 9, 25, 9, 0, tzinfo=UTC),
+        period_start=fin,
+        period_end=datetime(2026, 11, 9, 10, 0, tzinfo=UTC),
+        invoice_id="x",
+        invoice=SimpleNamespace(number="BS-2026-00042"),
+        rejection_reason="Aucun versement reçu avec cette référence.",
+    )
+    prix = SimpleNamespace(plan=plan, currency="CNY", amount=Decimal("109"))
+
+    apercus: list[tuple[str, object]] = [
+        ("paiement_recu", courriers.paiement_recu(demande)),
+        ("paiement_a_verifier", courriers.paiement_a_verifier(demande)),
+        ("paiement_valide", courriers.paiement_valide(demande)),
+        ("paiement_refuse", courriers.paiement_refuse(demande)),
+        ("prolongation", courriers.geste(abonnement, "prolongation")),
+        ("suspension", courriers.geste(abonnement, "suspension")),
+        ("tarif_modifie", courriers.tarif_modifie(prix, Decimal("99"), fin)),
+    ]
+    maintenant = datetime(2026, 10, 6, 9, 0, tzinfo=UTC)
+    for genre in ("trial_3", "renewal_7", "grace", "closed"):
+        try:
+            apercus.append((genre, courriers.rappel(abonnement, genre, maintenant)))
+        except Exception:  # noqa: BLE001 - base injoignable : pas de rappel
+            continue
+    return [(f"abonnement-{nom}", courrier.contexte(salon)) for nom, courrier in apercus]
+
+
 class Command(BaseCommand):
     help = "Rend les e-mails en HTML, dans les deux langues, sans rien envoyer."
 
@@ -212,6 +271,12 @@ class Command(BaseCommand):
             fichier = dossier / f"{langue}-{nom}.html"
             fichier.write_text(html, encoding="utf-8")
             rendus.append((langue, nom, fichier.name))
+
+        for nom, contexte in _abonnements():
+            html = render_to_string("emails/abonnement.html", contexte)
+            fichier = dossier / f"fr-{nom}.html"
+            fichier.write_text(html, encoding="utf-8")
+            rendus.append(("fr", nom, fichier.name))
 
         self._sommaire(dossier, rendus)
         self.stdout.write(self.style.SUCCESS(f"{len(rendus)} e-mail(s) rendus"))

@@ -31,8 +31,9 @@
  * Une coche confirme une syntaxe ; une conséquence confirme un choix.
  *
  * Rien n'est inventé pour presser : l'adresse n'est réellement pas réservée
- * tant que le formulaire n'est pas envoyé, et c'est dit. « 30 jours » est la
- * durée que la facturation applique, et rien ne s'interrompt à son terme.
+ * tant que le formulaire n'est pas envoyé, et c'est dit. « 14 jours » est la
+ * durée que la facturation applique (TRIAL_DAYS), et rien n'est prélevé à son
+ * terme : le salon choisit une offre et paie lui-même.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -543,7 +544,7 @@ export function SignupForm() {
 
           Dehors, il flottait sur le fond de la page sans lui appartenir — et
           ce fond porte maintenant un dégradé : le contraste de la mention
-          « 30 jours gratuits » y dépendait de la densité du rose, mesurée à
+          « 14 jours gratuits » y dépendait de la densité du rose, mesurée à
           4,37:1, sous le seuil. Dedans, le titre, l'avancement, les champs et
           le bouton forment un seul objet posé sur une surface opaque, dont le
           contraste ne dépend d'aucun décor.
@@ -555,13 +556,12 @@ export function SignupForm() {
         </h1>
         {/*
           Ancrage sur des faits vérifiables, pas sur une promesse vague.
-          « 30 jours » est la durée réellement appliquée par la facturation
-          (TRIAL_DAYS), et rien n'est prélevé à son terme : une facture est
-          émise, le mini-site continue de fonctionner. Annoncer une coupure
-          serait une menace inventée.
+          « 14 jours » est la durée réellement appliquée par la facturation
+          (TRIAL_DAYS), et rien n'est prélevé à son terme : aucun moyen de
+          paiement n'est enregistré, le salon choisit ensuite son offre.
         */}
         <p className="mb-6 mt-1.5 text-sm text-muted">
-          <strong className="font-medium text-ink">30 jours gratuits</strong>,
+          <strong className="font-medium text-ink">14 jours gratuits</strong>,
           sans carte bancaire.
         </p>
 
@@ -864,7 +864,7 @@ export function SignupForm() {
           une colonne unique fait la même économie sans rien casser. */}
       <ul className="mt-5 hidden gap-2 sm:grid">
         {[
-          // « 30 jours gratuits, sans carte bancaire » est déjà écrit en haut
+          // « 14 jours gratuits, sans carte bancaire » est déjà écrit en haut
           // de la carte, et « trois minutes suffisent » accompagne désormais
           // l'avancement. Restent les deux choses que rien d'autre ne dit.
           ["Rien n'est prélevé", "à la fin de l'essai."],

@@ -67,6 +67,8 @@ const GENRES: Record<string, { libelle: string; icone: IconName }> = {
   salon_inscrit: { libelle: "Nouveau salon", icone: "store" },
   facture: { libelle: "Facturation", icone: "receipt" },
   incident: { libelle: "Incident", icone: "bolt" },
+  abonnement: { libelle: "Abonnement", icone: "receipt" },
+  paiement_abonnement: { libelle: "Paiement à vérifier", icone: "wallet" },
 };
 
 function rvb(hex: string): [number, number, number] {

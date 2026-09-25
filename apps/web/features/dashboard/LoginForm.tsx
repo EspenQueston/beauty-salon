@@ -219,7 +219,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             Créer le mien
           </Link>
           <span className="mt-1 block text-xs text-muted">
-            30 jours gratuits, sans carte bancaire.
+            14 jours gratuits, sans carte bancaire.
           </span>
         </p>
       </div>

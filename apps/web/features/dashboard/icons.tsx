@@ -45,7 +45,8 @@ export type IconName =
   | "eye"
   | "sliders"
   | "close"
-  | "scan";
+  | "scan"
+  | "copy";
 
 /*
   Exportés pour l'image des notifications (app/notification-image), qui
@@ -243,6 +244,12 @@ export const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M4 8.5V6a2 2 0 0 1 2-2h2.5M15.5 4H18a2 2 0 0 1 2 2v2.5M20 15.5V18a2 2 0 0 1-2 2h-2.5M8.5 20H6a2 2 0 0 1-2-2v-2.5" />
       <path d="M3.5 12h17" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2" />
+      <path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5" />
     </>
   ),
 };

@@ -376,6 +376,13 @@
       "hybrid": "Au salon ou à domicile"
     },
     "reservationImmediate": "Réservation en ligne, confirmation immédiate",
+    "fermeture": {
+      "bandeau": "Les réservations en ligne sont momentanément indisponibles. Contactez le salon directement.",
+      "titre": "Réservations en ligne indisponibles",
+      "texte": "{salon} ne prend pas de rendez-vous en ligne pour le moment. Contactez le salon directement : il vous répondra avec plaisir.",
+      "appeler": "Appeler le salon",
+      "retour": "Retour à l'accueil"
+    },
     "notes": [
       "",
       "Très déçue",

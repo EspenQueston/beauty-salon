@@ -376,6 +376,13 @@
       "hybrid": "At the salon or at your place"
     },
     "reservationImmediate": "Book online, instant confirmation",
+    "fermeture": {
+      "bandeau": "Online booking is temporarily unavailable. Please contact the salon directly.",
+      "titre": "Online booking unavailable",
+      "texte": "{salon} isn't taking online bookings right now. Contact the salon directly — they'll be happy to help.",
+      "appeler": "Call the salon",
+      "retour": "Back to home"
+    },
     "notes": [
       "",
       "Very disappointed",
