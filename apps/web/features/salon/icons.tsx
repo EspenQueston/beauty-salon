@@ -44,7 +44,8 @@ export type SalonIconName =
   | "echange"
   | "globe"
   | "search"
-  | "grid";
+  | "grid"
+  | "mail";
 
 const PATHS: Record<SalonIconName, ReactNode> = {
   user: (
@@ -174,6 +175,12 @@ const PATHS: Record<SalonIconName, ReactNode> = {
   ),
   // « Toutes les catégories » : quatre carreaux, l'ensemble plutôt qu'une
   // famille.
+  mail: (
+    <>
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2.4" />
+      <path d="m4.5 7.5 7.5 5.5 7.5-5.5" />
+    </>
+  ),
   grid: (
     <>
       <rect x="4" y="4" width="6.5" height="6.5" rx="1.6" />

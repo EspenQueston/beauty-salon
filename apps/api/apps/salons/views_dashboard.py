@@ -47,6 +47,7 @@ class SalonProfileSerializer(serializers.ModelSerializer):
             "longitude",
             "phone",
             "whatsapp_number",
+            "contact_email",
             "social_links",
             "wechat_id",
             "wechat_qr",

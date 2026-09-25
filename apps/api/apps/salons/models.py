@@ -70,6 +70,11 @@ class SalonProfile(TenantOwnedModel):
 
     phone = models.CharField(_("téléphone"), max_length=32, blank=True)
     whatsapp_number = models.CharField(_("numéro WhatsApp"), max_length=32, blank=True)
+    # L'adresse publiee sur le mini-site, distincte de celle du compte : un
+    # salon ne veut pas forcement exposer l'adresse avec laquelle il se
+    # connecte. Vide tant qu'il ne l'a pas renseignee — rien n'est publie a
+    # sa place.
+    contact_email = models.EmailField(_("e-mail de contact"), blank=True)
     # {"instagram": "...", "tiktok": "...", "wechat": "...", "facebook": "..."}
     social_links = models.JSONField(default=dict, blank=True)
 

@@ -91,7 +91,7 @@ def envois(monkeypatch):
     """Intercepte les envois au lieu de les poster, et garde le contexte."""
     captures = []
 
-    def faux_send(subject, template, context, to):
+    def faux_send(subject, template, context, to, salon=None):
         captures.append((template, {**context, "subject": subject}, list(to)))
         return True
 
@@ -390,3 +390,33 @@ def test_aucun_commentaire_de_gabarit_ne_fuit_dans_la_page():
         "Ces commentaires s'étalent sur plusieurs lignes et seront affichés "
         f"tels quels. Utilisez {{% comment %}} : {fautifs}"
     )
+
+
+@pytest.mark.django_db
+def test_la_cliente_recoit_un_message_signe_du_salon(salon_a, reservation):
+    """Le nom du salon en expediteur, et la reponse qui va au salon."""
+    from django.core import mail
+
+    with as_tenant(salon_a.tenant):
+        salon_a.profile.contact_email = "contact@blondrose.com"
+        salon_a.profile.save(update_fields=["contact_email"])
+        tasks.send_booking_notifications.run(str(reservation.id), str(salon_a.tenant.id))
+
+    cliente = next(m for m in mail.outbox if reservation.customer.email in m.to)
+    salon = next(m for m in mail.outbox if reservation.customer.email not in m.to)
+    assert cliente.from_email.startswith(f"{salon_a.tenant.name} via Beauty Salon <")
+    assert cliente.reply_to == ["contact@blondrose.com"]
+    # L'alerte au salon garde l'expediteur de la plateforme.
+    assert "via Beauty Salon" not in salon.from_email
+    assert salon.reply_to == []
+
+
+@pytest.mark.django_db
+def test_sans_email_de_contact_la_reponse_n_est_pas_detournee(salon_a, reservation):
+    from django.core import mail
+
+    with as_tenant(salon_a.tenant):
+        tasks.send_booking_notifications.run(str(reservation.id), str(salon_a.tenant.id))
+
+    cliente = next(m for m in mail.outbox if reservation.customer.email in m.to)
+    assert cliente.reply_to == []

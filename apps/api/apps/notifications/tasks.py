@@ -77,6 +77,7 @@ def send_booking_notifications(self, booking_id: str, tenant_id: str):
                     "payment_url": _payment_url(booking),
                 },
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
             _send(
                 subject=f"Nouvelle réservation - {booking.service_name}",
@@ -141,6 +142,7 @@ def send_booking_reminders():
                         ),
                     },
                     to=[booking.customer.email],
+                    salon=booking.tenant,
                 )
                 # Marque meme sans e-mail : sinon la cliente sans adresse
                 # serait reexaminee a chaque passage de la tache.
@@ -427,6 +429,7 @@ def _invite_to_review(booking) -> bool:
         template="review_request",
         context=context,
         to=[booking.customer.email],
+        salon=booking.tenant,
     )
 
     booking.review_invited_at = timezone.now()
@@ -602,6 +605,7 @@ def send_booking_accepted(self, booking_id: str, tenant_id: str):
                     ),
                 },
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec de confirmation pour %s.", booking_id)
@@ -641,6 +645,7 @@ def send_deposit_rejected(self, booking_id: str, tenant_id: str):
                 template="deposit_rejected",
                 context=context,
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec d'avis de refus pour %s.", booking_id)
@@ -719,6 +724,7 @@ def send_booking_cancelled(self, booking_id: str, tenant_id: str, by_salon: bool
                 template="booking_cancelled",
                 context=context,
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
 
             # Le salon aussi : une annulation libère un créneau qu'il peut
@@ -802,6 +808,7 @@ def send_booking_rescheduled(
                 template="booking_rescheduled",
                 context=context,
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
     except Exception as exc:  # noqa: BLE001
         raise self.retry(exc=exc) from exc

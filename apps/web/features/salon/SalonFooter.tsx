@@ -34,7 +34,7 @@ import { Lien } from "@/features/ui/Lien";
 
 import type { PublicSalon } from "@/lib/types";
 import { BeautySalonCredit } from "./BeautySalonCredit";
-import { contactLinks, mapsHref, socialLinks } from "./contact";
+import { footerContacts, mapsHref, socialLinks } from "./contact";
 import { SalonIcon } from "./icons";
 import { SalonLogo } from "./SalonLogo";
 
@@ -46,7 +46,7 @@ interface Colonne {
 export function SalonFooter({ salon }: { salon: PublicSalon }) {
   const t = useTranslations("salon");
   const c = useTranslations("commun");
-  const contacts = contactLinks(salon);
+  const contacts = footerContacts(salon);
   const socials = socialLinks(salon);
   const maps = mapsHref(salon);
 

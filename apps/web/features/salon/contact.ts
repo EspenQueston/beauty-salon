@@ -33,6 +33,50 @@ const NETWORKS: { key: string; label: string; icon: SalonIconName }[] = [
  */
 export const SERVICE_MODES = ["salon", "home", "hybrid"] as const;
 
+/**
+ * L'adresse e-mail publiée par le salon, ou `null` s'il n'en a pas donné.
+ *
+ * À part des numéros : un e-mail ne s'« appelle » pas, et les écrans qui
+ * n'offrent que des gestes immédiats (appeler, écrire sur WhatsApp) n'en
+ * veulent pas.
+ */
+export function emailLink(salon: PublicSalon): ContactLink | null {
+  const adresse = salon.contact_email?.trim();
+  if (!adresse) return null;
+  return {
+    key: "email",
+    label: "E-mail",
+    value: adresse,
+    href: `mailto:${adresse}`,
+    icon: "mail",
+    external: false,
+  };
+}
+
+/**
+ * Les coordonnées du pied de page : le téléphone, puis l'e-mail.
+ *
+ * WhatsApp n'y vient qu'en l'absence d'e-mail, et seulement si son numéro
+ * n'est pas déjà celui du téléphone — le même numéro affiché deux fois
+ * ressemblait à une erreur. WhatsApp reste à portée partout ailleurs (barre
+ * de réservation, page Infos).
+ */
+export function footerContacts(salon: PublicSalon): ContactLink[] {
+  const numeros = contactLinks(salon);
+  const telephone = numeros.find((lien) => lien.key === "phone");
+  const whatsapp = numeros.find((lien) => lien.key === "whatsapp");
+  const email = emailLink(salon);
+  const chiffres = (valeur: string) => valeur.replace(/[^0-9]/g, "");
+
+  const second =
+    email ??
+    (whatsapp && (!telephone || chiffres(whatsapp.value) !== chiffres(telephone.value))
+      ? whatsapp
+      : null);
+
+  return [telephone, second].filter((lien): lien is ContactLink => Boolean(lien));
+}
+
 /** Le numéro WhatsApp doit être réduit aux chiffres pour wa.me. */
 export function whatsappHref(number: string): string | null {
   const digits = number.replace(/[^0-9]/g, "");

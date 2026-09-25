@@ -56,3 +56,37 @@ def test_une_photo_sans_copie_n_annonce_rien(api_client, salon_a):
     ).json()["logo"]
 
     assert logo["variants"] == {}
+
+
+# ---------------------------------------------------------------------------
+# L'e-mail de contact du mini-site
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_l_email_de_contact_est_publie_quand_le_salon_le_donne(api_client, salon_a):
+    hote = {"HTTP_HOST": salon_host("blondrose")}
+    assert api_client.get("/api/v1/public/salon", **hote).json()["contact_email"] == ""
+
+    api_client.force_login(salon_a.owner)
+    reponse = api_client.patch(
+        "/api/v1/salon-profile", {"contact_email": "contact@blondrose.com"}, format="json"
+    )
+    assert reponse.status_code == 200, reponse.json()
+    api_client.logout()
+
+    assert (
+        api_client.get("/api/v1/public/salon", **hote).json()["contact_email"]
+        == "contact@blondrose.com"
+    )
+
+
+@pytest.mark.django_db
+def test_un_email_de_contact_invalide_est_refuse(api_client, salon_a):
+    api_client.force_login(salon_a.owner)
+
+    reponse = api_client.patch(
+        "/api/v1/salon-profile", {"contact_email": "pas-un-email"}, format="json"
+    )
+
+    assert reponse.status_code == 400

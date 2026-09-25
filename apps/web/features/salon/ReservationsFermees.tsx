@@ -42,7 +42,7 @@ export function ReservationsFermees({ salon }: { salon: PublicSalon }) {
   const liens = contactLinks(salon);
 
   return (
-    <section className="mx-auto flex max-w-xl flex-col items-center px-4 py-16 text-center sm:py-24">
+    <section className="mx-auto flex max-w-xl flex-col items-center px-4 pb-16 pt-28 text-center sm:pb-24 sm:pt-36">
       <span className="flex size-14 items-center justify-center rounded-full bg-[var(--salon-primary-soft)] text-[var(--salon-ink)]">
         <SalonIcon name="calendar" className="size-6" />
       </span>

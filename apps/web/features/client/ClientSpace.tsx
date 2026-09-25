@@ -52,7 +52,7 @@ import {
 } from "@/features/ui/AuthShell";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { SalonLogo } from "@/features/salon/SalonLogo";
-import { platformUrl } from "@/lib/site";
+import { appUrl, platformUrl } from "@/lib/site";
 
 import { AuthShowcase } from "@/features/ui/AuthShowcase";
 // Les appels API de l'espace vivent à part : l'annulation en a besoin elle
@@ -189,16 +189,27 @@ export function ClientSpace({
   // Un membre d'équipe sans profil cliente est renvoyé vers son tableau de
   // bord : lui montrer un espace vide n'aurait aucun sens.
   if (!session.is_client) {
+    // Sous le menu fixe, comme les autres pages de l'espace : posée seule,
+    // la carte collait à la barre de navigation.
     return (
-      <div className={`${CARD} mx-auto max-w-md p-6 text-center`}>
-        <p className="font-medium text-[var(--site-ink)]">{t("pro.titre")}</p>
-        <p className="mt-1.5 text-sm text-[var(--site-muted)]">
-          {t("pro.corps")}
-        </p>
-        <Lien href="/dashboard" className={`${PRIMARY} mt-4`}>
-          {t("pro.tableau")}
-        </Lien>
-      </div>
+      <main className="mx-auto flex min-h-[70svh] w-full max-w-md items-center px-4 pb-12 pt-24 sm:pb-16 sm:pt-32">
+        <div className={`${CARD} w-full p-6 text-center sm:p-8`}>
+          <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--salon-primary-soft)] text-[var(--salon-ink)]">
+            <SalonIcon name="store" className="size-6" />
+          </span>
+          <p className="mt-4 text-base font-semibold text-[var(--site-ink)] sm:text-lg">
+            {t("pro.titre")}
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-[var(--site-muted)]">
+            {t("pro.corps")}
+          </p>
+          {/* L'espace professionnel vit sur `app.` : y aller directement
+              plutôt que de le rendre sous l'adresse du salon. */}
+          <a href={appUrl} className={`${PRIMARY} mt-5 w-full sm:w-auto`}>
+            {t("pro.tableau")}
+          </a>
+        </div>
+      </main>
     );
   }
 

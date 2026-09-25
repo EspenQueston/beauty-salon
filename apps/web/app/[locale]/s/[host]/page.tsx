@@ -24,7 +24,7 @@ import { HowItWorks } from "@/features/salon/HowItWorks";
 import { Marquee } from "@/features/salon/Marquee";
 import { OpeningHours } from "@/features/salon/OpeningHours";
 import { StatutOuverture } from "@/features/salon/Statut";
-import { contactLinks, mapsHref } from "@/features/salon/contact";
+import { contactLinks, emailLink, mapsHref } from "@/features/salon/contact";
 import { Reveal } from "@/features/ui/Reveal";
 import { ReviewList } from "@/features/salon/Reviews";
 import { fetchReviews } from "@/lib/api";
@@ -403,7 +403,8 @@ function PracticalSummary({
 }) {
   const t = useTranslations("salon");
   const maps = mapsHref(salon);
-  const contacts = contactLinks(salon);
+  const email = emailLink(salon);
+  const contacts = [...contactLinks(salon), ...(email ? [email] : [])];
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">

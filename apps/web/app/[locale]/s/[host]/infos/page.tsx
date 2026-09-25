@@ -11,6 +11,7 @@ import { SalonIcon } from "@/features/salon/icons";
 import { Card, GhostLink } from "@/features/salon/ui";
 import {
   contactLinks,
+  emailLink,
   mapsHref,
   serviceAreas,
   socialLinks,
@@ -43,7 +44,8 @@ export default async function InfosPage({ params }: Props) {
   if (!salon) notFound();
 
   const maps = mapsHref(salon);
-  const contacts = contactLinks(salon);
+  const email = emailLink(salon);
+  const contacts = [...contactLinks(salon), ...(email ? [email] : [])];
   const socials = socialLinks(salon);
   const areas = serviceAreas(salon);
   const travels = areas.length > 0 || salon.travel_zones.length > 0;

@@ -139,6 +139,8 @@ export interface PublicSalon {
   longitude: string | null;
   phone: string;
   whatsapp_number: string;
+  /** L'e-mail publié sur le mini-site. Vide tant que le salon ne l'a pas donné. */
+  contact_email?: string;
   social_links: Record<string, string>;
   /** L.identifiant WeChat du salon. Vide tant qu.il ne l.a pas renseigné. */
   wechat_id: string;

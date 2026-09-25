@@ -28,7 +28,7 @@ class SalonProfileAdmin(TenantScopedAdmin):
 
     fieldsets = (
         (None, {"fields": ("tenant", "description", "logo", "banner")}),
-        ("Coordonnees", {"fields": ("address", "city", "phone", "whatsapp_number",
+        ("Coordonnees", {"fields": ("address", "city", "phone", "whatsapp_number", "contact_email",
                                     "social_links")}),
         (
             "WeChat",

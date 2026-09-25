@@ -47,6 +47,7 @@ interface Profile {
   longitude: string | null;
   phone: string;
   whatsapp_number: string;
+  contact_email: string;
   social_links: Record<string, string>;
   wechat_id: string;
   wechat_qr: string | null;
@@ -93,7 +94,7 @@ const DEFAULT_ACCENT = "#F2C4CE";
 const DEFAULT_SURFACE = "#FAF7F8";
 
 export function SalonProfileScreen() {
-  const { membership } = useDashboard();
+  const { membership, user } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
   const canEdit = ["owner", "manager"].includes(membership.role);
@@ -272,6 +273,32 @@ export function SalonProfileScreen() {
                 placeholder="+242…"
                 className={inputClass}
               />
+            </Field>
+            <Field
+              label="E-mail de contact"
+              hint="Affiché sur votre mini-site, dans le pied de page et la page Infos."
+            >
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={profile.contact_email ?? ""}
+                  onChange={(event) => set("contact_email", event.target.value)}
+                  disabled={!canEdit}
+                  placeholder="contact@monsalon.com"
+                  autoComplete="email"
+                  className={inputClass}
+                />
+                {canEdit && !profile.contact_email && user.email && (
+                  <button
+                    type="button"
+                    onClick={() => set("contact_email", user.email)}
+                    className="shrink-0 rounded-lg border border-line px-3 text-xs font-medium text-ink transition hover:bg-surface-hover"
+                    title={`Utiliser ${user.email}`}
+                  >
+                    Mon e-mail
+                  </button>
+                )}
+              </div>
             </Field>
             {/*
               Ce réglage en commande un autre, et il faut le dire.
