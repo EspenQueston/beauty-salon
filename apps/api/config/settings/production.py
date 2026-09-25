@@ -204,3 +204,16 @@ if SENTRY_DSN:
         # n'est pas un endroit ou stocker le fichier clientes d'un salon.
         send_default_pii=False,
     )
+
+# ---------------------------------------------------------------------------
+# Nom d'hote des e-mails
+# ---------------------------------------------------------------------------
+# Django annonce au serveur SMTP (EHLO) et signe chaque Message-ID avec le nom
+# de la machine. Dans un conteneur, c'est un identifiant aleatoire sans
+# domaine (« f2c508b625e2 ») : un Message-ID `@f2c508b625e2` et un EHLO sans
+# point sont deux signaux que les filtres anti-spam, Gmail en tete,
+# penalisent. On leur donne un vrai nom, dans le domaine de la plateforme.
+from django.core.mail.utils import DNS_NAME  # noqa: E402
+
+EMAIL_HOSTNAME = env("EMAIL_HOSTNAME", default=f"api.{PLATFORM_DOMAIN}")
+DNS_NAME._fqdn = EMAIL_HOSTNAME

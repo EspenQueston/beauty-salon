@@ -62,6 +62,7 @@ import { useState } from "react";
 
 import type { PublicStaffMember } from "@/lib/types";
 import { SalonIcon } from "./icons";
+import { photo, TAILLES } from "./images";
 
 /**
  * Largeur relative de chaque colonne.
@@ -215,7 +216,7 @@ function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
         {member.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={member.photo.url}
+            {...photo(member.photo, TAILLES.grille)}
             alt={member.photo.alt_text || member.name}
             loading="lazy"
             className="size-full object-cover transition-transform duration-500 group-active:scale-[1.03]"
@@ -301,7 +302,7 @@ function Tuile({
       {member.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={member.photo.url}
+          {...photo(member.photo, TAILLES.cartes)}
           alt={member.photo.alt_text || member.name}
           loading="lazy"
           className="size-full object-cover transition-[filter,transform] duration-500"

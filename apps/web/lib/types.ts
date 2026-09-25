@@ -4,6 +4,8 @@ export type LocationMode = "salon" | "home" | "hybrid";
 export interface MediaAsset {
   id: string;
   url: string;
+  /** Copies WebP réduites, par largeur en pixels (« 480 », « 1024 »). */
+  variants?: Record<string, string>;
   /** "image/webp", "video/mp4"… Décide du rendu : <img> ou <video>. */
   content_type: string;
   alt_text: string;

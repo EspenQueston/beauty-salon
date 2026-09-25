@@ -69,6 +69,7 @@ import {
 import type { PublicSalon } from "@/lib/types";
 
 import { SalonIcon } from "./icons";
+import { srcSetDe, TAILLES } from "./images";
 
 /** Paragraphes par chapitre : la hauteur qui équilibre une image en 4/5. */
 const PAR_CHAPITRE = 3;
@@ -79,6 +80,7 @@ const RANG_DES_CHIFFRES = 1;
 interface Visuel {
   url: string;
   alt: string;
+  srcSet?: string;
 }
 
 export function AboutStory({
@@ -226,6 +228,8 @@ function Illustration({ visuel }: { visuel: Visuel }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={visuel.url}
+        srcSet={visuel.srcSet}
+        sizes={visuel.srcSet ? TAILLES.moitie : undefined}
         alt={visuel.alt}
         loading="lazy"
         className="aspect-[4/5] w-full object-cover"
@@ -337,6 +341,7 @@ function rassemblerVisuels(
   if (salon.about_image) {
     visuels.push({
       url: salon.about_image.url,
+      srcSet: srcSetDe(salon.about_image),
       alt: salon.about_image.alt_text || title,
     });
   }
@@ -346,7 +351,7 @@ function rassemblerVisuels(
     // Les vidéos de la galerie ne conviennent pas ici : elles appellent une
     // lecture, et ce vis-à-vis doit se regarder sans rien demander.
     if (media.content_type.startsWith("video/")) continue;
-    visuels.push({ url: media.url, alt: media.alt_text || "" });
+    visuels.push({ url: media.url, srcSet: srcSetDe(media), alt: media.alt_text || "" });
   }
 
   const theme = salon.categories[0]

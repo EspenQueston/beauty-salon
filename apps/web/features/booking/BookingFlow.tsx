@@ -56,6 +56,7 @@ import {
 import { SalonLogo } from "@/features/salon/SalonLogo";
 import { BeautySalonCredit } from "@/features/salon/BeautySalonCredit";
 import { contactLinks, mapsHref, whatsappHref } from "@/features/salon/contact";
+import { photo, TAILLES } from "@/features/salon/images";
 
 /**
  * Fenêtre demandée au serveur.
@@ -492,7 +493,7 @@ function TrustPanel({
               <li key={asset.id}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={asset.url}
+                  {...photo(asset, TAILLES.vignette)}
                   alt={asset.alt_text || ""}
                   loading="lazy"
                   className="aspect-square w-full rounded-lg object-cover"
@@ -847,7 +848,7 @@ function StaffStep({
               {member.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={member.photo.url}
+                  {...photo(member.photo, TAILLES.pastille)}
                   alt=""
                   className="size-11 shrink-0 rounded-full object-cover"
                 />

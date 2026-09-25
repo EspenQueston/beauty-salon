@@ -23,6 +23,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Reveal } from "@/features/ui/Reveal";
 import { isVideo, type MediaAsset } from "@/lib/types";
 import { SalonIcon } from "./icons";
+import { photo, TAILLES } from "./images";
 
 /** Motif de tailles répété : la 1re et la 6e occupent deux colonnes. */
 function spanOf(index: number): string {
@@ -133,7 +134,7 @@ export function GalleryGrid({
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={asset.url}
+                    {...photo(asset, TAILLES.grille)}
                     alt={
                       asset.alt_text || t("galerie.alt", { salon: salonName })
                     }
@@ -214,7 +215,7 @@ export function GalleryGrid({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={open.id}
-                src={open.url}
+                {...photo(open, TAILLES.pleineLargeur)}
                 alt={open.alt_text || t("galerie.alt", { salon: salonName })}
                 className="max-h-[78svh] w-full rounded-2xl object-contain"
               />

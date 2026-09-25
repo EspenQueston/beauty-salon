@@ -77,8 +77,11 @@ api.{$PLATFORM_DOMAIN} {
 		# type, et un document ouvert directement est mis en bac a sable,
 		# sans script (c'est la politique des contenus bruts de GitHub). Une
 		# image ou une video integree a une page s'affiche comme avant.
+		# Trente jours de cache : chaque fichier vit sous l'identifiant unique
+		# de son media et n'est jamais reecrit en place — une nouvelle photo
+		# est un nouveau media, donc une nouvelle adresse.
 		header {
-			Cache-Control "public, max-age=86400"
+			Cache-Control "public, max-age=2592000"
 			X-Content-Type-Options "nosniff"
 			Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 		}

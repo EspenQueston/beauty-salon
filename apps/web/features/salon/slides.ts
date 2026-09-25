@@ -58,6 +58,7 @@ import {
 import { formatServicePrice } from "@/lib/format";
 import type { PublicSalon } from "@/lib/types";
 import type { HeroSlide } from "./HeroCarousel";
+import { srcSetDe, srcSetIllustration } from "./images";
 
 /**
  * Nombre d'images retenues.
@@ -77,12 +78,15 @@ export function salonSlides(salon: PublicSalon, limit = HOME_SLIDES): HeroSlide[
     categoryName: string,
   ): HeroSlide => ({
     key: service.id,
-    url: service.image
-      ? service.image.url
-      : illustrationUrl(
-          pickIllustration(service.id, themeFromCategory(categoryName)).id,
-          { width: 1600, ratio: 0.62 },
-        ),
+    ...(service.image
+      ? { url: service.image.url, srcSet: srcSetDe(service.image) }
+      : (() => {
+          const id = pickIllustration(service.id, themeFromCategory(categoryName)).id;
+          return {
+            url: illustrationUrl(id, { width: 1600, ratio: 0.62 }),
+            srcSet: srcSetIllustration(id, 0.62),
+          };
+        })()),
     label: service.name,
     price: formatServicePrice(service, salon.currency),
   });
@@ -102,7 +106,15 @@ export function salonSlides(salon: PublicSalon, limit = HOME_SLIDES): HeroSlide[
 
   const slides: HeroSlide[] = [
     ...(salon.banner
-      ? [{ key: "banner", url: salon.banner.url, label: salon.name, price: "" }]
+      ? [
+          {
+            key: "banner",
+            url: salon.banner.url,
+            srcSet: srcSetDe(salon.banner),
+            label: salon.name,
+            price: "",
+          },
+        ]
       : []),
     ...perCategory,
     ...rest,

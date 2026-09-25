@@ -23,6 +23,7 @@ import type { PublicService } from "@/lib/types";
 import { SalonIcon, type SalonIconName } from "./icons";
 import { Relief } from "@/features/ui/Relief";
 import { Pill, SURFACE } from "./ui";
+import { photo, TAILLES } from "./images";
 
 export function ServiceCard({
   service,
@@ -60,13 +61,18 @@ export function ServiceCard({
     <Relief className="h-full">
       <Lien
         href={`/reserver?service=${service.id}`}
+        // Une adresse par prestation : prechargees toutes a l'affichage du
+        // catalogue, elles faisaient autant de rendus serveur que de cartes
+        // visibles. La page de reservation, elle, est deja prechargee par le
+        // bouton « Reserver » du menu.
+        prefetch={false}
         className={`${SURFACE} group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-[0_14px_32px_-10px_rgb(23_23_28_/_0.22)]`}
       >
         {service.image ? (
           <span className="block aspect-[16/10] overflow-hidden bg-black/[0.04]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={service.image.url}
+              {...photo(service.image, TAILLES.cartes)}
               alt={service.image.alt_text || service.name}
               loading="lazy"
               className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"

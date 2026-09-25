@@ -18,6 +18,7 @@ from .models import SalonProfile, TravelZone
 
 class MediaAssetSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = MediaAsset
@@ -27,6 +28,7 @@ class MediaAssetSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "url",
+            "variants",
             "content_type",
             "alt_text",
             "width",
@@ -36,10 +38,29 @@ class MediaAssetSerializer(serializers.ModelSerializer):
             "featured",
         )
 
-    def get_url(self, asset) -> str:
+    def _absolue(self, url: str) -> str:
         request = self.context.get("request")
-        url = asset.file.url
         return request.build_absolute_uri(url) if request else url
+
+    def get_url(self, asset) -> str:
+        return self._absolue(asset.file.url)
+
+    def get_variants(self, asset) -> dict:
+        """Les copies WebP reduites, par largeur : `{"480": url, "1024": url}`.
+
+        Une vignette de 170 pixels telechargeait l'original — jusqu'a
+        1600 x 2400, plusieurs centaines de kilo-octets par photo, sur des
+        reseaux mobiles factures a la donnee. Le mini-site en tire un
+        `srcset` : le navigateur prend la plus petite qui suffit a l'ecran.
+        """
+        from apps.media.tasks import DERIVATIVE_WIDTHS
+
+        variantes = {}
+        for label, chemin in (asset.derivatives or {}).items():
+            largeur = DERIVATIVE_WIDTHS.get(label)
+            if largeur and chemin:
+                variantes[str(largeur)] = self._absolue(asset.file.storage.url(chemin))
+        return variantes
 
 
 class PublicServiceOptionSerializer(Traduit, serializers.ModelSerializer):
