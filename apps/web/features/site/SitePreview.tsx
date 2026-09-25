@@ -129,16 +129,16 @@ export function SitePreview() {
 
         <p className="mt-2 min-h-5 text-sm" aria-live="polite">
           {slug.length >= SLUG_MIN && slugState === "checking" && (
-            <span className="text-subtle">Vérification de l&apos;adresse…</span>
+            <span className="text-subtle">{t("adresse.verification")}</span>
           )}
           {slugState === "free" && (
             <span className="text-success">
-              {hostname} est libre — elle sera à vous.
+              {t("adresse.libre", { adresse: hostname })}
             </span>
           )}
           {slugState === "taken" && (
             <span className="text-danger">
-              {hostname} est déjà pris. Essayez une variante.
+              {t("adresse.prise", { adresse: hostname })}
             </span>
           )}
         </p>
@@ -261,7 +261,7 @@ export function SitePreview() {
         </div>
 
         <p className="mt-3 text-center text-xs text-black/40">
-          Prestations et tarifs d&apos;exemple — les vôtres les remplaceront.
+          {t("apercuVitrine.noteExemple")}
         </p>
       </div>
     </div>

@@ -193,7 +193,8 @@
         "soin": "Deep conditioning"
       },
       "salonParDefaut": "Your salon",
-      "couleurs": "Your colours"
+      "couleurs": "Your colours",
+      "noteExemple": "Sample services and prices — yours will replace them."
     },
     "filmSecours": "Your browser cannot play this video.",
     "essaiCourt": "Free trial · No card details",

@@ -13,7 +13,7 @@ export function BeautySalonSymbol({ className = "size-8" }: { className?: string
         alt=""
         width={1254}
         height={1254}
-        className="platform-logo absolute left-1/2 top-1/2 !size-[140%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
+        className="platform-logo absolute left-1/2 top-1/2 !size-[118%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
       />
     </span>
   );
@@ -45,7 +45,22 @@ export function BeautySalonLockup() {
         alt=""
         width={2172}
         height={724}
-        className="platform-logo-original absolute left-1/2 top-1/2 !h-auto !w-[285px] max-w-none -translate-x-1/2 -translate-y-1/2 sm:!w-[310px]"
+        className="platform-logo-footer absolute left-1/2 top-1/2 !h-auto !w-[285px] max-w-none -translate-x-1/2 -translate-y-1/2 sm:!w-[310px]"
+      />
+    </span>
+  );
+}
+
+/** Wordmark alone leaves the mobile footer compact without losing the brand name. */
+export function BeautySalonFooterWordmark() {
+  return (
+    <span className="relative inline-block h-10 w-48 overflow-hidden" role="img" aria-label="Beauty Salon">
+      <Image
+        src={WORDMARK}
+        alt=""
+        width={2172}
+        height={724}
+        className="platform-logo-footer absolute left-1/2 top-1/2 !h-auto !w-[215px] max-w-none -translate-x-1/2 -translate-y-1/2"
       />
     </span>
   );

@@ -193,7 +193,8 @@
         "soin": "Soin profond"
       },
       "salonParDefaut": "Votre salon",
-      "couleurs": "Vos couleurs"
+      "couleurs": "Vos couleurs",
+      "noteExemple": "Prestations et tarifs d'exemple — les vôtres les remplaceront."
     },
     "filmSecours": "Votre navigateur ne peut pas lire cette vidéo.",
     "essaiCourt": "Essai gratuit · Aucune carte bancaire",
