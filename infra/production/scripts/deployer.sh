@@ -97,6 +97,19 @@ etape "Demarrage"
 # ---------------------------------------------------------------------------
 # `--wait` rend la main quand l'API repond a sa sonde de sante, ou echoue.
 compose up --detach --remove-orphans --wait
+
+# Le Caddyfile est monte fichier par fichier. `git pull` le remplace par un
+# nouveau fichier : le conteneur, lui, garde l'ancien, et `caddy reload` relit
+# l'ancien. Seul un redemarrage refait le montage — on ne le fait que si la
+# configuration a vraiment change, pour ne pas couper les salons a chaque mise
+# a jour. (Constate le 2026-09-25 : les en-tetes de /media/ n'etaient pas
+# passes en ligne malgre le rechargement.)
+caddyfile_hote="$(sha256sum "$ICI/Caddyfile" | cut -d' ' -f1)"
+caddyfile_conteneur="$(compose exec -T caddy sha256sum /etc/caddy/Caddyfile </dev/null 2>/dev/null | cut -d' ' -f1 || true)"
+if [ "$caddyfile_hote" != "$caddyfile_conteneur" ]; then
+  echo "Caddyfile modifie : redemarrage de Caddy."
+  compose restart caddy
+fi
 compose ps
 
 domaine="$(valeur PLATFORM_DOMAIN)"
