@@ -118,6 +118,21 @@ FR: dict[str, str] = {
         "à choisir en connaissance de cause."
     ),
     "avis_bouton": "Laisser mon avis",
+    # --- mot de passe oublie (espace cliente) --------------------------------
+    "mdp_objet": "Réinitialiser votre mot de passe — {salon}",
+    "mdp_titre": "Choisissez un nouveau mot de passe",
+    "mdp_intro": (
+        "Vous avez demandé à réinitialiser le mot de passe de votre espace "
+        "cliente chez {salon}."
+    ),
+    "mdp_bouton": "Choisir mon mot de passe",
+    "mdp_validite": "Ce lien est valable {heures} heures et ne sert qu'une seule fois.",
+    "mdp_ignorer": (
+        "Vous n'êtes pas à l'origine de cette demande ? Ignorez ce message : "
+        "votre mot de passe actuel reste valable."
+    ),
+    "mdp_pied": "Vous recevez ce message parce qu'un compte cliente utilise cette adresse.",
+    "pre_mdp": "Votre lien pour choisir un nouveau mot de passe",
     # --- e-mails du salon ---------------------------------------------------
     "salon_nouvelle_titre": "Nouveau rendez-vous",
     "salon_nouvelle_objet": "Nouveau rendez-vous — {service}",
@@ -247,6 +262,18 @@ EN: dict[str, str] = {
         "with their eyes open."
     ),
     "avis_bouton": "Leave my review",
+    # --- forgotten password (client space) -----------------------------------
+    "mdp_objet": "Reset your password — {salon}",
+    "mdp_titre": "Choose a new password",
+    "mdp_intro": "You asked to reset the password of your client account at {salon}.",
+    "mdp_bouton": "Choose my password",
+    "mdp_validite": "This link is valid for {heures} hours and can only be used once.",
+    "mdp_ignorer": (
+        "Didn't ask for this? Just ignore this email: your current password "
+        "still works."
+    ),
+    "mdp_pied": "You are receiving this because a client account uses this address.",
+    "pre_mdp": "Your link to choose a new password",
     "salon_nouvelle_titre": "New appointment",
     "salon_nouvelle_objet": "New appointment — {service}",
     "salon_annule_titre": "Appointment cancelled",

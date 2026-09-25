@@ -35,6 +35,7 @@ from apps.clients.views import (
     ClientBookingsView,
     ClientForgetBookingView,
     ClientMeView,
+    ClientPasswordResetView,
     ClientSessionView,
     ClientSignupView,
 )
@@ -151,6 +152,11 @@ public_urlpatterns = [
     # mini-site, sans compte d'equipe. Les routes restent authentifiees,
     # sauf l'inscription.
     path("client/signup", ClientSignupView.as_view(), name="client-signup"),
+    path(
+        "client/password/reset",
+        ClientPasswordResetView.as_view(),
+        name="client-password-reset",
+    ),
     path("client/session", ClientSessionView.as_view(), name="client-session"),
     path("client/me", ClientMeView.as_view(), name="client-me"),
     path("client/bookings", ClientBookingsView.as_view(), name="client-bookings"),

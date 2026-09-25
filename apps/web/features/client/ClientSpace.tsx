@@ -52,7 +52,7 @@ import {
 } from "@/features/ui/AuthShell";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { SalonLogo } from "@/features/salon/SalonLogo";
-import { appUrl, platformUrl } from "@/lib/site";
+import { appUrl } from "@/lib/site";
 
 import { AuthShowcase } from "@/features/ui/AuthShowcase";
 // Les appels API de l'espace vivent à part : l'annulation en a besoin elle
@@ -476,18 +476,16 @@ function Gate({
             action={
               mode === "login" ? (
                 /*
-                  La réinitialisation mène au domaine de la plateforme, et
-                  c'est volontaire : l'e-mail de réinitialisation y renvoie
-                  de toute façon. Reconstruire ici un formulaire qui aboutit
-                  au même endroit donnerait deux chemins à maintenir pour un
-                  seul parcours.
+                  La réinitialisation reste sur le mini-site : elle menait à
+                  une page de la plateforme qui n'existait pas (404), et
+                  l'e-mail ramène de toute façon ici, aux couleurs du salon.
                 */
-                <a
-                  href={`${platformUrl}/mot-de-passe-oublie`}
+                <Lien
+                  href="/compte/mot-de-passe-oublie"
                   className={`${authLink} text-sm`}
                 >
                   {t("compte.motDePasseOublie")}
-                </a>
+                </Lien>
               ) : undefined
             }
           />

@@ -29,9 +29,7 @@ class IsClient(IsAuthenticated):
     message = "Cet espace est réservé aux clientes."
 
     def has_permission(self, request, view):
-        return super().has_permission(request, view) and hasattr(
-            request.user, "client_profile"
-        )
+        return super().has_permission(request, view) and hasattr(request.user, "client_profile")
 
 
 class ClientSignupView(APIView):
@@ -66,8 +64,37 @@ class ClientSignupView(APIView):
         # choisi un mot de passe est une etape que personne ne comprend.
         login(request, user)
 
+        return Response(ClientProfileSerializer(profile).data, status=status.HTTP_201_CREATED)
+
+
+class ClientPasswordResetView(APIView):
+    """« Mot de passe oublié » depuis un mini-site.
+
+    Toujours la même réponse, que l'adresse soit inscrite ou non. Bornée
+    comme la réinitialisation de l'espace professionnel : chaque appel peut
+    envoyer un e-mail.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_scope = "password_reset"
+
+    def post(self, request):
+        from apps.accounts.serializers import PasswordResetRequestSerializer
+        from apps.tenants.models import Tenant
+
+        from .services import demander_nouveau_mot_de_passe
+
+        payload = PasswordResetRequestSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        tenant = Tenant.objects.filter(pk=getattr(request, "tenant_id", None)).first()
+        if tenant is not None:
+            demander_nouveau_mot_de_passe(
+                payload.validated_data["email"],
+                tenant,
+                langue=str(request.data.get("lang", "fr"))[:2],
+            )
         return Response(
-            ClientProfileSerializer(profile).data, status=status.HTTP_201_CREATED
+            {"detail": "Si un compte existe pour cette adresse, un e-mail vient d'être envoyé."}
         )
 
 
@@ -105,9 +132,7 @@ class ClientForgetBookingView(APIView):
 
         booking_id = str(request.data.get("booking", "")).strip()
         if not booking_id:
-            return Response(
-                {"detail": "Rendez-vous manquant.", "code": "missing"}, status=400
-            )
+            return Response({"detail": "Rendez-vous manquant.", "code": "missing"}, status=400)
 
         # On verifie que la visite appartient bien a cette cliente, et
         # qu'elle est close. Sans ce controle, n'importe quel identifiant
@@ -118,21 +143,20 @@ class ClientForgetBookingView(APIView):
 
         if row is None:
             return Response(
-                {"detail": "Ce rendez-vous n'est pas dans votre historique.",
-                 "code": "not_yours"},
+                {"detail": "Ce rendez-vous n'est pas dans votre historique.", "code": "not_yours"},
                 status=404,
             )
         if not row.get("can_forget"):
             return Response(
-                {"detail": "Ce rendez-vous est encore à venir. "
-                           "Contactez le salon pour l'annuler.",
-                 "code": "still_upcoming"},
+                {
+                    "detail": "Ce rendez-vous est encore à venir. "
+                    "Contactez le salon pour l'annuler.",
+                    "code": "still_upcoming",
+                },
                 status=400,
             )
 
-        HiddenBooking.objects.get_or_create(
-            user=request.user, booking_id=booking_id
-        )
+        HiddenBooking.objects.get_or_create(user=request.user, booking_id=booking_id)
         return Response({"detail": "Retiré de votre historique."})
 
 
