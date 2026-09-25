@@ -29,6 +29,8 @@ import type { Atout } from "@/features/site/contenu";
 export function RailAtouts({ atouts }: { atouts: Atout[] }) {
   const t = useTranslations("accueil.atouts");
   const rail = useRef<HTMLUListElement>(null);
+  const interaction = useRef(false);
+  const actifRef = useRef(0);
   const [actif, setActif] = useState(0);
 
   useEffect(() => {
@@ -50,7 +52,10 @@ export function RailAtouts({ atouts }: { atouts: Atout[] }) {
           part = entree.intersectionRatio;
           meilleure = cartes.indexOf(entree.target as HTMLElement);
         }
-        if (meilleure >= 0 && part > 0.55) setActif(meilleure);
+        if (meilleure >= 0 && part > 0.55) {
+          actifRef.current = meilleure;
+          setActif(meilleure);
+        }
       },
       { root: noeud, threshold: [0.25, 0.55, 0.8, 1] },
     );
@@ -59,7 +64,24 @@ export function RailAtouts({ atouts }: { atouts: Atout[] }) {
     return () => observateur.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (atouts.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      const noeud = rail.current;
+      if (!noeud || interaction.current || document.visibilityState !== "visible") return;
+      const cadre = noeud.getBoundingClientRect();
+      if (cadre.top > window.innerHeight * 0.85 || cadre.bottom < 0) return;
+      const prochain = (actifRef.current + 1) % atouts.length;
+      const carte = noeud.children[prochain];
+      if (carte instanceof HTMLElement) {
+        noeud.scrollTo({ left: carte.offsetLeft - noeud.offsetLeft, behavior: "smooth" });
+      }
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [atouts.length]);
+
   function allerA(index: number) {
+    interaction.current = true;
     const noeud = rail.current;
     const carte = noeud?.children[index];
     if (!(carte instanceof HTMLElement)) return;
@@ -71,10 +93,10 @@ export function RailAtouts({ atouts }: { atouts: Atout[] }) {
 
   return (
     <div className="sm:hidden">
-      <ul ref={rail} className="rail">
+      <ul ref={rail} className="rail" onPointerDown={() => { interaction.current = true; }} onFocusCapture={() => { interaction.current = true; }}>
         {atouts.map((atout, index) => (
           <li key={atout.cle}>
-            <article className="verre lisere relative flex h-full flex-col overflow-hidden rounded-3xl p-5 shadow-card">
+            <article data-actif={index === actif} className="rail-carte verre lisere relative flex h-full flex-col overflow-hidden rounded-3xl p-5 shadow-card">
               <span
                 aria-hidden
                 className="chiffre-fantome tabular pointer-events-none absolute -right-1 -top-1 z-0 text-6xl font-bold"

@@ -168,6 +168,8 @@
     "film": {
       "telecharger": "Télécharger le film (3 Mo)",
       "lancer": "Lancer le film de présentation, 29 secondes, avec le son",
+      "lancerMuet": "Lire le film de présentation sans le son",
+      "activer": "Activer le son",
       "couper": "Couper le son du film",
       "chapitres": {
         "demandes": "Les demandes arrivent",
@@ -177,6 +179,8 @@
       }
     },
     "territoiresLus": "Utilisé par des salons au {lieux}.",
+    "territoiresPause": "Mettre le bandeau des pays en pause",
+    "territoiresReprendre": "Relancer le bandeau des pays",
     "apercuVitrine": {
       "nomChamp": "Le nom de votre salon",
       "direct": "Aperçu en direct",

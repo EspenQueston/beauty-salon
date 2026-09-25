@@ -49,13 +49,53 @@ import { Fleche } from "@/features/site/contenu";
 import { illustrationUrl } from "@/lib/illustrations";
 import { appUrl } from "@/lib/site";
 
-export function HautMobile({ photo }: { photo: string }) {
+export function HautMobile() {
   const t = useTranslations("accueil");
   const c = useTranslations("commun");
+  const film = useTranslations("site.film");
+  const video = useRef<HTMLVideoElement>(null);
+  const [muet, setMuet] = useState(true);
+  const [enLecture, setEnLecture] = useState(false);
   /* Les métiers et la promesse sont des listes : leur nombre peut différer
      d'une langue à l'autre, et rien dans la mise en page n'en dépend. */
   const metiers = t.raw("metiers") as string[];
   const promesse = t.raw("promesse") as string[];
+
+  useEffect(() => {
+    const noeud = video.current;
+    if (!noeud) return;
+    noeud.defaultMuted = true;
+    noeud.muted = true;
+    const lien = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }).connection;
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      lien?.saveData ||
+      lien?.effectiveType === "2g" ||
+      lien?.effectiveType === "slow-2g"
+    ) return;
+
+    // A fresh mount (including a page refresh) starts at the beginning.
+    noeud.currentTime = 0;
+    void noeud.play().then(() => setEnLecture(true), () => setEnLecture(false));
+
+    if (typeof IntersectionObserver === "undefined") return;
+    const observateur = new IntersectionObserver(([entree]) => {
+      if (!entree?.isIntersecting) noeud.pause();
+      else if (noeud.paused) void noeud.play().catch(() => {});
+    }, { threshold: 0.15 });
+    observateur.observe(noeud);
+    return () => observateur.disconnect();
+  }, []);
+
+  function basculerSon() {
+    const noeud = video.current;
+    if (!noeud) return;
+    noeud.muted = !noeud.muted;
+    setMuet(noeud.muted);
+    if (noeud.paused) void noeud.play().catch(() => {});
+  }
 
   return (
     <section className="relative isolate overflow-hidden px-4 pb-8 pt-24 sm:hidden">
@@ -99,18 +139,23 @@ export function HautMobile({ photo }: { photo: string }) {
         </h1>
       </div>
 
-      {/* ------------------------------------------------------- la photo */}
+      {/* Le film remplace la photo : lecture muette automatique, son sur geste. */}
       <div
-        className="rise pleine-largeur relative z-10 mt-6"
+        className="rise relative z-10 mx-1 mt-7"
         style={{ animationDelay: "420ms" }}
       >
-        <div className="relative overflow-hidden rounded-3xl border border-line shadow-float">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={photo}
-            alt=""
-            fetchPriority="high"
-            className="derive aspect-[16/11] size-full object-cover"
+        <div className="lisere relative overflow-hidden rounded-3xl border border-line bg-[#0e0e12] shadow-float">
+          <video
+            ref={video}
+            src="/film/beauty-salon.mp4"
+            poster="/film/affiche.jpg"
+            preload="metadata"
+            playsInline
+            loop
+            onPlay={() => setEnLecture(true)}
+            onPause={() => setEnLecture(false)}
+            className="block aspect-video w-full object-cover"
+            aria-label={film("lancerMuet")}
           />
           {/* Un voile en bas : il n'est là que pour asseoir les deux pastilles,
               pas pour porter du texte. */}
@@ -119,34 +164,19 @@ export function HautMobile({ photo }: { photo: string }) {
             className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/45 to-transparent"
           />
 
-          <span className="verre absolute left-3 top-3 flex items-center gap-2 rounded-xl px-2.5 py-1.5 shadow-float">
-            <span
-              aria-hidden
-              className="pouls size-1.5 shrink-0 rounded-full bg-salon"
-            />
-            <span className="tabular text-[0.72rem] font-semibold text-ink">
-              10:30 · Cornrows
-            </span>
-          </span>
-
-          <span className="verre absolute bottom-3 right-3 flex max-w-[calc(100%-1.5rem)] items-center gap-1.5 rounded-xl px-2.5 py-1.5 shadow-float">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden
-              className="size-3 shrink-0 text-salon-ink"
-            >
-              <path
-                d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"
-                strokeLinecap="round"
-              />
-            </svg>
-            <span className="truncate text-[0.7rem] font-medium text-ink">
-              aminata.beauty-salon.com
-            </span>
-          </span>
+          {!enLecture && (
+            <button type="button" onClick={() => {
+              video.current?.play().catch(() => {});
+            }} aria-label={film("lancerMuet")}
+              className="absolute inset-0 grid place-items-center bg-black/25 text-white">
+              <span className="grid size-14 place-items-center rounded-full bg-white/90 text-salon shadow-lg" aria-hidden>▶</span>
+            </button>
+          )}
+          <button type="button" onClick={basculerSon}
+            aria-label={muet ? film("activer") : film("couper")}
+            className="absolute bottom-3 right-3 z-10 rounded-full bg-black/70 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm active:scale-95">
+            {muet ? film("activer") : film("couper")}
+          </button>
         </div>
       </div>
 
@@ -165,29 +195,12 @@ export function HautMobile({ photo }: { photo: string }) {
       >
         <a
           href={`${appUrl}/inscription`}
-          className="salon-gradient eclat flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold text-white shadow-lg"
+          className="salon-gradient eclat mobile-cta flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold text-white shadow-lg"
         >
           <span className="relative z-10">{c("creerSalon")}</span>
           <Fleche className="relative z-10 size-4" />
         </a>
 
-        <a
-          href="#film"
-          className="verre flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[0.95rem] font-medium text-ink"
-        >
-          <span className="grid size-5 place-items-center rounded-full bg-salon text-white">
-            <svg
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden
-              className="size-2.5 translate-x-px"
-            >
-              <path d="M8 5.2 19 12 8 18.8Z" />
-            </svg>
-          </span>
-          {t("voirFilm")}
-          <span className="tabular text-xs text-muted">{t("dureeFilm")}</span>
-        </a>
       </div>
 
       {/* `text-muted` et non `text-subtle` : ce gris-là donne 2,69:1 sur le
@@ -215,35 +228,23 @@ export function HautMobile({ photo }: { photo: string }) {
  */
 export function BandeauTerritoires({ lieux }: { lieux: string[] }) {
   const t = useTranslations("site");
-  const piste = useRef<HTMLDivElement>(null);
-  const [anime, setAnime] = useState(false);
-
-  useEffect(() => {
-    // On n'anime que si le contenu dépasse : sur un écran large, une piste
-    // qui glisse alors qu'il reste de la place se lit comme un bug.
-    const noeud = piste.current;
-    if (!noeud) return;
-    setAnime(noeud.scrollWidth / 2 > noeud.clientWidth);
-  }, []);
+  const accueil = useTranslations("accueil");
+  const [arrete, setArrete] = useState(false);
 
   return (
-    <div className="pleine-largeur relative overflow-hidden border-y border-line py-3 sm:hidden">
+    <div className="marquee relative overflow-hidden border-y border-line bg-surface/70 py-3.5 backdrop-blur-sm">
       {/* La liste lue à voix haute : la piste au-dessus est décorative
           et défile, ce qui ne se lit pas. */}
       <p className="sr-only">
         {t("territoiresLus", { lieux: lieux.join(", ") })}
       </p>
-      <div
-        ref={piste}
-        aria-hidden
-        className={`flex w-max items-center gap-6 ${anime ? "marquee-piste" : ""}`}
-      >
+      <div aria-hidden className="marquee-piste items-center" data-arretee={arrete ? "" : undefined}>
         {[0, 1].map((copie) => (
-          <div key={copie} className="flex items-center gap-6">
+          <div key={copie} className="flex shrink-0 items-center gap-6 pr-6 sm:gap-10 sm:pr-10">
             {lieux.map((lieu) => (
               <span
                 key={lieu}
-                className="flex shrink-0 items-center gap-2 text-[0.8rem] font-medium text-muted"
+                className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted sm:text-sm"
               >
                 <span aria-hidden className="size-1.5 rounded-full bg-salon" />
                 {lieu}
@@ -253,11 +254,20 @@ export function BandeauTerritoires({ lieux }: { lieux: string[] }) {
               aria-hidden
               className="shrink-0 text-[0.7rem] uppercase tracking-[0.14em] text-subtle"
             >
-              Salons utilisateurs
+              {accueil("utilisePar")}
             </span>
           </div>
         ))}
       </div>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-surface via-surface/80 to-transparent sm:w-24" />
+      <button
+        type="button"
+        onClick={() => setArrete((value) => !value)}
+        aria-label={arrete ? t("territoiresReprendre") : t("territoiresPause")}
+        className="absolute right-2 top-1/2 z-10 grid size-8 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface text-xs text-ink shadow-sm transition hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-salon sm:right-5"
+      >
+        <span aria-hidden="true">{arrete ? "▶" : "Ⅱ"}</span>
+      </button>
     </div>
   );
 }

@@ -28,46 +28,7 @@ import { useEffect, useState } from "react";
 import { checkSlug } from "@/lib/dashboard";
 import { appUrl } from "@/lib/site";
 import { SLUG_MIN, toSlug } from "@/lib/slug";
-
-/*
-  Mêmes palettes que dans l'espace professionnel : ce qu'on voit est vrai.
-
-  Seule la couleur fait foi ; le nom n'est là que pour la désigner, et il se
-  traduit. Le jour où l'espace professionnel passera à l'anglais, il lira ces
-  mêmes clés — c'est pour ça qu'elles sont ici et non dans deux catalogues.
-*/
-const PALETTES = [
-  { cle: "rose", primary: "#B4436C", accent: "#F7D9E1", surface: "#FCF7F9" },
-  { cle: "orNuit", primary: "#1F2937", accent: "#E9C46A", surface: "#FBF8F1" },
-  {
-    cle: "terracotta",
-    primary: "#9C4221",
-    accent: "#F6D5C0",
-    surface: "#FDF7F3",
-  },
-  {
-    cle: "emeraude",
-    primary: "#0F766E",
-    accent: "#CDEDE7",
-    surface: "#F4FAF9",
-  },
-  { cle: "violet", primary: "#6D28D9", accent: "#E4D8FB", surface: "#F9F7FE" },
-  {
-    cle: "bleuNuit",
-    primary: "#1E3A8A",
-    accent: "#D6E0FA",
-    surface: "#F6F8FD",
-  },
-  { cle: "cacao", primary: "#5C3A21", accent: "#E8D5C0", surface: "#FBF7F3" },
-  { cle: "corail", primary: "#C2410C", accent: "#FDDCC8", surface: "#FFF8F4" },
-  { cle: "prune", primary: "#86198F", accent: "#F3D5F5", surface: "#FDF6FE" },
-  {
-    cle: "encreMenthe",
-    primary: "#134E4A",
-    accent: "#B9E7DC",
-    surface: "#F2FAF8",
-  },
-];
+import { PALETTES } from "./palettes";
 
 type SlugState = "idle" | "checking" | "free" | "taken";
 
@@ -75,7 +36,7 @@ export function SitePreview() {
   const t = useTranslations("site");
   const c = useTranslations("commun");
   const [name, setName] = useState("");
-  const [palette, setPalette] = useState(PALETTES[0]);
+  const [palette, setPalette] = useState<(typeof PALETTES)[number]>(PALETTES[0]);
   /** Dernière réponse du serveur, avec l'adresse à laquelle elle répond. */
   const [checked, setChecked] = useState<{
     slug: string;

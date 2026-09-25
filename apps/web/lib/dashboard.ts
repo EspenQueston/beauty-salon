@@ -195,8 +195,8 @@ export interface SignupPayload {
   timezone_name: string;
   currency: string;
   accepts_terms: boolean;
-  /** Couleurs composées sur la page d'accueil, reprises telles quelles. */
-  theme_config?: Record<string, string>;
+  /** Palette obligatoire choisie pendant l'inscription. */
+  theme_config: Record<string, string>;
 }
 
 /**

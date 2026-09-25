@@ -26,6 +26,7 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+import { PALETTES } from "@/features/site/palettes";
 import { Icon } from "./icons";
 import { ContrastMeter } from "./ContrastMeter";
 import { MediaPicker, type PickableMedia } from "./MediaPicker";
@@ -90,56 +91,6 @@ const PROFILE_SECTIONS: NavSection[] = [
 const DEFAULT_PRIMARY = "#B4436C";
 const DEFAULT_ACCENT = "#F2C4CE";
 const DEFAULT_SURFACE = "#FAF7F8";
-
-/**
- * Palettes prêtes à l'emploi : choisir bat composer, pour la plupart.
- *
- * Chacune porte les trois couleurs, fond de page compris. Sans lui, choisir
- * « Terracotta » laissait le mini-site sur le fond rosé d'origine — deux
- * familles de couleurs sur la même page, ce qui se voit tout de suite.
- */
-const PALETTES = [
-  {
-    name: "Rose poudré",
-    primary: "#B4436C",
-    accent: "#F7D9E1",
-    surface: "#FCF7F9",
-  },
-  {
-    name: "Or et nuit",
-    primary: "#1F2937",
-    accent: "#E9C46A",
-    surface: "#FBF8F1",
-  },
-  {
-    name: "Terracotta",
-    primary: "#9C4221",
-    accent: "#F6D5C0",
-    surface: "#FDF7F3",
-  },
-  {
-    name: "Émeraude",
-    primary: "#0F766E",
-    accent: "#CDEDE7",
-    surface: "#F4FAF9",
-  },
-  { name: "Violet", primary: "#6D28D9", accent: "#E4D8FB", surface: "#F9F7FE" },
-  {
-    name: "Bleu nuit",
-    primary: "#1E3A8A",
-    accent: "#D6E0FA",
-    surface: "#F6F8FD",
-  },
-  { name: "Cacao", primary: "#5C3A21", accent: "#E8D5C0", surface: "#FBF7F3" },
-  { name: "Corail", primary: "#C2410C", accent: "#FDDCC8", surface: "#FFF8F4" },
-  { name: "Prune", primary: "#86198F", accent: "#F3D5F5", surface: "#FDF6FE" },
-  {
-    name: "Encre et menthe",
-    primary: "#134E4A",
-    accent: "#B9E7DC",
-    surface: "#F2FAF8",
-  },
-];
 
 export function SalonProfileScreen() {
   const { membership } = useDashboard();

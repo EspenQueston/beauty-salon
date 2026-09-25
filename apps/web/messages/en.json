@@ -168,6 +168,8 @@
     "film": {
       "telecharger": "Download the film (3 MB)",
       "lancer": "Play the 29-second presentation film, with sound",
+      "lancerMuet": "Play the presentation film without sound",
+      "activer": "Turn on sound",
       "couper": "Mute the film",
       "chapitres": {
         "demandes": "Requests coming in",
@@ -177,6 +179,8 @@
       }
     },
     "territoiresLus": "Used by salons in {lieux}.",
+    "territoiresPause": "Pause the country ticker",
+    "territoiresReprendre": "Resume the country ticker",
     "apercuVitrine": {
       "nomChamp": "Your salon's name",
       "direct": "Live preview",

@@ -47,6 +47,8 @@ import { Acquis, ForceMotDePasse, Parcours } from "./Parcours";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { guessCountry } from "@/lib/locale";
 import { useToast } from "@/features/ui/Toast";
+import { PALETTES, paletteDepuisCouleurs } from "@/features/site/palettes";
+import { useTranslations } from "next-intl";
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
 
@@ -81,6 +83,10 @@ const schema = z.object({
   display_name: z.string().max(120).optional(),
   phone: z.string().max(32).optional(),
   country: z.string(),
+  palette: z.string().refine(
+    (value) => PALETTES.some((entry) => entry.cle === value),
+    "Choisissez les couleurs de votre salon.",
+  ),
   accepts_terms: z.literal(true, {
     message: "Vous devez accepter les conditions.",
   }),
@@ -100,8 +106,8 @@ const GROUPES = [
   {
     cle: "salon",
     titre: "Votre salon",
-    champs: ["salon_name", "slug", "country"],
-    requis: ["salon_name", "slug"],
+    champs: ["salon_name", "slug", "country", "palette"],
+    requis: ["salon_name", "slug", "palette"],
   },
   {
     cle: "vous",
@@ -207,12 +213,15 @@ function readPrefill(): {
   return {
     name: params.get("nom") ?? "",
     slug: params.get("slug") ?? "",
-    theme: primary && accent && surface ? { primary, accent, surface } : null,
+    theme: primary && accent && surface && paletteDepuisCouleurs({ primary, accent, surface })
+      ? { primary, accent, surface }
+      : null,
   };
 }
 
 export function SignupForm() {
   const toast = useToast();
+  const site = useTranslations("site");
   const [prefill] = useState(readPrefill);
   const [done, setDone] = useState<{
     hostname: string;
@@ -275,12 +284,14 @@ export function SignupForm() {
       salon_name: prefill.name,
       display_name: "",
       phone: "",
+      palette: paletteDepuisCouleurs(prefill.theme),
     },
   });
 
   const salonName = watch("salon_name");
   const slug = watch("slug");
   const country = watch("country");
+  const palette = watch("palette");
   const email = watch("email");
   const password = watch("password") ?? "";
   const accepted = watch("accepts_terms");
@@ -320,6 +331,7 @@ export function SignupForm() {
     () => COUNTRIES.find((entry) => entry.code === country) ?? COUNTRIES[0],
     [country],
   );
+  const couleursChoisies = PALETTES.find((entry) => entry.cle === palette);
 
   /*
    * Avancement, dérivé des valeurs réelles du formulaire.
@@ -330,6 +342,7 @@ export function SignupForm() {
   const rempli: Record<string, boolean> = {
     salon_name: (salonName ?? "").trim().length >= 2,
     slug: (slug ?? "").length >= 3 && slugState !== "taken",
+    palette: PALETTES.some((entry) => entry.cle === palette),
     email: /.+@.+\..+/.test(email ?? ""),
     password: password.length >= 10,
     accepts_terms: Boolean(accepted),
@@ -418,15 +431,21 @@ export function SignupForm() {
   const submit = useCallback(
     async (values: Values) => {
       try {
+        const { palette: paletteKey, ...fields } = values;
+        const couleurs = PALETTES.find((entry) => entry.cle === paletteKey);
+        if (!couleurs) return;
         const result = await signup({
-          ...values,
+          ...fields,
           display_name: values.display_name || undefined,
           phone: values.phone || undefined,
           timezone_name: place.tz,
           currency: place.currency,
           accepts_terms: true,
-          // Reprend les couleurs composées sur la page d'accueil, s'il y en a.
-          ...(prefill.theme ? { theme_config: prefill.theme } : {}),
+          theme_config: {
+            primary: couleurs.primary,
+            accent: couleurs.accent,
+            surface: couleurs.surface,
+          },
         });
         toast.success(
           `${result.tenant.name} est créé. Connectez-vous pour entrer.`,
@@ -444,7 +463,7 @@ export function SignupForm() {
         );
       }
     },
-    [place, toast, prefill.theme],
+    [place, toast],
   );
 
   /*
@@ -627,6 +646,66 @@ export function SignupForm() {
             <Acquis actif ton="neutre">
               Tarifs en {place.currency} · fuseau {place.tz}
             </Acquis>
+
+            <fieldset className="mt-5" aria-describedby={errors.palette ? "palette-erreur" : undefined}>
+              <legend className="mb-2 text-sm font-medium text-ink">
+                Vos couleurs <span className="text-danger" aria-hidden="true">*</span>
+                <span className="sr-only">(obligatoire)</span>
+              </legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {PALETTES.map((entry) => {
+                  const active = palette === entry.cle;
+                  return (
+                    <label key={entry.cle} className="relative min-w-0 cursor-pointer">
+                      <input
+                        {...register("palette")}
+                        type="radio"
+                        value={entry.cle}
+                        className="peer sr-only"
+                      />
+                      <span className={`flex min-h-11 min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2 text-xs font-medium transition duration-200 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-salon active:scale-[0.97] sm:text-sm ${
+                        active
+                          ? "border-salon bg-salon-soft text-ink shadow-sm"
+                          : "border-line bg-surface text-muted hover:border-salon hover:bg-surface-hover"
+                      }`}>
+                        <span className="flex shrink-0" aria-hidden="true">
+                          <span className="size-4 rounded-full ring-1 ring-black/10" style={{ background: entry.primary }} />
+                          <span className="-ml-1.5 size-4 rounded-full ring-1 ring-black/10" style={{ background: entry.accent }} />
+                        </span>
+                        <span className="min-w-0 leading-tight">{site(`palettes.${entry.cle}`)}</span>
+                        {active && <span className="ml-auto shrink-0 text-salon-ink" aria-hidden="true">✓</span>}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {errors.palette && (
+                <p id="palette-erreur" role="alert" className="mt-2 text-xs font-medium text-danger">
+                  {errors.palette.message}
+                </p>
+              )}
+              {couleursChoisies && (
+                <div
+                  className="mt-3 flex items-center gap-2.5 rounded-xl border px-3 py-2.5 shadow-sm transition-colors duration-300"
+                  style={{ background: couleursChoisies.surface, borderColor: couleursChoisies.accent }}
+                >
+                  <span
+                    className="grid size-8 shrink-0 place-items-center rounded-lg text-xs font-bold text-white"
+                    style={{ background: couleursChoisies.primary }}
+                    aria-hidden="true"
+                  >
+                    BS
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-semibold" style={{ color: couleursChoisies.primary }}>
+                      {salonName?.trim() || "Votre salon"}
+                    </span>
+                    <span className="block text-[0.68rem] text-muted">Aperçu de votre mini-site</span>
+                  </span>
+                  <span className="size-2 shrink-0 rounded-full" style={{ background: couleursChoisies.accent }} aria-hidden="true" />
+                </div>
+              )}
+            </fieldset>
           </Cadre>
 
           {/* ---------------------------------------------------- 2. Vous */}

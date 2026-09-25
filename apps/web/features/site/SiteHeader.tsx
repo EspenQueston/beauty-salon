@@ -60,12 +60,12 @@ export function SiteHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4">
       <div
-        className={`mx-auto max-w-5xl rounded-2xl border border-line bg-surface/85 backdrop-blur-xl transition-shadow duration-300 ${
+        className={`mx-auto w-full max-w-7xl rounded-2xl border border-line bg-surface/85 backdrop-blur-xl transition-shadow duration-300 ${
           scrolled ? "shadow-float" : "shadow-card"
         }`}
       >
-        <div className="flex items-center gap-4 px-3 py-2.5 sm:px-4">
-          <a href="#haut" className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4 xl:gap-4">
+          <a href="#haut" className="flex shrink-0 items-center gap-2.5">
             <span className="salon-gradient inline-flex size-8 items-center justify-center rounded-xl text-sm font-semibold text-white">
               BS
             </span>
@@ -76,7 +76,7 @@ export function SiteHeader() {
 
           <nav
             aria-label={t("nav.principale")}
-            className="ml-auto hidden md:block"
+            className="ml-auto hidden min-w-0 xl:block"
           >
             <ul className="flex items-center gap-1">
               {LINKS.map((link) => (
@@ -92,7 +92,7 @@ export function SiteHeader() {
             </ul>
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
             {/* Sous 640 px la barre garde le logo, le thème, l'appel à
                 l'action et le menu : la langue rejoint le menu. */}
             {/*
@@ -114,7 +114,7 @@ export function SiteHeader() {
 
             <a
               href={appUrl}
-              className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink lg:inline-flex"
+              className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink 2xl:inline-flex"
             >
               {c("seConnecter")}
             </a>
@@ -132,7 +132,7 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="menu-mobile"
               aria-label={open ? c("fermerMenu") : c("ouvrirMenu")}
-              className="inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink md:hidden"
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink xl:hidden"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -157,7 +157,7 @@ export function SiteHeader() {
         <div
           id="menu-mobile"
           hidden={!open}
-          className="border-t border-line px-3 py-3 md:hidden"
+          className="border-t border-line px-3 py-3 xl:hidden"
         >
           <ul className="grid grid-cols-2 gap-1">
             {LINKS.map((link) => (

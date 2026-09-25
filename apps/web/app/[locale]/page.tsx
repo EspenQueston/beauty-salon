@@ -159,10 +159,6 @@ export default async function PlatformHome() {
   const territoires = t.raw("territoires") as string[];
 
   const photo = illustrationUrl(HERO_IMAGE.id, { width: 1100, ratio: 1.05 });
-  const photoMobile = illustrationUrl(HERO_IMAGE.id, {
-    width: 900,
-    ratio: 0.7,
-  });
 
   return (
     <div id="haut" className="flex min-h-svh flex-col bg-bg">
@@ -171,10 +167,7 @@ export default async function PlatformHome() {
 
       {/* ----------------------------------------------- haut de page, mobile */}
       <div id="accroche">
-        <HautMobile photo={photoMobile} />
-        <div className="px-4 sm:hidden">
-          <BandeauTerritoires lieux={territoires} />
-        </div>
+        <HautMobile />
       </div>
 
       {/* ---------------------------------------------- haut de page, bureau */}
@@ -310,27 +303,10 @@ export default async function PlatformHome() {
             </div>
           </div>
 
-          <Reveal className="mt-12 border-t border-line pt-6">
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
-              {t("utilisePar")}
-            </p>
-            <ul className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-              {territoires.map((lieu) => (
-                <li
-                  key={lieu}
-                  className="flex items-center gap-2 text-sm font-medium text-muted"
-                >
-                  <span
-                    aria-hidden
-                    className="pouls size-1.5 rounded-full bg-salon"
-                  />
-                  {lieu}
-                </li>
-              ))}
-            </ul>
-          </Reveal>
         </div>
       </section>
+
+      <BandeauTerritoires lieux={territoires} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6">
         {/* --------------------------------------------------------- atouts */}
@@ -411,16 +387,19 @@ export default async function PlatformHome() {
           on lit plus vite qu'on ne regarde, et une personne pressée doit
           pouvoir repartir sans avoir rien lancé.
         */}
-        <section id="film" className="scroll-mt-24 py-12 sm:py-24">
-          <TitreSection
-            centre
-            surtitre={t("film.surtitre")}
-            titre={t("film.titre")}
-            sous={t("film.sous")}
-          />
-          <Reveal>
-            <Film />
-          </Reveal>
+        <section id="film" className="relative isolate scroll-mt-24 overflow-hidden rounded-[2rem] border border-line bg-surface-muted/50 px-3 py-12 sm:px-8 sm:py-20">
+          <Aurore />
+          <div className="relative z-10">
+            <TitreSection
+              centre
+              surtitre={t("film.surtitre")}
+              titre={t("film.titre")}
+              sous={t("film.sous")}
+            />
+            <Reveal>
+              <Film />
+            </Reveal>
+          </div>
         </section>
 
         {/* -------------------------------------------- l'adresse, téléphone */}
@@ -470,7 +449,7 @@ export default async function PlatformHome() {
                 <span aria-hidden className="frise-noeud">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <div className="verre lisere rounded-2xl p-4 shadow-card">
+                <div className="frise-carte verre lisere rounded-2xl p-4 shadow-card">
                   <h3 className="text-[0.98rem] font-semibold text-ink">
                     {t(`etapes.${etape}.titre`)}
                   </h3>
@@ -520,7 +499,7 @@ export default async function PlatformHome() {
                 {/* <details> plutôt qu'un accordéon en JavaScript : le contenu
                     reste dans la page pour la recherche et pour qui n'a pas
                     de script. */}
-                <details className="verre lisere halo group rounded-2xl px-4 shadow-card open:shadow-float sm:px-6">
+                <details className="faq-mobile verre lisere halo group rounded-2xl px-4 shadow-card open:shadow-float sm:px-6">
                   <summary className="relative z-10 flex cursor-pointer list-none items-center gap-3 py-4 font-medium text-ink [&::-webkit-details-marker]:hidden sm:gap-4">
                     <span className="tabular shrink-0 text-sm font-semibold text-salon-ink/45">
                       {String(index).padStart(2, "0")}
