@@ -9,50 +9,89 @@
  */
 
 import {
+  Bodoni_Moda,
+  Cinzel,
   Cormorant_Garamond,
   DM_Serif_Display,
+  Dancing_Script,
+  Fraunces,
+  Great_Vibes,
+  Italiana,
   Josefin_Sans,
+  Libre_Baskerville,
   Lora,
+  Manrope,
+  Marcellus,
   Montserrat,
   Nunito,
+  Outfit,
+  Parisienne,
   Playfair_Display,
   Poppins,
+  Quicksand,
+  Raleway,
 } from "next/font/google";
 
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--police-playfair", preload: false });
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--police-cormorant",
-  preload: false,
-});
-const dmSerif = DM_Serif_Display({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--police-dm-serif",
-  preload: false,
-});
-const lora = Lora({ subsets: ["latin"], variable: "--police-lora", preload: false });
-const montserrat = Montserrat({ subsets: ["latin"], variable: "--police-montserrat", preload: false });
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--police-poppins",
-  preload: false,
-});
-const josefin = Josefin_Sans({ subsets: ["latin"], variable: "--police-josefin", preload: false });
-const nunito = Nunito({ subsets: ["latin"], variable: "--police-nunito", preload: false });
+// Options ecrites en toutes lettres a chaque appel : le chargeur de
+// `next/font` lit ces objets a la compilation et refuse les variables et
+// les decompositions (`...`).
 
-const POLICES: Record<string, { variable: string; famille: string }> = {
-  playfair: { variable: playfair.variable, famille: "var(--police-playfair)" },
-  cormorant: { variable: cormorant.variable, famille: "var(--police-cormorant)" },
-  "dm-serif": { variable: dmSerif.variable, famille: "var(--police-dm-serif)" },
-  lora: { variable: lora.variable, famille: "var(--police-lora)" },
-  montserrat: { variable: montserrat.variable, famille: "var(--police-montserrat)" },
-  poppins: { variable: poppins.variable, famille: "var(--police-poppins)" },
-  josefin: { variable: josefin.variable, famille: "var(--police-josefin)" },
-  nunito: { variable: nunito.variable, famille: "var(--police-nunito)" },
-};
+const playfair = Playfair_Display({ subsets: ["latin"], preload: false, variable: "--police-playfair" });
+const cormorant = Cormorant_Garamond({ subsets: ["latin"], preload: false, weight: ["400", "500", "600", "700"],
+  variable: "--police-cormorant",
+});
+const dmSerif = DM_Serif_Display({ subsets: ["latin"], preload: false, weight: "400", variable: "--police-dm-serif" });
+const lora = Lora({ subsets: ["latin"], preload: false, variable: "--police-lora" });
+const montserrat = Montserrat({ subsets: ["latin"], preload: false, variable: "--police-montserrat" });
+const poppins = Poppins({ subsets: ["latin"], preload: false, weight: ["400", "500", "600", "700"],
+  variable: "--police-poppins",
+});
+const josefin = Josefin_Sans({ subsets: ["latin"], preload: false, variable: "--police-josefin" });
+const nunito = Nunito({ subsets: ["latin"], preload: false, variable: "--police-nunito" });
+const raleway = Raleway({ subsets: ["latin"], preload: false, variable: "--police-raleway" });
+const manrope = Manrope({ subsets: ["latin"], preload: false, variable: "--police-manrope" });
+const outfit = Outfit({ subsets: ["latin"], preload: false, variable: "--police-outfit" });
+const quicksand = Quicksand({ subsets: ["latin"], preload: false, variable: "--police-quicksand" });
+const libreBaskerville = Libre_Baskerville({ subsets: ["latin"], preload: false, variable: "--police-libre-baskerville" });
+const fraunces = Fraunces({ subsets: ["latin"], preload: false, variable: "--police-fraunces" });
+const bodoni = Bodoni_Moda({ subsets: ["latin"], preload: false, variable: "--police-bodoni" });
+const cinzel = Cinzel({ subsets: ["latin"], preload: false, variable: "--police-cinzel" });
+const italiana = Italiana({ subsets: ["latin"], preload: false, weight: "400", variable: "--police-italiana" });
+const marcellus = Marcellus({ subsets: ["latin"], preload: false, weight: "400", variable: "--police-marcellus" });
+const greatVibes = Great_Vibes({ subsets: ["latin"], preload: false, weight: "400", variable: "--police-great-vibes" });
+const dancing = Dancing_Script({ subsets: ["latin"], preload: false, variable: "--police-dancing-script" });
+const parisienne = Parisienne({ subsets: ["latin"], preload: false, weight: "400", variable: "--police-parisienne" });
+
+const POLICES: Record<string, { variable: string; famille: string }> = Object.fromEntries(
+  (
+    [
+      ["playfair", playfair],
+      ["cormorant", cormorant],
+      ["dm-serif", dmSerif],
+      ["lora", lora],
+      ["montserrat", montserrat],
+      ["poppins", poppins],
+      ["josefin", josefin],
+      ["nunito", nunito],
+      ["raleway", raleway],
+      ["manrope", manrope],
+      ["outfit", outfit],
+      ["quicksand", quicksand],
+      ["libre-baskerville", libreBaskerville],
+      ["fraunces", fraunces],
+      ["bodoni", bodoni],
+      ["cinzel", cinzel],
+      ["italiana", italiana],
+      ["marcellus", marcellus],
+      ["great-vibes", greatVibes],
+      ["dancing-script", dancing],
+      ["parisienne", parisienne],
+    ] as const
+  ).map(([cle, police]) => [
+    cle,
+    { variable: police.variable, famille: `var(--police-${cle})` },
+  ]),
+);
 
 /**
  * Les classes et les variables CSS qui posent les deux polices choisies.

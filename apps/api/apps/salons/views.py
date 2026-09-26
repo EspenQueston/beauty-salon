@@ -195,11 +195,32 @@ class PublicSalonView(APIView):
         from . import personnalisation
 
         fonctions = fonctions_du_salon(tenant.id)
-        donnees["site_config"] = (
+        config = (
             personnalisation.complete(profile.site_config)
             if fonctions.get("customization")
             else None
         )
+        if config and config["pages"]:
+            # L'image de chaque page, servie comme les autres medias (avec
+            # ses variantes). Un media devenu prive ou efface disparait de
+            # la page plutot que de casser son affichage.
+            from .serializers import MediaAssetSerializer
+
+            ids = personnalisation.images_des_pages(config)
+            medias = {
+                str(asset.id): asset
+                for asset in MediaAsset.objects.filter(
+                    id__in=ids, visibility=MediaAsset.Visibility.PUBLIC
+                ).exclude(kind=MediaAsset.Kind.PROOF)
+            }
+            for page in config["pages"]:
+                asset = medias.get(page.get("image") or "")
+                page["image"] = (
+                    MediaAssetSerializer(asset, context={"request": request}).data
+                    if asset
+                    else None
+                )
+        donnees["site_config"] = config
         # La bulle ne s'affiche que si le salon y a droit *et* l'a laissee
         # allumee : coupee, elle ne repondrait que « pas active ».
         from apps.assistants.models import AssistantReglages

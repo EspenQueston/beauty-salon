@@ -274,6 +274,7 @@ class PaiementsView(_ProprietaireSeulement, APIView):
                 moyen_id=donnees["method"],
                 reference=donnees["reference"],
                 preuve=donnees.get("proof"),
+                montant_attendu=donnees.get("montant_attendu"),
             )
         except services.PaiementRefuse as refus:
             code_http = (

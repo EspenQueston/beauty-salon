@@ -168,6 +168,7 @@ export default async function SiteLayout({ children, params }: Props) {
           show={show}
           menu={config?.menu}
           bouton={config?.bouton_reserver}
+          pages={config?.pages}
         />
 
         {/* Réservations fermées : dit dès le haut de page, et la barre de

@@ -310,7 +310,10 @@
       "nousSuivre": "Nous suivre",
       "aProposDe": "À propos de {salon}",
       "reservezChez": "Réservez votre rendez-vous chez {salon}.",
-      "introuvable": "Salon introuvable"
+      "introuvable": "Salon introuvable",
+      "persoSurtitre": "Chez {salon}",
+      "persoQuestion": "Une question sur cette page ?",
+      "persoQuestionCorps": "Le salon vous répond, ou réservez directement votre créneau."
     },
     "galerie": {
       "alt": "Réalisation de {salon}",

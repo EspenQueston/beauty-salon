@@ -244,6 +244,22 @@ class SitePersonnaliseView(APIView):
         from . import personnalisation
 
         config = personnalisation.valider(request.data)
+        # L'image d'une page : un media public de ce salon (le contexte RLS
+        # ecarte ceux des autres), jamais une preuve de versement.
+        images = set(personnalisation.images_des_pages(config))
+        if images:
+            from apps.media.models import MediaAsset
+
+            valides = (
+                MediaAsset.objects.filter(id__in=images, visibility=MediaAsset.Visibility.PUBLIC)
+                .exclude(kind=MediaAsset.Kind.PROOF)
+                .count()
+            )
+            if valides != len(images):
+                return Response(
+                    {"detail": "Image introuvable dans vos médias.", "code": "image_invalide"},
+                    status=400,
+                )
         profil = self._profil(request)
         profil.site_config = config
         profil.save(update_fields=["site_config", "updated_at"])

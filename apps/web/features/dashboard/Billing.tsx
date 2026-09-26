@@ -412,6 +412,7 @@ export function Billing() {
                   relire();
                   signalerAbonnement();
                 }}
+                onTarifModifie={offres.reload}
               />
             </>
           )}
@@ -930,6 +931,7 @@ function Commande({
   onPlan,
   tenantId,
   onEnvoye,
+  onTarifModifie,
 }: {
   offres: Offres | null;
   erreur: string | null;
@@ -940,6 +942,8 @@ function Commande({
   onPlan: (code: CodeOffre) => void;
   tenantId: string;
   onEnvoye: () => void;
+  /** Le tarif a change depuis l'affichage : relire les offres. */
+  onTarifModifie: () => void;
 }) {
   const toast = useToast();
   const [choixPays, setChoixPays] = useState<string | null>(null);
@@ -1008,7 +1012,7 @@ function Commande({
   }
 
   const debutPeriode = plan?.effet
-    ? decrireEffet(plan.effet)
+    ? decrireEffet(plan.effet, acces.raison === "essai")
     : acces.raison === "essai" || acces.raison === "periode"
       ? `Votre nouvelle période commencera le ${dateLongue.format(new Date(acces.fin_periode ?? ""))}, à la suite de l'actuelle.`
       : "Votre période commencera à la validation du paiement.";
@@ -1042,6 +1046,9 @@ function Commande({
     corps.set("currency", devise.code);
     corps.set("method", moyen.id);
     corps.set("reference", reference.trim());
+    // Le montant affiche : le serveur refuse s'il ne correspond plus au
+    // tarif du moment, plutot que d'enregistrer un montant jamais montre.
+    corps.set("montant_attendu", plan.montant);
     if (preuve) corps.set("proof", preuve);
 
     setEnvoi(true);
@@ -1061,6 +1068,9 @@ function Commande({
       );
       if (caught instanceof DashboardError && caught.code === "demande_en_attente") {
         onEnvoye();
+      }
+      if (caught instanceof DashboardError && caught.code === "tarif_modifie") {
+        onTarifModifie();
       }
     } finally {
       setEnvoi(false);
@@ -1150,8 +1160,7 @@ function Commande({
         {bloque ? (
           <p className="mt-2 rounded-xl bg-warning-bg px-3 py-2 text-[12px] leading-relaxed text-warning sm:text-xs">
             Un passage à {programme?.plan.name} est déjà programmé : un nouveau paiement
-            Pro sera possible une fois ce changement en vigueur. Pour changer d&apos;avis
-            avant, contactez l&apos;équipe Beauty Salon.
+            Pro sera possible une fois ce changement en vigueur.
           </p>
         ) : (
           <p className="mt-2 text-[11.5px] leading-relaxed text-muted sm:text-xs">{debutPeriode}</p>
@@ -1305,12 +1314,19 @@ function Commande({
 }
 
 /** Ce que fera le paiement, en une phrase — calculé aujourd'hui, appliqué à la validation. */
-function decrireEffet(effet: Effet): string {
+function decrireEffet(effet: Effet, pendantEssai = false): string {
   const debut = dateLongue.format(new Date(effet.debut));
   const fin = dateLongue.format(new Date(effet.fin));
   const jours = Math.round(effet.jours_credites);
   switch (effet.nature) {
     case "montee":
+      // Pendant l'essai : les jours restants s'ajoutent en entier, sans
+      // conversion (decide avec le produit).
+      if (pendantEssai) {
+        return jours > 0
+          ? `Pro s'ouvre dès la validation du paiement, et vos ${jours} jour${jours > 1 ? "s" : ""} d'essai restant${jours > 1 ? "s" : ""} s'ajoutent à votre période : jusqu'au ${fin} environ.`
+          : `Pro s'ouvre dès la validation du paiement, jusqu'au ${fin} environ.`;
+      }
       return jours > 0
         ? `Pro s'ouvre dès la validation du paiement. Vos jours Standard restants deviennent ${jours} jour${jours > 1 ? "s" : ""} de Pro, ajoutés à votre période : jusqu'au ${fin} environ.`
         : `Pro s'ouvre dès la validation du paiement, jusqu'au ${fin} environ.`;
@@ -1747,7 +1763,7 @@ const QUESTIONS: { question: string; reponse: string }[] = [
   {
     question: "Quand ma période payée commence-t-elle ?",
     reponse:
-      "À la suite de votre période en cours (essai ou mois payé), sans perdre un jour. Si votre période est déjà terminée, elle commence à la validation du paiement.",
+      "À la suite de votre période en cours (essai ou mois payé), sans perdre un jour. Exception : Pro choisi pendant l'essai s'ouvre dès la validation, et vos jours d'essai restants s'y ajoutent. Si votre période est déjà terminée, elle commence à la validation du paiement.",
   },
   {
     question: "Puis-je passer du mensuel à l'annuel ?",

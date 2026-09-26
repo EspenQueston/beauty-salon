@@ -232,10 +232,10 @@ def test_sans_pro_ou_coupe_l_assistant_des_clientes_ne_repond_pas(
     api_client, salon_a, pro, fausse_ia
 ):
     abonnement_de(salon_a)
-    assert (
-        api_client.post("/api/v1/public/assistant", CONVERSATION, format="json", **HOTE).status_code
-        == 403
-    )
+    refus = api_client.post("/api/v1/public/assistant", CONVERSATION, format="json", **HOTE)
+    assert refus.status_code == 403
+    # Le vrai motif, pas « non authentifie » : une visiteuse ne l'est jamais.
+    assert refus.json()["code"] == "offre_pro_requise"
     assert api_client.get("/api/v1/public/salon", **HOTE).json()["assistant_clientes"] is False
 
     au_plan(salon_a, "pro_monthly", fin=timezone.now() + timedelta(days=20))

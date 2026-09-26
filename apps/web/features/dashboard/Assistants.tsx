@@ -289,7 +289,7 @@ function Clientes({
       <EnteteCarte
         icone="globe"
         titre="Sur le mini-site"
-        detail="Répond jour et nuit aux questions des clientes. En cas de panne, il donne vos coordonnées."
+        detail="Une IA répond jour et nuit aux questions des clientes — ce n'est pas une personne. En cas de panne, elle donne vos coordonnées."
         statut={
           ouvert && etat.clientes_actif ? (
             <Badge tone="success">En ligne</Badge>

@@ -25,7 +25,7 @@ import { useTranslations } from "next-intl";
 import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
 import { decouper } from "@/i18n/langues";
 import { SiteModeToggle } from "./SiteMode";
-import type { MediaAsset, RubriqueMenu, SiteConfig } from "@/lib/types";
+import type { MediaAsset, PagePerso, RubriqueMenu, SiteConfig } from "@/lib/types";
 
 interface Props {
   name: string;
@@ -43,9 +43,14 @@ interface Props {
   menu?: SiteConfig["menu"] | null;
   /** Le libellé du bouton de réservation choisi par le salon (offre Pro). */
   bouton?: string;
+  /** Les pages écrites par le salon (offre Pro), trois au plus. */
+  pages?: PagePerso[];
 }
 
-const RUBRIQUES: Record<RubriqueMenu, { href: string; cle: string; montre: keyof Props["show"] | null }> = {
+/** Un lien du menu : une rubrique traduite (`cle`) ou une page du salon (`libelle`). */
+type LienMenu = { href: string; cle?: string; libelle?: string };
+
+const RUBRIQUES: Record<Exclude<RubriqueMenu, `page:${string}`>, { href: string; cle: string; montre: keyof Props["show"] | null }> = {
   prestations: { href: "/prestations", cle: "prestations", montre: "prestations" },
   realisations: { href: "/realisations", cle: "realisations", montre: "realisations" },
   equipe: { href: "/equipe", cle: "equipe", montre: "equipe" },
@@ -53,8 +58,9 @@ const RUBRIQUES: Record<RubriqueMenu, { href: string; cle: string; montre: keyof
   infos: { href: "/infos", cle: "infos", montre: null },
 };
 const ORDRE: RubriqueMenu[] = ["prestations", "realisations", "equipe", "a-propos", "infos"];
+const PREFIXE_PAGE = "page:";
 
-export function SalonNav({ name, slug, logo, show, menu, bouton }: Props) {
+export function SalonNav({ name, slug, logo, show, menu, bouton, pages = [] }: Props) {
   const t = useTranslations("salon");
   const c = useTranslations("commun");
   const pathname = usePathname();
@@ -87,11 +93,18 @@ export function SalonNav({ name, slug, logo, show, menu, bouton }: Props) {
 
   // Une rubrique n'apparaît que si le salon la montre *et* qu'elle a du
   // contenu : masquée ou vide, on ne propose pas de lien.
-  const links = (menu ?? ORDRE.map((cle) => ({ cle, visible: true })))
-    .filter((entree) => entree.visible && entree.cle in RUBRIQUES)
-    .map((entree) => RUBRIQUES[entree.cle])
-    .filter((rubrique) => rubrique.montre === null || show[rubrique.montre])
-    .map(({ href, cle }) => ({ href, cle }));
+  // Une page du salon n'apparaît que si elle existe encore.
+  const links: LienMenu[] = (menu ?? ORDRE.map((cle) => ({ cle, visible: true })))
+    .filter((entree) => entree.visible)
+    .flatMap((entree): LienMenu[] => {
+      if (entree.cle.startsWith(PREFIXE_PAGE)) {
+        const page = pages.find((p) => PREFIXE_PAGE + p.id === entree.cle);
+        return page ? [{ href: `/p/${page.slug}`, libelle: page.titre }] : [];
+      }
+      const rubrique = RUBRIQUES[entree.cle as keyof typeof RUBRIQUES];
+      if (!rubrique || (rubrique.montre !== null && !show[rubrique.montre])) return [];
+      return [{ href: rubrique.href, cle: rubrique.cle }];
+    });
 
   /*
     Le chemin est comparé **sans son préfixe de langue**.
@@ -158,7 +171,7 @@ export function SalonNav({ name, slug, logo, show, menu, bouton }: Props) {
                         : "text-[var(--site-muted)] hover:text-[var(--site-ink)]"
                   }`}
                 >
-                  {t(link.cle)}
+                  {link.libelle ?? t(link.cle ?? "")}
                   {isCurrent(link.href) && (
                     <span
                       className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full"
@@ -272,7 +285,7 @@ export function SalonNav({ name, slug, logo, show, menu, bouton }: Props) {
         className="border-t border-[var(--site-line)] bg-[var(--site-surface)] px-4 py-3 lg:hidden"
       >
         <ul className="space-y-1">
-          {[{ href: "/", cle: "accueil" }, ...links].map((link) => (
+          {[{ href: "/", cle: "accueil" } as LienMenu, ...links].map((link) => (
             <li key={link.href}>
               <Lien
                 href={link.href}
@@ -283,7 +296,7 @@ export function SalonNav({ name, slug, logo, show, menu, bouton }: Props) {
                     : "text-[var(--site-ink)] hover:bg-black/[0.03]"
                 }`}
               >
-                {t(link.cle)}
+                {link.libelle ?? t(link.cle ?? "")}
               </Lien>
             </li>
           ))}

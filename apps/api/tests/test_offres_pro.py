@@ -160,13 +160,40 @@ def test_passer_a_pro_convertit_les_jours_standard_restants(salon_a, moyens, pro
 
 
 @ADMIN
-def test_payer_pro_pendant_l_essai_commence_apres_l_essai(salon_a, moyens, pro):
+def test_payer_pro_pendant_l_essai_ouvre_pro_tout_de_suite_et_garde_l_essai(
+    salon_a, moyens, pro
+):
+    """Decide avec le produit : Pro demarre a l'approbation, et les jours
+    d'essai restants s'ajoutent en entier a la periode Pro."""
     fin_essai = timezone.now() + timedelta(days=6)
     abonnement_de(salon_a, fin=fin_essai)
 
     demande = declarer_et_approuver(salon_a, moyens["momo"], "pro_monthly")
 
+    with as_tenant(salon_a.tenant):
+        abonnement = Subscription.objects.select_related("plan", "tenant").get()
+        assert fonctions_du_salon(salon_a.tenant.id)["platform_assistant"] is True
+        journal = SubscriptionEvent.objects.filter(kind="upgraded", note__contains="essai")
+        assert journal.exists()
+    assert abs((demande.period_start - timezone.now()).total_seconds()) < 60  # tout de suite
+    assert abonnement.status == Subscription.Status.ACTIVE
+    assert groupe_effectif(abonnement) == "pro"
+    # Six jours d'essai + un mois : la fin tombe un mois apres la fin d'essai.
+    assert abonnement.period_anchor == fin_essai
+    assert abonnement.current_period_end == ajouter_mois(fin_essai, 1, salon_a.tenant.timezone)
+
+
+@ADMIN
+def test_payer_standard_pendant_l_essai_commence_a_la_fin_de_l_essai(salon_a, moyens, pro):
+    fin_essai = timezone.now() + timedelta(days=6)
+    abonnement_de(salon_a, fin=fin_essai)
+
+    demande = declarer_et_approuver(salon_a, moyens["momo"], "monthly")
+
     assert demande.period_start == fin_essai
+    with as_tenant(salon_a.tenant):
+        abonnement = Subscription.objects.get()
+    assert abonnement.current_period_end == ajouter_mois(fin_essai, 1, salon_a.tenant.timezone)
 
 
 @ADMIN

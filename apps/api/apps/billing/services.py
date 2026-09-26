@@ -406,6 +406,7 @@ def soumettre_paiement(
     moyen_id,
     reference: str,
     preuve=None,
+    montant_attendu: Decimal | None = None,
 ) -> SubscriptionPaymentRequest:
     """Enregistre la declaration d'un paiement. N'active rien.
 
@@ -427,6 +428,13 @@ def soumettre_paiement(
             f"L'offre {plan.name} n'a pas encore de tarif en {devise}. "
             "Choisissez une autre devise.",
             "tarif_absent",
+        )
+    if montant_attendu is not None and Decimal(montant_attendu) != prix.amount:
+        raise PaiementRefuse(
+            f"Le tarif de l'offre {plan.name} a changé : il est maintenant de "
+            f"{prix.amount.normalize():f} {devise}. Vérifiez le montant versé avant "
+            "de déclarer votre paiement.",
+            "tarif_modifie",
         )
 
     moyen = PlatformPaymentMethod.objects.filter(pk=moyen_id).first()
@@ -477,8 +485,8 @@ def soumettre_paiement(
             if abonnement.scheduled_plan_id and plan.group == Plan.Groupe.PRO:
                 raise PaiementRefuse(
                     "Un retour à Standard est déjà programmé à la fin de votre période "
-                    "Pro. Contactez l'équipe Beauty Salon pour l'annuler avant de "
-                    "reprendre Pro.",
+                    "Pro : un nouveau paiement Pro sera possible une fois ce changement "
+                    "en vigueur.",
                     "changement_programme",
                 )
             if SubscriptionPaymentRequest.objects.filter(
@@ -706,7 +714,11 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
                 avant_fin=avant_fin,
                 acteur=administrateur,
                 demande=demande,
-                note=f"{effet.jours_credites:.1f} jour(s) Standard convertis en Pro.",
+                note=(
+                    f"{effet.jours_credites:.1f} jour(s) d'essai ajoutés à Pro."
+                    if avant_statut == Subscription.Status.TRIALING
+                    else f"{effet.jours_credites:.1f} jour(s) Standard convertis en Pro."
+                ),
             )
         elif effet.programme:
             _evenement(
@@ -749,13 +761,39 @@ class Effet:
     jours_credites: float = 0.0
 
 
-def _mensuel(plan: Plan, devise: str, repli: Decimal | None = None) -> Decimal | None:
-    """Le prix d'un mois de cette offre : tarif de la devise, puis CNY, puis repli."""
-    for code_devise in (devise, "CNY"):
-        prix = tarif(plan, code_devise)
-        if prix and plan.billing_months:
-            return prix.amount / plan.billing_months
-    return repli
+def _mensuel(plan: Plan, devise: str) -> Decimal | None:
+    """Le prix d'un mois de cette offre dans cette devise, ou None."""
+    prix = tarif(plan, devise)
+    if prix and plan.billing_months:
+        return prix.amount / plan.billing_months
+    return None
+
+
+def _ratio_mensuel(abonnement: Subscription, plan: Plan, devise: str) -> float:
+    """Ancien prix mensuel / nouveau prix mensuel, **dans une meme devise**.
+
+    Les deux prix etaient cherches chacun de son cote, avec des replis
+    differents : un Standard sans prix dans la devise payee se comparait
+    alors en CNY a un Pro en XAF, et le salon perdait ses jours payes (ou en
+    gagnait). On cherche maintenant une devise ou les deux offres ont un
+    prix : celle du paiement, puis le CNY, puis celle de l'abonnement — ou
+    le prix reellement paye sert d'ancien prix a defaut d'un tarif.
+
+    Sans devise commune, on refuse : calculer un credit faux serait pire
+    qu'attendre que l'administration complete les tarifs.
+    """
+    for code in dict.fromkeys((devise, "CNY", abonnement.currency)):
+        nouveau = _mensuel(plan, code)
+        ancien = _mensuel(abonnement.plan, code)
+        if ancien is None and code == abonnement.currency and abonnement.plan.billing_months:
+            ancien = abonnement.price_amount / abonnement.plan.billing_months or None
+        if ancien and nouveau:
+            return float(ancien / nouveau)
+    raise PaiementRefuse(
+        "Impossible de convertir les jours restants : l'offre actuelle et la nouvelle "
+        "n'ont de prix dans aucune devise commune. Complétez les tarifs, puis réessayez.",
+        "prix_incomparables",
+    )
 
 
 def effet_du_paiement(
@@ -765,7 +803,11 @@ def effet_du_paiement(
 
     Regles decidees avec le produit :
 
-      - meme groupe : a la suite de la periode en cours (essai compris) ;
+      - meme groupe : a la suite de la periode en cours (essai compris) —
+        Standard paye pendant l'essai commence donc a la fin de l'essai ;
+      - Pro paye pendant l'essai : Pro commence maintenant, et les jours
+        d'essai restants s'ajoutent en entier a la periode Pro (jour pour
+        jour : l'essai est gratuit, il n'y a pas de prix a convertir) ;
       - Standard paye -> Pro : Pro commence maintenant ; les jours Standard
         restants sont convertis en jours Pro au ratio des prix mensuels, et
         ajoutes a la periode Pro. Ni remboursement, ni supplement ;
@@ -784,19 +826,23 @@ def effet_du_paiement(
     essai = abonnement.status == Subscription.Status.TRIALING
     fuseau = _fuseau(abonnement)
 
+    if en_cours and essai and nouveau == Plan.Groupe.PRO:
+        # L'ancre est la fin de l'essai : les mois payes partent de la, et
+        # Pro court des maintenant. Les echeances tombent a « fin d'essai +
+        # n mois ».
+        restant = fin_actuelle - maintenant
+        return Effet(
+            "montee",
+            maintenant,
+            ajouter_mois(fin_actuelle, mois_payes, fuseau),
+            fin_actuelle,
+            mois_payes,
+            jours_credites=restant.total_seconds() / 86400,
+        )
+
     if en_cours and not essai and ancien == Plan.Groupe.STANDARD and nouveau == Plan.Groupe.PRO:
         restant = fin_actuelle - maintenant
-        ancien_mensuel = _mensuel(
-            abonnement.plan,
-            devise,
-            repli=(abonnement.price_amount / abonnement.plan.billing_months)
-            if abonnement.plan.billing_months
-            else None,
-        )
-        nouveau_mensuel = _mensuel(plan, devise)
-        ratio = (
-            float(ancien_mensuel / nouveau_mensuel) if ancien_mensuel and nouveau_mensuel else 0.0
-        )
+        ratio = _ratio_mensuel(abonnement, plan, devise)
         credit = restant * min(ratio, 1.0)
         # L'ancre est decalee du credit : les echeances suivantes tombent
         # toujours a « ancre + n mois », credit compris.
@@ -829,7 +875,12 @@ def apercu_du_paiement(abonnement: Subscription | None, plan: Plan, devise: str)
     """Ce que le salon verra s'il paie cette offre : a montrer avant de payer."""
     if abonnement is None:
         return None
-    effet = effet_du_paiement(abonnement, plan, plan.billing_months, devise, timezone.now())
+    try:
+        effet = effet_du_paiement(abonnement, plan, plan.billing_months, devise, timezone.now())
+    except PaiementRefuse:
+        # Conversion impossible (tarifs incomplets) : pas d'apercu plutot
+        # qu'un ecran d'abonnement en erreur. L'approbation, elle, refusera.
+        return None
     return {
         "nature": effet.nature,
         "debut": effet.debut,
@@ -1038,6 +1089,15 @@ def changer_d_offre(
         if abonnement.status == Subscription.Status.SUSPENDED:
             raise PaiementRefuse(
                 "Ce salon est suspendu : réactivez-le avant de changer son offre.", "suspendu"
+            )
+        if abonnement.scheduled_plan_id:
+            # Une periode Standard payee attend la fin de Pro. L'effacer ferait
+            # perdre au salon ce qu'il a paye ; aucune regle de remboursement
+            # ou de report n'a ete decidee : on refuse plutot que d'inventer.
+            raise PaiementRefuse(
+                "Une période déjà payée est programmée après l'offre en cours : "
+                "changer l'offre la ferait perdre. Laissez-la s'appliquer d'abord.",
+                "changement_programme",
             )
         maintenant = timezone.now()
         avant_statut = abonnement.status
@@ -1363,9 +1423,15 @@ def run_billing_cycle(now=None) -> dict:
     crees = expires = changes = 0
 
     for tenant in Tenant.objects.all().only("id"):
-        with tenant_context(tenant.id):
+        # Un salon a la fois, abonnement verrouille : une approbation qui
+        # arrive pendant ce passage attend qu'il finisse, au lieu d'etre
+        # ecrasee par l'ecriture d'une copie lue avant elle.
+        with tenant_context(tenant.id), transaction.atomic():
             abonnement = (
-                Subscription.objects.select_related("tenant").filter(tenant_id=tenant.id).first()
+                Subscription.objects.select_for_update(of=("self",))
+                .select_related("tenant")
+                .filter(tenant_id=tenant.id)
+                .first()
             )
             if abonnement is None:
                 try:
@@ -1418,7 +1484,7 @@ def appliquer_changement_programme(abonnement: Subscription) -> Subscription:
     """Fait passer un abonnement a son offre programmee (Pro -> Standard).
 
     Appele par la tache quotidienne une fois la periode Pro terminee. L'acces
-    n'en depend pas — il se calcule sur \`fin_effective\` —, seul l'etat affiche
+    n'en depend pas — il se calcule sur `fin_effective` —, seul l'etat affiche
     en depend. Les reglages Pro restent en base : ils sont en pause.
     """
     avant_statut = abonnement.status

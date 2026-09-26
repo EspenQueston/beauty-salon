@@ -108,6 +108,14 @@ class AssistantPublicView(APIView):
     fonction_pro = "customer_assistant"
     throttle_scope = "assistant_public"
 
+    def permission_denied(self, request, message=None, code=None):
+        # Route publique : une visiteuse n'est jamais connectee, et DRF
+        # transformerait tout refus en « non authentifie ». Le vrai motif —
+        # le salon n'a pas l'offre Pro — est celui qu'on renvoie.
+        from rest_framework.exceptions import PermissionDenied
+
+        raise PermissionDenied(detail=message, code=code)
+
     def post(self, request):
         reglages = _reglages(request.tenant_id)
         repli = _repli(request.tenant_id)

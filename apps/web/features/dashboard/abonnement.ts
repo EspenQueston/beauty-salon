@@ -85,16 +85,16 @@ export const FONCTIONS_PRO: Record<FonctionPro, { nom: string; resume: string }>
     resume: "Polices, menu, ordre des sections, accroche et bouton.",
   },
   whatsapp_assistant: {
-    nom: "Assistant WhatsApp",
-    resume: "Répond à vos clientes sur votre numéro WhatsApp.",
+    nom: "Assistant IA WhatsApp",
+    resume: "Réponses automatiques à vos clientes sur votre numéro WhatsApp.",
   },
   platform_assistant: {
-    nom: "Assistant de l'espace pro",
+    nom: "Assistant IA de l'espace pro",
     resume: "Répond à vos questions sur votre agenda et votre salon.",
   },
   customer_assistant: {
-    nom: "Assistant 24 h/24",
-    resume: "Renseigne vos clientes sur le mini-site, jour et nuit.",
+    nom: "Assistant IA 24 h/24",
+    resume: "Réponses automatiques à vos clientes sur le mini-site, jour et nuit.",
   },
 };
 

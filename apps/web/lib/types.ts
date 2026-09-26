@@ -194,7 +194,24 @@ export interface PublicSalon {
   assistant_clientes?: boolean;
 }
 
-export type RubriqueMenu = "prestations" | "realisations" | "equipe" | "a-propos" | "infos";
+/** Une rubrique connue, ou une page du salon (`page:<id>`). */
+export type RubriqueMenu =
+  | "prestations"
+  | "realisations"
+  | "equipe"
+  | "a-propos"
+  | "infos"
+  | `page:${string}`;
+
+/** Une page écrite par le salon (offre Pro), servie sous `/p/<slug>`. */
+export interface PagePerso {
+  id: string;
+  titre: string;
+  slug: string;
+  accroche: string;
+  contenu: string;
+  image: MediaAsset | null;
+}
 export type SectionAccueil = "prestations" | "etapes" | "realisations" | "equipe" | "avis" | "infos";
 
 export interface SiteConfig {
@@ -204,6 +221,7 @@ export interface SiteConfig {
   sections: { cle: SectionAccueil; visible: boolean }[];
   accroche: string;
   bouton_reserver: string;
+  pages?: PagePerso[];
 }
 
 export interface TravelZone {

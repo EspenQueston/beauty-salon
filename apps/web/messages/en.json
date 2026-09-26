@@ -310,7 +310,10 @@
       "nousSuivre": "Follow us",
       "aProposDe": "About {salon}",
       "reservezChez": "Book your appointment at {salon}.",
-      "introuvable": "Salon not found"
+      "introuvable": "Salon not found",
+      "persoSurtitre": "At {salon}",
+      "persoQuestion": "A question about this page?",
+      "persoQuestionCorps": "The salon will answer you, or book your slot right away."
     },
     "galerie": {
       "alt": "Work by {salon}",

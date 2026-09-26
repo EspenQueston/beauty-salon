@@ -150,7 +150,10 @@ def contexte_public(tenant) -> dict:
             "duree_minutes": service.duration_minutes,
             "acompte": bool(service.requires_deposit),
         }
+        # Le meme filtre que le mini-site : une categorie cachee cache ses
+        # prestations, l'assistant ne doit pas les citer.
         for service in Service.objects.filter(active=True)
+        .exclude(category__active=False)
         .select_related("category")
         .order_by("category__position", "position", "name")[:80]
     ]

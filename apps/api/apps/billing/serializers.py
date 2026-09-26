@@ -232,6 +232,12 @@ class PaymentRequestCreateSerializer(serializers.Serializer):
     method = serializers.UUIDField()
     reference = serializers.CharField(max_length=100, trim_whitespace=True)
     proof = serializers.ImageField(required=False, allow_null=True)
+    # Le montant que l'ecran affichait. Il ne fixe rien — le serveur calcule
+    # toujours le sien — mais s'il differe, le tarif a change entre-temps :
+    # le salon a pu verser l'ancien montant, on le lui dit avant d'enregistrer.
+    montant_attendu = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False, allow_null=True
+    )
 
     def validate_proof(self, fichier):
         if fichier is None:

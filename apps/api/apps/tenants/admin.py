@@ -61,6 +61,24 @@ class TenantAdmin(SuppressionDefinitiveMixin, admin.ModelAdmin):
     )
     list_filter = ("status", OffreFilter, "country")
     readonly_fields = ("offre_actuelle", "lien_suppression")
+
+    def get_readonly_fields(self, request, obj=None):
+        """Statut, identifiant et devise ne se modifient pas dans ce formulaire.
+
+        Le statut passe par les actions « Publier » et « Suspendre », qui
+        laissent une trace d'audit ; le formulaire, lui, n'en laissait pas.
+        L'identifiant est le sous-domaine : le changer ici ne deplacait pas
+        l'adresse du mini-site. La devise se change depuis l'espace du salon,
+        qui convertit son catalogue ; ici, les prix restaient dans l'ancienne.
+        """
+        base = super().get_readonly_fields(request, obj)
+        if obj is None:
+            return base
+        return (*base, "slug", "status", "currency")
+
+    def get_prepopulated_fields(self, request, obj=None):
+        # Un champ en lecture seule ne se pre-remplit pas (Django le refuse).
+        return {} if obj is not None else super().get_prepopulated_fields(request, obj)
     suppression_formulaire = ConfirmationSalonForm
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
