@@ -41,12 +41,7 @@ import { Icon } from "./icons";
 
 export type NavType = "dark" | "transparent" | "light";
 export type AccentName =
-  | "salon"
-  | "graphite"
-  | "azur"
-  | "emeraude"
-  | "ambre"
-  | "grenat";
+  "salon" | "graphite" | "azur" | "emeraude" | "ambre" | "grenat";
 
 export interface ShellPrefs {
   accent: AccentName;
@@ -264,8 +259,16 @@ export const NAV_SKINS: Record<NavType, NavSkin> = {
 };
 
 const NAV_TYPES: { value: NavType; label: string; hint: string }[] = [
-  { value: "dark", label: "Sombre", hint: "fond constant, quel que soit le thème" },
-  { value: "transparent", label: "Transparente", hint: "la page passe dessous" },
+  {
+    value: "dark",
+    label: "Sombre",
+    hint: "fond constant, quel que soit le thème",
+  },
+  {
+    value: "transparent",
+    label: "Transparente",
+    hint: "la page passe dessous",
+  },
   { value: "light", label: "Claire", hint: "suit le thème clair ou sombre" },
 ];
 
@@ -284,7 +287,10 @@ function read(): ShellPrefs {
       // Chaque champ est revalidé : un stockage écrit par une version
       // antérieure, ou trafiqué à la main, ne doit pas pouvoir peindre la
       // navigation avec une valeur qui n'existe pas.
-      accent: parsed.accent && parsed.accent in ACCENTS ? parsed.accent : DEFAULTS.accent,
+      accent:
+        parsed.accent && parsed.accent in ACCENTS
+          ? parsed.accent
+          : DEFAULTS.accent,
       navType: NAV_TYPES.some((type) => type.value === parsed.navType)
         ? (parsed.navType as NavType)
         : DEFAULTS.navType,

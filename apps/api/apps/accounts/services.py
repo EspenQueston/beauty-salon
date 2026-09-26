@@ -18,6 +18,7 @@ from django.utils.http import urlsafe_base64_encode
 
 from apps.common.db import tenant_context
 from apps.domains.services import ensure_platform_domain
+from apps.notifications.details import grouper
 from apps.notifications.email import send_email
 from apps.salons.models import SalonProfile
 from apps.tenants.models import Tenant
@@ -89,7 +90,6 @@ def signup_salon(
         name=name.strip(),
         slug=slug,
         status=Tenant.Status.PENDING,
-        plan=Tenant.Plan.TRIAL,
         country=country,
         timezone=timezone_name,
         currency=currency,
@@ -114,7 +114,12 @@ def signup_salon(
     with tenant_context(tenant.id):
         # Les couleurs choisies avant l'inscription sont reprises : sans
         # cela, la page d'accueil promettrait un report qui n'a pas lieu.
-        SalonProfile.objects.create(tenant=tenant, theme_config=theme_config or {})
+        # L'e-mail de contact publie part de l'adresse d'inscription : le
+        # mini-site affiche une adresse des le premier jour. Le salon la
+        # change ou l'efface depuis son profil.
+        SalonProfile.objects.create(
+            tenant=tenant, theme_config=theme_config or {}, contact_email=user.email
+        )
         _seed_business_hours(tenant)
         _seed_owner_as_staff(tenant, user, membership)
 
@@ -130,6 +135,13 @@ def signup_salon(
         logger.warning("Inscription sans offre d'essai configurée (%s).", tenant.slug)
 
     transaction.on_commit(lambda: _notify_signup(tenant, user))
+
+    # L'equipe de la plateforme est prevenue dans son administration :
+    # une inscription est le seul evenement qu'on veut voir arriver le
+    # jour meme, pour accompagner un salon qui demarre.
+    from apps.notifications import evenements
+
+    evenements.salon_inscrit(tenant)
     return tenant, user
 
 
@@ -146,11 +158,11 @@ def _notify_signup(tenant: Tenant, user: User) -> None:
             "intro": (
                 f"Votre salon {tenant.name} est créé. Voici où le retrouver."
             ),
-            "details": [
+            "details": grouper([
                 {"label": "Mini-site", "value": hostname},
                 {"label": "Espace professionnel", "value": settings.APP_BASE_URL},
                 {"label": "Compte", "value": user.email, "strong": True},
-            ],
+            ]),
         },
         to=user.email,
     )
@@ -187,7 +199,7 @@ def invite_member(*, tenant, email: str, role: str, invited_by=None) -> Invitati
                 f"{tenant.name} vous invite à rejoindre son équipe "
                 "sur Beauty Salon."
             ),
-            "details": [
+            "details": grouper([
                 {"label": "Salon", "value": tenant.name},
                 {"label": "Rôle", "value": invitation.get_role_display(), "strong": True},
             ]
@@ -195,7 +207,7 @@ def invite_member(*, tenant, email: str, role: str, invited_by=None) -> Invitati
                 [{"label": "Invitée par", "value": invited_by.email}]
                 if invited_by
                 else []
-            ),
+            )),
         },
         to=email,
     )

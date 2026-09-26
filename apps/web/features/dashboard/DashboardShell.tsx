@@ -24,11 +24,20 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { fetchSession, logout, type Membership, type SessionUser } from "@/lib/dashboard";
+import {
+  fetchSession,
+  logout,
+  type Membership,
+  type SessionUser,
+} from "@/lib/dashboard";
 import { ToastProvider, useToast } from "@/features/ui/Toast";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
+import { BeautySalonBrand, BeautySalonSymbol } from "@/features/ui/BeautySalonBrand";
+
+import { AccesProvider, AccessBanner, UpgradeButton, useAcces } from "./AccessBanner";
+import type { FonctionPro } from "./abonnement";
+import { Notifications } from "./Notifications";
 import { LoginForm } from "./LoginForm";
-import { useResource } from "./useResource";
 import { Icon, type IconName } from "./icons";
 import {
   Configurator,
@@ -51,7 +60,8 @@ const DashboardContext = createContext<DashboardContextValue | null>(null);
 
 export function useDashboard(): DashboardContextValue {
   const value = useContext(DashboardContext);
-  if (!value) throw new Error("useDashboard doit être utilisé dans DashboardShell.");
+  if (!value)
+    throw new Error("useDashboard doit être utilisé dans DashboardShell.");
   return value;
 }
 
@@ -59,6 +69,11 @@ interface NavItem {
   href: string;
   label: string;
   icon: IconName;
+  /** Fonction Pro : un cadenas quand le salon ne l'a pas (l'écran reste
+   *  ouvert, pour montrer ce qu'elle apporte ; le serveur refuse le reste). */
+  fonction?: FonctionPro;
+  /** Rôles qui voient la rubrique ; tous si absent. */
+  roles?: string[];
 }
 
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
@@ -94,6 +109,31 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/identite", label: "Identité", icon: "edit" },
       { href: "/comptes", label: "Comptes", icon: "receipt" },
       { href: "/abonnement", label: "Abonnement", icon: "receipt" },
+    ],
+  },
+  {
+    title: "Offre Pro",
+    items: [
+      {
+        href: "/assistants",
+        label: "Assistants IA",
+        icon: "chat",
+        fonction: "platform_assistant",
+      },
+      {
+        href: "/apparence",
+        label: "Apparence avancée",
+        icon: "palette",
+        fonction: "customization",
+        roles: ["owner", "manager"],
+      },
+      {
+        href: "/domaine",
+        label: "Domaine perso",
+        icon: "globe",
+        fonction: "custom_domain",
+        roles: ["owner"],
+      },
     ],
   },
 ];
@@ -219,13 +259,16 @@ function ShellContent({ children }: { children: ReactNode }) {
   if (!user) return <LoginForm onSuccess={reload} />;
 
   const membership =
-    user.memberships.find((item) => item.tenant.id === tenantId) ?? user.memberships[0];
+    user.memberships.find((item) => item.tenant.id === tenantId) ??
+    user.memberships[0];
 
   if (!membership) {
     return (
       <div className="flex min-h-full items-center justify-center p-8">
         <div className="max-w-md text-center">
-          <h1 className="text-lg font-semibold text-ink">Aucun salon rattaché</h1>
+          <h1 className="text-lg font-semibold text-ink">
+            Aucun salon rattaché
+          </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Votre compte existe, mais n&apos;est rattaché à aucun salon.
             Contactez l&apos;équipe Beauty Salon, ou créez le vôtre.
@@ -314,45 +357,50 @@ function ShellContent({ children }: { children: ReactNode }) {
         main quand le réglage vaut « Couleur du salon », et rien de ce qui
         vit hors de l'espace professionnel n'est touché.
       */}
-      <div className="flex h-dvh overflow-hidden">
-        <Sidebar
-          membership={membership}
-          memberships={user.memberships}
-          onSelect={setTenantId}
-          pathname={pathname}
-          open={menuOpen}
-          collapsed={collapsed}
-          hidden={prefs.sidebarHidden}
-          skin={skin}
-          onClose={() => setMenuOpen(false)}
-        />
+      {/* L'accès de l'abonnement, lu une fois pour le bandeau, le bouton de
+          la barre du haut et la page Abonnement. */}
+      <AccesProvider tenantId={membership.tenant.id}>
+        <div className="flex h-dvh overflow-hidden">
+          <Sidebar
+            membership={membership}
+            memberships={user.memberships}
+            onSelect={setTenantId}
+            pathname={pathname}
+            open={menuOpen}
+            collapsed={collapsed}
+            hidden={prefs.sidebarHidden}
+            skin={skin}
+            onClose={() => setMenuOpen(false)}
+          />
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          {/*
-            La barre du haut change de place selon le réglage, et c'est bien
-            un changement de place — pas une classe `sticky` qu'on ajoute.
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            {/*
+              La barre du haut change de place selon le réglage, et c'est bien
+              un changement de place — pas une classe `sticky` qu'on ajoute.
 
-            Fixe : elle est posée *hors* de la zone qui défile, donc elle ne
-            bouge pas, sans superposition ni décalage à compenser sous elle.
+              Fixe : elle est posée *hors* de la zone qui défile, donc elle ne
+              bouge pas, sans superposition ni décalage à compenser sous elle.
 
-            Libre : elle est le premier enfant de la zone qui défile, donc
-            elle remonte avec la page et rend sa hauteur au contenu. Sur un
-            portable 13 pouces en vue mois, ces 60 pixels sont une ligne de
-            créneaux de plus.
-          */}
-          {prefs.navbarFixed && bar}
+              Libre : elle est le premier enfant de la zone qui défile, donc
+              elle remonte avec la page et rend sa hauteur au contenu. Sur un
+              portable 13 pouces en vue mois, ces 60 pixels sont une ligne de
+              créneaux de plus.
+            */}
+            {prefs.navbarFixed && bar}
 
-          <div className="flex-1 overflow-y-auto">
-            {!prefs.navbarFixed && bar}
+            <div className="flex-1 overflow-y-auto">
+              {!prefs.navbarFixed && bar}
 
-            {membership.tenant.status === "pending" && <PendingBanner />}
+              {membership.tenant.status === "pending" && <PendingBanner />}
+              <AccessBanner pathname={pathname} />
 
-            <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-              {children}
-            </main>
+              <main className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+                {children}
+              </main>
+            </div>
           </div>
         </div>
-      </div>
+      </AccesProvider>
 
       <Configurator />
     </DashboardContext.Provider>
@@ -411,6 +459,7 @@ function Sidebar({
 }) {
   const domain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
   const port = process.env.NEXT_PUBLIC_WEB_PORT ?? "3100";
+  const { acces } = useAcces();
 
   // Le repli ne concerne que la colonne fixe. Sur téléphone, la même barre
   // est un tiroir qu'on ouvre pour lire des libellés : la replier aux icônes
@@ -446,23 +495,7 @@ function Sidebar({
         <div
           className={`flex items-center gap-3 py-6 ${tight ? "justify-center px-3" : "px-6"}`}
         >
-          <span
-            aria-hidden
-            // `salon-gradient` et non un dégradé posé à la main : depuis que
-            // l'accent redéfinit `--salon-primary` sur la coquille, les deux
-            // donnent la même couleur. Passer par la classe supprime le
-            // risque qu'ils divergent un jour.
-            className="salon-gradient flex size-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold text-white"
-          >
-            BS
-          </span>
-          {!tight && (
-            <span
-              className={`whitespace-nowrap text-[1.05rem] font-semibold tracking-tight ${skin.brand}`}
-            >
-              Beauty Salon
-            </span>
-          )}
+          {tight ? <span role="img" aria-label="Beauty Salon"><BeautySalonSymbol className="size-10" /></span> : <BeautySalonBrand />}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
@@ -482,8 +515,13 @@ function Sidebar({
                 </p>
               )}
               <ul className="space-y-0.5">
-                {group.items.map((item) => {
+                {group.items
+                  .filter((item) => !item.roles || item.roles.includes(membership.role))
+                  .map((item) => {
                   const active = pathname === item.href;
+                  const verrouille = Boolean(
+                    item.fonction && acces && !acces.fonctions?.[item.fonction],
+                  );
                   return (
                     <li key={item.href}>
                       <Link
@@ -511,12 +549,26 @@ function Sidebar({
                             : skin.item
                         }`}
                       >
-                        <Icon name={item.icon} className="size-[1.15rem] shrink-0" />
+                        <Icon
+                          name={item.icon}
+                          className="size-[1.15rem] shrink-0"
+                        />
                         {/* Le libellé reste dans le DOM, masqué : un lecteur
                             d'écran annonce « Agenda », pas « lien ». */}
-                        <span className={tight ? "sr-only" : "whitespace-nowrap"}>
+                        <span
+                          className={tight ? "sr-only" : "whitespace-nowrap"}
+                        >
                           {item.label}
                         </span>
+                        {verrouille && !tight && (
+                          <span
+                            title="Offre Pro"
+                            className="ml-auto inline-flex items-center gap-0.5 rounded-full border border-current/25 px-1.5 py-px text-[0.6rem] font-bold uppercase tracking-wide opacity-70"
+                          >
+                            <Icon name="lock" className="size-2.5" />
+                            Pro
+                          </span>
+                        )}
                       </Link>
                     </li>
                   );
@@ -621,7 +673,11 @@ function SalonSwitcher({
           className={`w-full cursor-pointer truncate rounded-lg border px-2.5 py-1.5 text-sm font-medium ${skin.select}`}
         >
           {memberships.map((item) => (
-            <option key={item.tenant.id} value={item.tenant.id} className="text-black">
+            <option
+              key={item.tenant.id}
+              value={item.tenant.id}
+              className="text-black"
+            >
               {item.tenant.name}
             </option>
           ))}
@@ -641,7 +697,9 @@ function SalonSwitcher({
         </span>
 
         <span className="min-w-0 flex-1 text-left">
-          <span className={`block truncate text-sm font-semibold ${skin.strong}`}>
+          <span
+            className={`block truncate text-sm font-semibold ${skin.strong}`}
+          >
             {membership.tenant.name}
           </span>
           <span className={`block truncate text-xs ${skin.faint}`}>
@@ -665,18 +723,11 @@ function SalonSwitcher({
 /**
  * Barre du haut : où l'on est, ce qui attend, et qui est connectée.
  *
- * ---------------------------------------------------------------------------
- * La pastille n'est pas décorative
- * ---------------------------------------------------------------------------
- *
- * Elle compte trois choses, et rien d'autre : les acomptes à vérifier, les
- * demandes à accepter, les créneaux passés sans rien de noté. Toutes coûtent
- * quelque chose tant qu'on ne les traite pas — une cliente devant un
- * téléphone muet, un créneau bloqué sans engagement, une statistique
- * d'absence qui ne veut plus rien dire.
- *
- * Une pastille qui compterait aussi les bonnes nouvelles cesserait d'être
- * lue, et emporterait les trois autres avec elle.
+ * La cloche et son panneau vivent dans `features/dashboard/Notifications.tsx`.
+ * Ils ont leur propre fichier parce qu'ils ont leur propre horloge — un
+ * rafraîchissement suspendu dès que l'onglet passe en arrière-plan, et un
+ * canal ouvert avec le service worker — et que rien de cela ne regarde la
+ * coquille qui les héberge.
  */
 function TopBar({
   user,
@@ -760,9 +811,13 @@ function TopBar({
         </span>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          {/* L'action d'abonnement du moment — choisir, passer à l'annuel,
+              régler — à portée de clic depuis n'importe quel écran. */}
+          <UpgradeButton />
+
           <ThemeToggle />
 
-          <AttentionBell tenantId={membership.tenant.id} />
+          <Notifications tenantId={membership.tenant.id} />
 
           {/* Le nom et le rôle ensemble : dans un salon, plusieurs personnes
               partagent le même poste, et savoir sous quel rôle on agit change
@@ -812,61 +867,5 @@ function PendingBanner() {
         fois cette étape terminée — vous pouvez déjà tout préparer.
       </p>
     </div>
-  );
-}
-
-/**
- * La pastille de la cloche : ce qui attend un geste.
- *
- * ---------------------------------------------------------------------------
- * Ce qu'elle compte, et ce qu'elle ne compte pas
- * ---------------------------------------------------------------------------
- *
- * Trois choses, et rien d'autre : les acomptes à vérifier, les demandes à
- * accepter, les créneaux passés sans rien de noté. Toutes coûtent quelque
- * chose tant qu'on ne les traite pas — une cliente devant un téléphone muet,
- * un créneau bloqué sans engagement, une statistique d'absence qui ne veut
- * plus rien dire.
- *
- * Une pastille qui compterait aussi les bonnes nouvelles — un avis reçu, une
- * réservation de plus — cesserait d'être lue, et emporterait les trois
- * autres avec elle.
- *
- * ---------------------------------------------------------------------------
- * Pourquoi `?brief=1`
- * ---------------------------------------------------------------------------
- *
- * Cette cloche est affichée sur **toutes** les pages de l'espace. Charger la
- * page d'accueil complète — fil d'activité, classement des prestations,
- * répartition des notes — à chaque navigation reviendrait à payer une
- * dizaine d'agrégats pour trois nombres.
- */
-function AttentionBell({ tenantId }: { tenantId: string }) {
-  const { data } = useResource<{
-    attention: { deposits: number; requests: number; overdue: number };
-  }>("/api/v1/overview?brief=1", tenantId);
-
-  const attention = data?.attention;
-  const pending = attention
-    ? attention.deposits + attention.requests + attention.overdue
-    : 0;
-
-  return (
-    <Link
-      href="/agenda"
-      aria-label={
-        pending > 0
-          ? `${pending} chose${pending > 1 ? "s" : ""} à traiter`
-          : "Rien à traiter"
-      }
-      className="relative rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-ink"
-    >
-      <Icon name="bell" className="size-5" />
-      {pending > 0 && (
-        <span className="tabular absolute -right-0.5 -top-0.5 flex min-w-[1.15rem] items-center justify-center rounded-full bg-danger px-1 text-[0.65rem] font-semibold leading-[1.15rem] text-white">
-          {pending > 9 ? "9+" : pending}
-        </span>
-      )}
-    </Link>
   );
 }

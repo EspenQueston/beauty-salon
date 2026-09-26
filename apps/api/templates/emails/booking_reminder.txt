@@ -1,19 +1,14 @@
-{% autoescape off %}Bonjour {{ customer.full_name }},
+{% extends "emails/base_client.txt" %}
 
-Petit rappel : vous avez rendez-vous demain chez {{ salon.name }}.
+{% block extra %}{% if profile.late_policy %}
+{{ late_title }}
+{{ profile.late_policy }}
+{% endif %}{% endblock %}
 
-Prestation : {{ booking.service_name }}
-Avec : {{ staff_member.name }}
-Date : {{ date_label }} à {{ time_label }}
-{% if profile.late_policy %}
-Merci d'arriver à l'heure : au-delà de {{ profile.late_tolerance_minutes }} minutes de retard, {{ profile.late_policy|lower }}
-{% endif %}{% if maps_url %}
-L'itinéraire jusqu'au salon :
-
+{% block action %}{% if maps_url %}
+{{ t.itineraire }} :
 {{ maps_url }}
 {% endif %}
-Si vous ne pouvez pas venir, prévenez le salon dès que possible.
+{{ t.rappel_prevenir }}
 
-À demain,
-{{ salon.name }}
-{% endautoescape %}
+{% endblock %}

@@ -21,10 +21,8 @@
  * Les icônes
  * ---------------------------------------------------------------------------
  *
- * Celles de la plateforme sont dans `public/icones/`, engendrées à partir du
- * dégradé de marque. `maskable` réserve 20 % de marge : Android recadre
- * l'icône en cercle, en goutte ou en carré selon le lanceur, et une lettre
- * collée aux bords s'y fait rogner.
+ * Celles de la plateforme sont dans `public/icones/`. Le symbole neuf a une
+ * marge transparente pour éviter le rognage des lanceurs Android.
  *
  * Quand le salon a chargé un logo, il passe **en premier** — c'est le sien
  * qu'on veut voir. Les icônes de la plateforme restent derrière : un logo
@@ -42,14 +40,7 @@ const RESERVED = new Set(["www", "api", "admin", "static", "media", "mail"]);
 
 /** Les icônes de la plateforme, servies depuis `public/`. */
 const ICONES: NonNullable<MetadataRoute.Manifest["icons"]> = [
-  { src: "/icones/192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-  { src: "/icones/512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-  {
-    src: "/icones/maskable-512.png",
-    sizes: "512x512",
-    type: "image/png",
-    purpose: "maskable",
-  },
+  { src: "/icones/beauty-salon-symbol.png", sizes: "1254x1254", type: "image/png", purpose: "any" },
 ];
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {

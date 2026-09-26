@@ -30,6 +30,7 @@
  * renoncer, et une annulation sans motif vaut mieux qu'une absence.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { api } from "./api";
@@ -48,6 +49,7 @@ export function Annuler({
   salonUrl: string;
   onDone: () => void;
 }) {
+  const t = useTranslations("espace");
   const [ouvert, setOuvert] = useState(false);
   const [motif, setMotif] = useState("");
   const [pending, setPending] = useState(false);
@@ -70,7 +72,7 @@ export function Annuler({
           href={`${salonUrl}/infos`}
           className="font-medium text-[var(--salon-ink)] underline-offset-2 hover:underline"
         >
-          Le contacter
+          {t("annuler.leContacter")}
         </a>
       </p>
     );
@@ -82,15 +84,14 @@ export function Annuler({
     try {
       await api("/api/v1/public/booking/cancel", host, {
         method: "POST",
-        body: JSON.stringify({ token: booking.cancel_token, reason: motif.trim() }),
+        body: JSON.stringify({
+          token: booking.cancel_token,
+          reason: motif.trim(),
+        }),
       });
       onDone();
     } catch (caught) {
-      setErreur(
-        caught instanceof Error
-          ? caught.message
-          : "Annulation impossible. Contactez le salon.",
-      );
+      setErreur(caught instanceof Error ? caught.message : t("annuler.echec"));
       setPending(false);
     }
   }
@@ -103,7 +104,7 @@ export function Annuler({
         className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--site-muted)] underline-offset-2 transition hover:text-red-600 hover:underline"
       >
         <SalonIcon name="close" className="size-3.5 shrink-0" />
-        Annuler ce rendez-vous
+        {t("annuler.annuler")}
       </button>
     );
   }
@@ -111,7 +112,7 @@ export function Annuler({
   return (
     <div className="mt-3 rounded-xl border border-red-200 bg-red-50/60 p-3">
       <p className="text-sm font-medium text-[var(--site-ink)]">
-        Annuler ce rendez-vous ?
+        {t("annuler.confirmer")}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-[var(--site-muted)]">
         Le créneau repartira aussitôt et pourra être pris par quelqu&apos;un
@@ -119,21 +120,21 @@ export function Annuler({
         {Number(booking.deposit_amount) > 0 && (
           <>
             {" "}
-            Pour l&apos;acompte déjà versé, le salon vous recontactera : c&apos;est
-            lui qui décide, pas cette page.
+            Pour l&apos;acompte déjà versé, le salon vous recontactera :
+            c&apos;est lui qui décide, pas cette page.
           </>
         )}
       </p>
 
       <label className="mt-2.5 block">
         <span className="mb-1 block text-xs text-[var(--site-muted)]">
-          Un mot pour le salon (facultatif)
+          {t("annuler.mot")}
         </span>
         <input
           value={motif}
           onChange={(event) => setMotif(event.target.value)}
           maxLength={280}
-          placeholder="Empêchement de dernière minute"
+          placeholder={t("annuler.exemple")}
           className="w-full rounded-lg border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-2 text-sm text-[var(--site-ink)] transition focus:border-[var(--salon-primary)] focus:outline-none"
         />
       </label>
@@ -156,7 +157,7 @@ export function Annuler({
           disabled={pending}
           className="rounded-lg bg-red-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
         >
-          {pending ? "Un instant…" : "Confirmer"}
+          {pending ? t("annuler.unInstant") : "Confirmer"}
         </button>
         <button
           type="button"

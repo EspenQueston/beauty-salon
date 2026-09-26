@@ -57,7 +57,8 @@
  * mur.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Lien } from "@/features/ui/Lien";
 
 import { Reveal } from "@/features/ui/Reveal";
 import {
@@ -68,6 +69,7 @@ import {
 import type { PublicSalon } from "@/lib/types";
 
 import { SalonIcon } from "./icons";
+import { srcSetDe, TAILLES } from "./images";
 
 /** Paragraphes par chapitre : la hauteur qui équilibre une image en 4/5. */
 const PAR_CHAPITRE = 3;
@@ -78,6 +80,7 @@ const RANG_DES_CHIFFRES = 1;
 interface Visuel {
   url: string;
   alt: string;
+  srcSet?: string;
 }
 
 export function AboutStory({
@@ -91,9 +94,10 @@ export function AboutStory({
   salon: PublicSalon;
   title: string;
 }) {
+  const t = useTranslations("salon");
   const chapitres = decouper(paragraphs, PAR_CHAPITRE);
   const visuels = rassemblerVisuels(salon, title, chapitres.length);
-  const chiffres = compterLesChiffres(salon);
+  const chiffres = compterLesChiffres(salon, t);
 
   // Le tableau ne remplace une image que s'il a de quoi se remplir et qu'il
   // reste un chapitre pour l'accueillir.
@@ -150,6 +154,8 @@ function Chapitre({
   salon: PublicSalon;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("salon");
+  const c = useTranslations("commun");
   const texteADroite = rang % 2 === 1;
 
   return (
@@ -159,7 +165,7 @@ function Chapitre({
           <Reveal>
             <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-[var(--salon-accent)] px-3 py-1.5 text-xs font-medium text-[var(--salon-ink-accent)]">
               <SalonIcon name="clock" className="size-3.5" />
-              {minutes} min de lecture
+              {t("pages.lecture", { n: minutes })}
             </p>
           </Reveal>
         )}
@@ -192,12 +198,12 @@ function Chapitre({
                 </span>
                 {salon.city && ` · ${salon.city}`}
               </p>
-              <Link
+              <Lien
                 href="/reserver"
                 className="text-sm font-medium text-[var(--salon-ink)] underline-offset-2 hover:underline"
               >
-                Prendre rendez-vous →
-              </Link>
+                {c("prendreRdv")} →
+              </Lien>
             </div>
           </Reveal>
         )}
@@ -222,6 +228,8 @@ function Illustration({ visuel }: { visuel: Visuel }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={visuel.url}
+        srcSet={visuel.srcSet}
+        sizes={visuel.srcSet ? TAILLES.moitie : undefined}
         alt={visuel.alt}
         loading="lazy"
         className="aspect-[4/5] w-full object-cover"
@@ -257,7 +265,7 @@ function TableauDeChiffres({ chiffres }: { chiffres: Chiffre[] }) {
       <ul className="divide-y divide-[var(--site-line)]">
         {chiffres.map((chiffre) => (
           <li key={chiffre.libelle}>
-            <Link
+            <Lien
               href={chiffre.href}
               className="group flex items-center gap-3.5 px-5 py-3.5 transition hover:bg-[var(--salon-primary)]/[0.04]"
             >
@@ -288,7 +296,7 @@ function TableauDeChiffres({ chiffres }: { chiffres: Chiffre[] }) {
                 name="arrow"
                 className="size-4 shrink-0 text-[var(--salon-ink)] opacity-40 transition-all duration-300 group-hover:translate-x-0.5 group-hover:opacity-100"
               />
-            </Link>
+            </Lien>
           </li>
         ))}
       </ul>
@@ -333,6 +341,7 @@ function rassemblerVisuels(
   if (salon.about_image) {
     visuels.push({
       url: salon.about_image.url,
+      srcSet: srcSetDe(salon.about_image),
       alt: salon.about_image.alt_text || title,
     });
   }
@@ -342,7 +351,7 @@ function rassemblerVisuels(
     // Les vidéos de la galerie ne conviennent pas ici : elles appellent une
     // lecture, et ce vis-à-vis doit se regarder sans rien demander.
     if (media.content_type.startsWith("video/")) continue;
-    visuels.push({ url: media.url, alt: media.alt_text || "" });
+    visuels.push({ url: media.url, srcSet: srcSetDe(media), alt: media.alt_text || "" });
   }
 
   const theme = salon.categories[0]
@@ -364,7 +373,11 @@ function rassemblerVisuels(
   return visuels;
 }
 
-function compterLesChiffres(salon: PublicSalon): Chiffre[] {
+/* Le traducteur arrive en paramètre : ce n'est pas un composant. */
+function compterLesChiffres(
+  salon: PublicSalon,
+  t: (cle: string, vars?: Record<string, string | number | Date>) => string,
+): Chiffre[] {
   const prestations = salon.categories.reduce(
     (total, category) => total + category.services.length,
     0,
@@ -374,31 +387,31 @@ function compterLesChiffres(salon: PublicSalon): Chiffre[] {
     prestations > 0 && {
       icon: "scissors" as const,
       valeur: String(prestations),
-      libelle: `prestation${prestations > 1 ? "s" : ""} au catalogue`,
+      libelle: t("prestationsCatalogue", { n: prestations }),
       href: "/prestations",
     },
     salon.staff_members.length > 0 && {
       icon: "star" as const,
       valeur: String(salon.staff_members.length),
-      libelle: `prestataire${salon.staff_members.length > 1 ? "s" : ""}`,
+      libelle: t("chiffres.prestataires", { n: salon.staff_members.length }),
       href: "/equipe",
     },
     salon.categories.length > 0 && {
       icon: "sparkle" as const,
       valeur: String(salon.categories.length),
-      libelle: `spécialité${salon.categories.length > 1 ? "s" : ""}`,
+      libelle: t("chiffres.specialites", { n: salon.categories.length }),
       href: "/prestations",
     },
     salon.gallery.length > 0 && {
       icon: "sparkle" as const,
       valeur: String(salon.gallery.length),
-      libelle: "réalisations en ligne",
+      libelle: t("chiffres.realisations"),
       href: "/realisations",
     },
     salon.city && {
       icon: "pin" as const,
       valeur: salon.city,
-      libelle: "où nous recevoir",
+      libelle: t("chiffres.ouRecevoir"),
       href: "/infos",
     },
   ].filter(Boolean) as Chiffre[];

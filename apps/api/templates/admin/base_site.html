@@ -15,6 +15,9 @@ tout ce qu'elle doit pouvoir surcharger.
 {% endcomment %}
 {% block extrahead %}{{ block.super }}
   <link rel="stylesheet" href="{% versioned_static 'admin/platform.css' %}">
+  {% if user.is_authenticated and user.is_platform_admin %}
+    <link rel="stylesheet" href="{% versioned_static 'notifications/cloche.css' %}">
+  {% endif %}
 {% endblock %}
 
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Beauty Salon{% endblock %}
@@ -26,4 +29,33 @@ tout ce qu'elle doit pouvoir surcharger.
   {% endif %}
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
+{% comment %}
+La cloche des notifications.
+
+`nav-global` est vide chez Django et se trouve dans l'en-tete, apres les
+liens de compte : c'est exactement la place d'une cloche. Le bloc etait
+deja vide ici, on ne remplace donc rien.
+
+Le conteneur est rendu vide et rempli par `cloche.js`. Le faire rendre par
+Django aurait demande un processeur de contexte execute sur **chaque** page
+de l'administration, pour trois lignes qui changent toutes les trente
+secondes - et il aurait fallu les recharger a la main de toute facon.
+
+Reserve aux comptes plateforme : `is_staff` ouvre l'administration, il
+n'ouvre pas la supervision, et l'API refuserait tout le monde d'autre.
+{% endcomment %}
+{% block nav-global %}
+  {% if user.is_authenticated and user.is_platform_admin %}
+    <div id="cloche-plateforme"></div>
+  {% endif %}
+{% endblock %}
+
+{% block extrabody %}{{ block.super }}
+  {% if user.is_authenticated and user.is_platform_admin %}
+    {% comment %}
+    `defer` : le script attend que l'en-tete existe, sans retarder son
+    affichage.
+    {% endcomment %}
+    <script src="{% versioned_static 'notifications/cloche.js' %}" defer></script>
+  {% endif %}
+{% endblock %}

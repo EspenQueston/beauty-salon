@@ -69,7 +69,9 @@ export function Reviews() {
         description="Ce que vos clientes disent après leur rendez-vous. Chaque avis est rattaché à une prestation réellement honorée."
       />
 
-      {reviews.error && <ErrorState>Impossible de charger les avis.</ErrorState>}
+      {reviews.error && (
+        <ErrorState>Impossible de charger les avis.</ErrorState>
+      )}
       {reviews.data === null && !reviews.error && <Skeleton rows={3} />}
 
       {all.length === 0 && reviews.data !== null && (
@@ -100,12 +102,15 @@ export function Reviews() {
             <StatTile
               label="Trois étoiles ou moins"
               value={String(
-                spread.filter((row) => row.score <= 3).reduce((t, r) => t + r.count, 0),
+                spread
+                  .filter((row) => row.score <= 3)
+                  .reduce((t, r) => t + r.count, 0),
               )}
               hint="à lire en priorité"
               tone={
-                spread.filter((row) => row.score <= 3).reduce((t, r) => t + r.count, 0) >
-                0
+                spread
+                  .filter((row) => row.score <= 3)
+                  .reduce((t, r) => t + r.count, 0) > 0
                   ? "danger"
                   : "neutral"
               }
@@ -117,7 +122,9 @@ export function Reviews() {
             <ul className="space-y-2">
               {spread.map((row) => {
                 const share =
-                  published.length > 0 ? (row.count / published.length) * 100 : 0;
+                  published.length > 0
+                    ? (row.count / published.length) * 100
+                    : 0;
                 return (
                   <li key={row.score} className="flex items-center gap-3">
                     <span className="tabular w-10 shrink-0 text-sm text-muted">
@@ -156,7 +163,9 @@ export function Reviews() {
                         />
                       ))}
                     </span>
-                    <span className="font-medium text-ink">{review.author_name}</span>
+                    <span className="font-medium text-ink">
+                      {review.author_name}
+                    </span>
                     {review.status === "hidden" && (
                       <Badge tone="warning">Masqué par la plateforme</Badge>
                     )}
@@ -164,7 +173,8 @@ export function Reviews() {
 
                   <p className="mt-1 text-sm text-subtle">
                     {review.service_name}
-                    {review.staff_member_name && ` · ${review.staff_member_name}`}
+                    {review.staff_member_name &&
+                      ` · ${review.staff_member_name}`}
                     {" · "}
                     {formatDate(review.booking_starts_at, timeZone)}
                   </p>
@@ -219,9 +229,9 @@ export function Reviews() {
       {all.length > 0 && (
         <p className="mt-6 max-w-2xl text-sm leading-relaxed text-muted">
           Vous ne pouvez ni modifier ni supprimer un avis : c&apos;est ce qui
-          leur donne leur valeur aux yeux de vos clientes. Un avis
-          manifestement abusif peut être signalé à l&apos;équipe Beauty Salon,
-          qui décide de le retirer.
+          leur donne leur valeur aux yeux de vos clientes. Un avis manifestement
+          abusif peut être signalé à l&apos;équipe Beauty Salon, qui décide de
+          le retirer.
         </p>
       )}
     </section>

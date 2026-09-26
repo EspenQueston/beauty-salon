@@ -171,6 +171,18 @@ class Booking(TenantOwnedModel):
         max_length=20, choices=BookingSource.choices, default=BookingSource.WEB
     )
 
+    # La langue dans laquelle la cliente lisait le mini-site en reservant.
+    #
+    # Figee ici pour la meme raison que la devise juste en dessous : elle
+    # decrit un fait passe. Une cliente qui a reserve en anglais doit recevoir
+    # sa confirmation, son rappel de la veille et sa demande d avis en
+    # anglais - meme si elle revient plus tard en francais, et meme si le
+    # salon change de langue par defaut.
+    #
+    # Le francais par defaut : une reservation prise au telephone par le salon
+    # n en porte aucune, et c est la langue du salon qui vaut alors.
+    language = models.CharField(_("langue de la cliente"), max_length=5, default="fr")
+
     # Instantanes : le catalogue evolue, une reservation passee doit rester
     # lisible telle qu'elle a ete vendue.
     service_name = models.CharField(max_length=150)

@@ -12,7 +12,7 @@ import pytest
 from django.utils import timezone
 
 from apps.accounts.models import Membership
-from apps.billing.models import Invoice, Plan, Subscription
+from apps.billing.models import Invoice, Plan, Subscription, SubscriptionEvent
 from apps.billing.services import (
     BillingError,
     issue_invoice,
@@ -32,10 +32,14 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def plans(db):
-    Plan.objects.create(code=Plan.Code.TRIAL, name="Essai", reference_price=0)
-    return Plan.objects.create(
-        code=Plan.Code.SALON, name="Salon", reference_price=Decimal("12000")
+    # L'essai, le mensuel et l'annuel existent deja : la migration 0007 de
+    # `billing` les cree, dans la base de test comme ailleurs.
+    Plan.objects.get_or_create(code=Plan.Code.TRIAL, defaults={"name": "Essai"})
+    plan, _ = Plan.objects.get_or_create(
+        code=Plan.Code.MONTHLY,
+        defaults={"name": "Mensuel", "reference_price": Decimal("12000")},
     )
+    return plan
 
 
 @pytest.fixture
@@ -98,7 +102,8 @@ def test_a_trial_opens_at_signup(salon_a, plans):
     assert subscription.status == Subscription.Status.TRIALING
     assert subscription.price_amount == 0
     assert subscription.currency == salon_a.tenant.currency
-    assert 28 <= (subscription.days_left_in_trial or 0) <= 30
+    # Deux semaines : la duree decidee avec le produit.
+    assert 13 <= (subscription.days_left_in_trial or 0) <= 14
 
 
 def test_starting_a_trial_twice_returns_the_same_subscription(salon_a, plans):
@@ -111,6 +116,7 @@ def test_starting_a_trial_twice_returns_the_same_subscription(salon_a, plans):
 
 
 def test_a_trial_without_configured_plan_is_refused(salon_a):
+    Plan.objects.filter(code=Plan.Code.TRIAL).update(active=False)
     with pytest.raises(BillingError):
         start_trial(salon_a.tenant)
 
@@ -173,51 +179,53 @@ def test_paying_reactivates_a_suspended_subscription(salon_a, subscription):
 # ---------------------------------------------------------------------------
 
 
-def test_the_cycle_issues_the_invoice_of_an_elapsed_period(salon_a, subscription):
-    result = run_billing_cycle()
+def test_the_cycle_expires_an_elapsed_paid_period_without_billing(salon_a, subscription):
+    """Plus de facture emise d'office : une periode payee ne s'ouvre que par
+    un paiement approuve. Une periode echue expire, c'est tout."""
+    run_billing_cycle()
 
-    assert result["issued"] == 1
     with as_tenant(salon_a.tenant):
-        assert Invoice.objects.count() == 1
+        subscription.refresh_from_db()
+        assert subscription.status == Subscription.Status.EXPIRED
+        assert Invoice.objects.count() == 0
 
 
-def test_running_the_cycle_twice_does_not_bill_twice(salon_a, subscription):
+def test_running_the_cycle_twice_does_not_expire_twice(salon_a, subscription):
     """La tache tourne tous les jours : elle doit etre rejouable."""
     run_billing_cycle()
     run_billing_cycle()
 
     with as_tenant(salon_a.tenant):
-        assert Invoice.objects.count() == 1
+        assert (
+            SubscriptionEvent.objects.filter(kind=SubscriptionEvent.Kind.EXPIRED).count() == 1
+        )
 
 
-def test_the_cycle_converts_a_finished_trial(salon_a, plans):
+def test_a_finished_trial_expires_instead_of_becoming_free(salon_a, plans):
+    """Autrefois, un essai termine basculait en « actif » a prix nul : aucun
+    salon n'a jamais paye. Il expire desormais."""
     subscription = start_trial(salon_a.tenant)
     with as_tenant(salon_a.tenant):
         subscription.trial_ends_at = timezone.now() - timedelta(days=1)
         subscription.current_period_end = timezone.now() - timedelta(days=1)
         subscription.save()
 
-    result = run_billing_cycle()
-
-    assert result["converted"] == 1
-    with as_tenant(salon_a.tenant):
-        subscription.refresh_from_db()
-        assert subscription.status == Subscription.Status.ACTIVE
-        # Essai a 0 : aucune facture ne part tant qu'aucun prix n'est fixe.
-        assert Invoice.objects.count() == 0
-
-
-def test_an_overdue_invoice_suspends_the_subscription(salon_a, subscription):
-    with as_tenant(salon_a.tenant):
-        invoice = issue_invoice(subscription)
-        invoice.due_at = timezone.now() - timedelta(days=1)
-        invoice.save()
-
     run_billing_cycle()
 
     with as_tenant(salon_a.tenant):
         subscription.refresh_from_db()
-        assert subscription.status == Subscription.Status.PAST_DUE
+        assert subscription.status == Subscription.Status.EXPIRED
+        assert Invoice.objects.count() == 0
+
+
+def test_the_cycle_gives_a_trial_to_a_salon_without_subscription(salon_a, plans):
+    """Un salon sans abonnement echapperait aux regles d'acces : la tache
+    quotidienne lui ouvre un essai."""
+    run_billing_cycle()
+
+    with as_tenant(salon_a.tenant):
+        subscription = Subscription.objects.get()
+        assert subscription.status == Subscription.Status.TRIALING
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +270,7 @@ def test_only_the_owner_sees_the_subscription(api_client, salon_a, subscription)
 
     assert refuse.status_code == 403
     assert autorise.status_code == 200
-    assert autorise.data["plan"]["code"] == "salon"
+    assert autorise.data["plan"]["code"] == "monthly"
 
 
 # ---------------------------------------------------------------------------

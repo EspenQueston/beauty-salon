@@ -26,6 +26,7 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+import { PALETTES } from "@/features/site/palettes";
 import { Icon } from "./icons";
 import { ContrastMeter } from "./ContrastMeter";
 import { MediaPicker, type PickableMedia } from "./MediaPicker";
@@ -46,6 +47,7 @@ interface Profile {
   longitude: string | null;
   phone: string;
   whatsapp_number: string;
+  contact_email: string;
   social_links: Record<string, string>;
   wechat_id: string;
   wechat_qr: string | null;
@@ -91,28 +93,8 @@ const DEFAULT_PRIMARY = "#B4436C";
 const DEFAULT_ACCENT = "#F2C4CE";
 const DEFAULT_SURFACE = "#FAF7F8";
 
-/**
- * Palettes prêtes à l'emploi : choisir bat composer, pour la plupart.
- *
- * Chacune porte les trois couleurs, fond de page compris. Sans lui, choisir
- * « Terracotta » laissait le mini-site sur le fond rosé d'origine — deux
- * familles de couleurs sur la même page, ce qui se voit tout de suite.
- */
-const PALETTES = [
-  { name: "Rose poudré", primary: "#B4436C", accent: "#F7D9E1", surface: "#FCF7F9" },
-  { name: "Or et nuit", primary: "#1F2937", accent: "#E9C46A", surface: "#FBF8F1" },
-  { name: "Terracotta", primary: "#9C4221", accent: "#F6D5C0", surface: "#FDF7F3" },
-  { name: "Émeraude", primary: "#0F766E", accent: "#CDEDE7", surface: "#F4FAF9" },
-  { name: "Violet", primary: "#6D28D9", accent: "#E4D8FB", surface: "#F9F7FE" },
-  { name: "Bleu nuit", primary: "#1E3A8A", accent: "#D6E0FA", surface: "#F6F8FD" },
-  { name: "Cacao", primary: "#5C3A21", accent: "#E8D5C0", surface: "#FBF7F3" },
-  { name: "Corail", primary: "#C2410C", accent: "#FDDCC8", surface: "#FFF8F4" },
-  { name: "Prune", primary: "#86198F", accent: "#F3D5F5", surface: "#FDF6FE" },
-  { name: "Encre et menthe", primary: "#134E4A", accent: "#B9E7DC", surface: "#F2FAF8" },
-];
-
 export function SalonProfileScreen() {
-  const { membership } = useDashboard();
+  const { membership, user } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
   const canEdit = ["owner", "manager"].includes(membership.role);
@@ -292,6 +274,32 @@ export function SalonProfileScreen() {
                 className={inputClass}
               />
             </Field>
+            <Field
+              label="E-mail de contact"
+              hint="Affiché sur votre mini-site, dans le pied de page et la page Infos."
+            >
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={profile.contact_email ?? ""}
+                  onChange={(event) => set("contact_email", event.target.value)}
+                  disabled={!canEdit}
+                  placeholder="contact@monsalon.com"
+                  autoComplete="email"
+                  className={inputClass}
+                />
+                {canEdit && !profile.contact_email && user.email && (
+                  <button
+                    type="button"
+                    onClick={() => set("contact_email", user.email)}
+                    className="shrink-0 rounded-lg border border-line px-3 text-xs font-medium text-ink transition hover:bg-surface-hover"
+                    title={`Utiliser ${user.email}`}
+                  >
+                    Mon e-mail
+                  </button>
+                )}
+              </div>
+            </Field>
             {/*
               Ce réglage en commande un autre, et il faut le dire.
 
@@ -315,7 +323,10 @@ export function SalonProfileScreen() {
               <select
                 value={profile.service_mode}
                 onChange={(event) =>
-                  set("service_mode", event.target.value as Profile["service_mode"])
+                  set(
+                    "service_mode",
+                    event.target.value as Profile["service_mode"],
+                  )
                 }
                 disabled={!canEdit}
                 className={inputClass}
@@ -468,21 +479,27 @@ export function SalonProfileScreen() {
                 hint="Boutons et prix"
                 value={primary}
                 disabled={!canEdit}
-                onChange={(value) => set("theme_config", { ...theme, primary: value })}
+                onChange={(value) =>
+                  set("theme_config", { ...theme, primary: value })
+                }
               />
               <ColorField
                 label="Secondaire"
                 hint="Pastilles, médaillons"
                 value={accent}
                 disabled={!canEdit}
-                onChange={(value) => set("theme_config", { ...theme, accent: value })}
+                onChange={(value) =>
+                  set("theme_config", { ...theme, accent: value })
+                }
               />
               <ColorField
                 label="Fond de page"
                 hint="Derrière les cartes"
                 value={surface}
                 disabled={!canEdit}
-                onChange={(value) => set("theme_config", { ...theme, surface: value })}
+                onChange={(value) =>
+                  set("theme_config", { ...theme, surface: value })
+                }
               />
             </div>
 
@@ -498,7 +515,10 @@ export function SalonProfileScreen() {
                 style={{ background: surface }}
               >
                 <div className="rounded-lg bg-white p-4 shadow-sm">
-                  <p className="text-lg font-semibold" style={{ color: primary }}>
+                  <p
+                    className="text-lg font-semibold"
+                    style={{ color: primary }}
+                  >
                     {membership.tenant.name}
                   </p>
                   <p className="mt-0.5 text-sm text-black/55">
@@ -589,7 +609,9 @@ export function SalonProfileScreen() {
                 max={240}
                 step={5}
                 value={profile.buffer_minutes}
-                onChange={(event) => set("buffer_minutes", Number(event.target.value))}
+                onChange={(event) =>
+                  set("buffer_minutes", Number(event.target.value))
+                }
                 disabled={!canEdit}
                 className={`${inputClass} tabular`}
               />
@@ -625,7 +647,9 @@ export function SalonProfileScreen() {
                 min={1}
                 max={365}
                 value={profile.max_advance_days}
-                onChange={(event) => set("max_advance_days", Number(event.target.value))}
+                onChange={(event) =>
+                  set("max_advance_days", Number(event.target.value))
+                }
                 disabled={!canEdit}
                 className={`${inputClass} tabular`}
               />
@@ -796,9 +820,7 @@ export function SalonProfileScreen() {
                 min={0}
                 inputMode="decimal"
                 value={profile.deposit_minimum}
-                onChange={(event) =>
-                  set("deposit_minimum", event.target.value)
-                }
+                onChange={(event) => set("deposit_minimum", event.target.value)}
                 disabled={!canEdit}
                 className={`${inputClass} tabular`}
               />
@@ -817,15 +839,16 @@ export function SalonProfileScreen() {
           {/* Un réglage qui ne demande rien se signale : sans ce mot, le
               salon croit avoir activé les acomptes et découvre des mois plus
               tard qu'aucun n'a jamais été réclamé. */}
-          {profile.deposit_rate === 0 && Number(profile.deposit_minimum) === 0 && (
-            <p className="mt-3 flex items-start gap-2 rounded-xl bg-warning-bg px-3 py-2.5 text-sm text-warning">
-              <Icon name="clock" className="mt-0.5 size-4 shrink-0" />
-              <span>
-                Avec 0 % et aucun minimum, aucun acompte ne sera demandé — même
-                sur les prestations qui en réclament un.
-              </span>
-            </p>
-          )}
+          {profile.deposit_rate === 0 &&
+            Number(profile.deposit_minimum) === 0 && (
+              <p className="mt-3 flex items-start gap-2 rounded-xl bg-warning-bg px-3 py-2.5 text-sm text-warning">
+                <Icon name="clock" className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  Avec 0 % et aucun minimum, aucun acompte ne sera demandé —
+                  même sur les prestations qui en réclament un.
+                </span>
+              </p>
+            )}
 
           <DepositPreview
             rate={profile.deposit_rate}
@@ -862,7 +885,9 @@ export function SalonProfileScreen() {
           >
             <textarea
               value={profile.cancellation_policy}
-              onChange={(event) => set("cancellation_policy", event.target.value)}
+              onChange={(event) =>
+                set("cancellation_policy", event.target.value)
+              }
               disabled={!canEdit}
               rows={3}
               className={inputClass}
@@ -935,7 +960,9 @@ export function SalonProfileScreen() {
           <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur lg:left-[17rem]">
             <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
               <p className="text-sm text-muted">
-                {dirty ? "Modifications non enregistrées." : "Tout est enregistré."}
+                {dirty
+                  ? "Modifications non enregistrées."
+                  : "Tout est enregistré."}
               </p>
               <Button type="submit" pending={pending} disabled={!dirty}>
                 Enregistrer
@@ -967,7 +994,9 @@ function aboutWordCount(text: string): number {
  */
 function describeStep(minutes: number): string {
   const step = Math.max(5, minutes);
-  return [0, step, step * 2].map((offset) => frenchClock(9 * 60 + offset)).join(", ");
+  return [0, step, step * 2]
+    .map((offset) => frenchClock(9 * 60 + offset))
+    .join(", ");
 }
 
 /** Minutes depuis minuit → « 9 h » ou « 9 h 30 », espaces insécables. */
@@ -975,9 +1004,7 @@ function frenchClock(total: number): string {
   const hours = Math.floor(total / 60);
   const minutes = total % 60;
   const hour = `${hours} h`;
-  return minutes === 0
-    ? hour
-    : `${hour} ${String(minutes).padStart(2, "0")}`;
+  return minutes === 0 ? hour : `${hour} ${String(minutes).padStart(2, "0")}`;
 }
 
 function ColorField({
@@ -1073,7 +1100,9 @@ function ToleranceInput({
           value={value}
           onChange={(event) => {
             const next = Number(event.target.value);
-            onChange(Number.isFinite(next) ? Math.min(120, Math.max(0, next)) : 0);
+            onChange(
+              Number.isFinite(next) ? Math.min(120, Math.max(0, next)) : 0,
+            );
           }}
           disabled={disabled}
           aria-label="Tolérance de retard en minutes"
@@ -1215,7 +1244,9 @@ function PinField({
           rel="noreferrer noopener"
           className="font-medium text-salon underline-offset-2 hover:underline"
         >
-          {posed ? "Vérifier le point sur la carte" : "Trouver mon salon sur la carte"}
+          {posed
+            ? "Vérifier le point sur la carte"
+            : "Trouver mon salon sur la carte"}
         </a>
         <span className={posed ? "text-success" : "text-subtle"}>
           {posed
@@ -1311,7 +1342,10 @@ function DepositPreview({
       {/* Deux colonnes dès le téléphone : ces lignes sont courtes, et
           empilées elles éloigneraient le total du réglage qu'on ajuste. */}
       <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-        <Row label="Prestation" value={formatPrice(String(service), currency)} />
+        <Row
+          label="Prestation"
+          value={formatPrice(String(service), currency)}
+        />
         <Row label="Options" value={formatPrice(String(options), currency)} />
         <Row label="Fournitures" value={formatPrice(String(items), currency)} />
         <Row
@@ -1360,7 +1394,9 @@ function Row({
   return (
     <div className="flex items-baseline justify-between gap-2">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className={`tabular text-xs ${strong ? "font-medium text-ink" : "text-ink"}`}>
+      <dd
+        className={`tabular text-xs ${strong ? "font-medium text-ink" : "text-ink"}`}
+      >
         {value}
       </dd>
     </div>

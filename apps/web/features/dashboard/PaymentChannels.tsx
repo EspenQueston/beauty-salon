@@ -77,7 +77,10 @@ export function PaymentChannels({
   onMediaChanged: () => void;
 }) {
   const toast = useToast();
-  const channels = useResource<Page<Channel>>("/api/v1/payment-channels/", tenantId);
+  const channels = useResource<Page<Channel>>(
+    "/api/v1/payment-channels/",
+    tenantId,
+  );
   const list = rows(channels.data);
 
   const missing = OFFERED.filter(
@@ -89,7 +92,10 @@ export function PaymentChannels({
       () =>
         dashboardFetch(
           "/api/v1/payment-channels/",
-          { method: "POST", body: JSON.stringify({ kind, position: list.length }) },
+          {
+            method: "POST",
+            body: JSON.stringify({ kind, position: list.length }),
+          },
           tenantId,
         ),
       { success: "Moyen ajouté. Téléversez votre QR code." },
@@ -127,9 +133,9 @@ export function PaymentChannels({
     <Card id="encaissement">
       <SectionTitle>Encaisser les acomptes</SectionTitle>
       <p className="-mt-2 mb-4 text-sm text-muted">
-        Publiez le QR code de votre compte : vos clientes régleront leur
-        acompte dessus avant de venir. L&apos;argent arrive directement chez
-        vous — nous ne le touchons jamais.
+        Publiez le QR code de votre compte : vos clientes régleront leur acompte
+        dessus avant de venir. L&apos;argent arrive directement chez vous — nous
+        ne le touchons jamais.
       </p>
 
       {channels.data === null && !channels.error && <Skeleton rows={1} />}

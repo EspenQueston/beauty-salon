@@ -53,6 +53,12 @@ export class DashboardError extends Error {
   }
 }
 
+/**
+ * Événement de fenêtre : « l'abonnement a peut-être changé, relisez-le ».
+ * Émis ici sur un 402, et par la page Abonnement après une déclaration.
+ */
+export const ABONNEMENT_CHANGE = "beauty-salon:abonnement";
+
 function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
   return match ? decodeURIComponent(match[2]) : null;
@@ -100,6 +106,11 @@ export async function dashboardFetch<T>(
 
   const body = await response.json().catch(() => null);
   if (!response.ok) {
+    // 402 : l'abonnement a expiré entre deux chargements. La bannière de la
+    // coquille relit l'accès et le dit, quel que soit l'écran qui écrivait.
+    if (response.status === 402 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event(ABONNEMENT_CHANGE));
+    }
     throw new DashboardError(
       response.status,
       body?.code ?? "error",
@@ -195,8 +206,8 @@ export interface SignupPayload {
   timezone_name: string;
   currency: string;
   accepts_terms: boolean;
-  /** Couleurs composées sur la page d'accueil, reprises telles quelles. */
-  theme_config?: Record<string, string>;
+  /** Palette obligatoire choisie pendant l'inscription. */
+  theme_config: Record<string, string>;
 }
 
 /**

@@ -7,10 +7,8 @@ import { DashboardError, login } from "@/lib/dashboard";
 import { platformUrl } from "@/lib/site";
 import { Button } from "@/features/ui";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
+import { BeautySalonBrand } from "@/features/ui/BeautySalonBrand";
 import {
-  AuthAsideTitle,
-  AuthPoint,
-  AuthPoints,
   AuthShell,
   authCard,
   authInput,
@@ -18,7 +16,7 @@ import {
   authLink,
   authTitle,
 } from "@/features/ui/AuthShell";
-import { AgendaPreview } from "@/features/ui/AgendaPreview";
+import { FilmAcces } from "@/features/account/FilmAcces";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { useToast } from "@/features/ui/Toast";
 
@@ -80,7 +78,9 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
    * focus sauterait pendant la frappe, des le premier caractere tape dans
    * une adresse vide.
    */
-  const [emailWasFilled] = useState(() => Boolean(prefilled || rememberedEmail()));
+  const [emailWasFilled] = useState(() =>
+    Boolean(prefilled || rememberedEmail()),
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -110,47 +110,24 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     <AuthShell
       homeHref={platformUrl}
       action={<ThemeToggle />}
-      brand={
-        <>
-          <span className="inline-flex size-8 items-center justify-center rounded-xl bg-salon text-sm font-semibold text-white">
-            BS
-          </span>
-          <span className="font-semibold tracking-tight text-ink">
-            Beauty Salon
-          </span>
-        </>
-      }
-      aside={
-        /*
-          La colonne de réassurance.
+      brand={<BeautySalonBrand />}
+      /*
+        La colonne de droite : le film, et rien d'autre.
 
-          Elle ne vend rien : elle répond aux trois choses qui retiennent
-          quelqu'un devant un champ de mot de passe — ce qu'il y a derrière,
-          ce que ça coûte, et à qui appartiennent les données. La dernière
-          est celle qu'on nous pose le plus souvent.
+        Elle portait une légende, un titre et trois arguments — ce qu'il y a
+        derrière, ce que ça coûte, à qui appartiennent les données. C'était
+        juste, et c'était deux discours pour un seul geste : le film montre
+        déjà l'agenda qui se remplit et le mini-site qui se partage, pendant
+        que les lignes sous lui demandaient de lire ce qu'on regardait.
 
-          Les phrases ont été raccourcies d'un tiers. Trois paragraphes à
-          côté d'un formulaire ne se lisent pas : ils se contournent. Une
-          ligne chacun, et l'aperçu d'agenda montre en une seconde ce que
-          les trois racontaient.
-        */
-        <div>
-          <AgendaPreview />
+        Il reste seul, comme sur l'écran d'inscription. C'est la seule chose
+        de ces deux pages qui ne se lit pas.
 
-          <AuthAsideTitle>Votre salon, en ligne et à jour.</AuthAsideTitle>
-          <AuthPoints>
-            <AuthPoint title="Les rendez-vous se prennent tout seuls">
-              Votre mini-site réserve la nuit et le dimanche.
-            </AuthPoint>
-            <AuthPoint title="Rien à installer">
-              Tout se gère depuis ce navigateur, ordinateur ou téléphone.
-            </AuthPoint>
-            <AuthPoint title="Vos données restent les vôtres">
-              Votre fichier clientes s&apos;exporte quand vous voulez.
-            </AuthPoint>
-          </AuthPoints>
-        </div>
-      }
+        Le film remplace aussi l'aperçu d'agenda animé qui occupait cette
+        place : celui-ci montrait une chose, le film en montre trois, et en
+        mouvement réel plutôt qu'en maquette.
+      */
+      aside={<FilmAcces />}
     >
       <div className="rise w-full">
         {/*
@@ -203,7 +180,10 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               autoFocus={emailWasFilled}
               inputClassName={authInput}
               action={
-                <Link href="/mot-de-passe-oublie" className={`${authLink} text-sm`}>
+                <Link
+                  href="/mot-de-passe-oublie"
+                  className={`${authLink} text-sm`}
+                >
                   Mot de passe oublié ?
                 </Link>
               }
@@ -239,7 +219,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             Créer le mien
           </Link>
           <span className="mt-1 block text-xs text-muted">
-            30 jours gratuits, sans carte bancaire.
+            14 jours gratuits, sans carte bancaire.
           </span>
         </p>
       </div>

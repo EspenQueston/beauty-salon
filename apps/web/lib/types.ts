@@ -4,6 +4,8 @@ export type LocationMode = "salon" | "home" | "hybrid";
 export interface MediaAsset {
   id: string;
   url: string;
+  /** Copies WebP réduites, par largeur en pixels (« 480 », « 1024 »). */
+  variants?: Record<string, string>;
   /** "image/webp", "video/mp4"… Décide du rendu : <img> ou <video>. */
   content_type: string;
   alt_text: string;
@@ -137,6 +139,8 @@ export interface PublicSalon {
   longitude: string | null;
   phone: string;
   whatsapp_number: string;
+  /** L'e-mail publié sur le mini-site. Vide tant que le salon ne l'a pas donné. */
+  contact_email?: string;
   social_links: Record<string, string>;
   /** L.identifiant WeChat du salon. Vide tant qu.il ne l.a pas renseigné. */
   wechat_id: string;
@@ -174,6 +178,50 @@ export interface PublicSalon {
   travel_zones: TravelZone[];
   gallery: MediaAsset[];
   rating: RatingSummary;
+  /**
+   * Faux quand l'abonnement du salon est échu (grâce passée) ou suspendu.
+   * Le mini-site reste en ligne mais ne propose plus de réserver ; le
+   * serveur refuse de toute façon la réservation. Absent d'une réponse
+   * antérieure à ce champ : traité comme ouvert.
+   */
+  reservations_ouvertes?: boolean;
+  /**
+   * L'apparence avancée (offre Pro) : null quand le salon ne l'a pas — ses
+   * réglages restent gardés côté serveur, la page reprend son allure d'origine.
+   */
+  site_config?: SiteConfig | null;
+  /** L'assistant des clientes (offre Pro) est ouvert sur ce mini-site. */
+  assistant_clientes?: boolean;
+}
+
+/** Une rubrique connue, ou une page du salon (`page:<id>`). */
+export type RubriqueMenu =
+  | "prestations"
+  | "realisations"
+  | "equipe"
+  | "a-propos"
+  | "infos"
+  | `page:${string}`;
+
+/** Une page écrite par le salon (offre Pro), servie sous `/p/<slug>`. */
+export interface PagePerso {
+  id: string;
+  titre: string;
+  slug: string;
+  accroche: string;
+  contenu: string;
+  image: MediaAsset | null;
+}
+export type SectionAccueil = "prestations" | "etapes" | "realisations" | "equipe" | "avis" | "infos";
+
+export interface SiteConfig {
+  police_titres: string;
+  police_texte: string;
+  menu: { cle: RubriqueMenu; visible: boolean }[];
+  sections: { cle: SectionAccueil; visible: boolean }[];
+  accroche: string;
+  bouton_reserver: string;
+  pages?: PagePerso[];
 }
 
 export interface TravelZone {

@@ -556,3 +556,206 @@ def test_a_malformed_target_does_not_crash(api_client, salon_a):
 
     assert response.status_code == 409
     assert response.data["code"] == "wrong_booking"
+
+
+# ---------------------------------------------------------------------------
+# Un rendez-vous que l'on voit doit pouvoir être noté arrivé
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_le_code_fonctionne_au_dela_de_la_fenetre_quand_le_rendez_vous_est_vise(
+    api_client, salon_a
+):
+    """Le défaut signalé.
+
+    La recherche par code balaie une fenêtre de ±2 jours : elle existe pour
+    que deux codes à six caractères ne puissent pas se croiser. Mais un
+    rendez-vous ouvert depuis une ligne de l'agenda est déjà désigné — la
+    précaution n'a plus d'objet, et elle refusait une cliente attendue dans
+    deux jours et demi, affichée à l'écran et nommée dans le panneau.
+    """
+    booking = make_booking(salon_a, when=timezone.now() + timedelta(days=3))
+    login(api_client, salon_a.owner)
+
+    # Sans désigner le rendez-vous : la fenêtre s'applique, et elle refuse.
+    aveugle = api_client.post(
+        "/api/v1/bookings/check-in/",
+        {"code": checkin_code(booking)},
+        format="json",
+    )
+    assert aveugle.status_code == 404
+    assert aveugle.data["code"] == "unknown_code"
+
+    # En le désignant — ce que fait le panneau ouvert depuis l'agenda.
+    reponse = api_client.post(
+        "/api/v1/bookings/check-in/",
+        {"code": checkin_code(booking), "booking": str(booking.id)},
+        format="json",
+    )
+
+    assert reponse.status_code == 200, reponse.data
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    assert booking.status == Booking.Status.CHECKED_IN
+
+
+@pytest.mark.django_db
+def test_un_code_qui_n_est_pas_celui_du_rendez_vous_ouvert_nomme_l_autre_cliente(
+    api_client, salon_a
+):
+    """Le repli sur la recherche par fenêtre a une raison d'être.
+
+    Sans lui, comparer au seul rendez-vous visé rendrait « code inconnu » là
+    où l'on peut dire « c'est celui de Madame X » — le message qui permet de
+    comprendre, au comptoir, qu'on a scanné la voisine.
+    """
+    ouvert = make_booking(salon_a)
+    voisine = make_booking(salon_a, when=timezone.now() + timedelta(hours=3))
+
+    login(api_client, salon_a.owner)
+    reponse = api_client.post(
+        "/api/v1/bookings/check-in/",
+        {"code": checkin_code(voisine), "booking": str(ouvert.id)},
+        format="json",
+    )
+
+    assert reponse.status_code == 409
+    assert reponse.data["code"] == "wrong_booking"
+
+
+# ---------------------------------------------------------------------------
+# Un acompte versé ne se perd pas en confirmant
+# ---------------------------------------------------------------------------
+
+
+def _avec_preuve(salon, montant="112.00"):
+    """Un rendez-vous demandé, dont la cliente a envoyé sa preuve."""
+    from apps.payments.models import DepositProof
+
+    booking = make_booking(salon, status=Booking.Status.REQUESTED)
+    with as_tenant(salon.tenant):
+        Booking.objects.filter(pk=booking.pk).update(deposit_amount=Decimal(montant))
+        DepositProof.objects.create(
+            tenant=salon.tenant,
+            booking=booking,
+            status=DepositProof.Status.SUBMITTED,
+            channel="wechat",
+        )
+        booking.refresh_from_db()
+    return booking
+
+
+@pytest.mark.django_db
+def test_confirmer_est_refuse_tant_que_l_acompte_n_est_pas_tranche(
+    api_client, salon_a
+):
+    """Le trou par lequel 112 CNY ont disparu.
+
+    Deux boutons menaient à « confirmée ». Celui-ci ne touchait ni la preuve
+    ni la caisse : l'acompte restait « à vérifier » pour toujours, l'argent
+    n'entrait dans aucun compte, et l'autre bouton — resté affiché —
+    répondait « ce rendez-vous n'est plus en attente » à chaque clic.
+    """
+    booking = _avec_preuve(salon_a)
+    login(api_client, salon_a.owner)
+
+    reponse = api_client.post(
+        f"/api/v1/bookings/{booking.id}/status/",
+        {"status": "confirmed"},
+        format="json",
+    )
+
+    assert reponse.status_code == 409
+    assert reponse.data["code"] == "deposit_pending"
+
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    assert booking.status == Booking.Status.REQUESTED
+
+
+@pytest.mark.django_db
+def test_noter_arrivee_est_refuse_aussi(api_client, salon_a):
+    """Le même trou, par l'autre transition.
+
+    `requested` proposait aussi « Cliente arrivée » : elle sautait la
+    décision sur l'acompte exactement de la même façon.
+    """
+    booking = _avec_preuve(salon_a)
+    login(api_client, salon_a.owner)
+
+    reponse = api_client.post(
+        f"/api/v1/bookings/{booking.id}/status/",
+        {"status": "checked_in"},
+        format="json",
+    )
+
+    assert reponse.status_code == 409
+    assert reponse.data["code"] == "deposit_pending"
+
+
+@pytest.mark.django_db
+def test_accepter_l_acompte_confirme_et_encaisse(api_client, salon_a):
+    """Le chemin qui reste : il fait les trois choses d'un coup."""
+    from apps.finance.models import Transaction
+
+    booking = _avec_preuve(salon_a)
+    login(api_client, salon_a.owner)
+
+    reponse = api_client.post(
+        f"/api/v1/bookings/{booking.id}/accept/",
+        {"amount": "112.00"},
+        format="json",
+    )
+    assert reponse.status_code == 200, reponse.data
+
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    assert booking.status == Booking.Status.CONFIRMED
+    assert booking.deposit_paid is True
+
+    with as_tenant(salon_a.tenant):
+        booking.deposit_proof.refresh_from_db()
+        assert booking.deposit_proof.status == "accepted"
+        # L'argent est en caisse : c'est ce que la confirmation seule perdait.
+        assert Transaction.objects.filter(
+            kind=Transaction.Kind.INCOME, amount=Decimal("112.00")
+        ).exists()
+
+
+@pytest.mark.django_db
+def test_une_preuve_deja_tranchee_ne_bloque_plus_rien(api_client, salon_a):
+    """Le garde-fou ne doit gêner que ce qu'il protège."""
+    from apps.payments.models import DepositProof
+
+    booking = _avec_preuve(salon_a)
+    with as_tenant(salon_a.tenant):
+        DepositProof.objects.filter(booking=booking).update(
+            status=DepositProof.Status.REJECTED
+        )
+
+    login(api_client, salon_a.owner)
+    reponse = api_client.post(
+        f"/api/v1/bookings/{booking.id}/status/",
+        {"status": "confirmed"},
+        format="json",
+    )
+
+    assert reponse.status_code == 200, reponse.data
+    with as_tenant(salon_a.tenant):
+        booking.refresh_from_db()
+    assert booking.status == Booking.Status.CONFIRMED
+
+
+@pytest.mark.django_db
+def test_un_rendez_vous_sans_acompte_avance_librement(api_client, salon_a):
+    booking = make_booking(salon_a, status=Booking.Status.REQUESTED)
+    login(api_client, salon_a.owner)
+
+    reponse = api_client.post(
+        f"/api/v1/bookings/{booking.id}/status/",
+        {"status": "confirmed"},
+        format="json",
+    )
+
+    assert reponse.status_code == 200

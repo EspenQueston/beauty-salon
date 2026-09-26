@@ -174,7 +174,9 @@ export function SalonIdentityScreen() {
                   navigator.clipboard
                     ?.writeText(form.site_url)
                     .then(() => toast.info("Adresse copiée."))
-                    .catch(() => toast.info("Copie impossible sur ce navigateur."));
+                    .catch(() =>
+                      toast.info("Copie impossible sur ce navigateur."),
+                    );
                 }}
                 className="shrink-0 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-hover"
               >
@@ -190,8 +192,8 @@ export function SalonIdentityScreen() {
               </a>
             </div>
             <p className="mt-1.5 text-xs text-subtle">
-              Cette adresse ne change pas : elle est peut-être déjà imprimée
-              ou partagée. Écrivez-nous si vous devez vraiment en changer.
+              Cette adresse ne change pas : elle est peut-être déjà imprimée ou
+              partagée. Écrivez-nous si vous devez vraiment en changer.
             </p>
           </div>
         </Card>

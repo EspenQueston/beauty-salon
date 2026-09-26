@@ -6,6 +6,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from apps.common.admin import TenantScopedAdmin
+from apps.common.admin_suppression import SuppressionDefinitiveMixin
 
 from .forms import UserChangeForm, UserCreationForm
 from .models import Invitation, Membership, User
@@ -18,7 +19,7 @@ class MembershipInline(admin.TabularInline):
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(SuppressionDefinitiveMixin, BaseUserAdmin):
     add_form = UserCreationForm
     form = UserChangeForm
     change_password_form = AdminPasswordChangeForm
@@ -45,8 +46,37 @@ class UserAdmin(BaseUserAdmin):
             },
         ),
         ("Dates", {"fields": ("last_login", "created_at", "updated_at")}),
+        ("Zone sensible", {"fields": ("lien_suppression",)}),
     )
-    readonly_fields = ("last_login", "created_at", "updated_at")
+    readonly_fields = ("last_login", "created_at", "updated_at", "lien_suppression")
+
+    # --- Suppression definitive (apps/common/suppression.py) ---------------
+
+    def suppression_identifiant(self, user) -> str:
+        return user.email
+
+    def suppression_contexte(self, request, user) -> dict:
+        from apps.common.suppression import obstacles_compte
+
+        salons = ", ".join(str(m.tenant) for m in user.memberships.select_related("tenant"))
+        return {
+            "obstacles": obstacles_compte(user, request.user),
+            "resume": (
+                "Partent : le compte, ses accès aux salons"
+                + (f" ({salons})" if salons else "")
+                + ", ses appareils de connexion, ses notifications et son espace cliente."
+            ),
+            "conserve": [
+                "Ce qu'il a fait dans les salons (rendez-vous, gestes d'abonnement), sans son nom.",
+                "Le journal d'audit, qui garde une adresse masquée et le motif.",
+            ],
+        }
+
+    def suppression_executer(self, request, user, donnees) -> str:
+        from apps.common.suppression import masquer, supprimer_compte
+
+        supprimer_compte(user, administrateur=request.user, motif=donnees["motif"])
+        return f"Compte {masquer(user.email)} supprimé définitivement."
 
     add_fieldsets = (
         (

@@ -1,16 +1,12 @@
-{% autoescape off %}Bonjour {{ customer.full_name }},
+{% extends "emails/base_client.txt" %}
 
-{{ salon.name }} n'a pas retrouvé votre versement pour le rendez-vous du
-{{ date_label }} à {{ time_label }}.
-{% if reason %}
-Motif indiqué par le salon : {{ reason }}
-{% endif %}
-Votre créneau est toujours réservé. Si vous avez bien payé, renvoyez votre
-capture d'écran ici :
+{% block extra %}{% if reason %}
+{{ t.acompte_refuse_motif }} : {{ reason }}
+{% endif %}{% endblock %}
 
+{% block action %}
+{{ t.acompte_refuse_suite }}
+{% if payment_url %}
 {{ payment_url }}
-
-En cas de doute, contactez directement le salon.
-
-{{ salon.name }}
-{% endautoescape %}
+{% endif %}
+{% endblock %}

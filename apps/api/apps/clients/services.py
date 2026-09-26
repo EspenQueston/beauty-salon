@@ -22,9 +22,7 @@ MAX_BOOKINGS_PER_SALON = 40
 def linked_salons(user):
     """Salons auxquels ce compte est rattache, du plus recent au plus ancien."""
     return list(
-        ClientSalonLink.objects.filter(user=user)
-        .select_related("tenant")
-        .order_by("-created_at")
+        ClientSalonLink.objects.filter(user=user).select_related("tenant").order_by("-created_at")
     )
 
 
@@ -48,9 +46,7 @@ def bookings_for(user) -> list[dict]:
 
     # Visites que la cliente a retirees de sa vue. Chargees une fois : un
     # test par ligne ferait autant de requetes que de rendez-vous.
-    hidden = set(
-        HiddenBooking.objects.filter(user=user).values_list("booking_id", flat=True)
-    )
+    hidden = set(HiddenBooking.objects.filter(user=user).values_list("booking_id", flat=True))
 
     rows: list[dict] = []
     links = linked_salons(user)
@@ -228,9 +224,7 @@ def _review_state(booking) -> dict:
         "reviewed": reviewed,
         "can_review": can_review,
         "review_token": make_token(booking.id) if can_review else "",
-        "review_until": (
-            (booking.starts_at + TOKEN_MAX_AGE).isoformat() if can_review else ""
-        ),
+        "review_until": ((booking.starts_at + TOKEN_MAX_AGE).isoformat() if can_review else ""),
     }
 
 
@@ -244,3 +238,69 @@ def attach(user, tenant_id, customer_id) -> None:
     ClientSalonLink.objects.get_or_create(
         user=user, tenant_id=tenant_id, defaults={"customer_id": customer_id}
     )
+
+
+# ---------------------------------------------------------------------------
+# Mot de passe oublie
+# ---------------------------------------------------------------------------
+
+
+def demander_nouveau_mot_de_passe(email: str, tenant, langue: str = "fr") -> None:
+    """Envoie a une cliente le lien pour choisir un nouveau mot de passe.
+
+    Le lien ramene sur le mini-site d'ou vient la demande, aux couleurs du
+    salon et dans la langue ou elle lisait. Un compte d'equipe (sans profil
+    cliente) recoit le lien de l'espace professionnel, le seul ou son mot de
+    passe lui sert.
+
+    Rien ne distingue la reponse selon que le compte existe ou non : ce
+    formulaire ne doit pas devenir un annuaire des adresses inscrites.
+    """
+    import logging
+
+    from django.conf import settings
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
+
+    from apps.accounts.models import User
+    from apps.accounts.services import request_password_reset
+    from apps.notifications.email import send_email
+    from apps.notifications.tasks import _brand_colour, _salon_base_url
+    from apps.notifications.textes import textes
+    from apps.salons.models import SalonProfile
+
+    logger = logging.getLogger(__name__)
+    user = User.objects.filter(email=email.strip().lower(), is_active=True).first()
+    if user is None:
+        logger.info("Mot de passe oublie : adresse inconnue.")
+        return
+    if not hasattr(user, "client_profile"):
+        request_password_reset(user.email)
+        return
+
+    langue = langue if langue in ("fr", "en") else "fr"
+    t = textes(langue)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    jeton = default_token_generator.make_token(user)
+    heures = settings.PASSWORD_RESET_TIMEOUT // 3600
+    lien = f"{_salon_base_url(tenant)}/{langue}/compte/mot-de-passe?uid={uid}&token={jeton}"
+
+    with tenant_context(tenant.id):
+        profil = SalonProfile.objects.filter(tenant_id=tenant.id).first()
+        send_email(
+            subject=t.dire("mdp_objet", salon=tenant.name),
+            template="client_password_reset",
+            context={
+                "t": t,
+                "langue": langue,
+                "salon": tenant,
+                "brand": _brand_colour(profil),
+                "intro": t.dire("mdp_intro", salon=tenant.name),
+                "validite": t.dire("mdp_validite", heures=heures),
+                "reset_url": lien,
+                "pied": t["mdp_pied"],
+            },
+            to=[user.email],
+            salon=tenant,
+        )

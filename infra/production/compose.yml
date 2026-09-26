@@ -1,0 +1,217 @@
+# ---------------------------------------------------------------------------
+# La plateforme en production, sur une seule machine.
+#
+#   caddy     HTTPS, certificats, aiguillage par nom d'hote   ports 80, 443
+#   web       Next.js : plateforme, espace pro, mini-sites     interne
+#   api       Django sous Gunicorn                             interne
+#   worker    Celery : e-mails, traductions, notifications     interne
+#   beat      Celery beat : rappels, liberation des creneaux   interne
+#   postgres  la base, avec ses deux roles RLS                 interne
+#   redis     cache et file de taches                          interne
+#
+# Seul Caddy publie des ports. Postgres, Redis, l'API et Next ne sont
+# joignables que sur le reseau Docker : aucune regle de pare-feu a oublier
+# pour eux.
+#
+# Toutes les valeurs viennent de `.env`, a cote de ce fichier (voir
+# `env.exemple`). Chaque service ne recoit que les variables dont il a
+# besoin : le mot de passe du super-utilisateur Postgres n'entre jamais dans
+# un conteneur applicatif.
+#
+# A lancer par `scripts/deployer.sh`, qui construit, migre, collecte les
+# fichiers statiques puis demarre, dans cet ordre.
+# ---------------------------------------------------------------------------
+
+name: salon
+
+# Journaux bornes : 40 Go de disque se remplissent en quelques semaines de
+# journaux d'acces si on laisse Docker les garder tous.
+x-journaux: &journaux
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+# Tout ce que Django lit, pour l'API, le worker et beat a l'identique.
+x-environnement-django: &environnement-django
+  DJANGO_SETTINGS_MODULE: config.settings.production
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY manquant dans .env}
+  PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:?PLATFORM_DOMAIN manquant dans .env}
+  # Adresse(s) IPv4 du serveur, vers laquelle un domaine personnalise doit
+  # pointer. Vide : lue dans le DNS du domaine de la plateforme.
+  PLATFORM_PUBLIC_IPS: ${PLATFORM_PUBLIC_IPS:-}
+  # Noms du reseau interne : voir ALLOWED_HOSTS dans production.py.
+  DJANGO_INTERNAL_HOSTS: api,127.0.0.1,localhost
+  # Caddy redirige deja tout HTTP vers HTTPS, pour chaque nom qu'il sert.
+  # Laisser Django le refaire renverrait aussi vers HTTPS les appels
+  # internes de Next, qui arrivent en clair sur `http://api:8000`.
+  SECURE_SSL_REDIRECT: "False"
+  ADMIN_PATH: ${ADMIN_PATH:-admin/}
+  DATABASE_URL: postgres://salon_app:${SALON_APP_PASSWORD:?}@postgres:5432/salon
+  DATABASE_ADMIN_URL: postgres://salon_admin:${SALON_ADMIN_PASSWORD:?}@postgres:5432/salon
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?INTERNAL_API_TOKEN manquant dans .env}
+  # L'e-mail est obligatoire, et non optionnel : l'inscription d'un salon
+  # envoie un message de bienvenue, et un envoi impossible fait echouer la
+  # requete. Sans serveur SMTP, personne ne pourrait s'inscrire.
+  EMAIL_HOST: ${EMAIL_HOST:?EMAIL_HOST manquant dans .env}
+  EMAIL_PORT: ${EMAIL_PORT:?EMAIL_PORT manquant dans .env}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:?DEFAULT_FROM_EMAIL manquant dans .env}
+  VAPID_SUBJECT: ${VAPID_SUBJECT:?VAPID_SUBJECT manquant dans .env}
+  # Ceux-ci peuvent rester vides : chacun eteint une fonction, jamais le
+  # site (push sur telephone, traduction, conversion de devise, suivi des
+  # erreurs).
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  # Assistant WhatsApp (offre Pro) : l'API Evolution du serveur. Vides = la
+  # fonction s'affiche « a configurer » dans le tableau de bord.
+  EVOLUTION_API_URL: ${EVOLUTION_API_URL:-}
+  EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
+  CURRENCY_API_KEY: ${CURRENCY_API_KEY:-}
+
+# Une seule image pour l'API, le worker et beat. Seule l'API la construit ;
+# les deux autres la reprennent telle quelle, sans jamais aller la chercher
+# sur un registre public — une image `salon-api` qui y existerait par hasard
+# n'est pas la notre.
+x-django: &django
+  image: salon-api:latest
+  pull_policy: never
+  environment: *environnement-django
+  volumes:
+    - media:/app/media
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+  logging: *journaux
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:?}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL manquant dans .env}
+      # `direct` ou `coolify` : voir caddy/*.caddy et compose.coolify.yml.
+      ENTREE: ${ENTREE:-direct}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy:/etc/caddy/entree:ro
+      # Certificats et cles : les perdre force a tout redemander, et
+      # Let's Encrypt limite les demandes par semaine.
+      - caddy_data:/data
+      - caddy_config:/config
+      - media:/srv/media:ro
+      - static:/srv/static:ro
+    depends_on:
+      - web
+      - api
+    restart: unless-stopped
+    logging: *journaux
+
+  web:
+    image: salon-web:latest
+    build:
+      context: ../../apps/web
+      dockerfile: ../../infra/production/web.Dockerfile
+      args:
+        NEXT_PUBLIC_PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:?}
+        NEXT_PUBLIC_API_URL: https://api.${PLATFORM_DOMAIN:?}
+        NEXT_PUBLIC_WEB_PORT: "443"
+    environment:
+      INTERNAL_API_URL: http://api:8000
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:?}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: *journaux
+
+  api:
+    <<: *django
+    # L'image se construit ici ; `never`, herite du modele, l'en empecherait.
+    pull_policy: missing
+    build:
+      context: ../../apps/api
+      dockerfile: ../../infra/production/api.Dockerfile
+    volumes:
+      - media:/app/media
+      - static:/app/staticfiles
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    <<: *django
+    # Deux processus : les taches sont courtes (un e-mail, une traduction),
+    # et chaque processus de plus coute ~150 Mo pour rien.
+    command: ["celery", "-A", "config", "worker", "--loglevel", "info", "--concurrency", "2"]
+
+  beat:
+    <<: *django
+    # Un seul planificateur, toujours : deux instances enverraient chaque
+    # rappel deux fois. Son etat vit dans /tmp — les taches sont des
+    # balayages periodiques, rien ne se perd a le reconstruire.
+    command: ["celery", "-A", "config", "beat", "--loglevel", "info", "--schedule", "/tmp/celerybeat-schedule"]
+    volumes: []
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}
+      POSTGRES_DB: salon
+      # Lus une seule fois, par postgres/01-roles.sh, a la creation du volume.
+      SALON_ADMIN_PASSWORD: ${SALON_ADMIN_PASSWORD:?}
+      SALON_APP_PASSWORD: ${SALON_APP_PASSWORD:?}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./postgres:/docker-entrypoint-initdb.d:ro
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d salon"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *journaux
+
+  redis:
+    image: redis:7-alpine
+    # Persistance par journal : une tache mise en file juste avant un
+    # redemarrage (un e-mail de confirmation) n'est pas perdue.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    logging: *journaux
+
+volumes:
+  postgres:
+  redis:
+  media:
+  static:
+  caddy_data:
+  caddy_config:

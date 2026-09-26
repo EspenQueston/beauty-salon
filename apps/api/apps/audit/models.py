@@ -22,6 +22,45 @@ class AuditLog(UUIDModel, TimeStampedModel):
         TENANT_STATUS_CHANGED = "tenant.status_changed", _("Statut du salon modifié")
         MEMBERSHIP_CHANGED = "membership.changed", _("Membership modifié")
         TENANT_ACCESS_DENIED = "tenant.access_denied", _("Accès croisé refusé")
+        # Suppression depuis l'administration plateforme. C'est la trace
+        # qui rend cette permission acceptable : l'equipe SaaS peut effacer
+        # la donnee d'un salon, mais jamais sans laisser dire qui, quand et
+        # quoi.
+        PLATFORM_DELETED = "platform.deleted", _("Supprimé depuis l'administration")
+        # Abonnements : chaque decision qui touche a l'acces d'un salon ou a
+        # un montant laisse une trace nominative.
+        SUBSCRIPTION_PAYMENT_SUBMITTED = (
+            "subscription.payment_submitted",
+            _("Paiement d'abonnement déclaré"),
+        )
+        SUBSCRIPTION_PAYMENT_APPROVED = (
+            "subscription.payment_approved",
+            _("Paiement d'abonnement approuvé"),
+        )
+        SUBSCRIPTION_PAYMENT_REJECTED = (
+            "subscription.payment_rejected",
+            _("Paiement d'abonnement refusé"),
+        )
+        SUBSCRIPTION_MANUAL_CHANGE = (
+            "subscription.manual_change",
+            _("Abonnement modifié à la main"),
+        )
+        BILLING_SETTINGS_CHANGED = (
+            "billing.settings_changed",
+            _("Tarifs ou moyens de règlement modifiés"),
+        )
+        DOMAIN_CLAIMED = "domain.claimed", _("Domaine personnalisé demandé")
+        DOMAIN_CONNECTED = "domain.connected", _("Domaine personnalisé relié")
+        DOMAIN_REMOVED = "domain.removed", _("Domaine personnalisé retiré")
+        SITE_CUSTOMIZED = "site.customized", _("Personnalisation du site modifiée")
+        ASSISTANT_SETTINGS_CHANGED = (
+            "assistant.settings_changed",
+            _("Réglages des assistants IA modifiés"),
+        )
+        # Suppressions definitives, par la procedure dediee : la trace
+        # survit a ce qu'elle decrit (salon et compte sont partis).
+        TENANT_DELETED = "tenant.deleted", _("Salon supprimé définitivement")
+        USER_DELETED = "user.deleted", _("Compte supprimé définitivement")
 
     tenant = models.ForeignKey(
         "tenants.Tenant",

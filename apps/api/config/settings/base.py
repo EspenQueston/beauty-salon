@@ -27,6 +27,10 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 # passer en production revient a changer cette seule variable.
 PLATFORM_DOMAIN = env("PLATFORM_DOMAIN", default="localhost")
 
+# Adresses IPv4 publiques du serveur : c'est vers elles qu'un domaine personnalise
+# doit pointer pour etre relie. Vide = lues dans le DNS de PLATFORM_DOMAIN.
+PLATFORM_PUBLIC_IPS = env.list("PLATFORM_PUBLIC_IPS", default=[])
+
 # Sous-domaines reserves : ils n'appartiennent a aucun salon.
 RESERVED_SUBDOMAINS = {"www", "app", "api", "admin", "static", "media", "mail"}
 
@@ -43,6 +47,14 @@ APP_BASE_URL = env("APP_BASE_URL", default=f"http://app.{PLATFORM_DOMAIN}:{WEB_P
 # de l'administration : sans lui, Django pointe sur « / », c'est-a-dire la
 # racine de l'API, qui ne rend aucune page.
 SITE_BASE_URL = env("SITE_BASE_URL", default=f"http://{PLATFORM_DOMAIN}:{WEB_PORT}")
+
+# Adresse publique de l'API, la ou les medias sont servis. Sert a rendre
+# absolue l'adresse d'une image qui ne l'est pas deja : une notification est
+# affichee par le systeme, hors de toute page, et une adresse relative n'y
+# designe rien. En production, `MEDIA_URL` est deja absolue.
+API_BASE_URL = env(
+    "API_BASE_URL", default=f"http://{PLATFORM_DOMAIN}:{env('API_PORT', default='8001')}"
+)
 
 # Duree de validite des liens de reinitialisation de mot de passe.
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24
@@ -92,6 +104,8 @@ LOCAL_APPS = [
     "apps.platformledger",
     "apps.store",
     "apps.payments",
+    "apps.translations",
+    "apps.assistants",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -112,6 +126,9 @@ MIDDLEWARE = [
     # Doit venir apres AuthenticationMiddleware : la resolution du tenant
     # depend de l'utilisateur connecte pour les routes du dashboard.
     "apps.common.middleware.TenantContextMiddleware",
+    # Apres le tenant : l'abonnement se lit dans le contexte du salon. Voir
+    # apps/billing/middleware.py pour ce qui se ferme sans abonnement actif.
+    "apps.billing.middleware.AccesAbonnementMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -177,6 +194,42 @@ ADMIN_PATH = env("ADMIN_PATH", default="admin/")
 # dix pour cent d'erreur ne se rattrape pas.
 CURRENCY_API_KEY = env("CURRENCY_API_KEY", default="")
 
+# Traduction du contenu des salons vers l anglais, a l ecriture.
+#
+# Sans cle : rien n est appele, aucune traduction n est ecrite, et les
+# mini-sites servent le francais. C est une degradation, pas une panne — et
+# c est ce qui permet aux tests et au developpement de tourner sans reseau.
+OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+
+# Assistants IA (offre Pro) : WhatsApp par l'API Evolution, installee a part.
+# Vides = la fonction s'affiche « a configurer », sans jamais pretendre marcher.
+EVOLUTION_API_URL = env("EVOLUTION_API_URL", default="")
+EVOLUTION_API_KEY = env("EVOLUTION_API_KEY", default="")
+
+# Jeton partage avec le serveur Next : ses appels internes ne sont pas
+# comptes dans les limites de debit par IP. Vide, personne n'est exempte.
+# Voir apps/common/throttling.py.
+INTERNAL_API_TOKEN = env("INTERNAL_API_TOKEN", default="")
+
+# ---------------------------------------------------------------------------
+# Notifications push (Web Push, norme VAPID)
+# ---------------------------------------------------------------------------
+#
+# La paire de cles identifie ce serveur aupres des services de push des
+# navigateurs — ceux de Google, Mozilla et Apple. Il n'y a ni compte a
+# ouvrir ni quota facture : c'est le navigateur de la personne qui relaie.
+#
+# Vides par defaut, et c'est deliberement inoffensif : sans elles, aucun
+# abonnement n'est propose et aucun envoi n'est tente. Le centre de
+# notifications, lui, continue de fonctionner dans l'onglet ouvert. Une
+# installation sans cles perd le telephone verrouille, pas la fonction.
+VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
+
+# Exigee par la norme : le service de push s'en sert pour joindre le
+# responsable du serveur quand un envoi pose probleme. Une adresse `mailto:`.
+VAPID_SUBJECT = env("VAPID_SUBJECT", default=f"mailto:{env('DEFAULT_FROM_EMAIL', default='')}")
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
@@ -241,6 +294,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.billing.tasks.run_billing_cycle",
         "schedule": crontab(hour=3, minute=0),
     },
+    # Rappels d'abonnement par e-mail : horaires, pour tomber dans la journee
+    # de chaque salon (8 h - 20 h, heure locale) ; jamais deux fois le meme.
+    "subscription-reminders": {
+        "task": "apps.billing.tasks.envoyer_rappels_abonnement",
+        "schedule": crontab(minute=20),
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -287,8 +346,10 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.DefaultPagination",
     "PAGE_SIZE": 25,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Celle de DRF, moins les appels du serveur de rendu Next : voir
+    # apps/common/throttling.py pour la panne qu'elle evite en production.
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.ScopedRateThrottle",
+        "apps.common.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "public_read": "120/min",
@@ -307,6 +368,19 @@ REST_FRAMEWORK = {
         "signup": "5/hour",
         "password_reset": "5/hour",
         "invitation_accept": "10/hour",
+        # Notification d'essai : chaque clic sollicite les services de push
+        # de Google, Mozilla ou Apple. Dix par heure suffisent a regler un
+        # appareil ; au-dela, c'est un clic en boucle.
+        "notification_essai": "10/hour",
+        # Declaration d'un paiement d'abonnement. Une seule peut attendre a
+        # la fois ; dix envois par heure couvrent les corrections apres refus.
+        "subscription_payment": "10/hour",
+        # Verification DNS d'un domaine personnalise : chaque essai interroge des
+        # serveurs externes. Vingt par heure couvrent l'attente de la propagation.
+        "domain_check": "20/hour",
+        # Assistants IA : chaque message coute un appel au fournisseur.
+        "assistant": "60/hour",
+        "assistant_public": "30/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

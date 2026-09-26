@@ -7,7 +7,8 @@
  * le jour où un vrai domaine remplace `localhost`, rien d'autre ne bouge.
  */
 
-const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
+export const PLATFORM_DOMAIN =
+  process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
 const WEB_PORT = process.env.NEXT_PUBLIC_WEB_PORT ?? "3100";
 
 /** Le port disparaît de lui-même en production, où il est implicite. */

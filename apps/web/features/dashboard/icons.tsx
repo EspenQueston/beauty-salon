@@ -12,6 +12,8 @@ export type IconName =
   | "bag"
   | "calendar"
   | "users"
+  | "phone"
+  | "mail"
   | "sparkles"
   | "scissors"
   | "clock"
@@ -43,9 +45,22 @@ export type IconName =
   | "eye"
   | "sliders"
   | "close"
-  | "scan";
+  | "scan"
+  | "copy"
+  // Offre Pro.
+  | "globe"
+  | "palette"
+  | "chat"
+  | "lock"
+  | "crown"
+  | "send";
 
-const PATHS: Record<IconName, ReactNode> = {
+/*
+  Exportés pour l'image des notifications (app/notification-image), qui
+  dessine le même pictogramme en grand : une alerte doit ressembler à l'écran
+  qu'elle ouvre.
+*/
+export const PATHS: Record<IconName, ReactNode> = {
   edit: (
     <>
       <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" />
@@ -103,6 +118,18 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M3 10h18M8 3v4M16 3v4" />
     </>
   ),
+  /* Le combiné et l’enveloppe : joindre une cliente depuis l’agenda. */
+  phone: (
+    <path d="M6.5 3.5h3l1.5 3.8-2 1.5a12 12 0 0 0 5.2 5.2l1.5-2 3.8 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z" />
+  ),
+
+  mail: (
+    <>
+      <rect x="2.75" y="5" width="18.5" height="14" rx="2.5" />
+      <path d="m3.5 7.5 8.5 6 8.5-6" />
+    </>
+  ),
+
   users: (
     <>
       <circle cx="9" cy="8" r="3.2" />
@@ -226,6 +253,40 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M3.5 12h17" />
     </>
   ),
+  copy: (
+    <>
+      <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2" />
+      <path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z" />
+    </>
+  ),
+  palette: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" />
+      <circle cx="7.5" cy="11.5" r="1" />
+      <circle cx="10.5" cy="7.5" r="1" />
+      <circle cx="15.5" cy="8.5" r="1" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z" />
+      <path d="M8.5 11h.01M12 11h.01M15.5 11h.01" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="10.5" width="14" height="10" rx="2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </>
+  ),
+  crown: <path d="M4 18h16M4.5 15 3 7l5 3.5L12 4l4 6.5L21 7l-1.5 8z" />,
+  send: <path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z" />,
 };
 
 export function Icon({

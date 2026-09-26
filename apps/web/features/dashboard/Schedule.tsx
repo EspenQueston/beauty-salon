@@ -60,10 +60,16 @@ interface StaffMember {
 const KINDS = [
   { value: "leave", label: "Congé", tone: "info" as const },
   { value: "blocked", label: "Créneau bloqué", tone: "warning" as const },
-  { value: "extra_opening", label: "Ouverture exceptionnelle", tone: "success" as const },
+  {
+    value: "extra_opening",
+    label: "Ouverture exceptionnelle",
+    tone: "success" as const,
+  },
 ];
 
-const KIND_BY_VALUE = Object.fromEntries(KINDS.map((kind) => [kind.value, kind]));
+const KIND_BY_VALUE = Object.fromEntries(
+  KINDS.map((kind) => [kind.value, kind]),
+);
 
 export function Schedule() {
   const { membership } = useDashboard();
@@ -71,7 +77,10 @@ export function Schedule() {
   const timeZone = membership.tenant.timezone;
   const canEdit = ["owner", "manager"].includes(membership.role);
 
-  const hours = useResource<Page<BusinessHours>>("/api/v1/business-hours/", tenantId);
+  const hours = useResource<Page<BusinessHours>>(
+    "/api/v1/business-hours/",
+    tenantId,
+  );
   const staff = useResource<Page<StaffMember>>(
     "/api/v1/staff-members/?page_size=100",
     tenantId,
@@ -199,7 +208,9 @@ function WeeklyGrid({
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `Plage du ${weekdayLabel(row.weekday).toLowerCase()} supprimée.` },
+      {
+        success: `Plage du ${weekdayLabel(row.weekday).toLowerCase()} supprimée.`,
+      },
     );
     if (ok) onChange();
   }
@@ -218,7 +229,9 @@ function WeeklyGrid({
 
         {staff.length > 0 && (
           <label className="text-sm">
-            <span className="mb-1.5 block font-medium text-ink">Appliquer à</span>
+            <span className="mb-1.5 block font-medium text-ink">
+              Appliquer à
+            </span>
             <select
               value={scope}
               onChange={(event) => setScope(event.target.value)}
@@ -271,7 +284,9 @@ function WeeklyGrid({
                   <input
                     type="time"
                     defaultValue={shortTime(row.starts_at)}
-                    onBlur={(event) => update(row, "starts_at", event.target.value)}
+                    onBlur={(event) =>
+                      update(row, "starts_at", event.target.value)
+                    }
                     disabled={!canEdit}
                     aria-label={`Ouverture du ${weekdayLabel(weekday).toLowerCase()}`}
                     className="tabular rounded-md border border-line bg-surface px-2 py-1 text-sm text-ink"
@@ -280,7 +295,9 @@ function WeeklyGrid({
                   <input
                     type="time"
                     defaultValue={shortTime(row.ends_at)}
-                    onBlur={(event) => update(row, "ends_at", event.target.value)}
+                    onBlur={(event) =>
+                      update(row, "ends_at", event.target.value)
+                    }
                     disabled={!canEdit}
                     aria-label={`Fermeture du ${weekdayLabel(weekday).toLowerCase()}`}
                     className="tabular rounded-md border border-line bg-surface px-2 py-1 text-sm text-ink"
@@ -408,7 +425,10 @@ function ExceptionList({
       <SectionTitle
         action={
           canEdit && (
-            <GhostButton type="button" onClick={() => setOpen((value) => !value)}>
+            <GhostButton
+              type="button"
+              onClick={() => setOpen((value) => !value)}
+            >
               {open ? "Fermer" : "Ajouter"}
             </GhostButton>
           )
@@ -424,7 +444,9 @@ function ExceptionList({
               <Field label="Type">
                 <select
                   value={form.kind}
-                  onChange={(event) => setForm({ ...form, kind: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, kind: event.target.value })
+                  }
                   className={inputClass}
                 >
                   {KINDS.map((kind) => (
@@ -469,7 +491,9 @@ function ExceptionList({
                   type="date"
                   value={form.end_date}
                   min={form.start_date || undefined}
-                  onChange={(event) => setForm({ ...form, end_date: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, end_date: event.target.value })
+                  }
                   className={inputClass}
                 />
               </Field>
@@ -481,7 +505,9 @@ function ExceptionList({
               >
                 <input
                   value={form.reason}
-                  onChange={(event) => setForm({ ...form, reason: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, reason: event.target.value })
+                  }
                   placeholder="Congés annuels"
                   className={inputClass}
                 />
@@ -522,7 +548,9 @@ function ExceptionList({
                         {kind?.label ?? exception.kind}
                       </Badge>
                       {exception.reason && (
-                        <span className="font-medium text-ink">{exception.reason}</span>
+                        <span className="font-medium text-ink">
+                          {exception.reason}
+                        </span>
                       )}
                     </p>
                     <p className="mt-1.5 text-sm text-muted">
@@ -535,7 +563,10 @@ function ExceptionList({
                   </div>
 
                   {canEdit && (
-                    <DangerButton type="button" onClick={() => remove(exception)}>
+                    <DangerButton
+                      type="button"
+                      onClick={() => remove(exception)}
+                    >
                       Supprimer
                     </DangerButton>
                   )}

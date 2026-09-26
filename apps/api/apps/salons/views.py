@@ -12,6 +12,7 @@ from apps.media.reserved import duplicate_media_ids, reserved_media_ids
 from apps.scheduling.models import BusinessHours
 from apps.staff.models import StaffMember, StaffService
 from apps.tenants.models import Tenant
+from apps.translations.langue import table_pour
 
 from .models import SalonProfile, TravelZone
 from .serializers import PublicSalonSerializer
@@ -59,14 +60,17 @@ class PublicSalonView(APIView):
                 status=404,
             )
 
+        traductions = table_pour(request, profile.tenant_id)
+
+        def traduit(objet, champ):
+            return traductions.get((objet._meta.label_lower, str(objet.pk), champ)) or getattr(
+                objet, champ
+            )
+
         services = list(
-            Service.objects.filter(active=True)
-            .select_related("image")
-            .order_by("position", "name")
+            Service.objects.filter(active=True).select_related("image").order_by("position", "name")
         )
-        categories = list(
-            ServiceCategory.objects.filter(active=True).order_by("position", "name")
-        )
+        categories = list(ServiceCategory.objects.filter(active=True).order_by("position", "name"))
 
         services_by_category: dict = {}
         for service in services:
@@ -88,14 +92,14 @@ class PublicSalonView(APIView):
             requirements_by_service.setdefault(requirement.service_id, []).append(
                 {
                     "id": str(requirement.id),
-                    "label": requirement.label,
-                    "detail": requirement.detail,
+                    "label": traduit(requirement, "label"),
+                    "detail": traduit(requirement, "detail"),
                     "mandatory": requirement.mandatory,
                     "products": [
                         {
                             "id": str(offer.product.id),
-                            "name": offer.product.name,
-                            "description": offer.product.description,
+                            "name": traduit(offer.product, "name"),
+                            "description": traduit(offer.product, "description"),
                             "price": str(offer.product.price),
                             "unit": offer.product.unit,
                             "available": offer.product.available,
@@ -121,9 +125,7 @@ class PublicSalonView(APIView):
         # Une seule requete pour toutes les options, plutot qu'une par
         # prestation dans le serializer.
         options_by_service: dict = {}
-        for option in ServiceOption.objects.filter(active=True).order_by(
-            "position", "name"
-        ):
+        for option in ServiceOption.objects.filter(active=True).order_by("position", "name"):
             options_by_service.setdefault(option.service_id, []).append(option)
 
         # Une seule requete pour toutes les competences, plutot qu'une par
@@ -167,9 +169,67 @@ class PublicSalonView(APIView):
                 TravelZone.objects.filter(active=True).order_by("position", "name")
             ),
             "rating": _rating_summary(),
+            # Toutes les traductions du salon, en une requete.
+            #
+            # Une par champ aurait ajoute une requete par prestation, sur la
+            # page qui doit s ouvrir le plus vite du produit. Vide quand la
+            # langue demandee est le francais : il n y a alors rien a
+            # remplacer, et la requete serait perdue.
+            "traductions": traductions,
         }
 
-        return Response(PublicSalonSerializer(profile, context=context).data)
+        donnees = PublicSalonSerializer(profile, context=context).data
+        # Le mini-site reste en ligne sans abonnement actif, mais ne prend
+        # plus de reservation : il doit le dire, plutot que de laisser une
+        # cliente remplir un formulaire que le serveur refusera. Le refus
+        # lui-meme est applique cote serveur (billing/middleware.py).
+        from apps.billing.services import acces_du_salon
+
+        donnees["reservations_ouvertes"] = acces_du_salon(tenant.id).ouvert
+
+        # Offre Pro : la personnalisation et l'assistant ne sont publies que
+        # si le salon y a droit. Sans Pro, les reglages restent en base mais
+        # le mini-site reprend l'apparence standard (pause, pas effacement).
+        from apps.billing.droits import fonctions_du_salon
+
+        from . import personnalisation
+
+        fonctions = fonctions_du_salon(tenant.id)
+        config = (
+            personnalisation.complete(profile.site_config)
+            if fonctions.get("customization")
+            else None
+        )
+        if config and config["pages"]:
+            # L'image de chaque page, servie comme les autres medias (avec
+            # ses variantes). Un media devenu prive ou efface disparait de
+            # la page plutot que de casser son affichage.
+            from .serializers import MediaAssetSerializer
+
+            ids = personnalisation.images_des_pages(config)
+            medias = {
+                str(asset.id): asset
+                for asset in MediaAsset.objects.filter(
+                    id__in=ids, visibility=MediaAsset.Visibility.PUBLIC
+                ).exclude(kind=MediaAsset.Kind.PROOF)
+            }
+            for page in config["pages"]:
+                asset = medias.get(page.get("image") or "")
+                page["image"] = (
+                    MediaAssetSerializer(asset, context={"request": request}).data
+                    if asset
+                    else None
+                )
+        donnees["site_config"] = config
+        # La bulle ne s'affiche que si le salon y a droit *et* l'a laissee
+        # allumee : coupee, elle ne repondrait que « pas active ».
+        from apps.assistants.models import AssistantReglages
+
+        reglages = AssistantReglages.objects.filter(tenant_id=tenant.id).first()
+        donnees["assistant_clientes"] = bool(fonctions.get("customer_assistant")) and (
+            reglages is None or reglages.clientes_actif
+        )
+        return Response(donnees)
 
 
 def _gallery() -> list:
@@ -205,11 +265,7 @@ def _gallery() -> list:
 
     doublons = duplicate_media_ids([*employes, *candidats])
 
-    return [
-        asset
-        for asset in candidats
-        if asset.id not in reserves and asset.id not in doublons
-    ]
+    return [asset for asset in candidats if asset.id not in reserves and asset.id not in doublons]
 
 
 def _rating_summary() -> dict:

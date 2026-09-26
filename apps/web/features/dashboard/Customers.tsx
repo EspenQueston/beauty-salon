@@ -64,7 +64,10 @@ interface HistoryRow {
   internal_note: string;
 }
 
-const STATUS_LABELS: Record<string, { label: string; tone: "success" | "danger" | "warning" | "neutral" }> = {
+const STATUS_LABELS: Record<
+  string,
+  { label: string; tone: "success" | "danger" | "warning" | "neutral" }
+> = {
   completed: { label: "Terminée", tone: "success" },
   confirmed: { label: "Confirmée", tone: "neutral" },
   requested: { label: "Demandée", tone: "warning" },
@@ -93,7 +96,8 @@ export function Customers() {
     // Petit délai : évite une requête par touche frappée.
     const handle = setTimeout(() => {
       const query = search ? `&search=${encodeURIComponent(search)}` : "";
-      const recurring = filter === "recurring" ? "&recurring=true&ordering=visits" : "";
+      const recurring =
+        filter === "recurring" ? "&recurring=true&ordering=visits" : "";
       dashboardFetch<{ results: Customer[] }>(
         `/api/v1/customers/?page_size=50${query}${recurring}`,
         {},
@@ -225,7 +229,9 @@ export function Customers() {
               <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3">
                 <Counter label="venues" value={customer.visit_count} />
                 <Counter
-                  label={customer.cancelled_count > 1 ? "annulations" : "annulation"}
+                  label={
+                    customer.cancelled_count > 1 ? "annulations" : "annulation"
+                  }
                   value={customer.cancelled_count}
                 />
                 <Counter
@@ -247,7 +253,9 @@ export function Customers() {
                   className="mt-3 flex items-center gap-1.5 text-sm text-muted transition hover:text-ink"
                 >
                   <Icon
-                    name={open === customer.id ? "chevron-left" : "chevron-right"}
+                    name={
+                      open === customer.id ? "chevron-left" : "chevron-right"
+                    }
                     className={`size-3.5 transition-transform ${
                       open === customer.id ? "rotate-90" : ""
                     }`}
@@ -343,9 +351,7 @@ function History({
   });
 
   if (failed) {
-    return (
-      <p className="mt-3 text-sm text-danger">Historique indisponible.</p>
-    );
+    return <p className="mt-3 text-sm text-danger">Historique indisponible.</p>;
   }
   if (rows === null) {
     return (

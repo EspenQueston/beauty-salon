@@ -22,31 +22,21 @@
  * franchir l'étape.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { checkSlug } from "@/lib/dashboard";
 import { appUrl } from "@/lib/site";
 import { SLUG_MIN, toSlug } from "@/lib/slug";
-
-/** Mêmes palettes que dans l'espace professionnel : ce qu'on voit est vrai. */
-const PALETTES = [
-  { name: "Rose poudré", primary: "#B4436C", accent: "#F7D9E1", surface: "#FCF7F9" },
-  { name: "Or et nuit", primary: "#1F2937", accent: "#E9C46A", surface: "#FBF8F1" },
-  { name: "Terracotta", primary: "#9C4221", accent: "#F6D5C0", surface: "#FDF7F3" },
-  { name: "Émeraude", primary: "#0F766E", accent: "#CDEDE7", surface: "#F4FAF9" },
-  { name: "Violet", primary: "#6D28D9", accent: "#E4D8FB", surface: "#F9F7FE" },
-  { name: "Bleu nuit", primary: "#1E3A8A", accent: "#D6E0FA", surface: "#F6F8FD" },
-  { name: "Cacao", primary: "#5C3A21", accent: "#E8D5C0", surface: "#FBF7F3" },
-  { name: "Corail", primary: "#C2410C", accent: "#FDDCC8", surface: "#FFF8F4" },
-  { name: "Prune", primary: "#86198F", accent: "#F3D5F5", surface: "#FDF6FE" },
-  { name: "Encre et menthe", primary: "#134E4A", accent: "#B9E7DC", surface: "#F2FAF8" },
-];
+import { PALETTES } from "./palettes";
 
 type SlugState = "idle" | "checking" | "free" | "taken";
 
 export function SitePreview() {
+  const t = useTranslations("site");
+  const c = useTranslations("commun");
   const [name, setName] = useState("");
-  const [palette, setPalette] = useState(PALETTES[0]);
+  const [palette, setPalette] = useState<(typeof PALETTES)[number]>(PALETTES[0]);
   /** Dernière réponse du serveur, avec l'adresse à laquelle elle répond. */
   const [checked, setChecked] = useState<{
     slug: string;
@@ -55,7 +45,7 @@ export function SitePreview() {
   } | null>(null);
 
   const slug = toSlug(name);
-  const displayName = name.trim() || "Votre salon";
+  const displayName = name.trim() || t("apercuVitrine.salonParDefaut");
 
   /*
    * L'état affiché est **déduit**, pas stocké.
@@ -126,44 +116,46 @@ export function SitePreview() {
           htmlFor="apercu-nom"
           className="mb-1.5 block text-sm font-medium text-ink"
         >
-          Le nom de votre salon
+          {t("apercuVitrine.nomChamp")}
         </label>
         <input
           id="apercu-nom"
           value={name}
           onChange={(event) => setName(event.target.value)}
-          placeholder="Chez Sandra"
+          placeholder={t("apercu.exemple")}
           maxLength={60}
           className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-ink transition focus:border-salon"
         />
 
         <p className="mt-2 min-h-5 text-sm" aria-live="polite">
           {slug.length >= SLUG_MIN && slugState === "checking" && (
-            <span className="text-subtle">Vérification de l&apos;adresse…</span>
+            <span className="text-subtle">{t("adresse.verification")}</span>
           )}
           {slugState === "free" && (
             <span className="text-success">
-              {hostname} est libre — elle sera à vous.
+              {t("adresse.libre", { adresse: hostname })}
             </span>
           )}
           {slugState === "taken" && (
             <span className="text-danger">
-              {hostname} est déjà pris. Essayez une variante.
+              {t("adresse.prise", { adresse: hostname })}
             </span>
           )}
         </p>
 
-        <p className="mb-2 mt-5 text-sm font-medium text-ink">Vos couleurs</p>
+        <p className="mb-2 mt-5 text-sm font-medium text-ink">
+          {t("apercuVitrine.couleurs")}
+        </p>
         <div className="flex flex-wrap gap-2">
           {PALETTES.map((entry) => {
-            const active = entry.name === palette.name;
+            const active = entry.cle === palette.cle;
             return (
               <button
-                key={entry.name}
+                key={entry.cle}
                 type="button"
                 onClick={() => setPalette(entry)}
                 aria-pressed={active}
-                title={entry.name}
+                title={t(`palettes.${entry.cle}`)}
                 className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs transition ${
                   active
                     ? "border-salon bg-salon-soft text-ink"
@@ -180,7 +172,9 @@ export function SitePreview() {
                     style={{ background: entry.accent }}
                   />
                 </span>
-                <span className="hidden sm:inline">{entry.name}</span>
+                <span className="hidden sm:inline">
+                  {t(`palettes.${entry.cle}`)}
+                </span>
               </button>
             );
           })}
@@ -191,13 +185,11 @@ export function SitePreview() {
           className="mt-6 inline-flex items-center justify-center rounded-xl bg-salon px-6 py-3.5 font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:brightness-110"
         >
           {slugState === "free"
-            ? `Réserver ${hostname}`
-            : "Créer mon salon"}
+            ? t("apercuVitrine.reserverAdresse", { adresse: hostname })
+            : c("creerSalon")}
         </a>
 
-        <p className="mt-2 text-xs text-subtle">
-          Vos choix vous suivent : le formulaire arrive déjà rempli.
-        </p>
+        <p className="mt-2 text-xs text-subtle">{t("apercuVitrine.suivi")}</p>
       </div>
 
       {/* -------------------------------------------------------- aperçu */}
@@ -206,7 +198,7 @@ export function SitePreview() {
         style={{ background: palette.surface }}
       >
         <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.12em] text-black/40">
-          Aperçu en direct
+          {t("apercuVitrine.direct")}
         </p>
 
         <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
@@ -233,13 +225,16 @@ export function SitePreview() {
               {displayName}
             </p>
             <p className="mt-0.5 text-sm text-black/50">
-              {hostname || "votre-salon.beautysalon"}
+              {hostname || t("apercuVitrine.hoteExemple")}
             </p>
 
             <div className="mt-4 space-y-2">
               {[
-                { label: "Tresses collées", price: "12 000" },
-                { label: "Soin profond", price: "8 000" },
+                {
+                  label: t("apercuVitrine.prestations.tresses"),
+                  price: "12 000",
+                },
+                { label: t("apercuVitrine.prestations.soin"), price: "8 000" },
               ].map((row) => (
                 <div
                   key={row.label}
@@ -260,13 +255,13 @@ export function SitePreview() {
               className="mt-4 block rounded-xl py-2.5 text-center text-sm font-semibold text-white transition-[background] duration-500"
               style={{ background: palette.primary }}
             >
-              Réserver un rendez-vous
+              {t("apercuVitrine.reserver")}
             </span>
           </div>
         </div>
 
         <p className="mt-3 text-center text-xs text-black/40">
-          Prestations et tarifs d&apos;exemple — les vôtres les remplaceront.
+          {t("apercuVitrine.noteExemple")}
         </p>
       </div>
     </div>

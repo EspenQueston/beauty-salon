@@ -207,9 +207,11 @@ def submit_proof(
 
     # Le salon est prevenu tout de suite : un acompte verse sans que personne
     # ne regarde, c'est une cliente qui attend devant un telephone muet.
+    from apps.notifications import evenements
     from apps.notifications.tasks import send_deposit_proof_alert
 
     send_deposit_proof_alert.delay(str(booking.id), str(booking.tenant_id))
+    evenements.acompte_a_verifier(booking)
 
     return proof
 
@@ -403,6 +405,14 @@ def expirer(booking, now=None) -> bool:
     from apps.store.services import give_back_stock
 
     give_back_stock(booking)
+
+    # Apres l'UPDATE conditionnel, donc une seule fois : deux onglets
+    # ouverts sur la page de suivi franchissent tous deux le test de
+    # delai, mais un seul gagne l'ecriture. Prevenir plus haut aurait
+    # fait sonner le telephone du salon deux fois pour un creneau.
+    from apps.notifications import evenements
+
+    evenements.acompte_expire(booking)
     return True
 
 

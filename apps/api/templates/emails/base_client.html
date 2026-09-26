@@ -12,33 +12,46 @@ ferait sur le site :
     s'effondre en une colonne de texte nu.
   - **Du CSS en ligne.** Les feuilles de style externes ne partent pas avec
     le message, et une partie des clients retire les balises `<style>`. Les
-    règles du `<head>` ne servent donc qu'au responsive, en supplément.
+    règles du `<head>` ne servent donc qu'au supplément, jamais au vital.
   - **600 px de large.** C'est la largeur que tous les clients de bureau
     affichent sans rogner, et la valeur qu'attendent les gabarits d'Outlook.
   - **Aucune image indispensable.** La moitié des clients bloquent les
     images par défaut : tout ce qui porte du sens est du texte.
 
 ---------------------------------------------------------------------------
-Une seule colonne, et pourquoi
+Deux colonnes, enfin
 ---------------------------------------------------------------------------
 
-Sur le site, deux colonnes valent mieux qu'une sur téléphone. En e-mail,
-c'est l'inverse : l'application Gmail sur Android ignore une partie des
-requêtes média, si bien qu'une mise en page à deux colonnes reste à deux
-colonnes sur un écran de 360 px et devient illisible.
+Ce fichier disait jusqu'ici qu'une mise en page à deux colonnes ne tenait
+pas en e-mail, parce que l'application Gmail sur Android ignore une partie
+des requêtes média : deux colonnes y restaient deux colonnes sur 360 px, et
+devenaient illisibles.
 
-La seule exception est le tableau de détails — libellé à gauche, valeur à
-droite. Ce n'est pas une mise en page en colonnes, c'est un tableau de
-données, et il se comporte bien partout.
+L'objection ne porte que sur des colonnes qu'on veut faire **retomber**
+l'une sous l'autre sur petit écran — c'est ce mécanisme-là qui dépend d'un
+`@media`, et c'est lui qui casse.
+
+La grille de détails ne veut rien faire retomber : deux colonnes à 50 %
+dans un vrai tableau restent deux colonnes partout, Outlook compris, sans
+une seule requête média. Sur 360 px chaque cellule fait environ 160 px, de
+quoi loger « Durée / 3 h 30 » sans serrer. Ce qui ne tient pas dans cette
+largeur — un nom de prestation, une adresse — prend la rangée entière.
+
+Voir `_details.html`, qui porte le détail du découpage.
 
 ---------------------------------------------------------------------------
 La marque du salon
 ---------------------------------------------------------------------------
 
 La couleur principale vient du salon, pas de la plateforme : la cliente a
-réservé chez « blondrose », pas chez nous. Le pied de page seul nous nomme.
+réservé chez « blondrose », pas chez nous. Le bandeau du haut la porte en
+aplat — un dégradé CSS est ignoré par Outlook, qui rendrait alors un bloc
+blanc avec du texte blanc dessus. Le pied de page seul nous nomme.
+
+Attendu dans le contexte : `t` (le catalogue de langue), `salon`, `brand`,
+`langue`.
 {% endcomment %}<!doctype html>
-<html lang="fr">
+<html lang="{{ langue|default:'fr' }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -48,33 +61,40 @@ réservé chez « blondrose », pas chez nous. Le pied de page seul nous nomme.
 <style>
   /* Réglages que le CSS en ligne ne peut pas exprimer. Tout ce qui est
      vital est dupliqué en ligne : ces règles ne font qu'améliorer. */
-  body { margin:0; padding:0; width:100% !important; }
+  body { margin:0; padding:0; width:100% !important; -webkit-text-size-adjust:100%; }
   table { border-collapse:collapse; }
   img { border:0; line-height:100%; outline:none; text-decoration:none; }
+  a { text-decoration:none; }
 
-  /* Sur téléphone : marges resserrées et corps légèrement réduit, pour que
-     la première ligne utile tienne au-dessus de la ligne de flottaison. */
-  @media only screen and (max-width:600px) {
-    .wrap { padding:16px 12px !important; }
-    .card { padding:20px 18px !important; }
-    .h1 { font-size:20px !important; line-height:28px !important; }
-    .big { font-size:26px !important; }
-    .stack { display:block !important; width:100% !important; }
+  /* Sur téléphone : marges resserrées, corps et blocs réduits, pour que la
+     première ligne utile tienne au-dessus de la ligne de flottaison.
+     Supplément, jamais condition : la mise en page tient sans. */
+  @media only screen and (max-width:620px) {
+    .wrap   { padding:14px 10px !important; }
+    .card   { padding:22px 18px !important; }
+    .bande  { padding:18px 18px 16px !important; }
+    .h1     { font-size:21px !important; line-height:28px !important; }
+    .lead   { font-size:14px !important; line-height:21px !important; }
+    .big    { font-size:27px !important; line-height:34px !important; }
+    .cell   { padding:12px 12px !important; }
+    .etiq   { font-size:10px !important; }
+    .val    { font-size:15px !important; line-height:21px !important; }
+    .btn a  { display:block !important; text-align:center !important; }
   }
 
   /* Mode sombre : uniquement là où il est fiable — Apple Mail, Outlook
      macOS. Ailleurs la version claire reste affichée, ce qui est correct. */
   @media (prefers-color-scheme:dark) {
-    .bg { background:#0f0f13 !important; }
-    .card { background:#1a1a20 !important; }
-    .ink { color:#f4f4f7 !important; }
-    .muted { color:#a9a9b5 !important; }
+    .bg   { background:#0d0d11 !important; }
+    .card { background:#17171d !important; }
+    .ink  { color:#f4f4f7 !important; }
+    .muted{ color:#a9a9b5 !important; }
     .line { border-color:#2c2c35 !important; }
-    .soft { background:#22222a !important; }
+    .soft { background:#1f1f27 !important; }
   }
 </style>
 </head>
-<body class="bg" style="margin:0;padding:0;background:#f6f4f7;">
+<body class="bg" style="margin:0;padding:0;background:#f4f2f6;">
 
 {% comment %}
   Pré-en-tête : le texte que la boîte de réception affiche à côté de l'objet.
@@ -86,35 +106,47 @@ réservé chez « blondrose », pas chez nous. Le pied de page seul nous nomme.
   &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
 </div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg" style="background:#f6f4f7;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg" style="background:#f4f2f6;">
   <tr>
-    <td align="center" class="wrap" style="padding:28px 16px;">
+    <td align="center" class="wrap" style="padding:26px 14px;">
 
       <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;">
 
-        {# ----- Bandeau du salon ----- #}
+        {% comment %}
+          Le bandeau de marque.
+
+          Il remplace la ligne de texte coloré qui servait d'en-tête. Un
+          aplat aux couleurs du salon en haut du message fait deux choses
+          qu'une ligne de texte ne fait pas : il se reconnaît dans une boîte
+          de réception qu'on parcourt au pouce, et il donne au message le
+          poids d'un document plutôt que d'une note.
+
+          `bgcolor` **en plus** du `style` : quelques clients anciens ne
+          lisent que l'attribut, et un bandeau sans fond laisserait du blanc
+          sur blanc.
+        {% endcomment %}
         <tr>
-          <td style="padding:0 0 18px;font:600 18px/24px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:{{ brand|default:'#B4436C' }};">
-            {{ salon.name }}
+          <td class="bande" bgcolor="{{ brand|default:'#B4436C' }}" style="background:{{ brand|default:'#B4436C' }};border-radius:16px 16px 0 0;padding:22px 26px 20px;">
+            <div style="font:700 19px/26px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#ffffff;letter-spacing:-.01em;">
+              {{ salon.name }}
+            </div>
+            {% block bandeau %}{% endblock %}
           </td>
         </tr>
 
         {# ----- Le message ----- #}
         <tr>
-          <td class="card" style="background:#ffffff;border-radius:14px;padding:28px 26px;font:400 15px/23px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">
+          <td class="card" style="background:#ffffff;border-radius:0 0 16px 16px;padding:28px 26px;font:400 15px/23px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">
             {% block body %}{% endblock %}
           </td>
         </tr>
 
         {# ----- Pied de page ----- #}
         <tr>
-          <td class="muted" style="padding:20px 6px 0;font:400 12px/19px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#82828e;">
-            {% block footer %}
-              Vous recevez ce message parce que vous avez pris rendez-vous chez
-              {{ salon.name }}.
-            {% endblock %}
+          <td class="muted" style="padding:20px 8px 0;font:400 12px/19px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#67676f;">
+            {% block footer %}{{ pied }}{% endblock %}
             <br><br>
-            <span style="color:#a0a0ab;">Propulsé par Beauty Salon</span>
+            <span style="color:#6d6d77;">{{ t.propulse }}</span>
           </td>
         </tr>
 

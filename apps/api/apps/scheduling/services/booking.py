@@ -99,6 +99,9 @@ def create_booking(
     address: str = "",
     idempotency_key: str | None = None,
     actor=None,
+    # La langue de lecture du mini-site au moment de la reservation. Elle ne
+    # sert qu aux e-mails, mais elle se perd si on ne la retient pas ici.
+    language: str = "fr",
 ) -> Booking:
     if idempotency_key:
         existing = replay_booking(tenant, idempotency_key)
@@ -197,6 +200,7 @@ def create_booking(
                     else Booking.Status.REQUESTED
                 ),
                 source=source,
+                language=language,
                 service_name=service.name,
                 total_amount=total,
                 # Instantane : renommer ou retarifer une option demain ne
@@ -281,11 +285,13 @@ def cancel_booking(
     # Personne n'etait prevenu jusqu'ici. Une cliente qui se deplace pour un
     # rendez-vous annule la veille est le pire resultat possible du produit,
     # et c'etait silencieux.
+    from apps.notifications import evenements
     from apps.notifications.tasks import send_booking_cancelled
 
     send_booking_cancelled.delay(
         str(booking.id), str(booking.tenant_id), by_salon=by_salon
     )
+    evenements.rendez_vous_annule(booking, par_le_salon=by_salon)
 
     AuditLog.objects.create(
         tenant_id=booking.tenant_id,

@@ -9,8 +9,9 @@
  * que de laisser la cliente devant une erreur muette.
  */
 
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,7 +54,10 @@ import {
   type Basket,
 } from "./Requirements";
 import { SalonLogo } from "@/features/salon/SalonLogo";
+import { BeautySalonCredit } from "@/features/salon/BeautySalonCredit";
 import { contactLinks, mapsHref, whatsappHref } from "@/features/salon/contact";
+import { photo, TAILLES } from "@/features/salon/images";
+import { TeinteDeMarque } from "@/features/salon/Teinte";
 
 /**
  * Fenêtre demandée au serveur.
@@ -63,6 +67,17 @@ import { contactLinks, mapsHref, whatsappHref } from "@/features/salon/contact";
  * plus ferait transiter des journées vides sur un forfait mobile.
  */
 const HORIZON_DAYS = 30;
+
+function bookingDateTime(iso: string, timeZone: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(iso));
+}
 
 /**
  * L'acompte annoncé sur une carte de prestation.
@@ -83,7 +98,7 @@ const HORIZON_DAYS = 30;
  * inclure ici annoncerait une somme qu'on ne peut pas tenir. Le détail
  * complet apparaît à l'étape du récapitulatif, avant tout engagement.
  */
-function serviceDeposit(service: PublicService, salon: PublicSalon): string {
+function serviceDeposit(service: PublicService, salon: PublicSalon, locale = "fr-FR"): string {
   const rate = salon.deposit_rate || 0;
   const minimum = Number(salon.deposit_minimum) || 0;
 
@@ -93,7 +108,7 @@ function serviceDeposit(service: PublicService, salon: PublicSalon): string {
 
   const price = Number(service.price_amount) || 0;
   const due = Math.floor(Math.max(minimum, (price * rate) / 100));
-  return formatPrice(String(due), salon.currency);
+  return formatPrice(String(due), salon.currency, locale);
 }
 
 const CARD =
@@ -108,27 +123,37 @@ const INPUT =
 const PRIMARY =
   "inline-flex items-center justify-center rounded-xl bg-[var(--salon-primary)] px-6 py-3.5 font-semibold text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60";
 
-const contactSchema = z.object({
-  full_name: z.string().min(2, "Indiquez votre nom."),
-  phone: z
-    .string()
-    .min(6, "Numéro trop court.")
-    .regex(/^[0-9+\s().-]+$/, "Numéro invalide."),
-  email: z.string().email("Adresse e-mail invalide.").or(z.literal("")),
-  customer_note: z.string().max(1000).optional(),
-  // Obligatoire seulement pour un rendez-vous a domicile : la regle depend
-  // du lieu choisi, que le schema ne connait pas. Elle est donc verifiee a
-  // l'envoi, la ou l'information existe.
-  address: z.string().max(255).optional(),
-  accepts_policy: z.literal(true, {
-    message: "Vous devez accepter la politique d'annulation.",
-  }),
-  marketing_consent: z.boolean().optional(),
-  // Champ piège, laissé vide par une vraie visiteuse.
-  website: z.string().max(0).optional(),
-});
+/*
+  Le schéma est une **fonction** de la langue.
 
-type ContactValues = z.infer<typeof contactSchema>;
+  Les messages d'erreur d'un schéma Zod sont figés à sa construction. Écrit
+  au niveau du module, il les fixait une fois pour toutes au démarrage du
+  serveur — en français, quelle que soit la page. Construit à l'usage, il les
+  demande au catalogue de la requête en cours.
+*/
+function schemaContact(t: (cle: string) => string) {
+  return z.object({
+    full_name: z.string().min(2, t("erreurs.nom")),
+    phone: z
+      .string()
+      .min(6, t("erreurs.numeroCourt"))
+      .regex(/^[0-9+\s().-]+$/, t("erreurs.numeroInvalide")),
+    email: z.string().email(t("erreurs.email")).or(z.literal("")),
+    customer_note: z.string().max(1000).optional(),
+    // Obligatoire seulement pour un rendez-vous a domicile : la regle depend
+    // du lieu choisi, que le schema ne connait pas. Elle est donc verifiee a
+    // l'envoi, la ou l'information existe.
+    address: z.string().max(255).optional(),
+    accepts_policy: z.literal(true, {
+      message: t("erreurs.politique"),
+    }),
+    marketing_consent: z.boolean().optional(),
+    // Champ piège, laissé vide par une vraie visiteuse.
+    website: z.string().max(0).optional(),
+  });
+}
+
+type ContactValues = z.infer<ReturnType<typeof schemaContact>>;
 
 type Step = "service" | "staff" | "options" | "slot" | "contact" | "done";
 
@@ -192,7 +217,9 @@ export function BookingFlow({
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
   const [slot, setSlot] = useState<Slot | null>(null);
-  const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
+  const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(
+    null,
+  );
 
   const eligibleStaff = useMemo(
     () => (service ? staffFor(service) : []),
@@ -245,12 +272,12 @@ export function BookingFlow({
     <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 pb-8 pt-24 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       <div className="min-w-0">
         <header className="mb-6">
-          <Link
+          <Lien
             href="/"
             className="text-sm text-[var(--site-muted)] underline-offset-2 hover:underline"
           >
             {salon.name}
-          </Link>
+          </Lien>
         </header>
 
         <Steps
@@ -259,91 +286,97 @@ export function BookingFlow({
           hasOptionsStep={options.length > 0 || requirements.length > 0}
         />
 
-      {step === "service" && (
-        <ServiceStep salon={salon} services={services} onChoose={chooseService} />
-      )}
+        {step === "service" && (
+          <ServiceStep
+            salon={salon}
+            services={services}
+            onChoose={chooseService}
+          />
+        )}
 
-      {step === "staff" && service && (
-        <StaffStep
-          staff={eligibleStaff}
-          onChoose={(id) => {
-            setStaffId(id);
-            setStep(afterStaff(service));
-          }}
-          onBack={() => setStep("service")}
-        />
-      )}
+        {step === "staff" && service && (
+          <StaffStep
+            staff={eligibleStaff}
+            onChoose={(id) => {
+              setStaffId(id);
+              setStep(afterStaff(service));
+            }}
+            onBack={() => setStep("service")}
+          />
+        )}
 
-      {step === "options" && service && (
-        <OptionsStep
-          salon={salon}
-          service={service}
-          selected={optionIds}
-          onToggle={(id) => {
-            // Changer d'options change la durée, donc les créneaux : celui
-            // qui était retenu ne l'est peut-être plus.
-            setSlot(null);
-            setOptionIds((current) =>
-              current.includes(id)
-                ? current.filter((entry) => entry !== id)
-                : [...current, id],
-            );
-          }}
-          requirements={requirements}
-          basket={basket}
-          onBasket={setBasket}
-          currency={salon.currency}
-          onNext={() => setStep("slot")}
-          onBack={() => setStep(eligibleStaff.length > 1 ? "staff" : "service")}
-        />
-      )}
+        {step === "options" && service && (
+          <OptionsStep
+            salon={salon}
+            service={service}
+            selected={optionIds}
+            onToggle={(id) => {
+              // Changer d'options change la durée, donc les créneaux : celui
+              // qui était retenu ne l'est peut-être plus.
+              setSlot(null);
+              setOptionIds((current) =>
+                current.includes(id)
+                  ? current.filter((entry) => entry !== id)
+                  : [...current, id],
+              );
+            }}
+            requirements={requirements}
+            basket={basket}
+            onBasket={setBasket}
+            currency={salon.currency}
+            onNext={() => setStep("slot")}
+            onBack={() =>
+              setStep(eligibleStaff.length > 1 ? "staff" : "service")
+            }
+          />
+        )}
 
-      {step === "slot" && service && (
-        <SlotStep
-          // Changer de prestation ou de prestataire remonte le composant :
-          // la liste de créneaux repart de zéro sans réinitialisation
-          // manuelle dans l'effet.
-          // Changer de prestation, de prestataire ou d'options remonte le
-          // composant : la liste de créneaux repart de zéro sans
-          // réinitialisation manuelle dans l'effet.
-          key={`${service.id}-${staffId ?? "any"}-${[...optionIds].sort().join(",")}`}
-          salon={salon}
-          host={host}
-          service={service}
-          staffId={staffId}
-          optionIds={optionIds}
-          extraMinutes={chosenOptions.reduce(
-            (total, option) => total + option.duration_delta_minutes,
-            0,
-          )}
-          onChoose={(chosen) => {
-            setSlot(chosen);
-            setStep("contact");
-          }}
-          onBack={() =>
-            setStep(
-              options.length > 0
-                ? "options"
-                : eligibleStaff.length > 1
-                  ? "staff"
-                  : "service",
-            )
-          }
-        />
-      )}
+        {step === "slot" && service && (
+          <SlotStep
+            // Changer de prestation ou de prestataire remonte le composant :
+            // la liste de créneaux repart de zéro sans réinitialisation
+            // manuelle dans l'effet.
+            // Changer de prestation, de prestataire ou d'options remonte le
+            // composant : la liste de créneaux repart de zéro sans
+            // réinitialisation manuelle dans l'effet.
+            key={`${service.id}-${staffId ?? "any"}-${[...optionIds].sort().join(",")}`}
+            salon={salon}
+            host={host}
+            service={service}
+            staffId={staffId}
+            optionIds={optionIds}
+            extraMinutes={chosenOptions.reduce(
+              (total, option) => total + option.duration_delta_minutes,
+              0,
+            )}
+            onChoose={(chosen) => {
+              setSlot(chosen);
+              setStep("contact");
+            }}
+            onBack={() =>
+              setStep(
+                options.length > 0
+                  ? "options"
+                  : eligibleStaff.length > 1
+                    ? "staff"
+                    : "service",
+              )
+            }
+          />
+        )}
 
-      {step === "contact" && service && slot && (
-        <ContactStep
-          salon={salon}
-          host={host}
-          service={service}
-          slot={slot}
-          options={chosenOptions}
-          basket={basket}
-          requirements={requirements}
-          onBack={() => setStep("slot")}
-          onDone={(result) => {
-            /*
+        {step === "contact" && service && slot && (
+          <ContactStep
+            salon={salon}
+            host={host}
+            service={service}
+            slot={slot}
+            options={chosenOptions}
+            basket={basket}
+            requirements={requirements}
+            onBack={() => setStep("slot")}
+            onDone={(result) => {
+              /*
               Un acompte à régler en ligne renvoie vers la page de paiement
               plutôt que vers l'écran de confirmation.
 
@@ -356,22 +389,22 @@ export function BookingFlow({
               de paiement se retrouve depuis son espace, et la page de suivi
               dit où en est le rendez-vous.
             */
-            if (result.payment_token) {
-              // `router.push` plutôt qu'un `location.assign` : ce dernier
-              // recharge toute l'application pour une navigation interne,
-              // ce qui sur un réseau mobile lent ajoute plusieurs secondes
-              // juste avant le paiement.
-              router.push(
-                `/paiement?token=${encodeURIComponent(result.payment_token)}`,
-              );
-              return;
-            }
-            setConfirmation(result);
-            setStep("done");
-          }}
-          onSlotLost={() => setStep("slot")}
-        />
-      )}
+              if (result.payment_token) {
+                // `router.push` plutôt qu'un `location.assign` : ce dernier
+                // recharge toute l'application pour une navigation interne,
+                // ce qui sur un réseau mobile lent ajoute plusieurs secondes
+                // juste avant le paiement.
+                router.push(
+                  `/paiement?token=${encodeURIComponent(result.payment_token)}`,
+                );
+                return;
+              }
+              setConfirmation(result);
+              setStep("done");
+            }}
+            onSlotLost={() => setStep("slot")}
+          />
+        )}
       </div>
 
       <TrustPanel salon={salon} service={service} />
@@ -397,6 +430,8 @@ function TrustPanel({
   salon: PublicSalon;
   service: PublicService | null;
 }) {
+  const t = useTranslations("reservation");
+  const locale = useLocale();
   const contacts = contactLinks(salon);
   const maps = mapsHref(salon);
   const whatsapp = whatsappHref(salon.whatsapp_number);
@@ -448,7 +483,7 @@ function TrustPanel({
               {salon.rating.average.toFixed(1)}
             </span>
             <span className="text-[var(--site-muted)]">
-              · {salon.rating.count} avis
+              · {t("catalogue.avis", { n: salon.rating.count })}
             </span>
           </p>
         )}
@@ -456,14 +491,15 @@ function TrustPanel({
         {preview.length > 0 && (
           <ul className="mt-4 grid grid-cols-3 gap-1.5">
             {preview.map((asset) => (
-              <li key={asset.id}>
+              <li key={asset.id} className="relative overflow-hidden rounded-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={asset.url}
+                  {...photo(asset, TAILLES.vignette)}
                   alt={asset.alt_text || ""}
                   loading="lazy"
                   className="aspect-square w-full rounded-lg object-cover"
                 />
+                <TeinteDeMarque />
               </li>
             ))}
           </ul>
@@ -474,15 +510,17 @@ function TrustPanel({
       {service && (
         <div className={`${CARD} p-5`}>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--site-subtle)]">
-            Votre choix
+            {t("etapes.choix")}
           </p>
           <div className="mt-3 flex items-center gap-3">
             <ServiceThumb service={service} />
             <div className="min-w-0">
-              <p className="font-medium text-[var(--site-ink)]">{service.name}</p>
+              <p className="font-medium text-[var(--site-ink)]">
+                {service.name}
+              </p>
               <p className="mt-0.5 text-sm text-[var(--site-muted)]">
                 {formatDuration(service.duration_minutes)} ·{" "}
-                {formatServicePrice(service, salon.currency)}
+                {formatServicePrice(service, salon.currency, locale)}
               </p>
             </div>
           </div>
@@ -515,7 +553,7 @@ function TrustPanel({
                       rel="noreferrer noopener"
                       className="font-medium text-[var(--salon-ink)] underline-offset-2 hover:underline"
                     >
-                      itinéraire
+                      {t("catalogue.itineraire")}
                     </a>
                   </>
                 )}
@@ -547,8 +585,9 @@ function TrustPanel({
               className="mt-0.5 size-4 shrink-0 text-[var(--salon-ink)]"
             />
             <span className="text-[var(--site-muted)]">
-              Annulation gratuite jusqu&apos;à {salon.cancellation_deadline_hours} h
-              avant.
+              {t("catalogue.annulationGratuite", {
+                hours: salon.cancellation_deadline_hours,
+              })}
             </span>
           </li>
 
@@ -560,8 +599,10 @@ function TrustPanel({
               />
               <span className="text-[var(--site-muted)]">
                 {salon.late_tolerance_minutes > 0
-                  ? `Retard toléré jusqu'à ${salon.late_tolerance_minutes} min.`
-                  : "Aucun retard toléré."}
+                  ? t("catalogue.retardJusqua", {
+                      minutes: salon.late_tolerance_minutes,
+                    })
+                  : t("catalogue.aucunRetard")}
               </span>
             </li>
           )}
@@ -572,7 +613,7 @@ function TrustPanel({
               className="mt-0.5 size-4 shrink-0 text-[var(--salon-ink)]"
             />
             <span className="text-[var(--site-muted)]">
-              Confirmation immédiate par e-mail.
+              {t("catalogue.confirmationImmediate")}
             </span>
           </li>
         </ul>
@@ -585,7 +626,7 @@ function TrustPanel({
             className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-[var(--site-line)] px-4 py-2.5 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)] hover:text-[var(--salon-ink)]"
           >
             <SalonIcon name="whatsapp" className="size-4" />
-            Une question ? Écrivez-nous
+            {t("catalogue.uneQuestion")}
           </a>
         )}
       </div>
@@ -602,20 +643,21 @@ function Steps({
   hasStaffStep: boolean;
   hasOptionsStep: boolean;
 }) {
+  const t = useTranslations("reservation");
   // Les étapes qui n'existent pas pour cette prestation ne sont pas
   // affichées : montrer « 4 » puis sauter directement à « 5 » ferait croire
   // à une erreur, et allonger la barre décourage avant de commencer.
   const labels: [Step, string][] = [
-    ["service", "Prestation"],
-    ...(hasStaffStep ? ([["staff", "Prestataire"]] as [Step, string][]) : []),
-    ...(hasOptionsStep ? ([["options", "Options"]] as [Step, string][]) : []),
-    ["slot", "Créneau"],
-    ["contact", "Coordonnées"],
+    ["service", t("etapes.prestation")],
+    ...(hasStaffStep ? ([["staff", t("etapes.prestataire")]] as [Step, string][]) : []),
+    ...(hasOptionsStep ? ([["options", t("etapes.options")]] as [Step, string][]) : []),
+    ["slot", t("etapes.creneau")],
+    ["contact", t("etapes.coordonnees")],
   ];
   const index = labels.findIndex(([key]) => key === current);
 
   return (
-    <nav aria-label="Progression" className="mb-7">
+    <nav aria-label={t("etapes.progression")} className="mb-7">
       <ol className="flex items-center gap-2">
         {labels.map(([key, label], position) => {
           const reached = position <= index;
@@ -667,16 +709,17 @@ function ServiceStep({
   services: PublicService[];
   onChoose: (service: PublicService) => void;
 }) {
+  const t = useTranslations("reservation");
+  const locale = useLocale();
   return (
     <section>
       <h1 className="mb-5 text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
-        Quelle prestation ?
+        {t("catalogue.quellePrestation")}
       </h1>
 
       {services.length === 0 ? (
         <p className={`${CARD} p-6 text-sm text-[var(--site-muted)]`}>
-          Ce salon n&apos;a pas encore publié son catalogue. Contactez-le
-          directement.
+          {t("catalogue.vide")}
         </p>
       ) : (
         /*
@@ -701,7 +744,7 @@ function ServiceStep({
                       {service.name}
                     </span>
                     <span className="tabular shrink-0 font-semibold text-[var(--salon-ink)]">
-                      {formatServicePrice(service, salon.currency)}
+                      {formatServicePrice(service, salon.currency, locale)}
                     </span>
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-[var(--site-muted)]">
@@ -714,7 +757,7 @@ function ServiceStep({
                     {service.requires_deposit && (
                       <>
                         <span aria-hidden>·</span>
-                        <span>acompte de {serviceDeposit(service, salon)}</span>
+                        <span>{t("catalogue.acompteDe", { amount: serviceDeposit(service, salon, locale) })}</span>
                       </>
                     )}
                   </span>
@@ -753,13 +796,7 @@ function ServiceThumb({ service }: { service: PublicService }) {
         loading="lazy"
         className="size-full object-cover"
       />
-      {!service.image && (
-        <span
-          aria-hidden
-          className="absolute inset-0 opacity-25 mix-blend-multiply"
-          style={{ background: "var(--salon-primary)" }}
-        />
-      )}
+      <TeinteDeMarque />
     </span>
   );
 }
@@ -773,19 +810,26 @@ function StaffStep({
   onChoose: (id: string | null) => void;
   onBack: () => void;
 }) {
+  const t = useTranslations("reservation");
   return (
     <section>
       <BackLink onClick={onBack} />
       <h1 className="mb-5 text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
-        Avec qui ?
+        {t("catalogue.avecQui")}
       </h1>
 
       <ul className="space-y-2.5">
         <li>
-          <button type="button" onClick={() => onChoose(null)} className={CHOICE}>
-            <span className="font-medium text-[var(--site-ink)]">Peu importe</span>
+          <button
+            type="button"
+            onClick={() => onChoose(null)}
+            className={CHOICE}
+          >
+            <span className="font-medium text-[var(--site-ink)]">
+              {t("catalogue.peuImporte")}
+            </span>
             <span className="mt-0.5 block text-sm text-[var(--site-muted)]">
-              Plus de créneaux disponibles
+              {t("catalogue.plusDeCreneaux")}
             </span>
           </button>
         </li>
@@ -800,7 +844,7 @@ function StaffStep({
               {member.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={member.photo.url}
+                  {...photo(member.photo, TAILLES.pastille)}
                   alt=""
                   className="size-11 shrink-0 rounded-full object-cover"
                 />
@@ -848,6 +892,8 @@ function SlotStep({
   onChoose: (slot: Slot) => void;
   onBack: () => void;
 }) {
+  const t = useTranslations("reservation");
+  const locale = useLocale();
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [horizon, setHorizon] = useState<Horizon>("month");
@@ -870,12 +916,15 @@ function SlotStep({
       optionIds,
     })
       .then((result) => !cancelled && setSlots(result))
-      .catch(() => !cancelled && setError("Impossible de charger les disponibilités."));
+      .catch(() => !cancelled && setError(t("erreurs.disponibilites")));
 
     return () => {
       cancelled = true;
     };
-  }, [host, service.id, staffId, optionIds]);
+    // `t` : stable tant que la langue ne change pas, et une bascule de langue
+    // recharge la page entière — mais le linter ne le sait pas, et l'omettre
+    // masquerait un vrai oubli le jour où la dépendance cessera d'être stable.
+  }, [host, service.id, staffId, optionIds, t]);
 
   /*
     La prestation tient-elle dans au moins une plage d'ouverture ?
@@ -919,7 +968,10 @@ function SlotStep({
   // Dérivé, jamais stocké : la fenêtre choisie ne change pas les données,
   // seulement ce qu'on en montre.
   const visibleDays = useMemo(
-    () => byDay.filter(([, daySlots]) => within(daySlots[0].starts_at, horizon, salon.timezone)),
+    () =>
+      byDay.filter(([, daySlots]) =>
+        within(daySlots[0].starts_at, horizon, salon.timezone),
+      ),
     [byDay, horizon, salon.timezone],
   );
 
@@ -927,7 +979,7 @@ function SlotStep({
     <section>
       <BackLink onClick={onBack} />
       <h1 className="text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
-        Choisissez un créneau
+        {t("creneaux.titre")}
       </h1>
       <p className="mb-6 mt-1.5 text-sm text-[var(--site-muted)]">
         {service.name} ·{" "}
@@ -936,7 +988,10 @@ function SlotStep({
             croire à une erreur au moment de comparer avec l'agenda. */}
         {formatDuration(service.duration_minutes + extraMinutes)}
         {extraMinutes > 0 && (
-          <span className="text-[var(--site-subtle)]"> avec vos options</span>
+          <span className="text-[var(--site-subtle)]">
+            {" "}
+            {t("options.avecVosOptions")}
+          </span>
         )}
       </p>
 
@@ -952,12 +1007,15 @@ function SlotStep({
               </div>
             </div>
           ))}
-          <span className="sr-only">Chargement des disponibilités…</span>
+          <span className="sr-only">{t("creneaux.chargement")}</span>
         </div>
       )}
 
       {error && (
-        <p className={`${CARD} p-4 text-sm text-[var(--site-ink)]`} role="alert">
+        <p
+          className={`${CARD} p-4 text-sm text-[var(--site-ink)]`}
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -979,19 +1037,22 @@ function SlotStep({
             className={`${CARD} border-l-4 border-l-amber-500 p-5 text-sm text-[var(--site-ink)]`}
           >
             <p className="font-medium">
-              Aucun créneau ne contient {formatDuration(
-                service.duration_minutes + extraMinutes,
-              )}.
+              {t("creneaux.aucunAvecOptions", {
+                duration: formatDuration(service.duration_minutes + extraMinutes),
+              })}
             </p>
             <p className="mt-1.5 text-[var(--site-muted)]">
-              Vos options allongent la prestation de{" "}
-              {formatDuration(extraMinutes)}, et les journées du salon n&apos;ont
-              plus de plage assez longue. Retirez-en une, ou écrivez au salon
-              qui vous placera à la main.
+              {t("creneaux.optionsTropLongues", {
+                duration: formatDuration(extraMinutes),
+              })}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={onBack} className={`${PRIMARY} px-5 py-2.5`}>
-                Revoir mes options
+              <button
+                type="button"
+                onClick={onBack}
+                className={`${PRIMARY} px-5 py-2.5`}
+              >
+                {t("creneaux.revoirOptions")}
               </button>
               {whatsappHref(salon.whatsapp_number) && (
                 <a
@@ -1001,7 +1062,7 @@ function SlotStep({
                   className="inline-flex items-center gap-2 rounded-xl border border-[var(--site-line)] px-5 py-2.5 font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
                 >
                   <SalonIcon name="whatsapp" className="size-4" />
-                  Écrire au salon
+                  {t("creneaux.ecrireAuSalon")}
                 </a>
               )}
             </div>
@@ -1022,13 +1083,13 @@ function SlotStep({
             className={`${CARD} border-l-4 border-l-amber-500 p-5 text-sm text-[var(--site-ink)] sm:p-6`}
           >
             <p className="font-medium">
-              {service.name} demande{" "}
-              {formatDuration(service.duration_minutes + extraMinutes)} d&apos;affilée.
+              {t("creneaux.prestationTropLongue", {
+                service: service.name,
+                duration: formatDuration(service.duration_minutes + extraMinutes),
+              })}
             </p>
             <p className="mt-1.5 text-[var(--site-muted)]">
-              Les journées de {salon.name} n&apos;ont pas de plage aussi longue
-              en ce moment. Le salon peut vous proposer un autre créneau ou un
-              autre format — écrivez-lui.
+              {t("creneaux.journeesTropCourtes", { salon: salon.name })}
             </p>
             {whatsappHref(salon.whatsapp_number) && (
               <a
@@ -1038,18 +1099,15 @@ function SlotStep({
                 className={`${PRIMARY} mt-4 px-5 py-2.5`}
               >
                 <SalonIcon name="whatsapp" className="size-4" />
-                Écrire au salon
+                {t("creneaux.ecrireAuSalon")}
               </a>
             )}
           </div>
         ) : (
           <div className={`${CARD} p-5 text-sm text-[var(--site-ink)] sm:p-6`}>
-            <p className="font-medium">
-              Aucun créneau sur les trois prochaines semaines.
-            </p>
+            <p className="font-medium">{t("creneaux.aucunTroisSemaines")}</p>
             <p className="mt-1.5 text-[var(--site-muted)]">
-              Laissez vos coordonnées : le salon vous préviendra dès qu&apos;une
-              place se libère.
+              {t("creneaux.listeAttente")}
             </p>
             <WaitlistForm host={host} service={service} staffId={staffId} />
           </div>
@@ -1067,14 +1125,14 @@ function SlotStep({
         {byDay.length > 1 && (
           <div
             role="tablist"
-            aria-label="Période"
+            aria-label={t("creneaux.periode")}
             className="mb-4 flex rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] p-0.5"
           >
             {(
               [
-                ["day", "Aujourd'hui"],
-                ["week", "7 jours"],
-                ["month", "30 jours"],
+                ["day", t("creneaux.aujourdhui")],
+                ["week", t("creneaux.septJours")],
+                ["month", t("creneaux.trenteJours")],
               ] as [Horizon, string][]
             ).map(([key, label]) => {
               const count = countWithin(byDay, key, salon.timezone);
@@ -1094,7 +1152,9 @@ function SlotStep({
                   {label}
                   <span
                     className={`tabular text-xs ${
-                      horizon === key ? "text-white/70" : "text-[var(--site-subtle)]"
+                      horizon === key
+                        ? "text-white/70"
+                        : "text-[var(--site-subtle)]"
                     }`}
                   >
                     {count}
@@ -1107,16 +1167,16 @@ function SlotStep({
 
         {visibleDays.length === 0 && byDay.length > 0 && (
           <p className="mb-4 rounded-xl border border-[var(--site-line)] p-4 text-sm text-[var(--site-muted)]">
-            Rien sur cette période. Essayez « 30 jours ».
+            {t("creneaux.rienCettePeriode")}
           </p>
         )}
 
         {visibleDays.map(([day, daySlots]) => (
           <div key={day}>
             <h2 className="mb-2.5 text-sm font-semibold text-[var(--site-ink)] first-letter:uppercase">
-              {formatDate(daySlots[0].starts_at, salon.timezone)}
+              {formatDate(daySlots[0].starts_at, salon.timezone, locale)}
               <span className="ml-2 font-normal text-[var(--site-subtle)]">
-                {daySlots.length} créneau{daySlots.length > 1 ? "x" : ""}
+                {t("creneaux.nombre", { n: daySlots.length })}
               </span>
             </h2>
 
@@ -1162,6 +1222,8 @@ function ContactStep({
   onDone: (confirmation: BookingConfirmation) => void;
   onSlotLost: () => void;
 }) {
+  const t = useTranslations("reservation");
+  const langue = useLocale();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   /*
@@ -1185,7 +1247,9 @@ function ContactStep({
   );
   const [zoneError, setZoneError] = useState<string | null>(null);
 
-  const zone = atHome ? (zones.find((entry) => entry.id === zoneId) ?? null) : null;
+  const zone = atHome
+    ? (zones.find((entry) => entry.id === zoneId) ?? null)
+    : null;
 
   // Généré une fois par tentative : rejouer la même requête ne crée pas
   // une seconde réservation.
@@ -1197,7 +1261,7 @@ function ContactStep({
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ContactValues>({
-    resolver: zodResolver(contactSchema),
+    resolver: zodResolver(schemaContact(t)),
     defaultValues: { email: "", customer_note: "", website: "", address: "" },
   });
 
@@ -1209,12 +1273,12 @@ function ContactStep({
       // Le serveur refait ces deux contrôles ; les faire ici évite un
       // aller-retour pour une erreur qu'on peut voir tout de suite.
       if (atHome && !zone) {
-        setZoneError("Choisissez la zone de votre domicile.");
+        setZoneError(t("erreurs.zone"));
         return;
       }
       if (zone && !values.address?.trim()) {
         setError("address", {
-          message: "Indiquez où le prestataire doit se rendre.",
+          message: t("erreurs.adresse"),
         });
         return;
       }
@@ -1243,33 +1307,57 @@ function ContactStep({
             address: zone ? values.address?.trim() : undefined,
             marketing_consent: values.marketing_consent ?? false,
             accepts_policy: true,
+            /*
+              La langue dans laquelle elle vient de lire tout ceci.
+
+              Elle est retenue sur la reservation, et decide de la langue de
+              la confirmation, du rappel de la veille et de la demande
+              d avis. Sans elle, une cliente qui a tout lu en anglais — les
+              prestations, le prix, la politique d annulation qu elle vient
+              de cocher — recevrait son justificatif en francais.
+            */
+            language: langue,
             website: values.website ?? "",
           },
         });
         onDone(confirmation);
       } catch (error) {
-        if (error instanceof ApiRequestError && error.code === "slot_unavailable") {
-          setSubmitError("Ce créneau vient d'être réservé. Choisissez-en un autre.");
+        if (
+          error instanceof ApiRequestError &&
+          error.code === "slot_unavailable"
+        ) {
+          setSubmitError(t("erreurs.creneauPris"));
           // Nouvelle tentative = nouvelle clé d'idempotence.
           idempotencyKey.current = crypto.randomUUID();
           setTimeout(onSlotLost, 1500);
           return;
         }
         setSubmitError(
-          error instanceof ApiRequestError
-            ? error.message
-            : "La réservation a échoué. Réessayez.",
+          error instanceof ApiRequestError ? error.message : t("erreurs.echec"),
         );
       }
     },
-    [host, service.id, slot, options, basket, atHome, zone, setError, onDone, onSlotLost],
+    [
+      host,
+      service.id,
+      slot,
+      options,
+      basket,
+      atHome,
+      zone,
+      setError,
+      onDone,
+      onSlotLost,
+      t,
+      langue,
+    ],
   );
 
   return (
     <section>
       <BackLink onClick={onBack} />
       <h1 className="mb-5 text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
-        Vos coordonnées
+        {t("coordonnees.titre")}
       </h1>
 
       <div
@@ -1278,10 +1366,7 @@ function ContactStep({
         <div className="min-w-0 text-sm">
           <p className="font-medium text-[var(--site-ink)]">{service.name}</p>
           <p className="mt-1 text-[var(--site-muted)] first-letter:uppercase">
-            {formatDate(slot.starts_at, salon.timezone)} à{" "}
-            <span className="tabular">
-              {formatTime(slot.starts_at, salon.timezone)}
-            </span>
+            {bookingDateTime(slot.starts_at, salon.timezone, langue)}
           </p>
           {/*
             Le total se recompose sous les yeux de la cliente.
@@ -1292,7 +1377,7 @@ function ContactStep({
             du prestataire.
           */}
           <p className="mt-1 tabular font-medium text-[var(--salon-ink)]">
-            {formatServicePrice(service, salon.currency)}
+            {formatServicePrice(service, salon.currency, langue)}
           </p>
 
           {/* Les options sont rappelées ligne par ligne, pas fondues dans un
@@ -1308,8 +1393,8 @@ function ContactStep({
                   <span className="min-w-0">{option.name}</span>
                   <span className="tabular">
                     {Number(option.price_delta) === 0
-                      ? "inclus"
-                      : `+ ${formatPrice(option.price_delta, salon.currency)}`}
+                      ? t("attente.inclus")
+                      : `+ ${formatPrice(option.price_delta, salon.currency, langue)}`}
                   </span>
                 </li>
               ))}
@@ -1337,6 +1422,7 @@ function ContactStep({
                     {formatPrice(
                       String(Number(product.price) * basket.items[product.id]),
                       salon.currency,
+                      langue,
                     )}
                   </span>
                 </p>
@@ -1348,8 +1434,10 @@ function ContactStep({
               <p className="flex flex-wrap items-baseline gap-x-1.5 text-[var(--site-muted)]">
                 <span>
                   {Number(zone.fee_amount) === 0
-                    ? "Déplacement offert"
-                    : `+ ${formatPrice(zone.fee_amount, salon.currency)} de déplacement`}
+                    ? t("lieu.deplacementOffert")
+                    : t("lieu.fraisDeplacement", {
+                        amount: formatPrice(zone.fee_amount, salon.currency, langue),
+                      })}
                 </span>
                 <span className="text-[var(--site-subtle)]">· {zone.name}</span>
               </p>
@@ -1366,6 +1454,7 @@ function ContactStep({
                         Number(zone.fee_amount),
                     ),
                     salon.currency,
+                    langue,
                   )}
                 </p>
               )}
@@ -1404,13 +1493,17 @@ function ContactStep({
           />
         )}
 
-        <Field label="Nom complet" error={errors.full_name?.message}>
-          <input {...register("full_name")} autoComplete="name" className={INPUT} />
+        <Field label={t("coordonnees.nomComplet")} error={errors.full_name?.message}>
+          <input
+            {...register("full_name")}
+            autoComplete="name"
+            className={INPUT}
+          />
         </Field>
 
         <Field
-          label="Téléphone (WhatsApp)"
-          hint="C'est par là que le salon vous confirmera."
+          label={t("coordonnees.telephone")}
+          hint={t("coordonnees.telephoneAide")}
           error={errors.phone?.message}
         >
           <input
@@ -1423,21 +1516,31 @@ function ContactStep({
         </Field>
 
         <Field
-          label="E-mail (facultatif)"
-          hint="Pour recevoir la confirmation et le rappel de la veille."
+          label={t("coordonnees.emailFacultatif")}
+          hint={t("coordonnees.emailAide")}
           error={errors.email?.message}
         >
-          <input {...register("email")} type="email" autoComplete="email" className={INPUT} />
+          <input
+            {...register("email")}
+            type="email"
+            autoComplete="email"
+            className={INPUT}
+          />
         </Field>
 
-        <Field label="Message au salon (facultatif)">
+        <Field label={t("coordonnees.message")}>
           <textarea {...register("customer_note")} rows={3} className={INPUT} />
         </Field>
 
         {/* Piège à robots : masqué visuellement et retiré du parcours clavier. */}
         <div aria-hidden className="absolute left-[-9999px]">
-          <label htmlFor="website">Site web</label>
-          <input id="website" tabIndex={-1} autoComplete="off" {...register("website")} />
+          <label htmlFor="website">{t("coordonnees.siteWeb")}</label>
+          <input
+            id="website"
+            tabIndex={-1}
+            autoComplete="off"
+            {...register("website")}
+          />
         </div>
 
         <div className={`${CARD} space-y-3 p-4`}>
@@ -1448,7 +1551,7 @@ function ContactStep({
               className="mt-0.5 size-4 accent-[var(--salon-primary)]"
             />
             <span className="text-[var(--site-ink)]">
-              J&apos;accepte la politique d&apos;annulation du salon.
+              {t("coordonnees.acceptePolitique")}
               {salon.cancellation_policy && (
                 <span className="mt-1 block text-[var(--site-muted)]">
                   {salon.cancellation_policy}
@@ -1460,8 +1563,10 @@ function ContactStep({
                 <span className="mt-2 block text-[var(--site-muted)]">
                   <span className="font-medium text-[var(--site-ink)]">
                     {salon.late_tolerance_minutes > 0
-                      ? `Retard toléré : ${salon.late_tolerance_minutes} min.`
-                      : "Aucun retard toléré."}
+                      ? t("catalogue.retardMinutes", {
+                          minutes: salon.late_tolerance_minutes,
+                        })
+                      : t("catalogue.aucunRetard")}
                   </span>{" "}
                   {salon.late_policy}
                 </span>
@@ -1481,7 +1586,7 @@ function ContactStep({
               className="mt-0.5 size-4 accent-[var(--salon-primary)]"
             />
             <span className="text-[var(--site-ink)]">
-              J&apos;accepte de recevoir les offres du salon.
+              {t("coordonnees.offres")}
             </span>
           </label>
         </div>
@@ -1495,12 +1600,16 @@ function ContactStep({
           </p>
         )}
 
-        <button type="submit" disabled={isSubmitting} className={`${PRIMARY} w-full`}>
-          {isSubmitting ? "Envoi…" : "Confirmer la réservation"}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className={`${PRIMARY} w-full`}
+        >
+          {isSubmitting ? t("coordonnees.envoi") : t("coordonnees.confirmer")}
         </button>
 
         <p className="text-center text-xs text-[var(--site-subtle)]">
-          Vos coordonnées ne servent qu&apos;à ce rendez-vous.
+          {t("coordonnees.usage")}
         </p>
       </form>
     </section>
@@ -1514,12 +1623,20 @@ function Confirmation({
   salon: PublicSalon;
   confirmation: BookingConfirmation;
 }) {
+  const t = useTranslations("reservation");
+  const locale = useLocale();
   const whatsapp = salon.whatsapp_number.replace(/[^0-9]/g, "");
+  const when = bookingDateTime(confirmation.starts_at, salon.timezone, locale);
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 text-center">
       <span className="inline-flex size-14 items-center justify-center rounded-full bg-[var(--salon-accent)] text-[var(--salon-ink-accent)]">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-7">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          className="size-7"
+        >
           <path
             d="M20 6 9 17l-5-5"
             strokeWidth="2.2"
@@ -1530,10 +1647,10 @@ function Confirmation({
       </span>
 
       <h1 className="mt-5 text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
-        Rendez-vous enregistré
+        {t("attente.enregistre")}
       </h1>
       <p className="mt-2 text-[var(--site-muted)]">
-        {salon.name} a bien reçu votre demande.
+        {t("attente.demandeRecue", { salon: salon.name })}
       </p>
 
       <div className={`${CARD} mx-auto mt-7 max-w-sm p-5 text-left`}>
@@ -1541,13 +1658,10 @@ function Confirmation({
           {confirmation.service_name}
         </p>
         <p className="mt-1.5 text-sm text-[var(--site-muted)] first-letter:uppercase">
-          {formatDate(confirmation.starts_at, salon.timezone)} à{" "}
-          <span className="tabular">
-            {formatTime(confirmation.starts_at, salon.timezone)}
-          </span>
+          {when}
         </p>
         <p className="mt-1 text-sm text-[var(--site-muted)]">
-          Avec {confirmation.staff_member_name}
+          {t("attente.avec")} {confirmation.staff_member_name}
         </p>
 
         {confirmation.options_snapshot.length > 0 && (
@@ -1560,8 +1674,8 @@ function Confirmation({
                 <span className="min-w-0">{option.name}</span>
                 <span className="tabular">
                   {Number(option.price) === 0
-                    ? "inclus"
-                    : `+ ${formatPrice(option.price, salon.currency)}`}
+                    ? t("attente.inclus")
+                    : `+ ${formatPrice(option.price, salon.currency, locale)}`}
                 </span>
               </li>
             ))}
@@ -1590,7 +1704,7 @@ function Confirmation({
                   </span>
                 </span>
                 <span className="tabular">
-                  {formatPrice(item.total, salon.currency)}
+                  {formatPrice(item.total, salon.currency, locale)}
                 </span>
               </li>
             ))}
@@ -1604,9 +1718,9 @@ function Confirmation({
           confirmation.options_snapshot.length > 0 ||
           Number(confirmation.travel_fee_amount ?? 0) > 0) && (
           <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-[var(--site-line)] pt-3 text-sm font-medium text-[var(--site-ink)]">
-            <span>Total</span>
+            <span>{t("total")}</span>
             <span className="tabular">
-              {formatPrice(confirmation.total_amount, salon.currency)}
+              {formatPrice(confirmation.total_amount, salon.currency, locale)}
             </span>
           </p>
         )}
@@ -1621,14 +1735,19 @@ function Confirmation({
               className="mt-0.5 size-4 shrink-0 text-[var(--salon-ink)]"
             />
             <span>
-              À domicile · {confirmation.travel_zone_name}
+              {t("attente.aDomicile")} · {confirmation.travel_zone_name}
               {Number(confirmation.travel_fee_amount) > 0 && (
                 <>
                   {" — "}
                   <span className="tabular font-medium text-[var(--site-ink)]">
-                    {formatPrice(confirmation.travel_fee_amount, salon.currency)}
-                  </span>{" "}
-                  de déplacement, inclus dans le total
+                    {t("attente.deplacementInclus", {
+                      amount: formatPrice(
+                        confirmation.travel_fee_amount,
+                        salon.currency,
+                        locale,
+                      ),
+                    })}
+                  </span>
                 </>
               )}
             </span>
@@ -1637,11 +1756,9 @@ function Confirmation({
 
         {Number(confirmation.deposit_amount) > 0 && (
           <p className="mt-4 rounded-xl bg-[var(--salon-accent)]/40 p-3 text-sm text-[var(--site-ink)]">
-            Un acompte de{" "}
-            <strong className="tabular">
-              {formatPrice(confirmation.deposit_amount, salon.currency)}
-            </strong>{" "}
-            est demandé. Le salon vous indiquera comment le régler.
+            {t("attente.acompteDemande", {
+              amount: formatPrice(confirmation.deposit_amount, salon.currency, locale),
+            })}
           </p>
         )}
       </div>
@@ -1654,15 +1771,18 @@ function Confirmation({
             rel="noreferrer noopener"
             className="rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] px-6 py-3 font-medium text-[var(--site-ink)] transition hover:bg-black/[0.03]"
           >
-            Contacter le salon sur WhatsApp
+            {t("attente.contacterWhatsApp")}
           </a>
         )}
-        <Link
+        <Lien
           href="/"
           className="rounded-xl px-6 py-3 font-medium text-[var(--site-muted)] underline-offset-2 hover:underline"
         >
-          Revenir au salon
-        </Link>
+          {t("attente.revenirAuSalon")}
+        </Lien>
+      </div>
+      <div className="mt-8">
+        <BeautySalonCredit />
       </div>
     </div>
   );
@@ -1686,26 +1806,42 @@ function Field({
       </span>
       {children}
       {hint && !error && (
-        <span className="mt-1.5 block text-xs text-[var(--site-muted)]">{hint}</span>
+        <span className="mt-1.5 block text-xs text-[var(--site-muted)]">
+          {hint}
+        </span>
       )}
       {error && (
-        <span className="mt-1.5 block text-xs font-medium text-red-600">{error}</span>
+        <span className="mt-1.5 block text-xs font-medium text-red-600">
+          {error}
+        </span>
       )}
     </label>
   );
 }
 
 function BackLink({ onClick }: { onClick: () => void }) {
+  const t = useTranslations("reservation");
   return (
     <button
       type="button"
       onClick={onClick}
       className="mb-3 inline-flex items-center gap-1.5 text-sm text-[var(--site-muted)] transition hover:text-[var(--site-ink)]"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden className="size-4">
-        <path d="M15 6l-6 6 6 6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        aria-hidden
+        className="size-4"
+      >
+        <path
+          d="M15 6l-6 6 6 6"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
-      Retour
+      {t("retour")}
     </button>
   );
 }
@@ -1751,14 +1887,18 @@ function LocationStep({
   zoneId: string | null;
   zoneError: string | null;
   addressError?: string;
-  addressField: ReturnType<ReturnType<typeof useForm<ContactValues>>["register"]>;
+  addressField: ReturnType<
+    ReturnType<typeof useForm<ContactValues>>["register"]
+  >;
   onChangeMode: (atHome: boolean) => void;
   onChangeZone: (id: string) => void;
 }) {
+  const t = useTranslations("reservation");
+  const locale = useLocale();
   return (
     <div className={`${CARD} space-y-4 p-4`}>
       <p className="text-sm font-medium text-[var(--site-ink)]">
-        Où souhaitez-vous être reçue ?
+        {t("lieu.question")}
       </p>
 
       {/* Une prestation exclusivement à domicile n'ouvre pas de bascule :
@@ -1767,21 +1907,21 @@ function LocationStep({
       {!homeOnly && (
         <div
           role="radiogroup"
-          aria-label="Lieu du rendez-vous"
+          aria-label={t("lieu.titre")}
           className="grid grid-cols-2 gap-2"
         >
           <ModeChoice
             selected={!atHome}
             icon="pin"
-            label="Au salon"
-            hint={salon.city || "Sur place"}
+            label={t("lieu.auSalon")}
+            hint={salon.city || t("lieu.surPlace")}
             onSelect={() => onChangeMode(false)}
           />
           <ModeChoice
             selected={atHome}
             icon="home"
-            label="Chez moi"
-            hint="Le prestataire se déplace"
+            label={t("lieu.chezMoi")}
+            hint={t("lieu.prestataireSeDeplace")}
             onSelect={() => onChangeMode(true)}
           />
         </div>
@@ -1792,7 +1932,7 @@ function LocationStep({
           {zones.length > 1 && (
             <fieldset>
               <legend className="mb-2 text-sm text-[var(--site-muted)]">
-                Votre quartier
+                {t("lieu.quartier")}
               </legend>
               <div className="grid grid-cols-2 gap-2">
                 {zones.map((entry) => {
@@ -1820,15 +1960,17 @@ function LocationStep({
                         }`}
                       >
                         {free
-                          ? "Offert"
-                          : formatPrice(entry.fee_amount, salon.currency)}
+                          ? t("lieu.offert")
+                          : formatPrice(entry.fee_amount, salon.currency, locale)}
                       </span>
                     </button>
                   );
                 })}
               </div>
               {zoneError && (
-                <p className="mt-2 text-sm font-medium text-red-600">{zoneError}</p>
+                <p className="mt-2 text-sm font-medium text-red-600">
+                  {zoneError}
+                </p>
               )}
             </fieldset>
           )}
@@ -1836,24 +1978,24 @@ function LocationStep({
           {/* Zone unique : on l'annonce au lieu de la faire choisir. */}
           {zones.length === 1 && (
             <p className="text-sm text-[var(--site-muted)]">
-              Zone desservie : {zones[0].name} ·{" "}
+              {t("lieu.zoneDesservie", { zone: zones[0].name })} ·{" "}
               <span className="tabular font-semibold text-[var(--salon-ink)]">
                 {Number(zones[0].fee_amount) === 0
-                  ? "déplacement offert"
-                  : formatPrice(zones[0].fee_amount, salon.currency)}
+                  ? t("lieu.deplacementOffertMinuscule")
+                  : formatPrice(zones[0].fee_amount, salon.currency, locale)}
               </span>
             </p>
           )}
 
           <Field
-            label="Adresse"
-            hint="Rue, immeuble, étage — et un point de repère si besoin."
+            label={t("lieu.adresse")}
+            hint={t("lieu.adresseAide")}
             error={addressError}
           >
             <input
               {...addressField}
               autoComplete="street-address"
-              placeholder="Ex. 12 avenue de la Paix, immeuble bleu, face à la pharmacie"
+              placeholder={t("lieu.adresseExemple")}
               className={INPUT}
             />
           </Field>
@@ -1955,7 +2097,11 @@ function OptionsStep({
   onNext: () => void;
   onBack: () => void;
 }) {
-  const chosen = service.options.filter((option) => selected.includes(option.id));
+  const t = useTranslations("reservation");
+  const locale = useLocale();
+  const chosen = service.options.filter((option) =>
+    selected.includes(option.id),
+  );
 
   const extraMinutes = chosen.reduce(
     (total, option) => total + option.duration_delta_minutes,
@@ -1976,12 +2122,14 @@ function OptionsStep({
     <section>
       <BackLink onClick={onBack} />
       <h1 className="mb-1.5 text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
-        {requirements.length > 0 ? "Avant de venir" : "Une option ?"}
+        {requirements.length > 0
+          ? t("options.avantDeVenir")
+          : t("options.uneOption")}
       </h1>
       <p className="mb-5 text-sm text-[var(--site-muted)]">
         {requirements.length > 0
-          ? "Ce qu'il faut prévoir pour cette prestation, et ce que vous pouvez ajouter."
-          : "Facultatif. Chaque option ajustera le tarif et la durée du rendez-vous."}
+          ? t("options.prevoir")
+          : t("options.facultatif")}
       </p>
 
       {/* Les fournitures d'abord : elles peuvent empêcher la réservation,
@@ -1999,7 +2147,7 @@ function OptionsStep({
 
       {service.options.length > 0 && requirements.length > 0 && (
         <h2 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-[var(--site-subtle)]">
-          Options
+          {t("options.titre")}
         </h2>
       )}
 
@@ -2053,8 +2201,8 @@ function OptionsStep({
                     }`}
                   >
                     {free
-                      ? "Inclus"
-                      : `+ ${formatPrice(option.price_delta, salon.currency)}`}
+                      ? t("options.inclus")
+                      : `+ ${formatPrice(option.price_delta, salon.currency, locale)}`}
                   </span>
                   {option.duration_delta_minutes > 0 && (
                     <span className="tabular text-xs text-[var(--site-subtle)]">
@@ -2087,7 +2235,7 @@ function OptionsStep({
               className="flex flex-wrap items-baseline gap-x-2 text-sm"
             >
               <span className="tabular text-lg font-semibold text-[var(--site-ink)]">
-                {formatPrice(String(totalPrice), salon.currency)}
+                {formatPrice(String(totalPrice), salon.currency, locale)}
               </span>
               <span className="tabular text-[var(--site-muted)]">
                 {" · "}
@@ -2097,17 +2245,18 @@ function OptionsStep({
             <p className="mt-0.5 text-xs text-[var(--site-subtle)]">
               {blocking.length > 0 ? (
                 <span className="font-medium text-amber-600">
-                  {blocking.map((item) => item.label).join(", ")} : apportez-le
-                  ou achetez-le
+                  {t("options.fournituresRequises", {
+                    items: blocking.map((item) => item.label).join(", "),
+                  })}
                 </span>
               ) : chosen.length === 0 && supplies === 0 ? (
-                "Sans option"
+                t("options.sansOption")
               ) : (
                 [
-                  chosen.length > 0 &&
-                    `${chosen.length} option${chosen.length > 1 ? "s" : ""}`,
-                  supplies > 0 && "fournitures comprises",
-                  extraMinutes > 0 && `${formatDuration(extraMinutes)} de plus`,
+                  chosen.length > 0 && t("options.nombre", { n: chosen.length }),
+                  supplies > 0 && t("options.fournituresCompris"),
+                  extraMinutes > 0 &&
+                    t("options.tempsAjoute", { duration: formatDuration(extraMinutes) }),
                 ]
                   .filter(Boolean)
                   .join(" · ")
@@ -2122,10 +2271,10 @@ function OptionsStep({
             className={`${PRIMARY} px-5 py-2.5 disabled:cursor-not-allowed disabled:opacity-60`}
           >
             {blocking.length > 0
-              ? "Répondez ci-dessus"
+              ? t("options.repondezCiDessus")
               : chosen.length === 0 && supplies === 0
-                ? "Continuer"
-                : "Choisir un créneau"}
+                ? t("options.continuer")
+                : t("options.choisirCreneau")}
           </button>
         </div>
       </div>
@@ -2167,6 +2316,7 @@ function WaitlistForm({
   service: PublicService;
   staffId: string | null;
 }) {
+  const t = useTranslations("reservation");
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
   const [pending, setPending] = useState(false);
@@ -2206,7 +2356,7 @@ function WaitlistForm({
       setFailure(
         caught instanceof ApiRequestError
           ? caught.message
-          : "Inscription impossible pour le moment.",
+          : t("erreurs.inscription"),
       );
     } finally {
       setPending(false);
@@ -2219,9 +2369,8 @@ function WaitlistForm({
         role="status"
         className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-[var(--site-ink)]"
       >
-        <span className="font-medium">C&apos;est noté.</span> Le salon vous
-        appellera au {phone} si une place se libère. Vous n&apos;avez pas de
-        rendez-vous pour l&apos;instant.
+        <span className="font-medium">{t("attente.cestNote")}</span>{" "}
+        {t("attente.rappel", { phone })}
       </p>
     );
   }
@@ -2233,7 +2382,7 @@ function WaitlistForm({
         onClick={() => setOpen(true)}
         className={`${PRIMARY} mt-4 px-5 py-2.5`}
       >
-        Me prévenir si une place se libère
+        {t("attente.mePrevenir")}
       </button>
     );
   }
@@ -2245,7 +2394,7 @@ function WaitlistForm({
       <div className="grid grid-cols-2 gap-2.5">
         <label className="col-span-2 block">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
-            Votre nom
+            {t("attente.votreNom")}
           </span>
           <input
             autoFocus
@@ -2257,7 +2406,7 @@ function WaitlistForm({
 
         <label className="col-span-2 block">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
-            Téléphone (WhatsApp)
+            {t("coordonnees.telephone")}
           </span>
           <input
             value={phone}
@@ -2270,7 +2419,7 @@ function WaitlistForm({
 
         <label className="block">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
-            À partir du
+            {t("attente.aPartirDu")}
           </span>
           <input
             value={from}
@@ -2282,7 +2431,7 @@ function WaitlistForm({
 
         <label className="block">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
-            Jusqu&apos;au
+            {t("attente.jusquAu")}
           </span>
           <input
             value={to}
@@ -2295,12 +2444,12 @@ function WaitlistForm({
 
         <label className="col-span-2 block">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
-            Précision (facultatif)
+            {t("attente.precision")}
           </span>
           <input
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder="Plutôt le samedi matin…"
+            placeholder={t("attente.precisionExemple")}
             className={INPUT}
           />
         </label>
@@ -2318,19 +2467,19 @@ function WaitlistForm({
           disabled={pending || !name.trim() || !phone.trim()}
           className={`${PRIMARY} px-5 py-2.5 disabled:opacity-60`}
         >
-          {pending ? "Envoi…" : "M'inscrire"}
+          {pending ? t("coordonnees.envoi") : t("attente.inscrire")}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="px-2 py-2 text-sm text-[var(--site-muted)] transition hover:text-[var(--site-ink)]"
         >
-          Annuler
+          {t("attente.annuler")}
         </button>
       </div>
 
       <p className="text-xs text-[var(--site-subtle)]">
-        Ceci ne réserve aucun créneau : c&apos;est une demande de rappel.
+        {t("attente.avertissement")}
       </p>
     </form>
   );
@@ -2365,7 +2514,8 @@ function countWithin(
 ): number {
   return days.reduce(
     (total, [, slots]) =>
-      total + (within(slots[0].starts_at, horizon, timeZone) ? slots.length : 0),
+      total +
+      (within(slots[0].starts_at, horizon, timeZone) ? slots.length : 0),
     0,
   );
 }

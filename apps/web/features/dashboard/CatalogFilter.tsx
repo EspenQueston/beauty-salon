@@ -60,7 +60,9 @@ export function CatalogFilter({
           <input
             type="search"
             value={value.query}
-            onChange={(event) => onChange({ ...value, query: event.target.value })}
+            onChange={(event) =>
+              onChange({ ...value, query: event.target.value })
+            }
             placeholder="Rechercher une prestation…"
             className="w-full rounded-xl border border-line bg-surface py-2.5 pl-9 pr-3 text-sm text-ink transition focus:border-salon"
           />
@@ -100,7 +102,8 @@ export function CatalogFilter({
                   ...value,
                   // Recliquer la catégorie courante la désélectionne : c'est
                   // le geste attendu, et il évite de chercher « Toutes ».
-                  categoryId: value.categoryId === category.id ? null : category.id,
+                  categoryId:
+                    value.categoryId === category.id ? null : category.id,
                 })
               }
               count={counts[category.id] ?? 0}

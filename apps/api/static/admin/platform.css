@@ -1427,6 +1427,449 @@ body.login #footer {
   display: none;
 }
 
+/* ---------------------------------------------------------------------------
+   Écrans de sécurité (double authentification)
+   ---------------------------------------------------------------------------
+
+   Ces pages ne sont pas rendues par l'administration Django : ce sont des
+   gabarits à nous, servis avant que la session soit vérifiée. Elles avaient
+   donc leur propre feuille en ligne, avec ses couleurs écrites en dur — un
+   fond crème et un rose qui n'existent plus nulle part ailleurs. On tombait
+   de la page de connexion sur un écran qui semblait appartenir à un autre
+   produit, au moment précis où l'on demande à quelqu'un de faire confiance.
+
+   Elles empruntent maintenant exactement le décor de la connexion : même fond
+   animé, même carte, même marque. Le seul ajout est le bouton de thème, qui
+   n'a pas de barre d'en-tête où se loger ici.
+--------------------------------------------------------------------------- */
+
+body.mfa {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  margin: 0;
+  padding: 1.5rem;
+  background: var(--bs-canvas);
+  color: var(--bs-ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* Les mêmes halos que la connexion. Déclarés à part plutôt qu'en sélecteur
+   groupé : `body.login` vit dans une section qui parle de l'administration,
+   et un jour l'un des deux écrans changera sans l'autre. */
+body.mfa::before,
+body.mfa::after {
+  content: "";
+  position: fixed;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+}
+
+body.mfa::before {
+  top: -20%;
+  left: -12%;
+  width: 54vmax;
+  height: 54vmax;
+  background: var(--bs-brand);
+  animation: bs-drift-a 28s ease-in-out infinite alternate;
+}
+
+body.mfa::after {
+  right: -16%;
+  bottom: -22%;
+  width: 48vmax;
+  height: 48vmax;
+  background: var(--bs-brand-soft);
+  opacity: 0.32;
+  animation: bs-drift-b 34s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.mfa::before,
+  body.mfa::after {
+    animation: none;
+  }
+}
+
+.mfa-carte {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  /* Plus large que la connexion : l'écran d'enrôlement porte un QR code de
+     190 px et une clé à recopier. La vérification, elle, reste étroite grâce
+     à `--mfa-largeur`, posé par le gabarit. */
+  max-width: var(--mfa-largeur, 28rem);
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-line);
+  border-radius: 18px;
+  box-shadow: var(--bs-shadow-lg);
+  overflow: hidden;
+}
+
+.mfa-entete {
+  display: grid;
+  /* Trois colonnes, les deux extrémités de largeur égale : la marque reste
+     centrée quoi qu'on ajoute à droite. Un simple flex centré l'aurait
+     décalée de la moitié du bouton. */
+  grid-template-columns: 2.25rem 1fr 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1.25rem 1.1rem;
+  border-bottom: 1px solid var(--bs-line-soft);
+}
+
+.mfa-marque {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--bs-ink);
+}
+
+/* La même pastille que dans l'en-tête de l'administration et sur la page de
+   connexion. Écrite ici plutôt qu'héritée : ces pages n'ont pas de
+   `#branding`. */
+.mfa-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.9rem;
+  background: var(--bs-brand);
+  color: var(--bs-ink-on-brand);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Le bouton de thème, dans la troisième colonne. */
+.mfa-entete .theme-toggle {
+  grid-column: 3;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: var(--bs-ink-muted);
+  cursor: pointer;
+}
+
+.mfa-entete .theme-toggle:hover {
+  background: var(--bs-surface-hover);
+  color: var(--bs-ink);
+}
+
+/* Les règles d'échange d'icônes vivent dans `dark_mode.css`, que ces pages ne
+   chargent pas : on les reprend ici, en version courte. */
+.mfa-entete .theme-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: none;
+  fill: currentColor;
+}
+
+.mfa-entete .theme-toggle .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+html[data-theme="auto"] .mfa-entete .theme-toggle svg.theme-icon-when-auto,
+html[data-theme="dark"] .mfa-entete .theme-toggle svg.theme-icon-when-dark,
+html[data-theme="light"] .mfa-entete .theme-toggle svg.theme-icon-when-light {
+  display: block;
+}
+
+.mfa-contenu {
+  padding: 1.5rem 1.25rem;
+}
+
+.mfa-contenu h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  color: var(--bs-ink);
+}
+
+.mfa-contenu p {
+  margin: 0 0 0.9rem;
+  font-size: 0.875rem;
+  color: var(--bs-ink-muted);
+}
+
+.mfa-contenu p strong {
+  color: var(--bs-ink);
+}
+
+.mfa-discret {
+  font-size: 0.8125rem;
+}
+
+/*
+  Le libelle du champ, masque a l'oeil mais pas aux lecteurs d'ecran.
+
+  Son texte est repris en invite dans le champ lui-meme : une ligne de
+  moins a l'ecran, et la meme information. Mais une invite disparait des
+  qu'on tape, et un champ qui n'aurait plus d'intitule a ce moment-la
+  serait annonce comme « zone de texte » et rien d'autre.
+*/
+.mfa-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+  Ces deux-la sont prefixees par `.mfa-contenu`, et il le faut.
+
+  La regle generale des paragraphes est `.mfa-contenu p` : un element et
+  une classe, soit 0,1,1. Une classe seule ne vaut que 0,1,0 et perdait —
+  les marges etaient ignorees, et la ligne sur les codes de secours se
+  retrouvait collee au bouton, a zero pixel. C'est la deuxieme fois dans
+  ce fichier ; les regles de base y sont ecrites avec un selecteur
+  d'element, il faut s'aligner dessus.
+*/
+
+/* Le compte concerne, juste sous le titre : c'est la seule facon de
+   savoir quelle entree ouvrir dans son application. */
+.mfa-contenu .mfa-compte {
+  margin: -0.15rem 0 1.1rem;
+  word-break: break-all;
+}
+
+/* Detachee du bouton : elle parle d'autre chose que de l'action en cours. */
+.mfa-contenu .mfa-secours {
+  margin: 1.25rem 0 0;
+}
+
+.mfa-contenu input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--bs-line);
+  border-radius: 0.6rem;
+  background: var(--bs-surface);
+  color: var(--bs-ink);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  Un code se lit chiffre par chiffre : l'espacement evite de relire. Mais
+  il ne s'applique qu'une fois qu'on tape — etire, « Code a 6 chiffres »
+  deborderait du champ et se lirait mal.
+*/
+.mfa-contenu input[type="text"]:not(:placeholder-shown) {
+  letter-spacing: 0.22em;
+}
+
+/*
+  `--bs-ink-muted`, pas `--bs-ink-faint`.
+
+  Depuis que le libelle visible a disparu, ce texte d'invite est le seul
+  intitule qu'on voit. La teinte la plus pale le mettait a 2,49:1 en theme
+  clair : lisible pour qui sait deja ce qu'il y a a taper, invisible pour
+  les autres. Celle-ci passe a 5,18:1.
+*/
+.mfa-contenu input[type="text"]::placeholder {
+  color: var(--bs-ink-muted, #6e6b7b);
+  opacity: 1;
+}
+
+.mfa-contenu input[type="text"]:focus {
+  outline: 2px solid var(--bs-brand);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.mfa-valider {
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.7rem 1rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: var(--bs-brand);
+  color: var(--bs-ink-on-brand);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mfa-valider:hover {
+  background: var(--bs-brand-strong);
+}
+
+.mfa-erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.6rem;
+  background: var(--bs-bad-bg);
+  color: var(--bs-bad);
+  font-size: 0.8125rem;
+}
+
+.mfa-qr {
+  display: flex;
+  justify-content: center;
+  margin: 1.25rem 0;
+  padding: 0.9rem;
+  border-radius: 0.9rem;
+  /* Un QR code se lit en noir sur blanc. En thème sombre, le laisser sur la
+     carte le rendrait illisible pour l'appareil photo : on lui donne son
+     propre fond clair, dans les deux thèmes. */
+  background: #fff;
+}
+
+.mfa-qr svg {
+  width: 190px;
+  height: 190px;
+}
+
+.mfa-cle {
+  display: inline-block;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.45rem;
+  background: var(--bs-surface-sunken);
+  color: var(--bs-ink);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+/* Les codes de secours : deux colonnes, y compris sur téléphone. Huit codes
+   sur une seule colonne obligent à faire défiler pour les recopier. */
+.mfa-codes {
+  columns: 2;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.95rem;
+  color: var(--bs-ink);
+}
+
+.mfa-codes li {
+  margin-bottom: 0.3rem;
+  break-inside: avoid;
+}
+
+/*
+  `:link` et `:visited`, et pas seulement la classe.
+
+  `a:link, a:visited` (plus haut dans cette feuille) vaut 0,1,1 en
+  specificite ; `.mfa-suite` seule ne vaut que 0,1,0 et perdait. Le texte
+  du bouton heritait donc de la couleur des liens — un violet clair sur un
+  fond violet, mesure a 1,3:1. On egalise la specificite plutot que
+  d'ecrire `!important`, qui aurait rendu ce bouton impossible a
+  retoucher.
+*/
+.mfa-suite:link,
+.mfa-suite:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  background: var(--bs-brand);
+  color: var(--bs-ink-on-brand);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mfa-suite:hover,
+.mfa-suite:focus-visible {
+  background: var(--bs-brand-strong);
+  color: var(--bs-ink-on-brand);
+}
+
+/* Le pied : revenir à la connexion, et recommencer. */
+.mfa-pied {
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid var(--bs-line-soft);
+  background: var(--bs-surface-sunken);
+  text-align: center;
+}
+
+.mfa-retour {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--bs-ink-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mfa-retour:hover {
+  background: var(--bs-surface-hover);
+  color: var(--bs-ink);
+}
+
+@media (max-width: 480px) {
+  body.mfa {
+    padding: 0.75rem;
+  }
+
+  .mfa-entete {
+    padding: 1.15rem 1rem 0.9rem;
+  }
+
+  .mfa-contenu {
+    padding: 1.15rem 1rem;
+  }
+
+  .mfa-contenu h1 {
+    font-size: 1.125rem;
+  }
+
+  .mfa-qr svg {
+    width: 160px;
+    height: 160px;
+  }
+}
+
 /* --------------------------------------------------------------------- */
 /* Petits écrans                                                          */
 /* --------------------------------------------------------------------- */
@@ -2281,4 +2724,142 @@ input[type="submit"].default:hover,
   .supervision-grid .stat-value {
     font-size: 1.5rem;
   }
+}
+
+/* --------------------------------------------------------------------- */
+/* Abonnements : moyens de reglement et verification des paiements        */
+/* --------------------------------------------------------------------- */
+
+.pill--ok {
+  background: var(--bs-ok-bg);
+  color: var(--bs-ok);
+}
+
+.pill--info {
+  background: var(--bs-info-bg);
+  color: var(--bs-info);
+}
+
+/* Un QR code se lit sur fond blanc, meme en theme sombre : c'est ce que
+   verra le telephone qui le scanne. */
+.qr-vignette {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.qr-apercu {
+  max-width: 240px;
+  max-height: 240px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--bs-line);
+}
+
+.paiement-preuve {
+  max-width: min(320px, 100%);
+  max-height: 420px;
+  border-radius: 10px;
+  border: 1px solid var(--bs-line);
+}
+
+/* Le panneau de decision, au-dessus du detail d'une demande. */
+.paiement-decision {
+  margin: 0 0 1.25rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--bs-line);
+  border-radius: var(--bs-radius);
+  background: var(--bs-surface);
+  box-shadow: var(--bs-shadow-sm);
+}
+
+.paiement-decision h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.paiement-decision__resume {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+  margin: 0.9rem 0 1rem;
+}
+
+.paiement-decision__fait {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: var(--bs-surface-sunken);
+}
+
+.paiement-decision__fait span {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bs-ink-muted);
+}
+
+.paiement-decision__fait strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+  color: var(--bs-ink);
+  overflow-wrap: anywhere;
+}
+
+.paiement-decision__choix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.9rem;
+}
+
+.paiement-decision__choix form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--bs-line);
+  border-radius: 10px;
+}
+
+.paiement-decision__choix label {
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.paiement-decision__choix textarea,
+.paiement-decision__choix input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.paiement-decision__approuver {
+  border-color: var(--bs-ok-bg);
+}
+
+.paiement-decision__refuser {
+  border-color: var(--bs-bad-bg);
+}
+
+/* Teintes fixes, et non les jetons du theme : en sombre, --bs-ok devient un
+   vert clair ou le blanc tombe sous 2:1. Ces deux-la tiennent 5,1:1 et
+   6,6:1 avec le blanc, dans les deux themes. */
+.paiement-decision .button.approuver {
+  background: #1a7f4b;
+  color: #fff;
+}
+
+.paiement-decision .button.refuser {
+  background: #b42318;
+  color: #fff;
+}
+
+.paiement-decision__aide {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--bs-ink-muted);
 }

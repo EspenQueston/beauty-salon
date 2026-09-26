@@ -11,15 +11,20 @@ import logging
 import re
 from datetime import timedelta
 from decimal import Decimal
+from types import SimpleNamespace
 
 from celery import shared_task
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 from apps.common.db import tenant_context
+from apps.notifications.details import grouper
 from apps.notifications.email import send_email
+from apps.notifications.textes import Textes, textes
 from apps.scheduling.models import Booking
 from apps.tenants.models import Tenant
+from apps.translations.services import texte as traduction
 
 logger = logging.getLogger(__name__)
 
@@ -51,19 +56,20 @@ def send_booking_notifications(self, booking_id: str, tenant_id: str):
             context = _booking_context(booking)
 
             _send(
-                subject=f"Votre rendez-vous chez {booking.tenant.name}",
+                subject=context["t"].dire(
+                    "confirmation_objet", salon=booking.tenant.name
+                ),
                 template="booking_confirmation",
                 context={
                     **context,
-                    "intro": (
-                        f"Bonjour {booking.customer.full_name}, "
-                        f"{booking.tenant.name} a bien reçu votre demande."
+                    "intro": context["t"].dire(
+                        "confirmation_intro", salon=booking.tenant.name
                     ),
                     # Le delai figure dans l'e-mail parce que c'est la
                     # qu'on le lit : la page de paiement affiche un compte a
                     # rebours, mais une cliente qui a ferme l'onglet n'a plus
                     # que ce message pour savoir qu'il y en avait un.
-                    "deposit_hint": _deposit_hint(booking),
+                    "deposit_hint": _deposit_hint(booking, context["t"]),
                     # Le lien de reglement ne part que si l'acompte est
                     # encore du. C'est la seule facon de revenir a la page
                     # de paiement pour qui a ferme l'onglet - sans lui, le
@@ -71,6 +77,7 @@ def send_booking_notifications(self, booking_id: str, tenant_id: str):
                     "payment_url": _payment_url(booking),
                 },
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
             _send(
                 subject=f"Nouvelle réservation - {booking.service_name}",
@@ -117,18 +124,25 @@ def send_booking_reminders():
             )
 
             for booking in bookings:
+                rappel = _booking_context(booking)
                 delivered = _send(
-                    subject=f"Rappel : rendez-vous demain chez {booking.tenant.name}",
+                    subject=rappel["t"].dire(
+                        "rappel_objet", salon=booking.tenant.name
+                    ),
                     template="booking_reminder",
                     context={
-                        **_booking_context(booking),
-                        "intro": (
-                            f"Bonjour {booking.customer.full_name}, petit "
-                            f"rappel : vous avez rendez-vous demain chez "
-                            f"{booking.tenant.name}."
+                        **rappel,
+                        "intro": rappel["t"].dire(
+                            "rappel_intro", salon=booking.tenant.name
+                        ),
+                        "pre": rappel["t"].dire(
+                            "pre_rappel",
+                            heure=rappel["time_label"],
+                            salon=booking.tenant.name,
                         ),
                     },
                     to=[booking.customer.email],
+                    salon=booking.tenant,
                 )
                 # Marque meme sans e-mail : sinon la cliente sans adresse
                 # serait reexaminee a chaque passage de la tache.
@@ -141,7 +155,13 @@ def send_booking_reminders():
 
 
 def _booking_context(booking: Booking) -> dict:
+    """Tout ce dont un gabarit a besoin, dans la langue de la cliente."""
     from apps.salons.models import SalonProfile
+
+    # La langue retenue au moment de la reservation, et non celle du salon
+    # aujourd'hui : c'est dans celle-la que la cliente a lu ce qu'elle
+    # acceptait.
+    t = textes(booking.language)
 
     local_start = booking.starts_at.astimezone(_tenant_timezone(booking.tenant))
 
@@ -150,21 +170,42 @@ def _booking_context(booking: Booking) -> dict:
     # elle les lit vraiment : sur le mini-site, elle a deja decide.
     profile = SalonProfile.objects.filter(tenant_id=booking.tenant_id).first()
 
+    # Les regles du salon, dans la langue de la cliente quand elles y sont.
+    #
+    # Le gabarit lisait `profile.late_policy` en direct, donc le francais : un
+    # e-mail anglais portait sa politique de retard en francais au milieu. Les
+    # serialiseurs du mini-site font deja ce remplacement ; ici il n y a pas de
+    # serialiseur, il faut donc le demander.
+    regles = (
+        SimpleNamespace(
+            late_policy=traduction(profile, "late_policy", booking.language),
+            late_tolerance_minutes=profile.late_tolerance_minutes,
+            cancellation_policy=traduction(
+                profile, "cancellation_policy", booking.language
+            ),
+            cancellation_deadline_hours=profile.cancellation_deadline_hours,
+        )
+        if profile is not None
+        else None
+    )
+
     site = _salon_base_url(booking.tenant)
 
     return {
+        "t": t,
+        "langue": booking.language,
         "booking": booking,
         "salon": booking.tenant,
-        "profile": profile,
+        "profile": regles,
         "customer": booking.customer,
         "staff_member": booking.staff_member,
         # Couleur de marque du salon, pour les e-mails qui lui sont adresses.
         # Le HTML d'un e-mail ne lit aucune variable CSS : la valeur doit
         # etre resolue ici et interpolee en dur.
         "brand": _brand_colour(profile),
-        "details": _detail_rows(booking, profile),
+        "details": _detail_rows(booking, profile, t),
         "deposit_label": _money(booking.deposit_amount, booking.tenant.currency),
-        "late_title": _late_title(profile),
+        "late_title": _late_title(profile, t),
         "site_url": site,
         "booking_url": f"{site}/reserver",
         # L'espace professionnel, pas le mini-site : ces liens ne partent
@@ -175,9 +216,25 @@ def _booking_context(booking: Booking) -> dict:
         "local_start": local_start,
         # Duree reelle du rendez-vous, options comprises : la duree de la
         # prestation seule serait fausse des qu'une option rallonge la pose.
-        "duration_label": _duration_label(booking),
+        "duration_label": _duration_label(booking, t),
         "date_label": local_start.strftime("%d/%m/%Y"),
         "time_label": local_start.strftime("%H:%M"),
+        # Le pre-en-tete par defaut : ce que la boite de reception montre a
+        # cote de l'objet. Chaque tache peut le remplacer.
+        # Le pied porte le nom du salon : comme la salutation, il ne peut pas
+        # se resoudre dans le gabarit.
+        "pied": t.dire("pied_cliente", salon=booking.tenant.name),
+        # La salutation porte le prenom : le gabarit ne sait pas appeler
+        # une phrase avec des variables.
+        "salutation": t.dire(
+            "bonjour", prenom=booking.customer.full_name
+        ),
+        "pre": t.dire(
+            "pre_confirmation",
+            service=booking.service_name,
+            date=local_start.strftime("%d/%m/%Y"),
+            heure=local_start.strftime("%H:%M"),
+        ),
     }
 
 
@@ -218,80 +275,100 @@ def _money(amount, currency: str) -> str:
     return f"{quantised} {currency}"
 
 
-def _deposit_hint(booking) -> str:
+def _deposit_hint(booking, t: Textes) -> str:
     """La phrase sous le montant de l'acompte, ou rien."""
     if not booking.deposit_amount:
         return ""
     if booking.deposit_paid:
-        return "Déjà réglé"
+        return t["acompte_deja_regle"]
 
     from apps.payments.services import PAYMENT_WINDOW
 
     minutes = int(PAYMENT_WINDOW.total_seconds() // 60)
-    return f"À régler dans les {minutes} minutes"
+    return t.dire("acompte_a_regler_dans", minutes=minutes)
 
 
-def _late_title(profile) -> str:
+def _late_title(profile, t: Textes) -> str:
     minutes = getattr(profile, "late_tolerance_minutes", 0) or 0
     if minutes <= 0:
-        return "Merci d'arriver à l'heure"
-    return f"Retard toléré : {minutes} minutes"
+        return t["retard_a_l_heure"]
+    return t.dire("retard_tolere", minutes=minutes)
 
 
-def _detail_rows(booking, profile) -> list[dict]:
-    """Le tableau libellé / valeur, commun à tous les messages.
+def _detail_rows(booking, profile, t: Textes) -> list[list[dict]]:
+    """Les faits du rendez-vous, groupes deux par deux.
 
-    Construit ici plutot que dans chaque gabarit : douze gabarits qui
+    Compose ici plutot que dans chaque gabarit : douze gabarits qui
     recomposent la meme liste divergent au premier champ ajoute, et c'est
     exactement ce qui produit un e-mail ou le prix manque.
+
+    Rend des **rangees** et non des faits : le gabarit se contente de les
+    poser, sans avoir a ouvrir un `<tr>` au milieu d'une boucle selon la
+    parite et selon la largeur du fait. Voir `_grouper`.
     """
     currency = booking.tenant.currency
     local = booking.starts_at.astimezone(_tenant_timezone(booking.tenant))
 
-    rows = [
-        {"label": "Prestation", "value": booking.service_name or "Prestation"},
-        {"label": "Date", "value": f"{local:%d/%m/%Y} à {local:%H:%M}"},
+    faits = [
+        # `wide` : un nom de prestation ne tient pas dans une demi-largeur de
+        # telephone, et se briserait au milieu d'un mot.
+        {
+            "label": t["prestation"],
+            "value": booking.service_name or t["prestation"],
+            "wide": True,
+        },
+        {
+            "label": t["date"],
+            "value": t.dire(
+                "le_a", date=f"{local:%d/%m/%Y}", heure=f"{local:%H:%M}"
+            ),
+        },
+        {"label": t["duree"], "value": _duration_label(booking, t)},
     ]
 
     if booking.staff_member:
-        rows.append({"label": "Avec", "value": booking.staff_member.name})
-
-    rows.append({"label": "Durée", "value": _duration_label(booking)})
+        faits.append({"label": t["avec"], "value": booking.staff_member.name})
 
     for item in booking.options_snapshot or []:
-        rows.append({"label": item.get("name", "Option"), "value": "inclus"})
+        faits.append({"label": item.get("name", t["option"]), "value": t["inclus"]})
 
     for item in booking.items_snapshot or []:
-        rows.append(
+        nom = item.get("name", t["article"])
+        quantite = item.get("quantity", 1)
+        faits.append(
             {
-                "label": f"{item.get('name', 'Article')} × {item.get('quantity', 1)}",
+                "label": f"{nom} × {quantite}",
                 "value": _money(Decimal(item.get("total", "0")), currency),
             }
         )
 
     if booking.travel_zone_name:
-        rows.append({"label": "À domicile", "value": booking.travel_zone_name})
+        faits.append({"label": t["a_domicile"], "value": booking.travel_zone_name})
+        if booking.address:
+            faits.append(
+                {"label": t["adresse"], "value": booking.address, "wide": True}
+            )
 
-    rows.append(
+    faits.append(
         {
-            "label": "Total",
+            "label": t["total"],
             "value": _money(booking.total_amount, currency),
             "strong": True,
         }
     )
-    return rows
+    return grouper(faits)
 
 
-def _duration_label(booking) -> str:
+def _duration_label(booking, t: Textes) -> str:
     """« 3 h 30 » plutot que « 210 minutes » : c'est ainsi qu'on lit un
     rendez-vous."""
     minutes = int((booking.ends_at - booking.starts_at).total_seconds() // 60)
     hours, rest = divmod(minutes, 60)
     if hours and rest:
-        return f"{hours} h {rest:02d}"
+        return t.dire("duree_heures_minutes", heures=hours, minutes=f"{rest:02d}")
     if hours:
-        return f"{hours} h"
-    return f"{rest} min"
+        return t.dire("duree_heures", heures=hours)
+    return t.dire("duree_minutes", minutes=rest)
 
 
 def _tenant_timezone(tenant):
@@ -337,10 +414,10 @@ def _invite_to_review(booking) -> bool:
         return False
 
     context = _booking_context(booking)
-    context["intro"] = (
-        f"Bonjour {booking.customer.full_name}, vous êtes passée "
-        f"chez {booking.tenant.name} — en un mot, c'était comment ?"
-    )
+    t = context["t"]
+    context["intro"] = t.dire("avis_comment", salon=booking.tenant.name)
+    context["pre"] = t.dire("pre_avis", service=booking.service_name)
+    context["pied"] = t.dire("avis_pied", salon=booking.tenant.name)
     context["review_url"] = review_url(booking, _salon_base_url(booking.tenant))
     # Les critères sont nommés dans l'e-mail : savoir sur quoi on va être
     # interrogée avant de cliquer fait la différence entre « encore un
@@ -348,10 +425,11 @@ def _invite_to_review(booking) -> bool:
     context["review_criteria"] = [str(label) for _, label in ReviewCriteria]
 
     delivered = _send(
-        subject=f"Votre avis sur {booking.tenant.name} ?",
+        subject=context["t"].dire("avis_objet", salon=booking.tenant.name),
         template="review_request",
         context=context,
         to=[booking.customer.email],
+        salon=booking.tenant,
     )
 
     booking.review_invited_at = timezone.now()
@@ -509,18 +587,25 @@ def send_booking_accepted(self, booking_id: str, tenant_id: str):
             if booking is None:
                 return
 
+            accepte = _booking_context(booking)
             _send(
-                subject=f"Votre rendez-vous chez {booking.tenant.name} est confirmé",
+                subject=accepte["t"].dire(
+                    "accepte_objet", salon=booking.tenant.name
+                ),
                 template="booking_accepted",
                 context={
-                    **_booking_context(booking),
-                    "intro": (
-                        f"Bonjour {booking.customer.full_name}, "
-                        f"{booking.tenant.name} a bien reçu votre acompte : "
-                        "votre rendez-vous est confirmé."
+                    **accepte,
+                    "intro": accepte["t"].dire(
+                        "accepte_intro", salon=booking.tenant.name
+                    ),
+                    "pre": accepte["t"].dire(
+                        "pre_accepte",
+                        date=accepte["date_label"],
+                        heure=accepte["time_label"],
                     ),
                 },
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec de confirmation pour %s.", booking_id)
@@ -554,10 +639,13 @@ def send_deposit_rejected(self, booking_id: str, tenant_id: str):
             context["payment_url"] = _payment_url(booking)
 
             _send(
-                subject=f"Votre acompte chez {booking.tenant.name}",
+                subject=context["t"].dire(
+                    "acompte_refuse_objet", salon=booking.tenant.name
+                ),
                 template="deposit_rejected",
                 context=context,
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec d'avis de refus pour %s.", booking_id)
@@ -608,29 +696,35 @@ def send_booking_cancelled(self, booking_id: str, tenant_id: str, by_salon: bool
 
             context = _booking_context(booking)
             context["by_salon"] = by_salon
+            t = context["t"]
             context["headline"] = (
-                "Votre rendez-vous a été annulé"
-                if by_salon
-                else "Annulation confirmée"
+                t["annule_par_salon"] if by_salon else t["annule_par_cliente"]
             )
             context["intro"] = (
-                f"Bonjour {booking.customer.full_name}, "
-                + (
-                    f"{booking.tenant.name} a dû annuler votre rendez-vous."
-                    if by_salon
-                    else "votre rendez-vous est bien annulé."
-                )
+                t.dire("annule_intro_salon", salon=booking.tenant.name)
+                if by_salon
+                else t["annule_intro_cliente"]
             )
-            context["deposit_title"] = (
-                f"Un acompte de {_money(booking.deposit_received, booking.tenant.currency)} "
-                "avait été versé."
+            context["deposit_title"] = t.dire(
+                "annule_acompte",
+                montant=_money(
+                    booking.deposit_received, booking.tenant.currency
+                ),
+            )
+            context["pre"] = t.dire(
+                "pre_annule",
+                service=booking.service_name,
+                date=context["date_label"],
             )
 
             _send(
-                subject=f"Rendez-vous annulé — {booking.tenant.name}",
+                subject=context["t"].dire(
+                    "annule_objet", salon=booking.tenant.name
+                ),
                 template="booking_cancelled",
                 context=context,
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
 
             # Le salon aussi : une annulation libère un créneau qu'il peut
@@ -676,33 +770,45 @@ def send_booking_rescheduled(
                 return
 
             context = _booking_context(booking)
-            context["headline"] = "Votre rendez-vous a été déplacé"
-            context["intro"] = (
-                f"Bonjour {booking.customer.full_name}, "
-                f"{booking.tenant.name} a déplacé votre rendez-vous. "
-                "La nouvelle date est ci-dessous."
+            t = context["t"]
+            context["headline"] = t["deplace_titre"]
+            context["intro"] = t.dire(
+                "deplace_intro", salon=booking.tenant.name
+            )
+            context["pre"] = t.dire(
+                "pre_deplace",
+                date=context["date_label"],
+                heure=context["time_label"],
             )
 
             ancien = _ancienne_date(booking, ancienne_date)
             context["ancienne_date"] = ancien["date"]
             context["ancienne_heure"] = ancien["heure"]
             context["ancien_titre"] = (
-                f"Ancienne date : {ancien['date']} à {ancien['heure']}"
+                t.dire(
+                    "deplace_ancien_titre",
+                    date=ancien["date"],
+                    heure=ancien["heure"],
+                )
                 if ancien["date"]
-                else "Ancienne date annulée"
+                else t["deplace_ancien_annule"]
             )
-            context["inchange"] = (
-                "Rien d'autre ne change : ni le tarif, ni la prestation"
-                + (", ni l'acompte déjà versé" if booking.deposit_paid else "")
-                + ". Si cette nouvelle date ne vous convient pas, écrivez au salon."
+            context["inchange"] = t.dire(
+                "deplace_inchange",
+                acompte=(
+                    t["deplace_inchange_acompte"] if booking.deposit_paid else ""
+                ),
             )
             context["status_url"] = _status_url(booking)
 
             _send(
-                subject=f"Rendez-vous déplacé — {booking.tenant.name}",
+                subject=context["t"].dire(
+                    "deplace_objet", salon=booking.tenant.name
+                ),
                 template="booking_rescheduled",
                 context=context,
                 to=[booking.customer.email],
+                salon=booking.tenant,
             )
     except Exception as exc:  # noqa: BLE001
         raise self.retry(exc=exc) from exc
@@ -732,3 +838,91 @@ def _status_url(booking) -> str:
     from apps.payments.tokens import status_token
 
     return f"{_salon_base_url(booking.tenant)}/rendez-vous?token={status_token(booking)}"
+
+
+# ---------------------------------------------------------------------------
+# Notifications push
+# ---------------------------------------------------------------------------
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=120)
+def pousser_notification(
+    self,
+    comptes: list[str],
+    portee: str,
+    charge: dict,
+    abonnements: list[str] | None = None,
+):
+    """Depose une notification sur les appareils d'un ou plusieurs comptes.
+
+    -----------------------------------------------------------------------
+    Pourquoi la reprise ne rejoue pas le lot entier
+    -----------------------------------------------------------------------
+
+    Une gerante a souvent trois appareils : un telephone, un ordinateur au
+    salon, un portable. Si le deuxieme echoue sur un 500 passager, rejouer la
+    tache telle quelle ferait sonner les deux autres une seconde fois — puis
+    une troisieme. On preferera toujours une notification manquee a trois
+    notifications identiques : la seconde apprend qu'il ne faut pas les lire.
+
+    La reprise ne repart donc qu'avec les abonnements reellement en echec,
+    passes explicitement par `abonnements`.
+
+    -----------------------------------------------------------------------
+    Ce que fait cette tache des abonnements morts
+    -----------------------------------------------------------------------
+
+    Elle les supprime. Un service de push qui repond 404 ou 410 dit que la
+    boite n'existe plus — desinstallation, donnees du site videes, telephone
+    change. La ligne ne redeviendra jamais valide, et la garder ferait
+    reessayer a chaque evenement, pour toujours.
+    """
+    from apps.notifications import push
+    from apps.notifications.models import PushSubscription
+
+    if not push.configure():
+        # Installation sans cles VAPID : la cloche fonctionne, le push non.
+        # Ce n'est pas une erreur, c'est une configuration.
+        return {"envoyes": 0, "motif": "push non configure"}
+
+    cibles = PushSubscription.objects.filter(user_id__in=comptes, portee=portee)
+    if abonnements is not None:
+        cibles = cibles.filter(pk__in=abonnements)
+
+    envoyes = 0
+    disparus: list[str] = []
+    a_reprendre: list[str] = []
+
+    for abonnement in cibles:
+        try:
+            vivant = push.envoyer(abonnement, charge)
+        except Exception:
+            # Passager : on compte, on garde, et on repassera.
+            a_reprendre.append(str(abonnement.pk))
+            PushSubscription.objects.filter(pk=abonnement.pk).update(
+                echecs=models.F("echecs") + 1
+            )
+            continue
+
+        if vivant:
+            envoyes += 1
+            PushSubscription.objects.filter(pk=abonnement.pk).update(
+                derniere_reussite=timezone.now(), echecs=0
+            )
+        else:
+            disparus.append(str(abonnement.pk))
+
+    if disparus:
+        PushSubscription.objects.filter(pk__in=disparus).delete()
+
+    if a_reprendre and self.request.retries < self.max_retries:
+        raise self.retry(
+            kwargs={
+                "comptes": comptes,
+                "portee": portee,
+                "charge": charge,
+                "abonnements": a_reprendre,
+            }
+        )
+
+    return {"envoyes": envoyes, "supprimes": len(disparus), "repris": len(a_reprendre)}

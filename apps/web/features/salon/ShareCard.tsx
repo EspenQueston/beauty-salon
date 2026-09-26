@@ -44,6 +44,7 @@
  * pas scanner son propre écran. Chacun couvre l'angle mort de l'autre.
  */
 
+import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -80,6 +81,7 @@ export function ShareCard({
   /** Le QR qui ajoute le salon en contact. */
   wechatQr?: MediaAsset | null;
 }) {
+  const t = useTranslations("salon");
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [wechatOuvert, setWechatOuvert] = useState(false);
@@ -90,7 +92,7 @@ export function ShareCard({
   );
 
   const url = `https://${host}`;
-  const message = `Prenez rendez-vous chez ${salonName} : ${url}`;
+  const message = t("partage.message", { salon: salonName, url });
 
   /*
     Le bouton WeChat n'existe que s'il y a de quoi le remplir.
@@ -150,8 +152,7 @@ export function ShareCard({
             Partager {salonName}
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-[var(--site-muted)]">
-            Scannez le code avec WeChat ou l&apos;appareil photo, ou envoyez le
-            lien.
+            {t("partage.scannez")}
           </p>
 
           <p className="mt-3 break-all rounded-lg bg-[var(--salon-primary)]/[0.06] px-3 py-2 text-sm text-[var(--site-muted)]">
@@ -186,7 +187,7 @@ export function ShareCard({
                 name={copied ? "check" : "sparkle"}
                 className="size-4 text-[var(--salon-ink)]"
               />
-              {copied ? "Lien copié" : "Copier le lien"}
+              {copied ? t("partage.copie") : t("partage.copier")}
             </button>
 
             {/*
@@ -277,6 +278,7 @@ function PanneauWechat({
   copie: boolean;
   onCopier: () => void;
 }) {
+  const t = useTranslations("salon");
   return (
     <div
       id={id}
@@ -292,7 +294,7 @@ function PanneauWechat({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={qr.url}
-            alt={`QR code WeChat de ${salonName}`}
+            alt={t("partage.qrWechat", { salon: salonName })}
             /*
               Chargée tout de suite, pas en différé.
 
@@ -311,13 +313,11 @@ function PanneauWechat({
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-[var(--site-ink)]">
           {qr
-            ? "Scannez le code dans WeChat"
-            : `Cherchez ${salonName} dans WeChat`}
+            ? t("partage.wechatTitre")
+            : t("partage.chercher", { salon: salonName })}
         </p>
         <p className="mt-1 text-[0.8rem] leading-relaxed text-[var(--site-muted)]">
-          {qr
-            ? "Découvrir › Scanner. Depuis votre téléphone, recopiez plutôt l’identifiant."
-            : "Ouvrez la recherche et collez l’identifiant ci-dessous."}
+          {qr ? t("partage.wechatBureau") : t("partage.wechatTelephone")}
         </p>
 
         {identifiant && (
@@ -339,7 +339,6 @@ function PanneauWechat({
             </span>
           </button>
         )}
-
       </div>
     </div>
   );

@@ -46,6 +46,8 @@ import { CountUp } from "./CountUp";
 import { SalonIcon } from "./icons";
 import { SalonLogo } from "./SalonLogo";
 import { horairesDuJour } from "./ouverture";
+import { useTranslations } from "next-intl";
+
 import { StatutOuverture } from "./Statut";
 import { GhostLink, PrimaryLink } from "./ui";
 
@@ -57,6 +59,7 @@ export function Hero({
   /** L'instant du rendu, partagé avec la pastille d'ouverture. */
   instantServeur: number;
 }) {
+  const t = useTranslations("salon");
   const whatsapp = whatsappHref(salon.whatsapp_number);
   const serviceCount = salon.categories.reduce(
     (total, category) => total + category.services.length,
@@ -119,12 +122,14 @@ export function Hero({
             <Mots text={salon.name} />
           </h1>
 
-          {salon.description && (
+          {/* L'accroche choisie par un salon Pro passe devant la
+              description : c'est la phrase qu'il veut voir en premier. */}
+          {(salon.site_config?.accroche || salon.description) && (
             <p
               className="rise mt-4 max-w-xl text-pretty text-[0.95rem] leading-relaxed text-white/90 sm:mt-5 sm:text-lg"
               style={{ animationDelay: "160ms" }}
             >
-              {salon.description}
+              {salon.site_config?.accroche || salon.description}
             </p>
           )}
 
@@ -132,8 +137,12 @@ export function Hero({
             className="rise mt-7 flex flex-wrap items-center gap-2.5 sm:gap-3"
             style={{ animationDelay: "240ms" }}
           >
-            <PrimaryLink href="/reserver" icon="calendar" className="px-6 py-3.5 sm:px-7">
-              Réserver un rendez-vous
+            <PrimaryLink
+              href="/reserver"
+              icon="calendar"
+              className="px-6 py-3.5 sm:px-7"
+            >
+              {salon.site_config?.bouton_reserver || t("reserverRdv")}
             </PrimaryLink>
 
             {whatsapp && (
@@ -178,7 +187,7 @@ export function Hero({
         className="absolute inset-x-0 bottom-6 z-10 hidden justify-center sm:flex"
       >
         <span className="group flex flex-col items-center gap-1 rounded-lg px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-[var(--site-muted)] transition hover:text-white">
-          Voir les prestations
+          {t("hero.voirPrestations")}
           <SalonIcon
             name="arrow"
             className="size-3.5 rotate-90 animate-bounce transition-transform group-hover:translate-y-0.5"
@@ -219,6 +228,7 @@ function Faits({
   serviceCount: number;
   instantServeur: number;
 }) {
+  const t = useTranslations("salon");
   const plages = horairesDuJour(salon, new Date(instantServeur));
   const note = salon.rating;
 
@@ -236,7 +246,7 @@ function Faits({
       style={{ animationDelay: "320ms" }}
     >
       {note.average != null && note.count > 0 && (
-        <Tuile libelle={`${note.count} avis vérifié${note.count > 1 ? "s" : ""}`}>
+        <Tuile libelle={t("hero.avis", { n: note.count })}>
           {/*
             Une étoile, pas cinq.
 
@@ -245,7 +255,10 @@ function Faits({
             chiffre sur cinq dit la même chose et se lit de loin.
           */}
           <span className="flex items-baseline gap-1.5">
-            <SalonIcon name="star" className="size-4 shrink-0 self-center opacity-80" />
+            <SalonIcon
+              name="star"
+              className="size-4 shrink-0 self-center opacity-80"
+            />
             <span className="tabular text-2xl font-semibold leading-none">
               {note.average.toFixed(1)}
             </span>
@@ -255,7 +268,7 @@ function Faits({
       )}
 
       {serviceCount > 0 && (
-        <Tuile libelle={serviceCount > 1 ? "prestations" : "prestation"}>
+        <Tuile libelle={t("hero.prestations", { n: serviceCount })}>
           <span className="flex items-center gap-2 text-2xl font-semibold leading-none">
             <SalonIcon name="scissors" className="size-4 opacity-70" />
             <CountUp value={serviceCount} />
@@ -265,9 +278,7 @@ function Faits({
 
       {salon.staff_members.length > 0 && (
         <Tuile
-          libelle={
-            salon.staff_members.length > 1 ? "prestataires" : "prestataire"
-          }
+          libelle={t("hero.prestataires", { n: salon.staff_members.length })}
         >
           <span className="flex items-center gap-2 text-2xl font-semibold leading-none">
             <SalonIcon name="star" className="size-4 opacity-70" />
@@ -277,9 +288,9 @@ function Faits({
       )}
 
       {salon.business_hours.length > 0 && (
-        <Tuile libelle="aujourd'hui">
+        <Tuile libelle={t("hero.aujourdhui")}>
           {plages.length === 0 ? (
-            <span className="text-base font-semibold">Fermé</span>
+            <span className="text-base font-semibold">{t("statut.ferme")}</span>
           ) : (
             <span className="tabular flex flex-col gap-0.5 text-sm font-semibold leading-tight">
               {plages.map((plage, index) => (
