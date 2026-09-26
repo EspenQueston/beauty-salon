@@ -103,7 +103,10 @@ export function SalonNav({ name, slug, logo, show }: Props) {
    * dessous. Une position identique d'une page à l'autre évite aussi le
    * saut de mise en page à la navigation.
    */
-  const overlay = pathname === "/" && !scrolled;
+  // `chemin` et non `pathname` : l'accueil anglais est `/en`, et le menu y
+  // restait opaque — une bande sombre la ou le francais posait le menu sur
+  // la photo.
+  const overlay = chemin === "/" && !scrolled;
   const strong = overlay ? "text-white" : "text-[var(--site-ink)]";
 
   return (

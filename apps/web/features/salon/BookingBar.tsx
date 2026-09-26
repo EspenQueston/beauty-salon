@@ -13,6 +13,7 @@ import { useTranslations } from "next-intl";
 
 import { Lien } from "@/features/ui/Lien";
 import { usePathname } from "next/navigation";
+import { decouper } from "@/i18n/langues";
 import { useEffect, useState } from "react";
 
 import { whatsappHref } from "./contact";
@@ -32,7 +33,9 @@ export function BookingBar({ salon }: { salon: PublicSalon }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (pathname.startsWith("/reserver")) return null;
+  // Sans le prefixe de langue : `/en/reserver` est aussi la page de
+  // reservation.
+  if (decouper(pathname).reste.startsWith("/reserver")) return null;
 
   const whatsapp = whatsappHref(salon.whatsapp_number);
 

@@ -90,3 +90,16 @@ def test_un_email_de_contact_invalide_est_refuse(api_client, salon_a):
     )
 
     assert reponse.status_code == 400
+
+
+@pytest.mark.django_db
+def test_un_nouveau_salon_publie_l_adresse_de_son_inscription(api_client):
+    from apps.accounts.services import signup_salon
+    from apps.salons.models import SalonProfile
+
+    tenant, _ = signup_salon(
+        name="Chez Awa", slug="chezawa", email="Awa@Example.com", password="motdepasse-solide-9"
+    )
+
+    with as_tenant(tenant):
+        assert SalonProfile.objects.get().contact_email == "awa@example.com"

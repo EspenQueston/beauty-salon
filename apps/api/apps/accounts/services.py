@@ -115,7 +115,12 @@ def signup_salon(
     with tenant_context(tenant.id):
         # Les couleurs choisies avant l'inscription sont reprises : sans
         # cela, la page d'accueil promettrait un report qui n'a pas lieu.
-        SalonProfile.objects.create(tenant=tenant, theme_config=theme_config or {})
+        # L'e-mail de contact publie part de l'adresse d'inscription : le
+        # mini-site affiche une adresse des le premier jour. Le salon la
+        # change ou l'efface depuis son profil.
+        SalonProfile.objects.create(
+            tenant=tenant, theme_config=theme_config or {}, contact_email=user.email
+        )
         _seed_business_hours(tenant)
         _seed_owner_as_staff(tenant, user, membership)
 

@@ -482,11 +482,13 @@ function PracticalSummary({
                       : {})}
                     className="flex items-center justify-between gap-3 rounded-lg py-1 text-[var(--site-muted)] transition hover:text-[var(--salon-ink)]"
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex shrink-0 items-center gap-2">
                       <SalonIcon name={contact.icon} className="size-4" />
                       {contact.label}
                     </span>
-                    <span className="tabular text-sm">{contact.value}</span>
+                    <span className="tabular min-w-0 truncate text-sm" title={contact.value}>
+                          {contact.value}
+                        </span>
                   </a>
                 </li>
               ))}
