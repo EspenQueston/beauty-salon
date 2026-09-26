@@ -98,6 +98,20 @@ export class ApiRequestError extends Error {
  *
  * Elle entre dans la cle de cache de Next : deux langues, deux entrees.
  */
+/**
+ * Un domaine personnalisé en pause (le salon n'a plus l'offre Pro) : l'API
+ * répond 404 en donnant l'adresse du salon sur la plateforme, où la page
+ * redirige plutôt que d'afficher « introuvable ».
+ */
+export class SalonDeplace extends Error {
+  constructor(readonly canonique: string) {
+    super("Salon servi à une autre adresse.");
+  }
+}
+
+// Un nom d'hôte, rien d'autre : jamais une adresse complète venue d'ailleurs.
+const HOTE_VALIDE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+
 export async function fetchSalon(
   host: string,
   langue: Langue = LANGUE_PAR_DEFAUT,
@@ -115,7 +129,13 @@ export async function fetchSalon(
     },
   );
 
-  if (response.status === 404) return null;
+  if (response.status === 404) {
+    const corps = (await response.json().catch(() => null)) as { canonique?: unknown } | null;
+    if (typeof corps?.canonique === "string" && HOTE_VALIDE.test(corps.canonique)) {
+      throw new SalonDeplace(corps.canonique);
+    }
+    return null;
+  }
   if (!response.ok) {
     throw new ApiRequestError(response.status, "fetch_failed", "Salon indisponible.");
   }

@@ -76,7 +76,18 @@ PAYMENT_TERMS_DAYS = 15
 # d'administration qui emet une facture sur un abonnement a prix negocie.
 PERIOD_DAYS = 30
 
-OFFRES_PAYANTES = (Plan.Code.MONTHLY, Plan.Code.YEARLY)
+OFFRES_PAYANTES = (
+    Plan.Code.MONTHLY,
+    Plan.Code.YEARLY,
+    Plan.Code.PRO_MONTHLY,
+    Plan.Code.PRO_YEARLY,
+)
+# Par groupe, l'offre au mois et l'offre a l'annee : c'est entre elles que se
+# calcule l'economie de l'annee.
+PAIRES_DE_GROUPE = {
+    Plan.Groupe.STANDARD: (Plan.Code.MONTHLY, Plan.Code.YEARLY),
+    Plan.Groupe.PRO: (Plan.Code.PRO_MONTHLY, Plan.Code.PRO_YEARLY),
+}
 DEVISES = {code for code, _ in DEVISES_ABONNEMENT}
 
 # Ce qu'un moyen de la plateforme devient sur la facture et en comptabilite.
@@ -151,10 +162,16 @@ def acces_de(abonnement: Subscription | None, now: datetime | None = None) -> Ac
     if abonnement.status == Subscription.Status.CANCELLED:
         return Acces(ouvert=False, raison="resilie", fin_periode=abonnement.current_period_end)
 
-    fin = abonnement.current_period_end
+    # La fin de tout ce qui est paye : une descente programmee prolonge
+    # l'acces au-dela de la periode Pro en cours.
+    fin = abonnement.fin_effective
     limite = fin + GRACE
     if now < fin:
-        raison = "essai" if abonnement.status == Subscription.Status.TRIALING else "periode"
+        essai = (
+            abonnement.status == Subscription.Status.TRIALING
+            and now < abonnement.current_period_end
+        )
+        raison = "essai" if essai else "periode"
         return Acces(ouvert=True, raison=raison, fin_periode=fin, jusqu_au=limite)
     if now < limite:
         return Acces(ouvert=True, raison="grace", fin_periode=fin, jusqu_au=limite)
@@ -273,6 +290,16 @@ def economie_annuelle(mensuel: Decimal | None, annuel: Decimal | None) -> dict |
     return {"montant": gain, "pourcentage": int(pourcentage), "douze_mois": douze}
 
 
+def economies_par_groupe(montants: dict) -> dict:
+    """L'economie de l'annee, groupe par groupe : `{"standard": {...}, "pro": {...}}`."""
+    resultat = {}
+    for groupe, (mensuel, annuel) in PAIRES_DE_GROUPE.items():
+        economie = economie_annuelle(montants.get(mensuel), montants.get(annuel))
+        if economie:
+            resultat[groupe] = economie
+    return resultat
+
+
 def montee_en_gamme(abonnement: Subscription | None) -> dict | None:
     """Ce que gagnerait un salon au mensuel a passer a l'annuel, ou None.
 
@@ -281,20 +308,23 @@ def montee_en_gamme(abonnement: Subscription | None) -> dict | None:
     passage n'a rien d'un avoir au prorata — l'annee payee commence a la
     suite de la periode en cours, comme tout paiement anticipe.
     """
-    if abonnement is None or abonnement.plan.code != Plan.Code.MONTHLY:
+    if abonnement is None:
+        return None
+    paire = PAIRES_DE_GROUPE.get(abonnement.plan.group)
+    if paire is None or abonnement.plan.code != paire[0]:
         return None
     offres = {offre.code: offre for offre in offres_payantes()}
-    if Plan.Code.MONTHLY not in offres or Plan.Code.YEARLY not in offres:
+    if paire[0] not in offres or paire[1] not in offres:
         return None
-    mensuel = tarif(offres[Plan.Code.MONTHLY], abonnement.currency)
-    annuel = tarif(offres[Plan.Code.YEARLY], abonnement.currency)
+    mensuel = tarif(offres[paire[0]], abonnement.currency)
+    annuel = tarif(offres[paire[1]], abonnement.currency)
     economie = economie_annuelle(
         mensuel.amount if mensuel else None, annuel.amount if annuel else None
     )
     if not economie:
         return None
     return {
-        "vers": Plan.Code.YEARLY,
+        "vers": paire[1],
         "devise": abonnement.currency,
         "montant_annuel": str(annuel.amount),
         "economie": {
@@ -341,14 +371,14 @@ def catalogue_de_paiement() -> list[dict]:
             if not disponibles or not plans:
                 continue
             montants = {p["plan"].code: p["montant"] for p in plans}
+            economies = economies_par_groupe(montants)
             devises.append(
                 {
                     "code": code_devise,
                     "nom": str(nom_devise),
                     "plans": plans,
-                    "economie": economie_annuelle(
-                        montants.get(Plan.Code.MONTHLY), montants.get(Plan.Code.YEARLY)
-                    ),
+                    "economie": economies.get(Plan.Groupe.STANDARD),
+                    "economies": economies,
                     "moyens": disponibles,
                 }
             )
@@ -418,8 +448,7 @@ def soumettre_paiement(
     # paiement, et finirait dans l'administration et dans les e-mails.
     if not reference.isprintable():
         raise PaiementRefuse(
-            "La référence contient des caractères non valides. Recopiez-la depuis "
-            "votre reçu.",
+            "La référence contient des caractères non valides. Recopiez-la depuis votre reçu.",
             "reference_invalide",
         )
     if len(normalisee) < 4:
@@ -444,6 +473,13 @@ def soumettre_paiement(
                 raise PaiementRefuse(
                     "Ce salon n'a pas d'abonnement. Contactez le support.",
                     "abonnement_absent",
+                )
+            if abonnement.scheduled_plan_id and plan.group == Plan.Groupe.PRO:
+                raise PaiementRefuse(
+                    "Un retour à Standard est déjà programmé à la fin de votre période "
+                    "Pro. Contactez l'équipe Beauty Salon pour l'annuler avant de "
+                    "reprendre Pro.",
+                    "changement_programme",
                 )
             if SubscriptionPaymentRequest.objects.filter(
                 tenant_id=tenant_id, status=SubscriptionPaymentRequest.Status.PENDING
@@ -590,7 +626,10 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
         avant_statut = abonnement.status
         avant_fin = abonnement.current_period_end
 
-        debut, fin, ancre, mois = _periode_accordee(abonnement, demande.billing_months, maintenant)
+        effet = effet_du_paiement(
+            abonnement, demande.plan, demande.billing_months, demande.currency, maintenant
+        )
+        debut, fin, ancre, mois = effet.debut, effet.fin, effet.ancre, effet.mois
 
         facture = Invoice.objects.create(
             tenant_id=tenant_id,
@@ -606,16 +645,29 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
             due_at=maintenant,
         )
 
-        abonnement.plan = demande.plan
-        abonnement.price_amount = demande.amount
-        abonnement.currency = demande.currency
-        abonnement.period_anchor = ancre
-        abonnement.anchor_months = mois
-        # Une periode qui prolonge la precedente garde son debut ; une periode
-        # neuve en ouvre un.
-        if debut != avant_fin or avant_statut not in (Subscription.Status.ACTIVE,):
-            abonnement.current_period_start = debut
-        abonnement.current_period_end = fin
+        if effet.programme:
+            # Descente Pro -> Standard : la periode Pro va a son terme, la
+            # suite Standard est programmee derriere elle.
+            abonnement.scheduled_plan = demande.plan
+            abonnement.scheduled_months = mois
+            abonnement.scheduled_period_end = fin
+            abonnement.scheduled_price_amount = demande.amount
+            abonnement.scheduled_currency = demande.currency
+        else:
+            abonnement.plan = demande.plan
+            abonnement.price_amount = demande.amount
+            abonnement.currency = demande.currency
+            abonnement.period_anchor = ancre
+            abonnement.anchor_months = mois
+            # Une periode qui prolonge la precedente garde son debut ; une
+            # periode neuve (ou une montee, qui commence maintenant) en ouvre un.
+            if debut != avant_fin or avant_statut not in (Subscription.Status.ACTIVE,):
+                abonnement.current_period_start = debut
+            abonnement.current_period_end = fin
+            if effet.nature == "montee":
+                abonnement.scheduled_plan = None
+                abonnement.scheduled_months = 0
+                abonnement.scheduled_period_end = None
         # Une suspension est une decision distincte : un paiement ne la leve
         # pas. Tout le reste redevient actif.
         if abonnement.status != Subscription.Status.SUSPENDED:
@@ -646,6 +698,26 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
             demande=demande,
             note=demande.review_note,
         )
+        if effet.nature == "montee":
+            _evenement(
+                abonnement,
+                SubscriptionEvent.Kind.UPGRADED,
+                avant_statut=avant_statut,
+                avant_fin=avant_fin,
+                acteur=administrateur,
+                demande=demande,
+                note=f"{effet.jours_credites:.1f} jour(s) Standard convertis en Pro.",
+            )
+        elif effet.programme:
+            _evenement(
+                abonnement,
+                SubscriptionEvent.Kind.DOWNGRADE_SCHEDULED,
+                avant_statut=avant_statut,
+                avant_fin=avant_fin,
+                acteur=administrateur,
+                demande=demande,
+                note=f"Standard du {debut:%d/%m/%Y} au {fin:%d/%m/%Y}.",
+            )
         _journaliser(
             "SUBSCRIPTION_PAYMENT_APPROVED",
             tenant_id=tenant_id,
@@ -657,6 +729,113 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
     _prevenir_apres_validation("abonnement_decide", demande)
     _ecrire_apres_validation("paiement_valide", demande.tenant_id, demande.id)
     return demande
+
+
+@dataclass(frozen=True)
+class Effet:
+    """Ce qu'accorde un paiement approuve, calcule avant ou pendant l'approbation.
+
+    `nature` : « renouvellement » (meme groupe, a la suite), « montee »
+    (Standard -> Pro, tout de suite, jours convertis), « descente » (Pro ->
+    Standard, programmee a la fin de Pro) ou « reprise » (rien en cours).
+    """
+
+    nature: str
+    debut: datetime
+    fin: datetime
+    ancre: datetime
+    mois: int
+    programme: bool = False
+    jours_credites: float = 0.0
+
+
+def _mensuel(plan: Plan, devise: str, repli: Decimal | None = None) -> Decimal | None:
+    """Le prix d'un mois de cette offre : tarif de la devise, puis CNY, puis repli."""
+    for code_devise in (devise, "CNY"):
+        prix = tarif(plan, code_devise)
+        if prix and plan.billing_months:
+            return prix.amount / plan.billing_months
+    return repli
+
+
+def effet_du_paiement(
+    abonnement: Subscription, plan: Plan, mois_payes: int, devise: str, maintenant: datetime
+) -> Effet:
+    """La periode qu'accorde un paiement de `plan`, selon ce qui est en cours.
+
+    Regles decidees avec le produit :
+
+      - meme groupe : a la suite de la periode en cours (essai compris) ;
+      - Standard paye -> Pro : Pro commence maintenant ; les jours Standard
+        restants sont convertis en jours Pro au ratio des prix mensuels, et
+        ajoutes a la periode Pro. Ni remboursement, ni supplement ;
+      - Pro en cours -> Standard : Pro va a son terme, Standard est
+        programme a sa suite ;
+      - rien en cours : la periode commence maintenant.
+    """
+    fin_actuelle = abonnement.current_period_end
+    en_cours = (
+        abonnement.status != Subscription.Status.CANCELLED
+        and fin_actuelle is not None
+        and fin_actuelle > maintenant
+    )
+    ancien = abonnement.plan.group
+    nouveau = plan.group
+    essai = abonnement.status == Subscription.Status.TRIALING
+    fuseau = _fuseau(abonnement)
+
+    if en_cours and not essai and ancien == Plan.Groupe.STANDARD and nouveau == Plan.Groupe.PRO:
+        restant = fin_actuelle - maintenant
+        ancien_mensuel = _mensuel(
+            abonnement.plan,
+            devise,
+            repli=(abonnement.price_amount / abonnement.plan.billing_months)
+            if abonnement.plan.billing_months
+            else None,
+        )
+        nouveau_mensuel = _mensuel(plan, devise)
+        ratio = (
+            float(ancien_mensuel / nouveau_mensuel) if ancien_mensuel and nouveau_mensuel else 0.0
+        )
+        credit = restant * min(ratio, 1.0)
+        # L'ancre est decalee du credit : les echeances suivantes tombent
+        # toujours a « ancre + n mois », credit compris.
+        ancre = maintenant + credit
+        fin = ajouter_mois(ancre, mois_payes, fuseau)
+        return Effet(
+            "montee",
+            maintenant,
+            fin,
+            ancre,
+            mois_payes,
+            jours_credites=credit.total_seconds() / 86400,
+        )
+
+    if en_cours and not essai and ancien == Plan.Groupe.PRO and nouveau == Plan.Groupe.STANDARD:
+        if abonnement.scheduled_plan_id:
+            # Une descente deja programmee : ce paiement la prolonge.
+            mois = abonnement.scheduled_months + mois_payes
+        else:
+            mois = mois_payes
+        debut = fin_actuelle
+        fin = ajouter_mois(debut, mois, fuseau)
+        return Effet("descente", debut, fin, debut, mois, programme=True)
+
+    debut, fin, ancre, mois = _periode_accordee(abonnement, mois_payes, maintenant)
+    return Effet("renouvellement" if en_cours else "reprise", debut, fin, ancre, mois)
+
+
+def apercu_du_paiement(abonnement: Subscription | None, plan: Plan, devise: str) -> dict | None:
+    """Ce que le salon verra s'il paie cette offre : a montrer avant de payer."""
+    if abonnement is None:
+        return None
+    effet = effet_du_paiement(abonnement, plan, plan.billing_months, devise, timezone.now())
+    return {
+        "nature": effet.nature,
+        "debut": effet.debut,
+        "fin": effet.fin,
+        "jours_credites": round(effet.jours_credites, 1),
+    }
 
 
 def _periode_accordee(abonnement: Subscription, mois_payes: int, maintenant: datetime):
@@ -789,6 +968,11 @@ def prolonger_manuellement(tenant_id, *, administrateur, mois: int, note: str) -
         abonnement.current_period_end = fin
         abonnement.period_anchor = ancre
         abonnement.anchor_months = total
+        if abonnement.scheduled_plan_id:
+            # La suite programmee commence a la nouvelle fin.
+            abonnement.scheduled_period_end = ajouter_mois(
+                fin, abonnement.scheduled_months, _fuseau(abonnement)
+            )
         if abonnement.status != Subscription.Status.SUSPENDED:
             abonnement.status = Subscription.Status.ACTIVE
         abonnement.save()
@@ -808,6 +992,109 @@ def prolonger_manuellement(tenant_id, *, administrateur, mois: int, note: str) -
             extra={"geste": "prolongation", "mois": mois, "note": note, "fin": fin.isoformat()},
         )
         _ecrire_apres_validation("prolongation", tenant_id)
+        return abonnement
+
+
+def changer_d_offre(
+    tenant_id, *, administrateur, code: str, note: str, mois: int = 0
+) -> Subscription:
+    """Place un salon sur une offre, sans paiement : le geste de l'administration.
+
+    C'est la seule facon, cote administration, de faire passer un salon a
+    Pro (ou de le ramener a Standard). Le champ « offre » de la fiche salon
+    ne commandait rien : il a ete retire pour cette raison.
+
+      - l'offre change tout de suite, et avec elle les droits ;
+      - un essai en cours devient une periode de l'offre choisie, jusqu'a la
+        meme date : changer d'offre n'offre pas de temps ;
+      - `mois` (1 ou 12) ajoute en plus des mois offerts, comme
+        « Prolonger » ; 0 garde les dates ;
+      - une descente programmee est annulee : l'administration vient de
+        trancher ;
+      - le tarif retenu est le prix configure de l'offre dans la devise du
+        salon, s'il existe : c'est lui que rappellent les echeances.
+
+    Exceptionnel et trace : justification obligatoire, evenement
+    d'historique, journal d'audit. Aucune facture : rien n'a ete encaisse.
+    """
+    note = (note or "").strip()
+    if not note:
+        raise PaiementRefuse("Un changement d'offre doit être justifié.", "note_requise")
+    if code not in OFFRES_PAYANTES:
+        raise PaiementRefuse("Offre inconnue ou non vendue.", "offre_invalide")
+    if mois not in (0, 1, 12):
+        raise PaiementRefuse("On offre 0, 1 ou 12 mois.", "duree_invalide")
+
+    plan = Plan.objects.filter(code=code, active=True).first()
+    if plan is None:
+        raise PaiementRefuse("Cette offre est désactivée.", "offre_invalide")
+
+    with bypass_tenant_context(), tenant_context(tenant_id):
+        abonnement = (
+            Subscription.objects.select_for_update()
+            .select_related("tenant", "plan")
+            .get(tenant_id=tenant_id)
+        )
+        if abonnement.status == Subscription.Status.SUSPENDED:
+            raise PaiementRefuse(
+                "Ce salon est suspendu : réactivez-le avant de changer son offre.", "suspendu"
+            )
+        maintenant = timezone.now()
+        avant_statut = abonnement.status
+        avant_fin = abonnement.current_period_end
+        avant_offre = abonnement.plan.code
+
+        abonnement.plan = plan
+        prix = tarif(plan, abonnement.currency)
+        if prix is not None:
+            abonnement.price_amount = prix.amount
+        abonnement.scheduled_plan = None
+        abonnement.scheduled_months = 0
+        abonnement.scheduled_period_end = None
+        abonnement.scheduled_price_amount = Decimal("0")
+        abonnement.scheduled_currency = ""
+
+        if mois:
+            debut, fin, ancre, total = _periode_accordee(abonnement, mois, maintenant)
+            if debut != avant_fin:
+                abonnement.current_period_start = debut
+            abonnement.current_period_end = fin
+            abonnement.period_anchor = ancre
+            abonnement.anchor_months = total
+        elif abonnement.period_anchor is None:
+            # Un essai devient une periode qui finit au meme moment. L'ancre
+            # est cette fin : le prochain paiement s'y ajoute, mois par mois.
+            abonnement.period_anchor = abonnement.current_period_end
+            abonnement.anchor_months = 0
+        if abonnement.current_period_end > maintenant:
+            abonnement.status = Subscription.Status.ACTIVE
+        abonnement.save()
+
+        _evenement(
+            abonnement,
+            SubscriptionEvent.Kind.PLAN_CHANGED,
+            avant_statut=avant_statut,
+            avant_fin=avant_fin,
+            acteur=administrateur,
+            note=(
+                f"{avant_offre} → {code}"
+                + (f", {mois} mois offerts" if mois else "")
+                + f" — {note}"
+            ),
+        )
+        _journaliser(
+            "SUBSCRIPTION_MANUAL_CHANGE",
+            tenant_id=tenant_id,
+            acteur=administrateur,
+            extra={
+                "geste": "changement_offre",
+                "avant": avant_offre,
+                "apres": code,
+                "mois": mois,
+                "note": note,
+                "fin": abonnement.current_period_end.isoformat(),
+            },
+        )
         return abonnement
 
 
@@ -1073,7 +1360,7 @@ def run_billing_cycle(now=None) -> dict:
     d'essai : une periode payee ne s'ouvre que par un paiement approuve.
     """
     now = now or timezone.now()
-    crees = expires = 0
+    crees = expires = changes = 0
 
     for tenant in Tenant.objects.all().only("id"):
         with tenant_context(tenant.id):
@@ -1087,6 +1374,10 @@ def run_billing_cycle(now=None) -> dict:
                 except BillingError:
                     logger.warning("Essai impossible pour %s : aucune offre d'essai.", tenant.id)
                 continue
+
+            if abonnement.scheduled_plan_id and abonnement.current_period_end <= now:
+                appliquer_changement_programme(abonnement)
+                changes += 1
 
             echu = abonnement.current_period_end <= now
             if echu and abonnement.status in (
@@ -1114,8 +1405,45 @@ def run_billing_cycle(now=None) -> dict:
                 expires += 1
 
     logger.info(
-        "Cycle d'abonnement : %s essai(s) ouvert(s), %s période(s) échue(s).",
+        "Cycle d'abonnement : %s essai(s) ouvert(s), %s changement(s) d'offre, "
+        "%s période(s) échue(s).",
         crees,
+        changes,
         expires,
     )
-    return {"trials_started": crees, "expired": expires}
+    return {"trials_started": crees, "plan_changes": changes, "expired": expires}
+
+
+def appliquer_changement_programme(abonnement: Subscription) -> Subscription:
+    """Fait passer un abonnement a son offre programmee (Pro -> Standard).
+
+    Appele par la tache quotidienne une fois la periode Pro terminee. L'acces
+    n'en depend pas — il se calcule sur \`fin_effective\` —, seul l'etat affiche
+    en depend. Les reglages Pro restent en base : ils sont en pause.
+    """
+    avant_statut = abonnement.status
+    avant_fin = abonnement.current_period_end
+    debut = abonnement.current_period_end
+    abonnement.plan = abonnement.scheduled_plan
+    abonnement.price_amount = abonnement.scheduled_price_amount
+    abonnement.currency = abonnement.scheduled_currency or abonnement.currency
+    abonnement.current_period_start = debut
+    abonnement.current_period_end = abonnement.scheduled_period_end
+    abonnement.period_anchor = debut
+    abonnement.anchor_months = abonnement.scheduled_months
+    abonnement.scheduled_plan = None
+    abonnement.scheduled_months = 0
+    abonnement.scheduled_period_end = None
+    abonnement.scheduled_price_amount = Decimal("0")
+    abonnement.scheduled_currency = ""
+    if abonnement.status not in (Subscription.Status.SUSPENDED, Subscription.Status.CANCELLED):
+        abonnement.status = Subscription.Status.ACTIVE
+    abonnement.save()
+    _evenement(
+        abonnement,
+        SubscriptionEvent.Kind.PLAN_CHANGED,
+        avant_statut=avant_statut,
+        avant_fin=avant_fin,
+        note=f"Passage à {abonnement.plan.name}.",
+    )
+    return abonnement

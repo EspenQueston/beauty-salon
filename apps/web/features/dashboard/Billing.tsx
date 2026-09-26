@@ -58,11 +58,16 @@ import {
 import { useToast } from "@/features/ui/Toast";
 import {
   ABONNEMENT_CHANGE,
+  FONCTIONS_PRO,
+  GROUPES,
   dateLongue,
   joursAvant,
   montant,
   signalerAbonnement,
   type Acces,
+  type FonctionPro,
+  type Fonctions,
+  type Groupe,
   type MonteeEnGamme,
 } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
@@ -74,7 +79,24 @@ import { rows, useResource, type Page } from "./useResource";
 // ---------------------------------------------------------------------------
 
 type Tone = "neutral" | "success" | "warning" | "danger" | "info" | "salon";
-type CodeOffre = "monthly" | "yearly";
+type CodeOffre = "monthly" | "yearly" | "pro_monthly" | "pro_yearly";
+const CODES: readonly string[] = ["monthly", "yearly", "pro_monthly", "pro_yearly"];
+
+/** Ce que ferait un paiement, calculé par le serveur au moment de l'affichage. */
+interface Effet {
+  nature: "renouvellement" | "reprise" | "montee" | "descente";
+  debut: string;
+  fin: string;
+  jours_credites: number;
+}
+
+interface ChangementProgramme {
+  plan: { code: string; name: string; group: Groupe };
+  debut: string;
+  fin: string;
+  montant: string;
+  devise: string;
+}
 
 interface PaymentRequest {
   id: string;
@@ -112,6 +134,9 @@ interface Subscription {
   acces: Acces;
   demande_en_attente: PaymentRequest | null;
   montee_en_gamme: MonteeEnGamme | null;
+  groupe: Groupe | null;
+  fonctions: Fonctions;
+  changement_programme: ChangementProgramme | null;
 }
 
 interface Moyen {
@@ -127,17 +152,26 @@ interface Moyen {
 
 interface OffrePlan {
   code: CodeOffre;
+  groupe: Groupe;
   nom: string;
   description: string;
   mois: number;
   montant: string;
+  effet: Effet | null;
+}
+
+interface Economie {
+  montant: string;
+  pourcentage: number;
+  douze_mois: string;
 }
 
 interface Devise {
   code: string;
   nom: string;
   plans: OffrePlan[];
-  economie: { montant: string; pourcentage: number; douze_mois: string } | null;
+  economie: Economie | null;
+  economies?: Partial<Record<Groupe, Economie | null>>;
   moyens: Moyen[];
 }
 
@@ -149,6 +183,8 @@ interface Pays {
 
 interface Offres {
   pays: Pays[];
+  fonctions_pro: { code: FonctionPro; nom: string; description: string }[];
+  groupe_actuel: string;
   suggestion: { pays: string; devise: string };
 }
 
@@ -306,7 +342,13 @@ export function Billing() {
   }
 
   const planCourant = subscription?.plan.code;
-  const plan: CodeOffre = choixPlan ?? (planCourant === "yearly" ? "yearly" : "monthly");
+  const plan: CodeOffre =
+    choixPlan ?? (planCourant && CODES.includes(planCourant) ? (planCourant as CodeOffre) : "monthly");
+  const proEnVente = Boolean(
+    offres.data?.pays.some((pays) =>
+      pays.devises.some((devise) => devise.plans.some((item) => item.groupe === "pro")),
+    ),
+  );
 
   return (
     <section>
@@ -326,16 +368,33 @@ export function Billing() {
             onAgir={subscription.demande_en_attente ? undefined : allerAuxOffres}
           />
 
+          {subscription.changement_programme && (
+            <Programme changement={subscription.changement_programme} />
+          )}
+
           {subscription.demande_en_attente ? (
             <PaiementEnAttente demande={subscription.demande_en_attente} />
           ) : (
             <>
-              {subscription.montee_en_gamme && plan !== "yearly" && (
+              {proEnVente &&
+                subscription.plan.code !== "pro_monthly" &&
+                subscription.plan.code !== "pro_yearly" &&
+                !subscription.changement_programme &&
+                !plan.startsWith("pro_") && (
+                  <PasserAPro
+                    fonctions={offres.data?.fonctions_pro ?? []}
+                    onChoisir={() => {
+                      setChoixPlan(plan === "yearly" ? "pro_yearly" : "pro_monthly");
+                      allerAuxOffres();
+                    }}
+                  />
+                )}
+              {subscription.montee_en_gamme && plan !== subscription.montee_en_gamme.vers && (
                 <PasserALAnnuel
                   proposition={subscription.montee_en_gamme}
                   finPeriode={subscription.acces.fin_periode}
                   onChoisir={() => {
-                    setChoixPlan("yearly");
+                    setChoixPlan(subscription.montee_en_gamme?.vers ?? "yearly");
                     allerAuxOffres();
                   }}
                 />
@@ -345,6 +404,7 @@ export function Billing() {
                 erreur={offres.error}
                 acces={subscription.acces}
                 planCourant={planCourant}
+                programme={subscription.changement_programme}
                 plan={plan}
                 onPlan={setChoixPlan}
                 tenantId={tenantId}
@@ -394,7 +454,8 @@ function Etat({
   const total = new Date(abonnement.current_period_end).getTime() - debut;
   const restant =
     total > 0 ? Math.min(1, Math.max(0, (new Date(abonnement.current_period_end).getTime() - maintenant) / total)) : 0;
-  const payant = abonnement.plan.code === "monthly" || abonnement.plan.code === "yearly";
+  const payant = CODES.includes(abonnement.plan.code);
+  const annuel = abonnement.plan.billing_months === 12;
 
   const vues: Record<
     Acces["raison"],
@@ -499,7 +560,7 @@ function Etat({
       terme: "Tarif",
       valeur:
         payant && Number(abonnement.price_amount) > 0
-          ? `${montant(abonnement.price_amount, abonnement.currency)} / ${abonnement.plan.code === "yearly" ? "an" : "mois"}`
+          ? `${montant(abonnement.price_amount, abonnement.currency)} / ${annuel ? "an" : "mois"}`
           : "Gratuit",
     },
   ];
@@ -522,6 +583,7 @@ function Etat({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={vue.tone}>{vue.badge}</Badge>
+            {abonnement.groupe && <PastilleGroupe groupe={abonnement.groupe} />}
           </div>
           <p className="mt-1.5 text-[15px] font-semibold leading-snug text-ink sm:text-xl">
             {vue.titre}
@@ -646,6 +708,126 @@ function Anneau({
 }
 
 // ---------------------------------------------------------------------------
+// Standard et Pro
+// ---------------------------------------------------------------------------
+
+export function PastilleGroupe({ groupe }: { groupe: Groupe }) {
+  return groupe === "pro" ? (
+    <span className="inline-flex items-center gap-1 rounded-full bg-ink px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-surface sm:text-[11px]">
+      <Icon name="crown" className="size-3" />
+      Pro
+    </span>
+  ) : (
+    <span className="inline-flex items-center rounded-full border border-line px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted sm:text-[11px]">
+      Standard
+    </span>
+  );
+}
+
+/** Ce que Pro ajoute : la liste vient du serveur, qui n'annonce que ce qui est ouvert. */
+function ListeFonctions({
+  fonctions,
+  compacte = false,
+}: {
+  fonctions: Offres["fonctions_pro"];
+  compacte?: boolean;
+}) {
+  return (
+    <ul className={`grid gap-1.5 ${compacte ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-3"} sm:gap-2`}>
+      {fonctions.map((fonction) => (
+        <li key={fonction.code} className="flex min-w-0 items-start gap-1.5">
+          <Icon name="check" className="mt-0.5 size-3.5 shrink-0 text-salon sm:size-4" />
+          <span className="min-w-0">
+            <span className="block text-[12px] font-medium leading-snug text-ink sm:text-[13px]">
+              {FONCTIONS_PRO[fonction.code]?.nom ?? fonction.nom}
+            </span>
+            {!compacte && (
+              <span className="block text-[11px] leading-snug text-muted sm:text-xs">
+                {FONCTIONS_PRO[fonction.code]?.resume ?? fonction.description}
+              </span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PasserAPro({
+  fonctions,
+  onChoisir,
+}: {
+  fonctions: Offres["fonctions_pro"];
+  onChoisir: () => void;
+}) {
+  return (
+    <div className="relative mb-4 overflow-hidden rounded-2xl border border-line bg-ink p-3.5 text-surface sm:mb-6 sm:p-5">
+      <div
+        aria-hidden
+        className="salon-gradient pointer-events-none absolute -right-16 -top-16 size-44 rounded-full opacity-40 blur-2xl"
+      />
+      <div className="relative flex flex-wrap items-start gap-3 sm:gap-4">
+        <span className="salon-gradient flex size-9 shrink-0 items-center justify-center rounded-full text-white sm:size-10">
+          <Icon name="crown" className="size-4.5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold sm:text-base">Passez à Pro</p>
+          <p className="mt-0.5 text-[12.5px] leading-relaxed opacity-75 sm:text-sm">
+            Tout Standard, plus :
+          </p>
+        </div>
+        <div className="hidden shrink-0 sm:block">
+          <button
+            type="button"
+            onClick={onChoisir}
+            className="rounded-xl bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:brightness-95"
+          >
+            Découvrir Pro
+          </button>
+        </div>
+      </div>
+      {fonctions.length > 0 && (
+        <ul className="relative mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-3">
+          {fonctions.map((fonction) => (
+            <li key={fonction.code} className="flex min-w-0 items-center gap-1.5 text-[12px] sm:text-[13px]">
+              <Icon name="check" className="size-3.5 shrink-0 opacity-80" />
+              <span className="truncate">{FONCTIONS_PRO[fonction.code]?.nom ?? fonction.nom}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button
+        type="button"
+        onClick={onChoisir}
+        className="relative mt-3 w-full rounded-xl bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-sm sm:hidden"
+      >
+        Découvrir Pro
+      </button>
+    </div>
+  );
+}
+
+/** Un passage à Standard programmé : Pro va à son terme, puis Standard prend la suite. */
+function Programme({ changement }: { changement: ChangementProgramme }) {
+  return (
+    <div className="mb-4 flex items-start gap-3 rounded-2xl border border-info/30 bg-info-bg p-3.5 sm:mb-6 sm:p-4">
+      <Icon name="calendar" className="mt-0.5 size-5 shrink-0 text-info" />
+      <div className="min-w-0 text-[12.5px] leading-relaxed text-ink sm:text-sm">
+        <p className="font-semibold">
+          {changement.plan.name} à partir du {dateLongue.format(new Date(changement.debut))}
+        </p>
+        <p className="mt-0.5 text-muted">
+          Votre offre actuelle va jusqu&apos;à son terme, puis {changement.plan.name} prend
+          la suite jusqu&apos;au {dateLongue.format(new Date(changement.fin))} (
+          {montant(changement.montant, changement.devise)}). Les fonctions Pro se mettront
+          alors en pause : vos réglages sont gardés, et reviennent si vous repassez à Pro.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // La proposition de l'annuel
 // ---------------------------------------------------------------------------
 
@@ -743,6 +925,7 @@ function Commande({
   erreur,
   acces,
   planCourant,
+  programme,
   plan: planVoulu,
   onPlan,
   tenantId,
@@ -752,6 +935,7 @@ function Commande({
   erreur: string | null;
   acces: Acces;
   planCourant?: string;
+  programme: ChangementProgramme | null;
   plan: CodeOffre;
   onPlan: (code: CodeOffre) => void;
   tenantId: string;
@@ -804,8 +988,28 @@ function Commande({
   const moyen = devise.moyens.find((item) => item.id === choixMoyen) ?? devise.moyens[0];
   const somme = plan ? montant(plan.montant, devise.code) : "";
 
-  const debutPeriode =
-    acces.raison === "essai" || acces.raison === "periode"
+  // Les deux groupes, s'ils sont tous deux en vente dans cette devise : une
+  // devise sans prix Pro ne montre pas d'onglet Pro vide.
+  const groupes = (["standard", "pro"] as const).filter((groupe) =>
+    devise.plans.some((item) => item.groupe === groupe),
+  );
+  const groupe: Groupe = plan?.groupe ?? "standard";
+  const plansDuGroupe = devise.plans.filter((item) => item.groupe === groupe);
+  const bloque = groupe === "pro" && programme !== null;
+
+  function changerDeGroupe(vers: Groupe) {
+    if (vers === groupe) return;
+    // On garde le rythme choisi : mensuel reste mensuel, annuel reste annuel.
+    const annuel = plan?.mois === 12;
+    const cible =
+      devise.plans.find((item) => item.groupe === vers && (item.mois === 12) === annuel) ??
+      devise.plans.find((item) => item.groupe === vers);
+    if (cible) onPlan(cible.code);
+  }
+
+  const debutPeriode = plan?.effet
+    ? decrireEffet(plan.effet)
+    : acces.raison === "essai" || acces.raison === "periode"
       ? `Votre nouvelle période commencera le ${dateLongue.format(new Date(acces.fin_periode ?? ""))}, à la suite de l'actuelle.`
       : "Votre période commencera à la validation du paiement.";
 
@@ -897,8 +1101,32 @@ function Commande({
           </div>
         )}
 
+        {groupes.length > 1 && (
+          <div
+            role="tablist"
+            aria-label="Gamme"
+            className="mb-3 grid w-full grid-cols-2 rounded-xl border border-line bg-surface-muted p-1 sm:inline-grid sm:w-auto"
+          >
+            {groupes.map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={groupe === item}
+                onClick={() => changerDeGroupe(item)}
+                className={`flex items-center justify-center gap-1.5 rounded-lg px-4 py-1.5 text-[13px] font-semibold transition sm:px-6 sm:text-sm ${
+                  groupe === item ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"
+                }`}
+              >
+                {item === "pro" && <Icon name="crown" className="size-3.5" />}
+                {GROUPES[item]}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div role="radiogroup" aria-label="Offre" className="grid grid-cols-2 gap-2.5 sm:gap-4">
-          {devise.plans.map((item) => (
+          {plansDuGroupe.map((item) => (
             <CarteOffre
               key={item.code}
               offre={item}
@@ -909,7 +1137,25 @@ function Commande({
             />
           ))}
         </div>
-        <p className="mt-2 text-[11.5px] leading-relaxed text-muted sm:text-xs">{debutPeriode}</p>
+
+        {groupe === "pro" && offres.fonctions_pro.length > 0 && (
+          <div className="mt-3 rounded-2xl border border-line bg-surface p-3 sm:p-4">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-subtle sm:text-xs">
+              Tout Standard, plus
+            </p>
+            <ListeFonctions fonctions={offres.fonctions_pro} />
+          </div>
+        )}
+
+        {bloque ? (
+          <p className="mt-2 rounded-xl bg-warning-bg px-3 py-2 text-[12px] leading-relaxed text-warning sm:text-xs">
+            Un passage à {programme?.plan.name} est déjà programmé : un nouveau paiement
+            Pro sera possible une fois ce changement en vigueur. Pour changer d&apos;avis
+            avant, contactez l&apos;équipe Beauty Salon.
+          </p>
+        ) : (
+          <p className="mt-2 text-[11.5px] leading-relaxed text-muted sm:text-xs">{debutPeriode}</p>
+        )}
       </div>
 
       {/* 2. Le règlement */}
@@ -1043,7 +1289,7 @@ function Commande({
                 l&apos;envoi de ce formulaire.
               </p>
             </div>
-            <Button type="submit" pending={envoi} disabled={!plan || !moyen} className="shrink-0">
+            <Button type="submit" pending={envoi} disabled={!plan || !moyen || bloque} className="shrink-0">
               Déclarer
               <span className="hidden sm:inline"> mon paiement</span>
             </Button>
@@ -1056,6 +1302,25 @@ function Commande({
       </div>
     </form>
   );
+}
+
+/** Ce que fera le paiement, en une phrase — calculé aujourd'hui, appliqué à la validation. */
+function decrireEffet(effet: Effet): string {
+  const debut = dateLongue.format(new Date(effet.debut));
+  const fin = dateLongue.format(new Date(effet.fin));
+  const jours = Math.round(effet.jours_credites);
+  switch (effet.nature) {
+    case "montee":
+      return jours > 0
+        ? `Pro s'ouvre dès la validation du paiement. Vos jours Standard restants deviennent ${jours} jour${jours > 1 ? "s" : ""} de Pro, ajoutés à votre période : jusqu'au ${fin} environ.`
+        : `Pro s'ouvre dès la validation du paiement, jusqu'au ${fin} environ.`;
+    case "descente":
+      return `Votre offre Pro va jusqu'à son terme, le ${debut}. Standard prend la suite jusqu'au ${fin} ; les fonctions Pro se mettent alors en pause, vos réglages sont gardés.`;
+    case "renouvellement":
+      return `Votre nouvelle période commencera le ${debut}, à la suite de l'actuelle, et ira jusqu'au ${fin}.`;
+    default:
+      return `Votre période commencera à la validation du paiement, jusqu'au ${fin} environ.`;
+  }
 }
 
 function Etape({ numero, titre }: { numero: number; titre: string }) {
@@ -1116,8 +1381,10 @@ function CarteOffre({
   actuelle: boolean;
   onChoisir: () => void;
 }) {
-  const annuel = offre.code === "yearly";
+  const annuel = offre.mois === 12;
   const parMois = annuel ? Number(offre.montant) / offre.mois : null;
+  const economie =
+    devise.economies?.[offre.groupe] ?? (offre.groupe === "standard" ? devise.economie : null);
 
   return (
     <button
@@ -1131,7 +1398,7 @@ function CarteOffre({
           : "border-line bg-surface hover:border-line-strong"
       }`}
     >
-      {annuel && devise.economie && (
+      {annuel && economie && (
         <span className="salon-gradient absolute -top-2.5 right-3 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm sm:text-[11px]">
           Meilleur prix
         </span>
@@ -1162,9 +1429,9 @@ function CarteOffre({
       </span>
 
       <span className="mt-2.5 flex flex-wrap gap-1">
-        {annuel && devise.economie ? (
+        {annuel && economie ? (
           <span className="inline-flex w-fit rounded-full bg-success-bg px-2 py-0.5 text-[10.5px] font-semibold text-success sm:text-xs">
-            −{devise.economie.pourcentage} % · {montant(devise.economie.montant, devise.code)}
+            −{economie.pourcentage} % · {montant(economie.montant, devise.code)}
           </span>
         ) : (
           <span className="text-[10.5px] text-subtle sm:text-xs">Sans engagement</span>
@@ -1486,6 +1753,16 @@ const QUESTIONS: { question: string; reponse: string }[] = [
     question: "Puis-je passer du mensuel à l'annuel ?",
     reponse:
       "Oui, à tout moment : choisissez l'offre annuelle et réglez-la. Votre année commence à la fin de votre mois en cours.",
+  },
+  {
+    question: "Si je passe de Standard à Pro, je perds mes jours payés ?",
+    reponse:
+      "Non. Pro s'ouvre dès la validation de votre paiement, et vos jours Standard restants sont convertis en jours Pro au prorata des prix mensuels, puis ajoutés à votre période Pro. Ni remboursement, ni supplément.",
+  },
+  {
+    question: "Et si je repasse de Pro à Standard ?",
+    reponse:
+      "Votre offre Pro va jusqu'au bout de ce que vous avez payé, puis Standard prend la suite. Les fonctions Pro se mettent en pause — domaine, apparence, assistants — mais leurs réglages sont gardés et reviennent si vous repassez à Pro.",
   },
   {
     question: "Que se passe-t-il si je ne paie pas à temps ?",

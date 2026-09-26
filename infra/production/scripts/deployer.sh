@@ -131,6 +131,14 @@ if [ "$ENTREE" = "coolify" ]; then
   sed "s/DOMAINE_REGEX/$motif/g" "$ICI/caddy/traefik-coolify.yaml" > "$DYNAMIQUE/.salon.yaml.tmp"
   mv "$DYNAMIQUE/.salon.yaml.tmp" "$DYNAMIQUE/salon.yaml"
   echo "Route posee : $DYNAMIQUE/salon.yaml"
+
+  # Domaines personnalises (offre Pro) : une route par domaine verifie,
+  # tenue a jour toutes les deux minutes. Voir synchroniser-domaines.sh.
+  printf '%s\n' \
+    "*/2 * * * * root bash $ICI/scripts/synchroniser-domaines.sh >> /var/log/salon-domaines.log 2>&1" \
+    > /etc/cron.d/salon-domaines
+  chmod 644 /etc/cron.d/salon-domaines
+  bash "$ICI/scripts/synchroniser-domaines.sh" || echo "Synchronisation des domaines : a reessayer."
 fi
 
 # Les images remplacees ne servent plus a rien ; sur 40 Go, elles comptent.

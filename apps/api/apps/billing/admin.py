@@ -31,6 +31,7 @@ from django.utils.html import format_html
 from django.views.decorators.http import require_POST
 
 from apps.common.admin import ADMIN_DB, TenantScopedAdmin, TenantScopedTabularInline
+from apps.common.db import bypass_tenant_context, tenant_context
 
 from . import services
 from .models import (
@@ -38,6 +39,7 @@ from .models import (
     Plan,
     PlanPrice,
     PlatformPaymentMethod,
+    ProCapability,
     Subscription,
     SubscriptionEvent,
     SubscriptionPaymentRequest,
@@ -99,18 +101,24 @@ class PlanPriceInline(admin.TabularInline):
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "billing_months", "tarifs", "active")
-    list_filter = ("active",)
+    list_display = ("name", "groupe", "code", "billing_months", "tarifs", "active")
+    list_filter = ("group", "active")
     search_fields = ("name", "code")
-    ordering = ("position",)
+    ordering = ("group", "position")
+
+    @admin.display(description="Groupe", ordering="group")
+    def groupe(self, plan):
+        return _pastille(plan.get_group_display(), "info" if plan.group == Plan.Groupe.PRO else "")
+
     inlines = (PlanPriceInline,)
 
     def get_readonly_fields(self, request, obj=None):
         # Le code et la duree definissent ce qu'un paiement accorde : le code
         # `monthly` renomme, plus aucun tarif n'est trouve ; la duree changee,
         # chaque approbation accorde autre chose que ce que le salon a paye.
+        # Le groupe aussi : il decide des fonctions ouvertes a tous les abonnes.
         if obj is not None:
-            return ("code", "billing_months")
+            return ("code", "group", "billing_months")
         return ()
 
     def save_model(self, request, obj, form, change):
@@ -392,6 +400,7 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
     )
     list_filter = (
         "status",
+        ("plan__group", admin.ChoicesFieldListFilter),
         "plan",
         "country",
         "currency",
@@ -669,6 +678,28 @@ class ProlongationForm(GesteForm):
     )
 
 
+class ChangementOffreForm(GesteForm):
+    """Placer un salon sur une offre : c'est ici qu'on le passe à Pro."""
+
+    offre = forms.ChoiceField(
+        label="Nouvelle offre",
+        choices=[
+            ("monthly", "Standard — mensuel"),
+            ("yearly", "Standard — annuel"),
+            ("pro_monthly", "Pro — mensuel"),
+            ("pro_yearly", "Pro — annuel"),
+        ],
+        help_text="S'applique tout de suite, avec ses droits.",
+    )
+    mois = forms.TypedChoiceField(
+        label="Mois offerts en plus",
+        choices=[(0, "Aucun — garder la date de fin actuelle"), (1, "1 mois"), (12, "12 mois")],
+        coerce=int,
+        initial=0,
+        help_text="Un essai en cours devient une période de l'offre choisie, jusqu'à la même date.",
+    )
+
+
 TONS_ABONNEMENT = {
     Subscription.Status.TRIALING: "info",
     Subscription.Status.ACTIVE: "ok",
@@ -684,16 +715,18 @@ class SubscriptionAdmin(TenantScopedAdmin):
     list_display = (
         "tenant",
         "plan",
+        "groupe",
         "statut",
         "current_period_end",
         "acces",
+        "programme",
         "price_amount",
         "currency",
     )
-    list_filter = ("status", "plan", "currency")
+    list_filter = ("status", ("plan__group", admin.ChoicesFieldListFilter), "plan", "currency")
     search_fields = ("tenant__name", "tenant__slug")
     inlines = (SubscriptionEventInline,)
-    actions = ("action_prolonger", "action_suspendre", "action_reactiver")
+    actions = ("action_changer_offre", "action_prolonger", "action_suspendre", "action_reactiver")
     # Les dates et le statut ne se modifient qu'a travers les gestes traces :
     # un champ de date edite a la main n'aurait ni auteur ni motif.
     readonly_fields = (
@@ -708,7 +741,46 @@ class SubscriptionAdmin(TenantScopedAdmin):
         "period_anchor",
         "anchor_months",
         "cancelled_at",
+        "scheduled_plan",
+        "scheduled_period_end",
+        "scheduled_price_amount",
+        "scheduled_currency",
+        "groupe_effectif",
+        "fonctions_ouvertes",
     )
+
+    @admin.display(description="Groupe", ordering="plan__group")
+    def groupe(self, abonnement):
+        return _pastille(
+            abonnement.plan.get_group_display(),
+            "info" if abonnement.plan.group == Plan.Groupe.PRO else "",
+        )
+
+    @admin.display(description="Changement programmé")
+    def programme(self, abonnement):
+        if not abonnement.scheduled_plan_id:
+            return "—"
+        return format_html(
+            "{} dès le {}",
+            abonnement.scheduled_plan.name,
+            timezone.localtime(abonnement.current_period_end).strftime("%d/%m/%Y"),
+        )
+
+    @admin.display(description="Groupe effectif")
+    def groupe_effectif(self, abonnement):
+        from .droits import groupe_effectif
+
+        groupe = groupe_effectif(abonnement)
+        return {"pro": "Pro", "standard": "Standard"}.get(groupe, "Accès fermé")
+
+    @admin.display(description="Fonctions Pro ouvertes")
+    def fonctions_ouvertes(self, abonnement):
+        from .droits import fonctions_du_salon
+
+        with bypass_tenant_context(), tenant_context(abonnement.tenant_id):
+            fonctions = fonctions_du_salon(abonnement.tenant_id)
+        ouvertes = [str(ProCapability.Code(code).label) for code, ok in fonctions.items() if ok]
+        return ", ".join(ouvertes) or "—"
 
     @admin.display(description="Statut", ordering="status")
     def statut(self, abonnement):
@@ -759,6 +831,23 @@ class SubscriptionAdmin(TenantScopedAdmin):
                 "opts": self.model._meta,
                 "action_checkbox_name": helpers.ACTION_CHECKBOX_NAME,
             },
+        )
+
+    @admin.action(description="Changer l'offre (Standard / Pro)…")
+    def action_changer_offre(self, request, queryset):
+        return self._geste(
+            request,
+            queryset,
+            titre="Changer l'offre",
+            formulaire=ChangementOffreForm,
+            action="action_changer_offre",
+            executer=lambda ab, d: services.changer_d_offre(
+                ab.tenant_id,
+                administrateur=request.user,
+                code=d["offre"],
+                mois=d["mois"],
+                note=d["note"],
+            ),
         )
 
     @admin.action(description="Prolonger à la main (exceptionnel)…")
@@ -844,6 +933,43 @@ class SubscriptionReminderAdmin(TenantScopedAdmin):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ProCapability)
+class ProCapabilityAdmin(admin.ModelAdmin):
+    """Couper ou rouvrir une fonction Pro pour tous les salons Pro.
+
+    Les reglages des salons ne sont pas touches : une fonction coupee se met
+    en pause, et revient telle quelle quand on la rouvre.
+    """
+
+    list_display = ("fonction", "etat", "active", "description")
+    list_editable = ("active",)
+    ordering = ("position",)
+    fields = ("code", "active", "description", "position")
+    readonly_fields = ("code",)
+
+    @admin.display(description="Fonction", ordering="code")
+    def fonction(self, capacite):
+        return capacite.get_code_display()
+
+    @admin.display(description="État")
+    def etat(self, capacite):
+        return (
+            _pastille("Ouverte aux salons Pro", "ok")
+            if capacite.active
+            else _pastille("Coupée", "danger")
+        )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        _journal_reglages(request, obj, "fonction_pro", form.changed_data)
+
+    def has_add_permission(self, request):
         return False
 
     def has_delete_permission(self, request, obj=None):

@@ -46,7 +46,14 @@ export type IconName =
   | "sliders"
   | "close"
   | "scan"
-  | "copy";
+  | "copy"
+  // Offre Pro.
+  | "globe"
+  | "palette"
+  | "chat"
+  | "lock"
+  | "crown"
+  | "send";
 
 /*
   Exportés pour l'image des notifications (app/notification-image), qui
@@ -252,6 +259,34 @@ export const PATHS: Record<IconName, ReactNode> = {
       <path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5" />
     </>
   ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z" />
+    </>
+  ),
+  palette: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" />
+      <circle cx="7.5" cy="11.5" r="1" />
+      <circle cx="10.5" cy="7.5" r="1" />
+      <circle cx="15.5" cy="8.5" r="1" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z" />
+      <path d="M8.5 11h.01M12 11h.01M15.5 11h.01" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="10.5" width="14" height="10" rx="2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </>
+  ),
+  crown: <path d="M4 18h16M4.5 15 3 7l5 3.5L12 4l4 6.5L21 7l-1.5 8z" />,
+  send: <path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z" />,
 };
 
 export function Icon({

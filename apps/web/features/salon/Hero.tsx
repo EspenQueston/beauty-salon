@@ -122,12 +122,14 @@ export function Hero({
             <Mots text={salon.name} />
           </h1>
 
-          {salon.description && (
+          {/* L'accroche choisie par un salon Pro passe devant la
+              description : c'est la phrase qu'il veut voir en premier. */}
+          {(salon.site_config?.accroche || salon.description) && (
             <p
               className="rise mt-4 max-w-xl text-pretty text-[0.95rem] leading-relaxed text-white/90 sm:mt-5 sm:text-lg"
               style={{ animationDelay: "160ms" }}
             >
-              {salon.description}
+              {salon.site_config?.accroche || salon.description}
             </p>
           )}
 
@@ -140,7 +142,7 @@ export function Hero({
               icon="calendar"
               className="px-6 py-3.5 sm:px-7"
             >
-              {t("reserverRdv")}
+              {salon.site_config?.bouton_reserver || t("reserverRdv")}
             </PrimaryLink>
 
             {whatsapp && (

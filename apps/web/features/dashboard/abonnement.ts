@@ -35,9 +35,9 @@ export interface Acces {
   jusqu_au: string | null;
 }
 
-/** Ce que gagnerait un salon au mensuel à passer à l'annuel. */
+/** Ce que gagnerait un salon au mensuel à passer à l'annuel, dans son groupe. */
 export interface MonteeEnGamme {
-  vers: "yearly";
+  vers: "yearly" | "pro_yearly";
   devise: string;
   montant_annuel: string;
   economie: { montant: string; pourcentage: number };
@@ -51,7 +51,54 @@ export interface AccesSalon extends Acces {
   paiement_en_attente: boolean;
   peut_payer: boolean;
   montee_en_gamme: MonteeEnGamme | null;
+  /** Le groupe qui ouvre les droits aujourd'hui ; null quand l'accès est fermé. */
+  groupe: Groupe | null;
+  fonctions: Fonctions;
+  /** Pro se vend dans la devise du salon, et le salon n'y est pas encore. */
+  pro_disponible: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Standard et Pro
+// ---------------------------------------------------------------------------
+
+export type Groupe = "standard" | "pro";
+
+export type FonctionPro =
+  | "custom_domain"
+  | "customization"
+  | "whatsapp_assistant"
+  | "platform_assistant"
+  | "customer_assistant";
+
+/** Les fonctions Pro ouvertes au salon, calculées par le serveur. */
+export type Fonctions = Record<FonctionPro, boolean>;
+
+/** Ce que chaque fonction Pro apporte, dit simplement. */
+export const FONCTIONS_PRO: Record<FonctionPro, { nom: string; resume: string }> = {
+  custom_domain: {
+    nom: "Domaine personnalisé",
+    resume: "Votre mini-site sur votre propre nom de domaine.",
+  },
+  customization: {
+    nom: "Apparence avancée",
+    resume: "Polices, menu, ordre des sections, accroche et bouton.",
+  },
+  whatsapp_assistant: {
+    nom: "Assistant WhatsApp",
+    resume: "Répond à vos clientes sur votre numéro WhatsApp.",
+  },
+  platform_assistant: {
+    nom: "Assistant de l'espace pro",
+    resume: "Répond à vos questions sur votre agenda et votre salon.",
+  },
+  customer_assistant: {
+    nom: "Assistant 24 h/24",
+    resume: "Renseigne vos clientes sur le mini-site, jour et nuit.",
+  },
+};
+
+export const GROUPES: Record<Groupe, string> = { standard: "Standard", pro: "Pro" };
 
 /** Jours pleins restants avant `iso`, arrondis au jour entamé. */
 export function joursAvant(iso: string | null, maintenant: number): number {

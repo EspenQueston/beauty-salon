@@ -254,14 +254,10 @@ class PublicSalonSerializer(Traduit, serializers.ModelSerializer):
         ).data
 
     def get_business_hours(self, profile) -> list:
-        return PublicBusinessHoursSerializer(
-            self.context.get("business_hours", []), many=True
-        ).data
+        return PublicBusinessHoursSerializer(self.context.get("business_hours", []), many=True).data
 
     def get_travel_zones(self, profile) -> list:
-        return PublicTravelZoneSerializer(
-            self.context.get("travel_zones", []), many=True
-        ).data
+        return PublicTravelZoneSerializer(self.context.get("travel_zones", []), many=True).data
 
     def get_gallery(self, profile) -> list:
         return MediaAssetSerializer(

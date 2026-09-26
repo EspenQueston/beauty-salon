@@ -27,6 +27,8 @@ dependencies = [
     # Mois calendaires des abonnements (31 janvier + 1 mois = 28 fevrier).
     # Deja installe par Celery ; declare parce qu'on s'en sert directement.
     "python-dateutil>=2.9",
+    "dnspython>=2.6",
+    "httpx>=0.27",
 ]
 
 [dependency-groups]

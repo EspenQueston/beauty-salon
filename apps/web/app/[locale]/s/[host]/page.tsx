@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -30,7 +31,16 @@ import { ReviewList } from "@/features/salon/Reviews";
 import { fetchReviews } from "@/lib/api";
 import { fetchSalon } from "@/lib/salon-serveur";
 import { serviceIllustrations, themeFromCategory } from "@/lib/illustrations";
-import type { PublicSalon } from "@/lib/types";
+import type { PublicSalon, SectionAccueil } from "@/lib/types";
+
+const SECTIONS_ACCUEIL: SectionAccueil[] = [
+  "prestations",
+  "etapes",
+  "realisations",
+  "equipe",
+  "avis",
+  "infos",
+];
 
 type Props = { params: Promise<{ host: string }> };
 
@@ -169,28 +179,15 @@ export default async function SalonHome({ params }: Props) {
   // eslint-disable-next-line react-hooks/purity -- composant serveur : un seul rendu par requête
   const instantServeur = Date.now();
 
-  return (
-    <main>
-      <Hero salon={salon} instantServeur={instantServeur} />
 
-      {/*
-        La bande défilante, hors du conteneur : elle traverse toute la
-        largeur, ce qui est la moitié de son effet.
-
-        Elle répond à « qu'est-ce qu'on fait ici » avant que le catalogue,
-        deux écrans plus bas, n'en ait l'occasion — et une visiteuse arrivée
-        d'un lien WhatsApp décide avant d'y arriver.
-      */}
-      <Marquee salon={salon} />
-
-      {/*
-        La cible du lien « Voir les prestations », en haut de page.
-
-        `scroll-mt-24` réserve la hauteur du menu, qui reste collé en haut :
-        sans elle, l'ancre amène le titre de section *sous* le menu, et on
-        atterrit sur une page qui semble avoir sauté une ligne.
-      */}
-      <div id={ANCRE_CONTENU} className="mx-auto max-w-5xl scroll-mt-24 px-4">
+  /*
+   * Les sections de l'accueil, dans l'ordre choisi par le salon (offre Pro,
+   * « Apparence avancée »). Sans réglage, l'ordre d'origine. L'en-tête et
+   * l'appel final restent à leur place : l'un présente, l'autre conclut.
+   */
+  const blocs: Record<SectionAccueil, ReactNode> = {
+    prestations: (
+    <div className="mx-auto max-w-5xl px-4">
         {featured.length > 0 ? (
           <section className="pt-4">
             {/*
@@ -268,8 +265,10 @@ export default async function SalonHome({ params }: Props) {
             </EmptyNote>
           </Reveal>
         )}
-      </div>
-
+    </div>
+  ),
+    etapes: (
+      <>
       {/*
         « Comment ça se passe » s'intercale ici, et pas ailleurs.
 
@@ -313,8 +312,10 @@ export default async function SalonHome({ params }: Props) {
           <HowItWorks salon={salon} />
         </div>
       </section>
-
-      <div className="mx-auto max-w-5xl px-4">
+      </>
+    ),
+    realisations: (
+    <div className="mx-auto max-w-5xl px-4">
         {showcase.length > 0 && (
           <Reveal as="section" className="pt-20">
             <SectionTitle
@@ -333,7 +334,10 @@ export default async function SalonHome({ params }: Props) {
             <GalleryGrid assets={showcase} salonName={salon.name} />
           </Reveal>
         )}
-
+    </div>
+  ),
+    equipe: (
+    <div className="mx-auto max-w-5xl px-4">
         {salon.staff_members.length > 0 && (
           <section className="pt-20">
             <Reveal>
@@ -358,7 +362,10 @@ export default async function SalonHome({ params }: Props) {
             </Reveal>
           </section>
         )}
-
+    </div>
+  ),
+    avis: (
+    <div className="mx-auto max-w-5xl px-4">
         {reviews.results.length > 0 && (
           <Reveal as="section" className="pt-20">
             <SectionTitle
@@ -372,7 +379,10 @@ export default async function SalonHome({ params }: Props) {
             />
           </Reveal>
         )}
-
+    </div>
+  ),
+    infos: (
+    <div className="mx-auto max-w-5xl px-4">
         <Reveal as="section" className="pt-20">
           <SectionTitle
             eyebrow={t("titresAccueil.infosSurtitre")}
@@ -385,7 +395,41 @@ export default async function SalonHome({ params }: Props) {
           />
           <PracticalSummary salon={salon} instantServeur={instantServeur} />
         </Reveal>
+    </div>
+  ),
+  };
+  const ordre = (salon.site_config?.sections ?? SECTIONS_ACCUEIL.map((cle) => ({ cle, visible: true })))
+    .filter((section) => section.visible && section.cle in blocs)
+    .map((section) => section.cle);
 
+  return (
+    <main>
+      <Hero salon={salon} instantServeur={instantServeur} />
+
+      {/*
+        La bande défilante, hors du conteneur : elle traverse toute la
+        largeur, ce qui est la moitié de son effet.
+
+        Elle répond à « qu'est-ce qu'on fait ici » avant que le catalogue,
+        deux écrans plus bas, n'en ait l'occasion — et une visiteuse arrivée
+        d'un lien WhatsApp décide avant d'y arriver.
+      */}
+      <Marquee salon={salon} />
+
+      {/*
+        La cible du lien « Voir les prestations », en haut de page.
+
+        `scroll-mt-24` réserve la hauteur du menu, qui reste collé en haut :
+        sans elle, l'ancre amène le titre de section *sous* le menu, et on
+        atterrit sur une page qui semble avoir sauté une ligne.
+      */}
+      <div id={ANCRE_CONTENU} className="scroll-mt-24">
+        {ordre.map((cle) => (
+          <Fragment key={cle}>{blocs[cle]}</Fragment>
+        ))}
+      </div>
+
+      <div className="mx-auto max-w-5xl px-4">
         <Reveal as="section" className="pt-20">
           <ClosingCall salon={salon} />
         </Reveal>

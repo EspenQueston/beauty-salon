@@ -189,10 +189,24 @@ class PlatformAdminMFAMiddleware:
     meme si la personne a deja enrole son telephone.
     """
 
-    EXEMPT = ("/admin/login", "/admin/logout", "/admin/jsi18n")
+    # Les sous-chemins exemptes, relatifs au chemin de l'administration.
+    EXEMPT = ("login", "logout", "jsi18n")
 
     def __init__(self, get_response):
         self.get_response = get_response
+
+    @staticmethod
+    def _prefixe() -> str:
+        """Le chemin reel de l'administration : `ADMIN_PATH`, pas `/admin/`.
+
+        Il etait code en dur. En production, l'administration est servie
+        sous un chemin tire au hasard (`ADMIN_PATH`) : aucune requete ne
+        commencait par `/admin/`, et la double authentification n'etait
+        donc jamais exigee — un mot de passe suffisait a ouvrir l'alias qui
+        contourne l'isolation des salons.
+        """
+        chemin = getattr(settings, "ADMIN_PATH", "admin/") or "admin/"
+        return "/" + chemin.strip("/") + "/"
 
     def __call__(self, request):
         if self._requires_mfa(request):
@@ -204,9 +218,10 @@ class PlatformAdminMFAMiddleware:
     def _requires_mfa(self, request) -> bool:
         if not getattr(settings, "PLATFORM_ADMIN_MFA_REQUIRED", True):
             return False
-        if not request.path.startswith("/admin/"):
+        prefixe = self._prefixe()
+        if not request.path.startswith(prefixe):
             return False
-        if request.path.startswith(self.EXEMPT):
+        if request.path.startswith(tuple(prefixe + sortie for sortie in self.EXEMPT)):
             return False
 
         user = getattr(request, "user", None)

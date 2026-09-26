@@ -185,6 +185,25 @@ export interface PublicSalon {
    * antérieure à ce champ : traité comme ouvert.
    */
   reservations_ouvertes?: boolean;
+  /**
+   * L'apparence avancée (offre Pro) : null quand le salon ne l'a pas — ses
+   * réglages restent gardés côté serveur, la page reprend son allure d'origine.
+   */
+  site_config?: SiteConfig | null;
+  /** L'assistant des clientes (offre Pro) est ouvert sur ce mini-site. */
+  assistant_clientes?: boolean;
+}
+
+export type RubriqueMenu = "prestations" | "realisations" | "equipe" | "a-propos" | "infos";
+export type SectionAccueil = "prestations" | "etapes" | "realisations" | "equipe" | "avis" | "infos";
+
+export interface SiteConfig {
+  police_titres: string;
+  police_texte: string;
+  menu: { cle: RubriqueMenu; visible: boolean }[];
+  sections: { cle: SectionAccueil; visible: boolean }[];
+  accroche: string;
+  bouton_reserver: string;
 }
 
 export interface TravelZone {

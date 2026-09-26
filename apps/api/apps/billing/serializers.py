@@ -20,6 +20,7 @@ class PlanSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "code",
+            "group",
             "name",
             "description",
             "max_staff",
@@ -69,6 +70,9 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     acces = serializers.SerializerMethodField()
     demande_en_attente = serializers.SerializerMethodField()
     montee_en_gamme = serializers.SerializerMethodField()
+    groupe = serializers.SerializerMethodField()
+    fonctions = serializers.SerializerMethodField()
+    changement_programme = serializers.SerializerMethodField()
 
     class Meta:
         model = Subscription
@@ -88,7 +92,36 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "acces",
             "demande_en_attente",
             "montee_en_gamme",
+            "groupe",
+            "fonctions",
+            "changement_programme",
         )
+
+    def get_groupe(self, abonnement) -> str | None:
+        from .droits import groupe_effectif
+
+        return groupe_effectif(abonnement)
+
+    def get_fonctions(self, abonnement) -> dict:
+        from .droits import fonctions_du_salon
+
+        return fonctions_du_salon(abonnement.tenant_id)
+
+    def get_changement_programme(self, abonnement) -> dict | None:
+        """La descente programmee, a montrer : quelle offre, de quand a quand."""
+        if not abonnement.scheduled_plan_id:
+            return None
+        return {
+            "plan": {
+                "code": abonnement.scheduled_plan.code,
+                "name": abonnement.scheduled_plan.name,
+                "group": abonnement.scheduled_plan.group,
+            },
+            "debut": abonnement.current_period_end,
+            "fin": abonnement.scheduled_period_end,
+            "montant": str(abonnement.scheduled_price_amount),
+            "devise": abonnement.scheduled_currency,
+        }
 
     def get_montee_en_gamme(self, abonnement) -> dict | None:
         from .services import montee_en_gamme
@@ -186,7 +219,14 @@ class PaymentRequestSerializer(serializers.ModelSerializer):
 class PaymentRequestCreateSerializer(serializers.Serializer):
     """Ce que le salon envoie. Le montant n'en fait pas partie : il se calcule."""
 
-    plan = serializers.ChoiceField(choices=[Plan.Code.MONTHLY, Plan.Code.YEARLY])
+    plan = serializers.ChoiceField(
+        choices=[
+            Plan.Code.MONTHLY,
+            Plan.Code.YEARLY,
+            Plan.Code.PRO_MONTHLY,
+            Plan.Code.PRO_YEARLY,
+        ]
+    )
     country = serializers.CharField(max_length=2)
     currency = serializers.CharField(max_length=3)
     method = serializers.UUIDField()

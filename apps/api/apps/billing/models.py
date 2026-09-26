@@ -39,22 +39,38 @@ class Plan(UUIDModel, TimeStampedModel):
 
     Table plateforme : les offres sont communes a tous les salons.
 
-    Deux offres payantes seulement, `monthly` et `yearly` : la meme
-    plateforme, reglee au mois ou a l'annee. Leur prix par devise vit dans
-    `PlanPrice`. Les offres Solo, Salon et Pro des debuts restent en base,
-    desactivees : des abonnements anciens les referencent, et un historique
-    ne se reecrit pas.
+    Deux groupes : Standard (`monthly`, `yearly`) et Pro (`pro_monthly`,
+    `pro_yearly`), plus l'essai. Leur prix par devise vit dans `PlanPrice`.
+    Les offres Solo et Salon des debuts ont ete retirees (migration 0011) ;
+    l'ancienne `pro`, desactivee, ne reste que si un historique la
+    reference - un historique ne se reecrit pas.
     """
 
     class Code(models.TextChoices):
         TRIAL = "trial", _("Essai")
-        SOLO = "solo", _("Solo")
-        SALON = "salon", _("Salon")
-        PRO = "pro", _("Pro")
+        # Ancienne offre unique des debuts, desactivee : a ne pas confondre
+        # avec le groupe Pro (`pro_monthly`, `pro_yearly`).
+        PRO = "pro", _("Pro (ancienne offre)")
         MONTHLY = "monthly", _("Mensuel")
         YEARLY = "yearly", _("Annuel")
+        PRO_MONTHLY = "pro_monthly", _("Pro mensuel")
+        PRO_YEARLY = "pro_yearly", _("Pro annuel")
+
+    class Groupe(models.TextChoices):
+        """Le groupe decide des fonctions ; la duree, du prix.
+
+        Standard : la plateforme telle qu'elle est. Pro : Standard, plus les
+        fonctions de `ProCapability` (domaine personnalise, personnalisation
+        avancee, assistants IA). L'essai donne acces a Standard.
+        """
+
+        STANDARD = "standard", _("Standard")
+        PRO = "pro", _("Pro")
 
     code = models.CharField(max_length=20, choices=Code.choices, unique=True)
+    group = models.CharField(
+        _("groupe"), max_length=12, choices=Groupe.choices, default=Groupe.STANDARD
+    )
     name = models.CharField(max_length=80)
     description = models.TextField(blank=True)
 
@@ -129,6 +145,28 @@ class Subscription(TenantOwnedModel):
     period_anchor = models.DateTimeField(null=True, blank=True)
     anchor_months = models.PositiveIntegerField(default=0)
 
+    # Changement programme : une descente de Pro vers Standard payee pendant
+    # une periode Pro. La periode Pro va a son terme ; la suite Standard
+    # prend le relais a `current_period_end` et court jusqu'a
+    # `scheduled_period_end`. La tache quotidienne fait la bascule ; l'acces
+    # se calcule sur les dates, donc rien ne s'interrompt si elle tarde.
+    scheduled_plan = models.ForeignKey(
+        Plan,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("offre programmée"),
+    )
+    scheduled_months = models.PositiveIntegerField(default=0)
+    scheduled_period_end = models.DateTimeField(
+        _("fin de la période programmée"), null=True, blank=True
+    )
+    scheduled_price_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0")
+    )
+    scheduled_currency = models.CharField(max_length=3, blank=True)
+
     class Meta:
         verbose_name = _("abonnement")
         verbose_name_plural = _("abonnements")
@@ -144,6 +182,11 @@ class Subscription(TenantOwnedModel):
 
     def __str__(self) -> str:
         return f"{self.plan.name} ({self.get_status_display()})"
+
+    @property
+    def fin_effective(self):
+        """La fin de tout ce qui est paye : periode en cours, puis programmee."""
+        return self.scheduled_period_end or self.current_period_end
 
     @property
     def is_running(self) -> bool:
@@ -522,6 +565,9 @@ class SubscriptionEvent(TenantOwnedModel):
         REACTIVATED = "reactivated", _("Réactivé")
         EXPIRED = "expired", _("Expiré")
         MIGRATED = "migrated", _("Reprise des abonnements existants")
+        UPGRADED = "upgraded", _("Passage à Pro")
+        DOWNGRADE_SCHEDULED = "downgrade_scheduled", _("Retour à Standard programmé")
+        PLAN_CHANGED = "plan_changed", _("Changement d'offre appliqué")
 
     subscription = models.ForeignKey(Subscription, on_delete=models.PROTECT, related_name="events")
     kind = models.CharField(_("événement"), max_length=30, choices=Kind.choices)
@@ -595,3 +641,32 @@ class SubscriptionReminder(TenantOwnedModel):
 
     def __str__(self) -> str:
         return f"{self.get_kind_display()} — {self.created_at:%d/%m/%Y}"
+
+
+class ProCapability(UUIDModel, TimeStampedModel):
+    """Une fonction de l'offre Pro, que l'administration peut couper.
+
+    Table plateforme. Couper une fonction la retire a tous les salons Pro a
+    la fois — une panne de fournisseur, une fonction pas encore prete dans un
+    pays — sans toucher a leurs reglages, qui reviennent tels quels.
+    """
+
+    class Code(models.TextChoices):
+        CUSTOM_DOMAIN = "custom_domain", _("Domaine personnalisé")
+        CUSTOMIZATION = "customization", _("Personnalisation avancée du site")
+        WHATSAPP_ASSISTANT = "whatsapp_assistant", _("Assistant IA sur WhatsApp")
+        PLATFORM_ASSISTANT = "platform_assistant", _("Assistant IA dans l'espace pro")
+        CUSTOMER_ASSISTANT = "customer_assistant", _("Assistant IA 24 h/24 pour les clientes")
+
+    code = models.CharField(max_length=40, choices=Code.choices, unique=True)
+    active = models.BooleanField(_("active"), default=True)
+    description = models.TextField(blank=True)
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = _("fonction Pro")
+        verbose_name_plural = _("fonctions Pro")
+        ordering = ("position", "code")
+
+    def __str__(self) -> str:
+        return self.get_code_display()

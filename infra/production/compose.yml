@@ -37,6 +37,9 @@ x-environnement-django: &environnement-django
   DJANGO_SETTINGS_MODULE: config.settings.production
   DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY manquant dans .env}
   PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:?PLATFORM_DOMAIN manquant dans .env}
+  # Adresse(s) IPv4 du serveur, vers laquelle un domaine personnalise doit
+  # pointer. Vide : lue dans le DNS du domaine de la plateforme.
+  PLATFORM_PUBLIC_IPS: ${PLATFORM_PUBLIC_IPS:-}
   # Noms du reseau interne : voir ALLOWED_HOSTS dans production.py.
   DJANGO_INTERNAL_HOSTS: api,127.0.0.1,localhost
   # Caddy redirige deja tout HTTP vers HTTPS, pour chaque nom qu'il sert.
@@ -65,6 +68,10 @@ x-environnement-django: &environnement-django
   VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
   VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
   OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  # Assistant WhatsApp (offre Pro) : l'API Evolution du serveur. Vides = la
+  # fonction s'affiche « a configurer » dans le tableau de bord.
+  EVOLUTION_API_URL: ${EVOLUTION_API_URL:-}
+  EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
   CURRENCY_API_KEY: ${CURRENCY_API_KEY:-}
 
 # Une seule image pour l'API, le worker et beat. Seule l'API la construit ;

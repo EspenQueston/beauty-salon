@@ -30,10 +30,13 @@ import "server-only";
  * n'a de toute facon pas de langue — il porte le nom du salon et ses couleurs.
  */
 
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { locale as segment } from "next/root-params";
 
-import { estLangue, LANGUE_PAR_DEFAUT, type Langue } from "@/i18n/langues";
-import { fetchSalon as lireSalon } from "@/lib/api";
+import { ENTETE_CHEMIN } from "@/i18n/adresses";
+import { estLangue, LANGUE_PAR_DEFAUT, prefixe, type Langue } from "@/i18n/langues";
+import { fetchSalon as lireSalon, SalonDeplace } from "@/lib/api";
 import type { PublicSalon } from "@/lib/types";
 
 /** La langue du rendu en cours, lue au parametre racine. */
@@ -43,5 +46,15 @@ export async function langueDuRendu(): Promise<Langue> {
 }
 
 export async function fetchSalon(host: string): Promise<PublicSalon | null> {
-  return lireSalon(host, await langueDuRendu());
+  const langue = await langueDuRendu();
+  try {
+    return await lireSalon(host, langue);
+  } catch (erreur) {
+    if (!(erreur instanceof SalonDeplace)) throw erreur;
+    // Même page, même langue, à l'adresse que le salon garde sur la
+    // plateforme. Un domaine personnalisé n'existe qu'en production : HTTPS.
+    const chemin = (await headers()).get(ENTETE_CHEMIN) ?? "/";
+    const sur = chemin.startsWith("/") && !chemin.startsWith("//") ? chemin : "/";
+    redirect(`https://${erreur.canonique}${prefixe(langue)}${sur === "/" ? "/" : sur}`);
+  }
 }

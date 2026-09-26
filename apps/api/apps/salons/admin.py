@@ -28,8 +28,19 @@ class SalonProfileAdmin(TenantScopedAdmin):
 
     fieldsets = (
         (None, {"fields": ("tenant", "description", "logo", "banner")}),
-        ("Coordonnees", {"fields": ("address", "city", "phone", "whatsapp_number", "contact_email",
-                                    "social_links")}),
+        (
+            "Coordonnees",
+            {
+                "fields": (
+                    "address",
+                    "city",
+                    "phone",
+                    "whatsapp_number",
+                    "contact_email",
+                    "social_links",
+                )
+            },
+        ),
         (
             "WeChat",
             {
@@ -92,8 +103,7 @@ class SalonProfileAdmin(TenantScopedAdmin):
                 '{} <span style="color:var(--bs-warn)">(sans QR)</span>', identifiant
             )
         if code:
-            return mark_safe('QR seul <span style="color:var(--bs-warn)">(sans '
-                             "identifiant)</span>")
+            return mark_safe('QR seul <span style="color:var(--bs-warn)">(sans identifiant)</span>')
         return mark_safe('<span style="color:var(--bs-ink-muted)">—</span>')
 
     def get_queryset(self, request):
@@ -132,9 +142,7 @@ class SalonProfileAdmin(TenantScopedAdmin):
             .get_queryset(request)
             .annotate(
                 nb_zones=Coalesce(Subquery(zones, output_field=IntegerField()), 0),
-                nb_a_domicile=Coalesce(
-                    Subquery(prestations, output_field=IntegerField()), 0
-                ),
+                nb_a_domicile=Coalesce(Subquery(prestations, output_field=IntegerField()), 0),
             )
         )
 
@@ -164,9 +172,7 @@ class SalonProfileAdmin(TenantScopedAdmin):
                 .count()
             )
         if not zones:
-            return mark_safe(
-                '<span style="color:var(--bs-warn)">aucune zone déclarée</span>'
-            )
+            return mark_safe('<span style="color:var(--bs-warn)">aucune zone déclarée</span>')
 
         ouvertes = getattr(profile, "nb_a_domicile", None)
         if ouvertes is None:
@@ -178,8 +184,7 @@ class SalonProfileAdmin(TenantScopedAdmin):
             )
         if not ouvertes:
             return mark_safe(
-                '<span style="color:var(--bs-warn)">aucune prestation à '
-                "domicile</span>"
+                '<span style="color:var(--bs-warn)">aucune prestation à domicile</span>'
             )
 
         return format_html("{} zone(s) · {} prestation(s)", zones, ouvertes)

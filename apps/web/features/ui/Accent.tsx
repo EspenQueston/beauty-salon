@@ -15,7 +15,7 @@
  * sur les téléphones lents visés.
  */
 
-import type { CSSProperties, ReactNode } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 
 export function Souligne({
   children,
@@ -118,17 +118,20 @@ export function Mots({
   return (
     <span className={`mots ${className}`}>
       {mots.map((mot, index) => (
-        <span key={`${mot}-${index}`} className="mots-masque">
-          <span
-            className="mots-mot"
-            style={{ animationDelay: `${delay + index * stagger}ms` }}
-          >
-            {mot}
+        <Fragment key={`${mot}-${index}`}>
+          <span className="mots-masque">
+            <span
+              className="mots-mot"
+              style={{ animationDelay: `${delay + index * stagger}ms` }}
+            >
+              {mot}
+            </span>
           </span>
-          {/* L'espace vit hors du masque : à l'intérieur, il serait coupé
-              avec le reste et les mots se colleraient. */}
+          {/* L'espace vit hors du masque. À l'intérieur, en fin de bloc
+              `inline-block`, le navigateur le supprime : les mots se
+              collaient (« TestPro »). */}
           {index < mots.length - 1 ? " " : null}
-        </span>
+        </Fragment>
       ))}
     </span>
   );

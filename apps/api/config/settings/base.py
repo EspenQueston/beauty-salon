@@ -27,6 +27,10 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 # passer en production revient a changer cette seule variable.
 PLATFORM_DOMAIN = env("PLATFORM_DOMAIN", default="localhost")
 
+# Adresses IPv4 publiques du serveur : c'est vers elles qu'un domaine personnalise
+# doit pointer pour etre relie. Vide = lues dans le DNS de PLATFORM_DOMAIN.
+PLATFORM_PUBLIC_IPS = env.list("PLATFORM_PUBLIC_IPS", default=[])
+
 # Sous-domaines reserves : ils n'appartiennent a aucun salon.
 RESERVED_SUBDOMAINS = {"www", "app", "api", "admin", "static", "media", "mail"}
 
@@ -101,6 +105,7 @@ LOCAL_APPS = [
     "apps.store",
     "apps.payments",
     "apps.translations",
+    "apps.assistants",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -195,6 +200,11 @@ CURRENCY_API_KEY = env("CURRENCY_API_KEY", default="")
 # mini-sites servent le francais. C est une degradation, pas une panne — et
 # c est ce qui permet aux tests et au developpement de tourner sans reseau.
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
+
+# Assistants IA (offre Pro) : WhatsApp par l'API Evolution, installee a part.
+# Vides = la fonction s'affiche « a configurer », sans jamais pretendre marcher.
+EVOLUTION_API_URL = env("EVOLUTION_API_URL", default="")
+EVOLUTION_API_KEY = env("EVOLUTION_API_KEY", default="")
 
 # Jeton partage avec le serveur Next : ses appels internes ne sont pas
 # comptes dans les limites de debit par IP. Vide, personne n'est exempte.
@@ -365,6 +375,12 @@ REST_FRAMEWORK = {
         # Declaration d'un paiement d'abonnement. Une seule peut attendre a
         # la fois ; dix envois par heure couvrent les corrections apres refus.
         "subscription_payment": "10/hour",
+        # Verification DNS d'un domaine personnalise : chaque essai interroge des
+        # serveurs externes. Vingt par heure couvrent l'attente de la propagation.
+        "domain_check": "20/hour",
+        # Assistants IA : chaque message coute un appel au fournisseur.
+        "assistant": "60/hour",
+        "assistant_public": "30/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

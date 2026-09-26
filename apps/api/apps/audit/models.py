@@ -49,6 +49,18 @@ class AuditLog(UUIDModel, TimeStampedModel):
             "billing.settings_changed",
             _("Tarifs ou moyens de règlement modifiés"),
         )
+        DOMAIN_CLAIMED = "domain.claimed", _("Domaine personnalisé demandé")
+        DOMAIN_CONNECTED = "domain.connected", _("Domaine personnalisé relié")
+        DOMAIN_REMOVED = "domain.removed", _("Domaine personnalisé retiré")
+        SITE_CUSTOMIZED = "site.customized", _("Personnalisation du site modifiée")
+        ASSISTANT_SETTINGS_CHANGED = (
+            "assistant.settings_changed",
+            _("Réglages des assistants IA modifiés"),
+        )
+        # Suppressions definitives, par la procedure dediee : la trace
+        # survit a ce qu'elle decrit (salon et compte sont partis).
+        TENANT_DELETED = "tenant.deleted", _("Salon supprimé définitivement")
+        USER_DELETED = "user.deleted", _("Compte supprimé définitivement")
 
     tenant = models.ForeignKey(
         "tenants.Tenant",

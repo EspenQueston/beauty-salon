@@ -75,7 +75,7 @@ export function BookingBar({ salon }: { salon: PublicSalon }) {
           className="salon-gradient flex flex-1 items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-white shadow-sm transition hover:brightness-110 sm:flex-none"
         >
           <SalonIcon name="calendar" className="size-4.5" />
-          {c("reserver")}
+          {salon.site_config?.bouton_reserver || c("reserver")}
         </Lien>
       </div>
     </div>

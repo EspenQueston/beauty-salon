@@ -17,6 +17,4 @@ class DomainsConfig(AppConfig):
         # Sans cela, renommer ou desactiver un domaine resterait sans effet
         # pendant la duree du cache.
         post_save.connect(_invalidate, sender=Domain, dispatch_uid="domains.invalidate_save")
-        post_delete.connect(
-            _invalidate, sender=Domain, dispatch_uid="domains.invalidate_delete"
-        )
+        post_delete.connect(_invalidate, sender=Domain, dispatch_uid="domains.invalidate_delete")

@@ -63,18 +63,14 @@ class PublicSalonView(APIView):
         traductions = table_pour(request, profile.tenant_id)
 
         def traduit(objet, champ):
-            return traductions.get(
-                (objet._meta.label_lower, str(objet.pk), champ)
-            ) or getattr(objet, champ)
+            return traductions.get((objet._meta.label_lower, str(objet.pk), champ)) or getattr(
+                objet, champ
+            )
 
         services = list(
-            Service.objects.filter(active=True)
-            .select_related("image")
-            .order_by("position", "name")
+            Service.objects.filter(active=True).select_related("image").order_by("position", "name")
         )
-        categories = list(
-            ServiceCategory.objects.filter(active=True).order_by("position", "name")
-        )
+        categories = list(ServiceCategory.objects.filter(active=True).order_by("position", "name"))
 
         services_by_category: dict = {}
         for service in services:
@@ -129,9 +125,7 @@ class PublicSalonView(APIView):
         # Une seule requete pour toutes les options, plutot qu'une par
         # prestation dans le serializer.
         options_by_service: dict = {}
-        for option in ServiceOption.objects.filter(active=True).order_by(
-            "position", "name"
-        ):
+        for option in ServiceOption.objects.filter(active=True).order_by("position", "name"):
             options_by_service.setdefault(option.service_id, []).append(option)
 
         # Une seule requete pour toutes les competences, plutot qu'une par
@@ -192,6 +186,28 @@ class PublicSalonView(APIView):
         from apps.billing.services import acces_du_salon
 
         donnees["reservations_ouvertes"] = acces_du_salon(tenant.id).ouvert
+
+        # Offre Pro : la personnalisation et l'assistant ne sont publies que
+        # si le salon y a droit. Sans Pro, les reglages restent en base mais
+        # le mini-site reprend l'apparence standard (pause, pas effacement).
+        from apps.billing.droits import fonctions_du_salon
+
+        from . import personnalisation
+
+        fonctions = fonctions_du_salon(tenant.id)
+        donnees["site_config"] = (
+            personnalisation.complete(profile.site_config)
+            if fonctions.get("customization")
+            else None
+        )
+        # La bulle ne s'affiche que si le salon y a droit *et* l'a laissee
+        # allumee : coupee, elle ne repondrait que « pas active ».
+        from apps.assistants.models import AssistantReglages
+
+        reglages = AssistantReglages.objects.filter(tenant_id=tenant.id).first()
+        donnees["assistant_clientes"] = bool(fonctions.get("customer_assistant")) and (
+            reglages is None or reglages.clientes_actif
+        )
         return Response(donnees)
 
 
@@ -228,11 +244,7 @@ def _gallery() -> list:
 
     doublons = duplicate_media_ids([*employes, *candidats])
 
-    return [
-        asset
-        for asset in candidats
-        if asset.id not in reserves and asset.id not in doublons
-    ]
+    return [asset for asset in candidats if asset.id not in reserves and asset.id not in doublons]
 
 
 def _rating_summary() -> dict:

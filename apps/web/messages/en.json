@@ -450,6 +450,27 @@
       "aucunCorpsRecherche": "Nothing for “{q}”. Try another word, or browse all services.",
       "toutAfficher": "Show everything",
       "voirCategorie": "{n, plural, one {See the “{categorie}” service} other {See all # “{categorie}” services}}"
+    },
+    "assistant": {
+      "ouvrir": "Ask a question",
+      "fermer": "Close the assistant",
+      "titre": "Salon assistant",
+      "sousTitre": "Automatic answers, 24/7",
+      "bienvenue": "Hello! I can answer your questions about {salon}: services, prices, opening hours, address. How can I help?",
+      "suggestions": {
+        "prix": "What are your prices?",
+        "horaires": "What are your opening hours?",
+        "reserver": "How do I book?"
+      },
+      "placeholder": "Your question…",
+      "envoyer": "Send",
+      "reflechit": "The assistant is typing…",
+      "automatique": "Automatic assistant: it can make mistakes. It does not book anything for you.",
+      "indisponible": "The assistant can't answer right now. Contact the salon directly:",
+      "whatsapp": "WhatsApp",
+      "appeler": "Call",
+      "email": "Email",
+      "effacer": "New conversation"
     }
   },
   "reservation": {

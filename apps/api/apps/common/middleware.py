@@ -59,9 +59,20 @@ class TenantContextMiddleware:
         try:
             tenant_id = self._resolve(request)
         except TenantNotFound:
-            return JsonResponse(
-                {"detail": "Salon introuvable.", "code": "tenant_not_found"}, status=404
-            )
+            reponse = {"detail": "Salon introuvable.", "code": "tenant_not_found"}
+            # Un domaine personnalise en pause (le salon n'est plus Pro) :
+            # le site dit ou le salon se trouve, pour y renvoyer ses clientes
+            # plutot que de leur montrer une page introuvable.
+            if request.path.startswith(PUBLIC_API_PREFIX):
+                from apps.domains.personnalises import canonique_en_pause
+
+                hote = (request.headers.get("X-Tenant-Host") or request.get_host() or "").split(
+                    ":"
+                )[0]
+                canonique = canonique_en_pause(hote) if hote else None
+                if canonique:
+                    reponse["canonique"] = canonique
+            return JsonResponse(reponse, status=404)
         except TenantForbidden:
             logger.warning(
                 "Acces refuse : l'utilisateur %s a demande le tenant %s sans membership actif.",

@@ -124,7 +124,8 @@ export function AccesProvider({
 /**
  * « Choisir une offre », « Passer à l'annuel », « Régler » : l'action du
  * moment, toujours visible, jamais là quand il n'y a rien à faire (offre
- * annuelle en cours, salon suspendu, membre qui ne paie pas).
+ * annuelle en cours, salon suspendu, membre qui ne paie pas). Au mensuel,
+ * l'annuel d'abord — l'économie est immédiate ; à l'annuel Standard, Pro.
  */
 export function UpgradeButton() {
   const { acces, maintenant } = useAcces();
@@ -147,6 +148,9 @@ export function UpgradeButton() {
   } else if (acces.raison === "periode" && acces.montee_en_gamme) {
     libelle = "Passer à l'annuel";
     pastille = `−${acces.montee_en_gamme.economie.pourcentage} %`;
+  } else if (acces.raison === "periode" && acces.pro_disponible) {
+    libelle = "Passer à Pro";
+    pastille = "Pro";
   } else {
     return null;
   }

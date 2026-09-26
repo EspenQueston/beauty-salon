@@ -90,7 +90,6 @@ def signup_salon(
         name=name.strip(),
         slug=slug,
         status=Tenant.Status.PENDING,
-        plan=Tenant.Plan.TRIAL,
         country=country,
         timezone=timezone_name,
         currency=currency,

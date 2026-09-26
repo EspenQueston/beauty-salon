@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { adresses, ENTETE_CHEMIN } from "@/i18n/adresses";
 import { estLangue, LANGUE_PAR_DEFAUT } from "@/i18n/langues";
 
+import { Assistant } from "@/features/salon/Assistant";
 import { BookingBar } from "@/features/salon/BookingBar";
 import {
   BandeauFermeture,
@@ -20,6 +21,7 @@ import { Installer } from "@/features/ui/Installer";
 import { ScrollTop } from "@/features/ui/ScrollTop";
 import { fetchSalon } from "@/lib/salon-serveur";
 import { themeToCssVars } from "@/lib/format";
+import { stylePolices } from "@/lib/polices";
 
 type Props = {
   children: React.ReactNode;
@@ -124,6 +126,10 @@ export default async function SiteLayout({ children, params }: Props) {
     écrits en séquence d'échappement Unicode, que le JavaScript relit à
     l'identique.
   */
+  // L'apparence avancée (offre Pro) : absente, rien ne change.
+  const config = salon.site_config ?? null;
+  const polices = stylePolices(config?.police_titres, config?.police_texte);
+
   const slug = JSON.stringify(salon.slug).replace(/</g, "\\u003c");
   const boot =
     `(function(){try{var k="beauty-salon.mode."+${slug},v=localStorage.getItem(k);` +
@@ -132,8 +138,13 @@ export default async function SiteLayout({ children, params }: Props) {
 
   return (
     <div
-      style={themeToCssVars(salon.theme_config) as React.CSSProperties}
-      className="salon-site flex min-h-svh flex-col"
+      style={
+        {
+          ...themeToCssVars(salon.theme_config),
+          ...polices.style,
+        } as React.CSSProperties
+      }
+      className={`salon-site flex min-h-svh flex-col ${polices.classes}`}
       data-mode="light"
       suppressHydrationWarning
     >
@@ -155,6 +166,8 @@ export default async function SiteLayout({ children, params }: Props) {
           slug={salon.slug}
           logo={salon.logo}
           show={show}
+          menu={config?.menu}
+          bouton={config?.bouton_reserver}
         />
 
         {/* Réservations fermées : dit dès le haut de page, et la barre de
@@ -181,6 +194,13 @@ export default async function SiteLayout({ children, params }: Props) {
       <div data-site-chrome>
         <ScrollTop offset="6.5rem" />
       </div>
+
+      {/* L'assistant des clientes (offre Pro), 24 h/24. */}
+      {salon.assistant_clientes && (
+        <div data-site-chrome>
+          <Assistant host={host} salon={salon.name} slug={salon.slug} />
+        </div>
+      )}
 
       {/* Proposée à la deuxième visite seulement, et une seule fois. */}
       <div data-site-chrome>

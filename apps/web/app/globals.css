@@ -2742,3 +2742,17 @@ body {
   }
 }
 }
+
+/*
+ * Les polices choisies par un salon Pro (lib/polices.ts).
+ *
+ * Posées en variables sur la coquille du mini-site : sans choix, les
+ * variables n'existent pas et tout retombe sur la police du produit — la
+ * page d'un salon Standard reste exactement celle d'avant.
+ */
+.salon-site {
+  font-family: var(--salon-police-texte, var(--font-sans)), system-ui, sans-serif;
+}
+.salon-site :is(h1, h2, h3) {
+  font-family: var(--salon-police-titres, inherit);
+}

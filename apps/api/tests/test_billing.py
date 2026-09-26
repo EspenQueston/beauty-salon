@@ -36,8 +36,8 @@ def plans(db):
     # `billing` les cree, dans la base de test comme ailleurs.
     Plan.objects.get_or_create(code=Plan.Code.TRIAL, defaults={"name": "Essai"})
     plan, _ = Plan.objects.get_or_create(
-        code=Plan.Code.SALON,
-        defaults={"name": "Salon", "reference_price": Decimal("12000")},
+        code=Plan.Code.MONTHLY,
+        defaults={"name": "Mensuel", "reference_price": Decimal("12000")},
     )
     return plan
 
@@ -270,7 +270,7 @@ def test_only_the_owner_sees_the_subscription(api_client, salon_a, subscription)
 
     assert refuse.status_code == 403
     assert autorise.status_code == 200
-    assert autorise.data["plan"]["code"] == "salon"
+    assert autorise.data["plan"]["code"] == "monthly"
 
 
 # ---------------------------------------------------------------------------

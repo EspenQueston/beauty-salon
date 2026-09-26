@@ -22,6 +22,8 @@ from apps.common.permissions import HasTenantRole, IsTenantMember
 from . import services
 from .models import (
     Invoice,
+    Plan,
+    PlanPrice,
     PlatformPaymentMethod,
     Subscription,
     SubscriptionPaymentRequest,
@@ -64,8 +66,12 @@ class AccesView(APIView):
     permission_classes = [IsTenantMember]
 
     def get(self, request):
+        from .droits import fonctions_du_salon, groupe_effectif
+
         abonnement = (
-            Subscription.objects.select_related("plan").filter(tenant_id=request.tenant_id).first()
+            Subscription.objects.select_related("plan", "scheduled_plan")
+            .filter(tenant_id=request.tenant_id)
+            .first()
         )
         acces = services.acces_de(abonnement)
         membership = getattr(request, "membership", None)
@@ -88,6 +94,24 @@ class AccesView(APIView):
                     ).exists()
                 ),
                 "peut_payer": proprietaire,
+                # Le groupe et les fonctions Pro ouvertes : c'est ce que lit
+                # le menu pour montrer (ou verrouiller) les ecrans Pro. Le
+                # serveur refuse de toute facon ce que le salon n'a pas.
+                "groupe": groupe_effectif(abonnement),
+                "fonctions": fonctions_du_salon(request.tenant_id),
+                # Pour « Passer à Pro » : seulement si Pro se vend dans la
+                # devise du salon, et pour qui paie.
+                "pro_disponible": bool(
+                    proprietaire
+                    and abonnement
+                    and abonnement.plan.group != Plan.Groupe.PRO
+                    and PlanPrice.objects.filter(
+                        plan__group=Plan.Groupe.PRO,
+                        plan__active=True,
+                        currency=abonnement.currency,
+                        active=True,
+                    ).exists()
+                ),
             }
         )
 
@@ -103,7 +127,35 @@ class OffresView(_ProprietaireSeulement, APIView):
     def get(self, request):
         from apps.tenants.models import Tenant
 
+        from .models import ProCapability
+
         tenant = Tenant.objects.filter(pk=request.tenant_id).first()
+        abonnement = (
+            Subscription.objects.select_related("plan", "tenant", "scheduled_plan")
+            .filter(tenant_id=request.tenant_id)
+            .first()
+        )
+
+        def economie(valeur):
+            if not valeur:
+                return None
+            return {
+                "montant": str(valeur["montant"]),
+                "pourcentage": valeur["pourcentage"],
+                "douze_mois": str(valeur["douze_mois"]),
+            }
+
+        def apercu(plan, code_devise):
+            effet = services.apercu_du_paiement(abonnement, plan, code_devise)
+            if effet is None:
+                return None
+            return {
+                "nature": effet["nature"],
+                "debut": effet["debut"],
+                "fin": effet["fin"],
+                "jours_credites": effet["jours_credites"],
+            }
+
         pays = []
         for entree in services.catalogue_de_paiement():
             pays.append(
@@ -117,22 +169,22 @@ class OffresView(_ProprietaireSeulement, APIView):
                             "plans": [
                                 {
                                     "code": offre["plan"].code,
+                                    "groupe": offre["plan"].group,
                                     "nom": offre["plan"].name,
                                     "description": offre["plan"].description,
                                     "mois": offre["plan"].billing_months,
                                     "montant": str(offre["montant"]),
+                                    # Ce que ce paiement ferait, a montrer avant
+                                    # de payer : montee, descente, a la suite.
+                                    "effet": apercu(offre["plan"], devise["code"]),
                                 }
                                 for offre in devise["plans"]
                             ],
-                            "economie": (
-                                {
-                                    "montant": str(devise["economie"]["montant"]),
-                                    "pourcentage": devise["economie"]["pourcentage"],
-                                    "douze_mois": str(devise["economie"]["douze_mois"]),
-                                }
-                                if devise["economie"]
-                                else None
-                            ),
+                            "economie": economie(devise["economie"]),
+                            "economies": {
+                                groupe: economie(valeur)
+                                for groupe, valeur in devise["economies"].items()
+                            },
                             "moyens": MoyenDeReglementSerializer(
                                 devise["moyens"], many=True, context={"request": request}
                             ).data,
@@ -144,6 +196,17 @@ class OffresView(_ProprietaireSeulement, APIView):
         return Response(
             {
                 "pays": pays,
+                # Ce que Pro ajoute a Standard, tel que l'administration l'a
+                # ouvert : une fonction coupee n'est pas promise.
+                "fonctions_pro": [
+                    {
+                        "code": fonction.code,
+                        "nom": fonction.get_code_display(),
+                        "description": fonction.description,
+                    }
+                    for fonction in ProCapability.objects.filter(active=True)
+                ],
+                "groupe_actuel": abonnement.plan.group if abonnement else "",
                 # Pour preselectionner ce qui correspond au salon.
                 "suggestion": {
                     "pays": getattr(tenant, "country", ""),

@@ -25,7 +25,7 @@ import { useTranslations } from "next-intl";
 import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
 import { decouper } from "@/i18n/langues";
 import { SiteModeToggle } from "./SiteMode";
-import type { MediaAsset } from "@/lib/types";
+import type { MediaAsset, RubriqueMenu, SiteConfig } from "@/lib/types";
 
 interface Props {
   name: string;
@@ -39,9 +39,22 @@ interface Props {
     equipe: boolean;
     apropos: boolean;
   };
+  /** L'ordre et la visibilité des rubriques (offre Pro) ; l'ordre d'origine sinon. */
+  menu?: SiteConfig["menu"] | null;
+  /** Le libellé du bouton de réservation choisi par le salon (offre Pro). */
+  bouton?: string;
 }
 
-export function SalonNav({ name, slug, logo, show }: Props) {
+const RUBRIQUES: Record<RubriqueMenu, { href: string; cle: string; montre: keyof Props["show"] | null }> = {
+  prestations: { href: "/prestations", cle: "prestations", montre: "prestations" },
+  realisations: { href: "/realisations", cle: "realisations", montre: "realisations" },
+  equipe: { href: "/equipe", cle: "equipe", montre: "equipe" },
+  "a-propos": { href: "/a-propos", cle: "aPropos", montre: "apropos" },
+  infos: { href: "/infos", cle: "infos", montre: null },
+};
+const ORDRE: RubriqueMenu[] = ["prestations", "realisations", "equipe", "a-propos", "infos"];
+
+export function SalonNav({ name, slug, logo, show, menu, bouton }: Props) {
   const t = useTranslations("salon");
   const c = useTranslations("commun");
   const pathname = usePathname();
@@ -72,13 +85,13 @@ export function SalonNav({ name, slug, logo, show }: Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const links = [
-    show.prestations && { href: "/prestations", cle: "prestations" },
-    show.realisations && { href: "/realisations", cle: "realisations" },
-    show.equipe && { href: "/equipe", cle: "equipe" },
-    show.apropos && { href: "/a-propos", cle: "aPropos" },
-    { href: "/infos", cle: "infos" },
-  ].filter(Boolean) as { href: string; cle: string }[];
+  // Une rubrique n'apparaît que si le salon la montre *et* qu'elle a du
+  // contenu : masquée ou vide, on ne propose pas de lien.
+  const links = (menu ?? ORDRE.map((cle) => ({ cle, visible: true })))
+    .filter((entree) => entree.visible && entree.cle in RUBRIQUES)
+    .map((entree) => RUBRIQUES[entree.cle])
+    .filter((rubrique) => rubrique.montre === null || show[rubrique.montre])
+    .map(({ href, cle }) => ({ href, cle }));
 
   /*
     Le chemin est comparé **sans son préfixe de langue**.
@@ -120,7 +133,10 @@ export function SalonNav({ name, slug, logo, show }: Props) {
       <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
         <Lien href="/" className="flex min-w-0 items-center gap-2.5">
           <SalonLogo logo={logo} name={name} className="size-9 text-sm" />
-          <span className={`truncate font-semibold tracking-tight ${strong}`}>
+          {/* Sur téléphone, les réglages de droite ne laissaient au nom que
+              deux pixels : le logo suffit à l'œil, le nom reste lu par les
+              lecteurs d'écran (le logo est décoratif). */}
+          <span className={`sr-only truncate font-semibold tracking-tight sm:not-sr-only ${strong}`}>
             {name}
           </span>
         </Lien>
@@ -228,7 +244,7 @@ export function SalonNav({ name, slug, logo, show }: Props) {
             className="salon-gradient hidden items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex"
           >
             <SalonIcon name="calendar" className="size-4" />
-            {c("reserver")}
+            {bouton || c("reserver")}
           </Lien>
 
           <button
@@ -290,7 +306,7 @@ export function SalonNav({ name, slug, logo, show }: Props) {
           className="salon-gradient mt-3 flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white sm:hidden"
         >
           <SalonIcon name="calendar" className="size-4" />
-          {t("reserverRdv")}
+          {bouton || t("reserverRdv")}
         </Lien>
       </div>
     </header>

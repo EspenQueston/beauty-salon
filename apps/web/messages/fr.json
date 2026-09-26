@@ -450,6 +450,27 @@
       "aucunCorpsRecherche": "Rien pour « {q} ». Essayez un autre mot, ou parcourez toutes les prestations.",
       "toutAfficher": "Tout afficher",
       "voirCategorie": "{n, plural, one {Voir la prestation « {categorie} »} other {Voir les # prestations « {categorie} »}}"
+    },
+    "assistant": {
+      "ouvrir": "Poser une question",
+      "fermer": "Fermer l'assistant",
+      "titre": "Assistant du salon",
+      "sousTitre": "Réponses automatiques, 24 h/24",
+      "bienvenue": "Bonjour ! Je réponds à vos questions sur {salon} : prestations, prix, horaires, adresse. Que puis-je faire pour vous ?",
+      "suggestions": {
+        "prix": "Quels sont vos prix ?",
+        "horaires": "Quels sont vos horaires ?",
+        "reserver": "Comment réserver ?"
+      },
+      "placeholder": "Votre question…",
+      "envoyer": "Envoyer",
+      "reflechit": "L'assistant écrit…",
+      "automatique": "Assistant automatique : il peut se tromper. Il ne réserve rien à votre place.",
+      "indisponible": "L'assistant ne peut pas répondre pour le moment. Contactez directement le salon :",
+      "whatsapp": "WhatsApp",
+      "appeler": "Appeler",
+      "email": "E-mail",
+      "effacer": "Nouvelle conversation"
     }
   },
   "reservation": {

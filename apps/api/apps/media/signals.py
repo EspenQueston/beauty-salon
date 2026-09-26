@@ -37,6 +37,7 @@ plus s'en debarrasser. On journalise, et on laisse passer.
 
 import logging
 
+from django.db import transaction
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
@@ -46,17 +47,22 @@ logger = logging.getLogger(__name__)
 
 
 @receiver(post_delete, sender=MediaAsset, dispatch_uid="media.supprimer_le_fichier")
-def supprimer_le_fichier(sender, instance, **kwargs):
-    """Efface du stockage le fichier porte par ce media."""
+def supprimer_le_fichier(sender, instance, using=None, **kwargs):
+    """Efface du stockage le fichier porte par ce media — une fois la ligne partie.
+
+    Apres la validation de la transaction, pas avant : une suppression plus
+    large (un salon entier) qui echoue et s'annule doit retrouver ses
+    fichiers intacts. Hors transaction, `on_commit` s'execute tout de suite.
+    """
     fichier = getattr(instance, "file", None)
     if not fichier or not fichier.name:
         return
+    stockage, nom, pk = fichier.storage, fichier.name, instance.pk
 
-    try:
-        fichier.storage.delete(fichier.name)
-    except Exception:  # noqa: BLE001 - la ligne part quoi qu'il arrive
-        logger.exception(
-            "Fichier %s non supprime apres l'effacement du media %s.",
-            fichier.name,
-            instance.pk,
-        )
+    def effacer():
+        try:
+            stockage.delete(nom)
+        except Exception:  # noqa: BLE001 - la ligne part quoi qu'il arrive
+            logger.exception("Fichier %s non supprime apres l'effacement du media %s.", nom, pk)
+
+    transaction.on_commit(effacer, using=using)

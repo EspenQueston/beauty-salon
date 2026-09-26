@@ -34,7 +34,8 @@ import { ToastProvider, useToast } from "@/features/ui/Toast";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { BeautySalonBrand, BeautySalonSymbol } from "@/features/ui/BeautySalonBrand";
 
-import { AccesProvider, AccessBanner, UpgradeButton } from "./AccessBanner";
+import { AccesProvider, AccessBanner, UpgradeButton, useAcces } from "./AccessBanner";
+import type { FonctionPro } from "./abonnement";
 import { Notifications } from "./Notifications";
 import { LoginForm } from "./LoginForm";
 import { Icon, type IconName } from "./icons";
@@ -68,6 +69,11 @@ interface NavItem {
   href: string;
   label: string;
   icon: IconName;
+  /** Fonction Pro : un cadenas quand le salon ne l'a pas (l'écran reste
+   *  ouvert, pour montrer ce qu'elle apporte ; le serveur refuse le reste). */
+  fonction?: FonctionPro;
+  /** Rôles qui voient la rubrique ; tous si absent. */
+  roles?: string[];
 }
 
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
@@ -103,6 +109,31 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/identite", label: "Identité", icon: "edit" },
       { href: "/comptes", label: "Comptes", icon: "receipt" },
       { href: "/abonnement", label: "Abonnement", icon: "receipt" },
+    ],
+  },
+  {
+    title: "Offre Pro",
+    items: [
+      {
+        href: "/assistants",
+        label: "Assistants IA",
+        icon: "chat",
+        fonction: "platform_assistant",
+      },
+      {
+        href: "/apparence",
+        label: "Apparence avancée",
+        icon: "palette",
+        fonction: "customization",
+        roles: ["owner", "manager"],
+      },
+      {
+        href: "/domaine",
+        label: "Domaine perso",
+        icon: "globe",
+        fonction: "custom_domain",
+        roles: ["owner"],
+      },
     ],
   },
 ];
@@ -428,6 +459,7 @@ function Sidebar({
 }) {
   const domain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
   const port = process.env.NEXT_PUBLIC_WEB_PORT ?? "3100";
+  const { acces } = useAcces();
 
   // Le repli ne concerne que la colonne fixe. Sur téléphone, la même barre
   // est un tiroir qu'on ouvre pour lire des libellés : la replier aux icônes
@@ -483,8 +515,13 @@ function Sidebar({
                 </p>
               )}
               <ul className="space-y-0.5">
-                {group.items.map((item) => {
+                {group.items
+                  .filter((item) => !item.roles || item.roles.includes(membership.role))
+                  .map((item) => {
                   const active = pathname === item.href;
+                  const verrouille = Boolean(
+                    item.fonction && acces && !acces.fonctions?.[item.fonction],
+                  );
                   return (
                     <li key={item.href}>
                       <Link
@@ -523,6 +560,15 @@ function Sidebar({
                         >
                           {item.label}
                         </span>
+                        {verrouille && !tight && (
+                          <span
+                            title="Offre Pro"
+                            className="ml-auto inline-flex items-center gap-0.5 rounded-full border border-current/25 px-1.5 py-px text-[0.6rem] font-bold uppercase tracking-wide opacity-70"
+                          >
+                            <Icon name="lock" className="size-2.5" />
+                            Pro
+                          </span>
+                        )}
                       </Link>
                     </li>
                   );
