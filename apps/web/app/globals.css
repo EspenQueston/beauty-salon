@@ -2756,3 +2756,32 @@ body {
 .salon-site :is(h1, h2, h3) {
   font-family: var(--salon-police-titres, inherit);
 }
+
+/*
+ * La fenetre de dialogue (features/ui/Modal.tsx) : le fond s'assombrit, le
+ * panneau monte — du bas sur telephone, ou il se presente comme une feuille.
+ * Rien ne bouge pour qui a demande moins d'animations.
+ */
+@keyframes modal-fond {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes modal-monte {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+}
+.modal-fond {
+  animation: modal-fond 0.18s ease-out;
+}
+.modal-panneau {
+  animation: modal-monte 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-fond,
+  .modal-panneau {
+    animation: none;
+  }
+}

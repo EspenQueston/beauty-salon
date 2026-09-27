@@ -8,7 +8,7 @@
  * à un montant exact ferait fuir les prestataires.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
 import { formatDuration, formatPrice } from "@/lib/format";
@@ -27,6 +27,7 @@ import {
   Toggle,
   inputClass,
 } from "@/features/ui";
+import { Modal } from "@/features/ui/Modal";
 import { useToast } from "@/features/ui/Toast";
 import { Icon } from "./icons";
 import { CatalogFilter, EMPTY_FILTER, type FilterState } from "./CatalogFilter";
@@ -34,6 +35,15 @@ import { MediaPicker, type PickableMedia } from "./MediaPicker";
 import { ServiceOptions } from "./ServiceOptions";
 import { Resources, ServiceResources } from "./Resources";
 import { useDashboard } from "./DashboardShell";
+import {
+  DUREE_MIN,
+  NOM_MAX,
+  corpsPrestation,
+  estModifiee,
+  premierChampEnErreur,
+  validerPrestation,
+  type ErreursPrestation,
+} from "./prestation";
 import { rows, useResource, type Page } from "./useResource";
 
 interface Category {
@@ -179,6 +189,22 @@ export function Services() {
   );
 
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
+  // Le bouton qui a ouvert la fenetre : le focus y revient a la fermeture.
+  const [ouvreur, setOuvreur] = useState<HTMLElement | null>(null);
+  function ouvrir(valeurs: Partial<Service>, bouton: HTMLElement) {
+    setOuvreur(bouton);
+    setEditing(valeurs);
+  }
+  // La prestation qu'on vient d'enregistrer : un halo, le temps de la
+  // reperer dans la liste, sans rien faire defiler.
+  const [recente, setRecente] = useState<string | null>(null);
+  const minuterie = useRef<number | undefined>(undefined);
+  function signaler(id: string | undefined) {
+    if (!id) return;
+    setRecente(id);
+    window.clearTimeout(minuterie.current);
+    minuterie.current = window.setTimeout(() => setRecente(null), 2600);
+  }
 
   /*
    * Deux parties, deux onglets.
@@ -312,7 +338,7 @@ export function Services() {
             <Button
               type="button"
               icon={<Icon name="plus" className="size-4" />}
-              onClick={() => setEditing(nouvelle())}
+              onClick={(event) => ouvrir(nouvelle(), event.currentTarget)}
             >
               Nouvelle prestation
             </Button>
@@ -382,10 +408,12 @@ export function Services() {
           media={mediaRows}
           onMediaChanged={media.reload}
           initial={editing}
+          retour={ouvreur}
           onClose={() => setEditing(null)}
-          onSaved={() => {
+          onSaved={(id) => {
             setEditing(null);
             reloadAll();
+            signaler(id);
           }}
         />
       )}
@@ -410,7 +438,7 @@ export function Services() {
                   canEdit && (
                     <Button
                       type="button"
-                      onClick={() => setEditing(nouvelle())}
+                      onClick={(event) => ouvrir(nouvelle(), event.currentTarget)}
                     >
                       Créer ma première prestation
                     </Button>
@@ -450,7 +478,13 @@ export function Services() {
                   <ul className="space-y-2.5">
                     {list.map((service) => (
                       <li key={service.id}>
-                        <Card>
+                        <Card
+                          className={`transition-shadow duration-500 ${
+                            recente === service.id
+                              ? "ring-2 ring-salon/60 ring-offset-2 ring-offset-bg"
+                              : ""
+                          }`}
+                        >
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
@@ -488,7 +522,7 @@ export function Services() {
                             <div className="mt-4 flex flex-wrap gap-2">
                               <GhostButton
                                 type="button"
-                                onClick={() => setEditing(service)}
+                                onClick={(event) => ouvrir(service, event.currentTarget)}
                               >
                                 Modifier
                               </GhostButton>
@@ -650,6 +684,7 @@ function ServiceForm({
   initial,
   onClose,
   onSaved,
+  retour,
 }: {
   tenantId: string;
   currency: string;
@@ -659,63 +694,135 @@ function ServiceForm({
   onMediaChanged: () => void;
   initial: Partial<Service>;
   onClose: () => void;
-  onSaved: () => void;
+  /** Enregistrée : l'identifiant de la prestation, pour la signaler dans la liste. */
+  onSaved: (id: string | undefined) => void;
+  retour: HTMLElement | null;
 }) {
   const toast = useToast();
   const [values, setValues] = useState<Partial<Service>>(initial);
   const [pending, setPending] = useState(false);
+  const [erreurs, setErreurs] = useState<ErreursPrestation>({});
+  const [erreur, setErreur] = useState<string | null>(null);
+  const formulaire = useRef<HTMLFormElement>(null);
+  const boiteErreur = useRef<HTMLDivElement>(null);
+  // Verrou synchrone : l'etat `pending` n'est a jour qu'au rendu suivant,
+  // et deux clics dans le meme instant passaient tous les deux (verifie :
+  // deux PATCH pour un double clic).
+  const envoiEnCours = useRef(false);
   const isNew = !initial.id;
+
+  // Le message d'erreur, une fois affiche, vient sous les yeux : la fenetre
+  // a pu defiler vers le bas, et il s'insere tout en haut. Le focus le suit,
+  // pour qu'un lecteur d'ecran l'annonce.
+  useEffect(() => {
+    if (!erreur || !boiteErreur.current) return;
+    boiteErreur.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    boiteErreur.current.focus({ preventScroll: true });
+  }, [erreur]);
+  const modifie = estModifiee(initial, values);
 
   function set<K extends keyof Service>(key: K, value: Service[K]) {
     setValues((current) => ({ ...current, [key]: value }));
+    // Le champ corrigé perd son message ; les autres le gardent.
+    setErreurs((current) => ({ ...current, [key]: undefined }));
   }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    // Deux clics, ou Entrée pendant l'envoi : une seule requête.
+    if (envoiEnCours.current) return;
+    setErreur(null);
+
+    const trouvees = validerPrestation(values);
+    const premier = premierChampEnErreur(trouvees);
+    setErreurs(trouvees);
+    if (premier) {
+      formulaire.current?.querySelector<HTMLElement>(`[name="${premier}"]`)?.focus();
+      return;
+    }
+
+    envoiEnCours.current = true;
     setPending(true);
-
-    const ok = await toast.run(
-      () =>
-        dashboardFetch(
-          isNew ? "/api/v1/services/" : `/api/v1/services/${initial.id}/`,
-          {
-            method: isNew ? "POST" : "PATCH",
-            body: JSON.stringify({
-              category: values.category,
-              name: values.name,
-              description: values.description ?? "",
-              duration_minutes: Number(values.duration_minutes),
-              price_kind: values.price_kind,
-              price_amount:
-                values.price_kind === "quote" ? "0" : values.price_amount,
-              requires_deposit: values.requires_deposit ?? false,
-              location_mode: values.location_mode,
-              active: values.active ?? true,
-              image: values.image ?? null,
-            }),
-          },
-          tenantId,
-        ),
-      {
-        success: isNew
-          ? `« ${values.name} » ajoutée au catalogue.`
-          : `« ${values.name} » enregistrée.`,
-      },
-    );
-
-    setPending(false);
-    if (ok) onSaved();
+    try {
+      const enregistree = await dashboardFetch<{ id?: string }>(
+        isNew ? "/api/v1/services/" : `/api/v1/services/${initial.id}/`,
+        {
+          method: isNew ? "POST" : "PATCH",
+          body: JSON.stringify(corpsPrestation(values)),
+        },
+        tenantId,
+      );
+      toast.success(
+        isNew
+          ? `« ${values.name?.trim()} » ajoutée au catalogue.`
+          : `« ${values.name?.trim()} » enregistrée.`,
+      );
+      onSaved(enregistree?.id ?? initial.id);
+    } catch (caught) {
+      // La fenêtre reste ouverte, les valeurs restent saisies : seul le
+      // message s'ajoute, en tête, là où on le voit.
+      setErreur(
+        caught instanceof Error && caught.message
+          ? caught.message
+          : "Enregistrement impossible. Vérifiez votre connexion, puis réessayez.",
+      );
+    } finally {
+      envoiEnCours.current = false;
+      setPending(false);
+    }
   }
 
   return (
-    <Card className="mb-7">
-      <form onSubmit={submit}>
-        <h2 className="mb-5 text-base font-semibold text-ink">
-          {isNew ? "Nouvelle prestation" : `Modifier « ${initial.name} »`}
-        </h2>
+    <Modal
+      titre={isNew ? "Nouvelle prestation" : "Modifier la prestation"}
+      sousTitre={isNew ? "Elle apparaîtra sur votre mini-site." : initial.name}
+      onFermer={onClose}
+      retour={retour}
+      modifie={modifie}
+      occupe={pending}
+      pied={
+        <>
+          <p className="mr-auto hidden text-xs text-muted sm:block">
+            {modifie ? "Modifications non enregistrées" : "Aucune modification"}
+          </p>
+          <GhostButton
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            className="flex-1 sm:flex-none"
+          >
+            Annuler
+          </GhostButton>
+          <Button
+            type="submit"
+            form="prestation-formulaire"
+            pending={pending}
+            disabled={!isNew && !modifie}
+            className="flex-1 sm:flex-none"
+          >
+            {pending ? "Enregistrement…" : isNew ? "Créer la prestation" : "Enregistrer"}
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="prestation-formulaire"
+        ref={formulaire}
+        onSubmit={submit}
+        noValidate
+        aria-busy={pending}
+        className="scroll-mt-4"
+      >
+        {erreur && (
+          <div ref={boiteErreur} role="alert" tabIndex={-1} className="mb-4 outline-none">
+            <ErrorState>{erreur}</ErrorState>
+          </div>
+        )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+        {/* Deux colonnes dès le téléphone pour les champs courts : durée,
+            tarif, prix, lieu tiennent côte à côte ; le reste prend la ligne. */}
+        <fieldset disabled={pending} className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="col-span-2">
             <MediaPicker
               tenantId={tenantId}
               assets={media}
@@ -727,21 +834,29 @@ function ServiceForm({
             />
           </div>
 
-          <Field label="Nom" className="sm:col-span-2">
+          <Field label="Nom" className="col-span-2" error={erreurs.name}>
             <input
+              name="name"
+              data-autofocus
               value={values.name ?? ""}
               onChange={(event) => set("name", event.target.value)}
               placeholder="Tresses collées"
-              required
+              maxLength={NOM_MAX}
+              aria-invalid={Boolean(erreurs.name)}
               className={inputClass}
             />
           </Field>
 
-          <Field label="Catégorie">
+          <Field
+            label="Catégorie"
+            className="col-span-2 sm:col-span-1"
+            error={erreurs.category}
+          >
             <select
+              name="category"
               value={values.category ?? ""}
               onChange={(event) => set("category", event.target.value)}
-              required
+              aria-invalid={Boolean(erreurs.category)}
               className={inputClass}
             >
               {categories.map((category) => (
@@ -752,25 +867,25 @@ function ServiceForm({
             </select>
           </Field>
 
-          <Field
-            label="Durée (minutes)"
-            hint="Temps réellement bloqué dans l'agenda."
-          >
+          <Field label="Durée (min)" hint="Bloquée dans l'agenda." error={erreurs.duration_minutes}>
             <input
+              name="duration_minutes"
               type="number"
-              min={5}
+              inputMode="numeric"
+              min={DUREE_MIN}
               step={5}
               value={values.duration_minutes ?? 60}
               onChange={(event) =>
-                set("duration_minutes", Number(event.target.value))
+                set("duration_minutes", event.target.value as unknown as number)
               }
-              required
+              aria-invalid={Boolean(erreurs.duration_minutes)}
               className={inputClass}
             />
           </Field>
 
           <Field label="Type de tarif">
             <select
+              name="price_kind"
               value={values.price_kind ?? "fixed"}
               onChange={(event) =>
                 set("price_kind", event.target.value as Service["price_kind"])
@@ -786,56 +901,35 @@ function ServiceForm({
           </Field>
 
           {values.price_kind !== "quote" && (
-            <Field label={`Prix (${currency})`}>
+            <Field label={`Prix (${currency})`} error={erreurs.price_amount}>
               <input
+                name="price_amount"
                 type="number"
+                inputMode="decimal"
                 min={0}
                 step="0.01"
                 value={values.price_amount ?? "0"}
                 onChange={(event) => set("price_amount", event.target.value)}
+                aria-invalid={Boolean(erreurs.price_amount)}
                 className={inputClass}
               />
             </Field>
           )}
 
-          {/*
-            Un interrupteur, plus un montant.
-
-            Ce champ demandait autrefois une somme, et cette somme n'était pas
-            celle que la cliente payait : la règle du salon — un pourcentage —
-            l'emportait. Le mini-site annonçait « acompte de 5 000 », la page
-            de règlement en réclamait 7 500. Deux réglages pour une même
-            notion, à deux endroits, qui se contredisaient.
-
-            La fiche ne dit plus que oui ou non. Le montant vit dans la règle
-            du salon, et l'aperçu ci-dessous montre ce que cela donne pour
-            *cette* prestation — pour qu'on n'ait pas à faire le calcul de
-            tête ni à ouvrir un autre écran.
-          */}
-          <div className="sm:col-span-2">
-            <Toggle
-              checked={values.requires_deposit ?? false}
-              onChange={(value) => set("requires_deposit", value)}
-              label="Cette prestation demande un acompte"
-              hint={depositHint(values, rule, currency)}
-            />
-          </div>
-
           <Field
             label="Lieu"
+            className={values.price_kind === "quote" ? "col-span-2 sm:col-span-1" : ""}
             hint={
               values.location_mode === "salon"
-                ? "Cette prestation ne sera pas proposée à domicile, même si votre salon se déplace."
-                : "La cliente choisira son quartier à la réservation, et le forfait s'ajoutera au total."
+                ? "Jamais proposée à domicile."
+                : "Le forfait du quartier s'ajoute."
             }
           >
             <select
+              name="location_mode"
               value={values.location_mode ?? "salon"}
               onChange={(event) =>
-                set(
-                  "location_mode",
-                  event.target.value as Service["location_mode"],
-                )
+                set("location_mode", event.target.value as Service["location_mode"])
               }
               className={inputClass}
             >
@@ -847,8 +941,26 @@ function ServiceForm({
             </select>
           </Field>
 
-          <Field label="Description" className="sm:col-span-2">
+          {/*
+            Un interrupteur, plus un montant.
+
+            Ce champ demandait autrefois une somme, et cette somme n'était pas
+            celle que la cliente payait : la règle du salon — un pourcentage —
+            l'emportait. La fiche ne dit plus que oui ou non ; l'aperçu montre
+            ce que cela donne pour *cette* prestation.
+          */}
+          <div className="col-span-2">
+            <Toggle
+              checked={values.requires_deposit ?? false}
+              onChange={(value) => set("requires_deposit", value)}
+              label="Cette prestation demande un acompte"
+              hint={depositHint(values, rule, currency)}
+            />
+          </div>
+
+          <Field label="Description" className="col-span-2">
             <textarea
+              name="description"
               value={values.description ?? ""}
               onChange={(event) => set("description", event.target.value)}
               rows={3}
@@ -857,7 +969,7 @@ function ServiceForm({
             />
           </Field>
 
-          <div className="sm:col-span-2">
+          <div className="col-span-2">
             <Toggle
               checked={values.active ?? true}
               onChange={(value) => set("active", value)}
@@ -865,16 +977,7 @@ function ServiceForm({
               hint="Décochez pour la retirer du mini-site sans la supprimer."
             />
           </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Button type="submit" pending={pending}>
-            {isNew ? "Créer la prestation" : "Enregistrer"}
-          </Button>
-          <GhostButton type="button" onClick={onClose}>
-            Annuler
-          </GhostButton>
-        </div>
+        </fieldset>
       </form>
 
       {/*
@@ -888,6 +991,10 @@ function ServiceForm({
       */}
       {!isNew && values.id && (
         <div className="mt-6 space-y-4 border-t border-line pt-5">
+          <p className="text-xs text-muted">
+            Options et ressources s&apos;enregistrent au fur et à mesure, indépendamment du
+            bouton « Enregistrer ».
+          </p>
           <ServiceOptions
             tenantId={tenantId}
             serviceId={values.id}
@@ -899,6 +1006,6 @@ function ServiceForm({
           <ServiceResources tenantId={tenantId} serviceId={values.id} canEdit />
         </div>
       )}
-    </Card>
+    </Modal>
   );
 }
