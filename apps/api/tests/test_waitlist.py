@@ -29,6 +29,7 @@ def signup_payload(salon, **overrides):
         "service": str(salon.service.id),
         "full_name": "Awa Diallo",
         "phone": "+242066112233",
+        "email": "awa@example.com",
         "preferred_from": today.isoformat(),
         "preferred_to": (today + timedelta(days=14)).isoformat(),
     }

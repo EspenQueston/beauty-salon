@@ -480,8 +480,8 @@
     "retour": "Retour",
     "erreurs": {
       "nom": "Indiquez votre nom.",
-      "numeroCourt": "Numéro trop court.",
-      "numeroInvalide": "Numéro invalide.",
+      "numeroCourt": "Au moins 6 chiffres.",
+      "numeroInvalide": "Chiffres uniquement (un « + » est accepté au début).",
       "politique": "Vous devez accepter la politique d'annulation.",
       "zone": "Choisissez la zone de votre domicile.",
       "adresse": "Indiquez où le prestataire doit se rendre.",
@@ -489,7 +489,10 @@
       "echec": "La réservation a échoué. Réessayez.",
       "disponibilites": "Impossible de charger les disponibilités.",
       "inscription": "Inscription impossible pour le moment.",
-      "email": "Adresse e-mail invalide."
+      "email": "Adresse e-mail invalide : il faut un « @ » et un domaine (ex. nom@exemple.com).",
+      "numeroLong": "15 chiffres au plus.",
+      "telephoneRequis": "Indiquez votre numéro de téléphone.",
+      "emailRequis": "Indiquez votre adresse e-mail."
     },
     "etapes": {
       "choix": "Votre choix",
@@ -544,10 +547,11 @@
       "offres": "J'accepte de recevoir les offres du salon.",
       "usage": "Vos coordonnées ne servent qu'à ce rendez-vous.",
       "telephone": "Téléphone (WhatsApp)",
-      "telephoneAide": "C'est par là que le salon vous confirmera.",
+      "telephoneAide": "Chiffres uniquement, avec l'indicatif (ex. +242061234567). C'est par là que le salon vous confirmera.",
       "emailAide": "Pour recevoir la confirmation et le rappel de la veille.",
       "message": "Message au salon (facultatif)",
-      "confirmer": "Confirmer la réservation"
+      "confirmer": "Confirmer la réservation",
+      "email": "E-mail"
     },
     "lieu": {
       "fraisDeplacement": "+ {amount} de déplacement",

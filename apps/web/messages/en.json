@@ -480,8 +480,8 @@
     "retour": "Back",
     "erreurs": {
       "nom": "Enter your name.",
-      "numeroCourt": "Number too short.",
-      "numeroInvalide": "Invalid number.",
+      "numeroCourt": "At least 6 digits.",
+      "numeroInvalide": "Digits only (a « + » is allowed at the start).",
       "politique": "You must accept the cancellation policy.",
       "zone": "Choose the area you live in.",
       "adresse": "Say where the stylist should go.",
@@ -489,7 +489,10 @@
       "echec": "The booking failed. Please try again.",
       "disponibilites": "Could not load availability.",
       "inscription": "Sign-up is not possible right now.",
-      "email": "Invalid email address."
+      "email": "Invalid email: it needs an « @ » and a domain (e.g. name@example.com).",
+      "numeroLong": "15 digits at most.",
+      "telephoneRequis": "Enter your phone number.",
+      "emailRequis": "Enter your email address."
     },
     "etapes": {
       "choix": "Your choice",
@@ -544,10 +547,11 @@
       "offres": "I agree to receive the salon's offers.",
       "usage": "Your details are used for this appointment only.",
       "telephone": "Phone (WhatsApp)",
-      "telephoneAide": "This is how the salon will confirm.",
+      "telephoneAide": "Digits only, with the country code (e.g. +242061234567). This is how the salon will confirm.",
       "emailAide": "To receive the confirmation and the reminder the day before.",
       "message": "Message to the salon (optional)",
-      "confirmer": "Confirm the booking"
+      "confirmer": "Confirm the booking",
+      "email": "Email"
     },
     "lieu": {
       "fraisDeplacement": "+ {amount} travel fee",

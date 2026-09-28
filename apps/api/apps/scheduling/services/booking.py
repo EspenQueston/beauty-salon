@@ -394,17 +394,25 @@ def _upsert_customer(tenant, details: CustomerDetails) -> Customer:
     Le telephone fait office d'identite : une meme personne qui reserve deux
     fois doit retrouver son historique, pas creer une seconde fiche.
     """
-    customer, created = Customer.objects.get_or_create(
-        tenant=tenant,
-        phone=details.phone.strip(),
-        defaults={
-            "full_name": details.full_name.strip(),
-            "email": details.email.strip(),
-            "contact_preference": details.contact_preference,
-            "marketing_consent": details.marketing_consent,
-            "marketing_consent_at": timezone.now() if details.marketing_consent else None,
-        },
-    )
+    from apps.customers.coordonnees import memes_chiffres
+
+    # Par les chiffres seulement : une cliente enregistree avec
+    # « +86 136 1234 5678 » est retrouvee quand elle tape « +8613612345678 ».
+    existante = memes_chiffres(Customer.objects.filter(tenant=tenant), details.phone).first()
+    if existante is not None:
+        customer, created = existante, False
+    else:
+        customer, created = Customer.objects.get_or_create(
+            tenant=tenant,
+            phone=details.phone.strip(),
+            defaults={
+                "full_name": details.full_name.strip(),
+                "email": details.email.strip(),
+                "contact_preference": details.contact_preference,
+                "marketing_consent": details.marketing_consent,
+                "marketing_consent_at": timezone.now() if details.marketing_consent else None,
+            },
+        )
 
     if not created:
         changed = []

@@ -134,11 +134,21 @@ const PRIMARY =
 function schemaContact(t: (cle: string) => string) {
   return z.object({
     full_name: z.string().min(2, t("erreurs.nom")),
+    // La meme regle que le serveur (customers/coordonnees.py) : des chiffres
+    // seulement, 6 a 15, un « + » admis en tete pour l'indicatif.
     phone: z
       .string()
-      .min(6, t("erreurs.numeroCourt"))
-      .regex(/^[0-9+\s().-]+$/, t("erreurs.numeroInvalide")),
-    email: z.string().email(t("erreurs.email")).or(z.literal("")),
+      .trim()
+      .min(1, t("erreurs.telephoneRequis"))
+      .regex(/^\+?[0-9]+$/, t("erreurs.numeroInvalide"))
+      .refine((v) => v.replace("+", "").length >= 6, t("erreurs.numeroCourt"))
+      .refine((v) => v.replace("+", "").length <= 15, t("erreurs.numeroLong")),
+    // Obligatoire : c'est par lui que partent la confirmation et le rappel.
+    email: z
+      .string()
+      .trim()
+      .min(1, t("erreurs.emailRequis"))
+      .email(t("erreurs.email")),
     customer_note: z.string().max(1000).optional(),
     // Obligatoire seulement pour un rendez-vous a domicile : la regle depend
     // du lieu choisi, que le schema ne connait pas. Elle est donc verifiee a
@@ -154,6 +164,12 @@ function schemaContact(t: (cle: string) => string) {
 }
 
 type ContactValues = z.infer<ReturnType<typeof schemaContact>>;
+
+/** Ce que le champ telephone garde d'une saisie : chiffres, et un « + » en tete. */
+function chiffresDuTelephone(saisie: string): string {
+  const plus = saisie.trimStart().startsWith("+") ? "+" : "";
+  return (plus + saisie.replace(/\D/g, "")).slice(0, 16);
+}
 
 type Step = "service" | "staff" | "options" | "slot" | "contact" | "done";
 
@@ -1264,6 +1280,7 @@ function ContactStep({
     resolver: zodResolver(schemaContact(t)),
     defaultValues: { email: "", customer_note: "", website: "", address: "" },
   });
+  const champTelephone = register("phone");
 
   const submit = useCallback(
     async (values: ContactValues) => {
@@ -1293,7 +1310,7 @@ function ContactStep({
             starts_at: slot.starts_at,
             full_name: values.full_name,
             phone: values.phone,
-            email: values.email || undefined,
+            email: values.email.trim(),
             customer_note: values.customer_note,
             options: options.map((option) => option.id),
             // Seuls l'identifiant et la quantité partent : le prix est relu
@@ -1507,16 +1524,25 @@ function ContactStep({
           error={errors.phone?.message}
         >
           <input
-            {...register("phone")}
+            {...champTelephone}
+            // Filtre a la frappe : seuls les chiffres restent, et un « + »
+            // en tete. Un numero colle avec ses espaces se range tout seul.
+            onChange={(event) => {
+              event.target.value = chiffresDuTelephone(event.target.value);
+              void champTelephone.onChange(event);
+            }}
             type="tel"
             autoComplete="tel"
             inputMode="tel"
+            maxLength={16}
+            placeholder="+242061234567"
+            aria-invalid={Boolean(errors.phone)}
             className={INPUT}
           />
         </Field>
 
         <Field
-          label={t("coordonnees.emailFacultatif")}
+          label={t("coordonnees.email")}
           hint={t("coordonnees.emailAide")}
           error={errors.email?.message}
         >
@@ -1524,6 +1550,9 @@ function ContactStep({
             {...register("email")}
             type="email"
             autoComplete="email"
+            inputMode="email"
+            placeholder="nom@exemple.com"
+            aria-invalid={Boolean(errors.email)}
             className={INPUT}
           />
         </Field>
@@ -2298,10 +2327,10 @@ function OptionsStep({
  * menu ne serait cliqué par personne : on ne s'inscrit pas sur une file
  * d'attente avant d'avoir constaté la file.
  *
- * Le formulaire est court — nom, téléphone, période — parce qu'il arrive
- * après une déception. Chaque champ de plus est une raison de renoncer.
- * L'e-mail reste facultatif : dans les marchés visés, le rappel se fait au
- * téléphone.
+ * Le formulaire est court — nom, téléphone, e-mail, période — parce qu'il
+ * arrive après une déception. Téléphone et e-mail suivent la même règle que
+ * la réservation (chiffres seulement ; e-mail obligatoire), vérifiée aussi
+ * par le serveur.
  *
  * L'inscription ne réserve rien, et le texte le dit. Laisser croire à une
  * priorité qui n'existe pas produirait des clientes qui se présentent sans
@@ -2324,6 +2353,8 @@ function WaitlistForm({
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [erreurs, setErreurs] = useState<{ phone?: string; email?: string }>({});
   const [note, setNote] = useState("");
 
   const today = new Date();
@@ -2334,7 +2365,20 @@ function WaitlistForm({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim()) return;
+
+    // La même règle que la réservation : chiffres seulement, e-mail requis.
+    const verifie = schemaContact(t).pick({ phone: true, email: true }).safeParse({ phone, email });
+    if (!verifie.success) {
+      const trouvees: { phone?: string; email?: string } = {};
+      for (const probleme of verifie.error.issues) {
+        const champ = probleme.path[0] as "phone" | "email";
+        trouvees[champ] ??= probleme.message;
+      }
+      setErreurs(trouvees);
+      return;
+    }
+    setErreurs({});
 
     setPending(true);
     setFailure(null);
@@ -2345,7 +2389,8 @@ function WaitlistForm({
           service: service.id,
           staff_member: staffId,
           full_name: name.trim(),
-          phone: phone.trim(),
+          phone: verifie.data.phone,
+          email: verifie.data.email,
           preferred_from: from,
           preferred_to: to,
           note: note.trim(),
@@ -2404,17 +2449,50 @@ function WaitlistForm({
           />
         </label>
 
-        <label className="col-span-2 block">
+        <label className="col-span-2 block sm:col-span-1">
           <span className="mb-1 block text-xs text-[var(--site-muted)]">
             {t("coordonnees.telephone")}
           </span>
           <input
             value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            // Filtre à la frappe : chiffres, et un « + » en tête.
+            onChange={(event) => {
+              setPhone(chiffresDuTelephone(event.target.value));
+              setErreurs((avant) => ({ ...avant, phone: undefined }));
+            }}
             type="tel"
             inputMode="tel"
+            autoComplete="tel"
+            maxLength={16}
+            placeholder="+242061234567"
+            aria-invalid={Boolean(erreurs.phone)}
             className={INPUT}
           />
+          {erreurs.phone && (
+            <span className="mt-1 block text-xs font-medium text-red-600">{erreurs.phone}</span>
+          )}
+        </label>
+
+        <label className="col-span-2 block sm:col-span-1">
+          <span className="mb-1 block text-xs text-[var(--site-muted)]">
+            {t("coordonnees.email")}
+          </span>
+          <input
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setErreurs((avant) => ({ ...avant, email: undefined }));
+            }}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="nom@exemple.com"
+            aria-invalid={Boolean(erreurs.email)}
+            className={INPUT}
+          />
+          {erreurs.email && (
+            <span className="mt-1 block text-xs font-medium text-red-600">{erreurs.email}</span>
+          )}
         </label>
 
         <label className="block">
@@ -2464,7 +2542,7 @@ function WaitlistForm({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
-          disabled={pending || !name.trim() || !phone.trim()}
+          disabled={pending || !name.trim() || !phone.trim() || !email.trim()}
           className={`${PRIMARY} px-5 py-2.5 disabled:opacity-60`}
         >
           {pending ? t("coordonnees.envoi") : t("attente.inscrire")}
