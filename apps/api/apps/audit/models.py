@@ -61,6 +61,12 @@ class AuditLog(UUIDModel, TimeStampedModel):
         # survit a ce qu'elle decrit (salon et compte sont partis).
         TENANT_DELETED = "tenant.deleted", _("Salon supprimé définitivement")
         USER_DELETED = "user.deleted", _("Compte supprimé définitivement")
+        # Parrainage : chaque etape qui peut valoir une remise laisse une trace.
+        REFERRAL_DETECTED = "referral.detected", _("Parrainage détecté")
+        REFERRAL_ELIGIBLE = "referral.eligible", _("Parrainage admissible")
+        REFERRAL_REVIEW_REQUIRED = "referral.review_required", _("Parrainage à revoir")
+        REFERRAL_REWARD_CREATED = "referral.reward_created", _("Remise de parrainage créée")
+        REFERRAL_ADMIN = "referral.admin", _("Parrainage corrigé par l'administration")
 
     tenant = models.ForeignKey(
         "tenants.Tenant",

@@ -429,14 +429,6 @@ def soumettre_paiement(
             "Choisissez une autre devise.",
             "tarif_absent",
         )
-    if montant_attendu is not None and Decimal(montant_attendu) != prix.amount:
-        raise PaiementRefuse(
-            f"Le tarif de l'offre {plan.name} a changé : il est maintenant de "
-            f"{prix.amount.normalize():f} {devise}. Vérifiez le montant versé avant "
-            "de déclarer votre paiement.",
-            "tarif_modifie",
-        )
-
     moyen = PlatformPaymentMethod.objects.filter(pk=moyen_id).first()
     if (
         moyen is None
@@ -498,6 +490,23 @@ def soumettre_paiement(
                     "demande_en_attente",
                 )
 
+            # Remises de parrainage : verrouillees ici, reservees plus bas
+            # par cette demande. Le montant a verser en decoule.
+            from apps.parrainage import services as parrainage
+
+            calcul = parrainage.calculer(
+                prix.amount,
+                devise,
+                parrainage.utilisables(tenant_id, utilisateur, verrouiller=True),
+            )
+            if montant_attendu is not None and Decimal(montant_attendu) != calcul.montant:
+                raise PaiementRefuse(
+                    f"Le montant de l'offre {plan.name} a changé : il est maintenant de "
+                    f"{calcul.montant.normalize():f} {devise}. Vérifiez le montant versé "
+                    "avant de déclarer votre paiement.",
+                    "tarif_modifie",
+                )
+
             asset = None
             if preuve is not None:
                 from apps.media.models import MediaAsset
@@ -522,7 +531,10 @@ def soumettre_paiement(
                 billing_months=plan.billing_months,
                 country=pays,
                 currency=devise,
-                amount=prix.amount,
+                amount=calcul.montant,
+                montant_catalogue=prix.amount,
+                remise_pourcentage=calcul.pourcentage,
+                remise_montant=calcul.remise,
                 payment_method=moyen,
                 method_kind=moyen.kind,
                 method_label=moyen.libelle,
@@ -533,6 +545,7 @@ def soumettre_paiement(
                 proof=asset,
                 submitted_by=utilisateur,
             )
+            parrainage.reserver(demande, calcul)
 
             # Une periode echue attend desormais une verification : on le dit.
             avant = abonnement.status
@@ -647,7 +660,12 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
             period_end=fin,
             amount=demande.amount,
             currency=demande.currency,
-            label=f"Abonnement {demande.plan.name}",
+            label=(
+                f"Abonnement {demande.plan.name} — remise parrainage "
+                f"{demande.remise_pourcentage.normalize():f} %"
+                if demande.remise_montant
+                else f"Abonnement {demande.plan.name}"
+            ),
             status=Invoice.Status.ISSUED,
             issued_at=maintenant,
             due_at=maintenant,
@@ -659,11 +677,13 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
             abonnement.scheduled_plan = demande.plan
             abonnement.scheduled_months = mois
             abonnement.scheduled_period_end = fin
-            abonnement.scheduled_price_amount = demande.amount
+            abonnement.scheduled_price_amount = demande.montant_catalogue or demande.amount
             abonnement.scheduled_currency = demande.currency
         else:
             abonnement.plan = demande.plan
-            abonnement.price_amount = demande.amount
+            # Le tarif, pas le montant remise : c'est lui qui sert a convertir
+            # les jours lors d'une prochaine montee.
+            abonnement.price_amount = demande.montant_catalogue or demande.amount
             abonnement.currency = demande.currency
             abonnement.period_anchor = ancre
             abonnement.anchor_months = mois
@@ -696,6 +716,13 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
         demande.period_end = fin
         demande.invoice = facture
         demande.save()
+
+        from apps.parrainage import services as parrainage
+
+        # Les remises reservees sont utilisees ; et si ce salon est un
+        # filleul, son paiement recompense son parrain.
+        parrainage.consommer(demande, maintenant)
+        parrainage.recompenser_paiement(demande, maintenant)
 
         _evenement(
             abonnement,
@@ -953,6 +980,10 @@ def refuser_paiement(
         demande.rejection_reason = motif[:255]
         demande.review_note = (note or "").strip()
         demande.save()
+
+        from apps.parrainage import services as parrainage
+
+        parrainage.liberer(demande, maintenant)
 
         avant = abonnement.status
         if abonnement.status == Subscription.Status.PENDING_PAYMENT:
@@ -1239,6 +1270,8 @@ def _journaliser(action: str, *, tenant_id, acteur=None, demande=None, extra=Non
             {
                 "plan": demande.plan.code,
                 "amount": str(demande.amount),
+                "catalogue_amount": str(demande.montant_catalogue or demande.amount),
+                "referral_discount": str(demande.remise_montant),
                 "currency": demande.currency,
                 "method": demande.method_kind,
                 "reference": demande.reference,

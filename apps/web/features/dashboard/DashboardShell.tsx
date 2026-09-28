@@ -109,6 +109,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/identite", label: "Identité", icon: "edit" },
       { href: "/comptes", label: "Comptes", icon: "receipt" },
       { href: "/abonnement", label: "Abonnement", icon: "receipt" },
+      { href: "/parrainage", label: "Parrainage", icon: "gift", roles: ["owner"] },
     ],
   },
   {

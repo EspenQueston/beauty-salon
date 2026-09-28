@@ -418,6 +418,9 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
         "country",
         "currency",
         "amount",
+        "montant_catalogue",
+        "remise_pourcentage",
+        "remise_montant",
         "method_kind",
         "method_label",
         "method_account_number",
@@ -445,6 +448,9 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
             {
                 "fields": (
                     "amount",
+                    "montant_catalogue",
+                    "remise_pourcentage",
+                    "remise_montant",
                     "currency",
                     "country",
                     "method_kind",
@@ -480,6 +486,12 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
 
     @admin.display(description="Montant", ordering="amount")
     def montant(self, demande):
+        if demande.remise_montant:
+            return format_html(
+                "{} <small>(parrainage −{} %)</small>",
+                _montant(demande.amount, demande.currency),
+                f"{demande.remise_pourcentage.normalize():f}",
+            )
         return _montant(demande.amount, demande.currency)
 
     @admin.display(description="Pays", ordering="country")

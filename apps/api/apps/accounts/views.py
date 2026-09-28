@@ -11,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import BaseThrottle
 from rest_framework.views import APIView
 
 from apps.common.permissions import HasTenantRole, IsTenantMember
@@ -153,6 +154,10 @@ class SignupView(APIView):
                 timezone_name=data["timezone_name"],
                 currency=data["currency"],
                 theme_config=data.get("theme_config"),
+                code_parrainage=data.get("code_parrainage", ""),
+                # L'IP n'est gardee qu'en empreinte, pour rapprocher des
+                # inscriptions parrainees en serie.
+                ip=BaseThrottle().get_ident(request),
             )
         except SignupError as exc:
             return Response(

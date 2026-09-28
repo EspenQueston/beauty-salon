@@ -66,6 +66,8 @@ def signup_salon(
     timezone_name: str = "Africa/Brazzaville",
     currency: str = Tenant.Currency.XAF,
     theme_config: dict | None = None,
+    code_parrainage: str = "",
+    ip: str = "",
 ) -> tuple[Tenant, User]:
     """Cree un salon et son compte proprietaire.
 
@@ -108,6 +110,17 @@ def signup_salon(
         role=Membership.Role.OWNER,
         status=Membership.Status.ACTIVE,
     )
+
+    # Parrainage : le parrain est fige ici, dans la transaction de
+    # l'inscription. Un code refuse (meme personne, meme salon) est retenu
+    # comme tel, sans bloquer l'inscription ; un code inconnu la bloque.
+    if code_parrainage:
+        from apps.parrainage import services as parrainage
+
+        try:
+            parrainage.detecter(tenant, user, code_parrainage, ip)
+        except parrainage.CodeInconnu as exc:
+            raise SignupError(str(exc)) from exc
 
     # Fiche vide des le depart : le proprietaire a quelque chose a remplir
     # au lieu d'un ecran qui parle de creation.

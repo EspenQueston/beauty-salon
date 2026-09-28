@@ -74,6 +74,11 @@ class SignupSerializer(serializers.Serializer):
         choices=Tenant.Currency.choices, default=Tenant.Currency.XAF
     )
     accepts_terms = serializers.BooleanField()
+    # Le code du parrain, facultatif. Un code inconnu est refuse tout de
+    # suite : mieux vaut le corriger que decouvrir plus tard qu'il n'a pas compte.
+    code_parrainage = serializers.CharField(
+        max_length=32, required=False, allow_blank=True, default=""
+    )
 
     # Couleurs composees sur la page d'accueil avant l'inscription. Elles
     # arrivent de l'exterieur : seules trois cles sont acceptees, et chacune
@@ -107,6 +112,16 @@ class SignupSerializer(serializers.Serializer):
         except Exception:
             raise serializers.ValidationError("Fuseau horaire inconnu.") from None
         return value
+
+    def validate_code_parrainage(self, value):
+        from apps.parrainage import services as parrainage
+
+        code = parrainage.normaliser_code(value)
+        if not code or not parrainage.actif():
+            return ""
+        if parrainage.resoudre(code) is None:
+            raise serializers.ValidationError("Code de parrainage inconnu.")
+        return code
 
     def validate_accepts_terms(self, value):
         if not value:

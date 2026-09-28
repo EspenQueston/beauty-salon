@@ -53,7 +53,10 @@ export type IconName =
   | "chat"
   | "lock"
   | "crown"
-  | "send";
+  | "send"
+  // Parrainage.
+  | "gift"
+  | "share";
 
 /*
   Exportés pour l'image des notifications (app/notification-image), qui
@@ -61,6 +64,22 @@ export type IconName =
   qu'elle ouvre.
 */
 export const PATHS: Record<IconName, ReactNode> = {
+  gift: (
+    <>
+      <rect x="3.5" y="8" width="17" height="4" rx="1" />
+      <path d="M5 12v7.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V12" />
+      <path d="M12 8v12.5" />
+      <path d="M12 8C10.5 4.5 7 4 6.5 6s2.5 2 5.5 2c3 0 6-0.5 5.5-2S13.5 4.5 12 8z" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="18" cy="5.5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="18.5" r="2.5" />
+      <path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1" />
+    </>
+  ),
   edit: (
     <>
       <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" />

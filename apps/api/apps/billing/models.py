@@ -454,6 +454,18 @@ class SubscriptionPaymentRequest(TenantOwnedModel):
     country = models.CharField(_("pays"), max_length=2)
     currency = models.CharField(_("devise"), max_length=3, choices=DEVISES_ABONNEMENT)
     amount = models.DecimalField(_("montant"), max_digits=12, decimal_places=2)
+    # Parrainage : `amount` est ce que le salon verse, remises deduites ; le
+    # tarif du catalogue reste ecrit a cote. Les jours convertis lors d'une
+    # montee se calculent sur le tarif, jamais sur le montant remise.
+    montant_catalogue = models.DecimalField(
+        _("tarif du catalogue"), max_digits=12, decimal_places=2, null=True, blank=True
+    )
+    remise_pourcentage = models.DecimalField(
+        _("remise de parrainage (%)"), max_digits=5, decimal_places=2, default=0
+    )
+    remise_montant = models.DecimalField(
+        _("remise de parrainage"), max_digits=12, decimal_places=2, default=0
+    )
 
     payment_method = models.ForeignKey(
         PlatformPaymentMethod,

@@ -61,6 +61,7 @@ import { api } from "./api";
 import { Annuler } from "./Annuler";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { Tracker } from "./Tracker";
+import { ParrainageCliente } from "./ParrainageCliente";
 import type { ClientBooking } from "./types";
 
 const CARD =
@@ -882,6 +883,8 @@ function Space({
           )}
         </section>
       )}
+
+      <ParrainageCliente host={host} />
 
       <Preferences
         session={session}

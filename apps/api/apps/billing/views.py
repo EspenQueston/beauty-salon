@@ -10,6 +10,8 @@ lisible par tous les membres — c'est lui qui explique a chacun pourquoi le
 tableau de bord est en lecture seule.
 """
 
+from decimal import Decimal
+
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
@@ -156,6 +158,16 @@ class OffresView(_ProprietaireSeulement, APIView):
                 "jours_credites": effet["jours_credites"],
             }
 
+        # Remises de parrainage applicables au prochain paiement : le montant
+        # a verser en tient compte, et c'est celui-la que le salon confirmera.
+        from apps.parrainage import services as parrainage
+
+        remises = parrainage.utilisables(request.tenant_id, request.user)
+        pourcentage_remise = sum((r.pourcentage for r in remises), Decimal(0))
+
+        def a_verser(montant, code_devise) -> str:
+            return str(parrainage.calculer(montant, code_devise, remises).montant)
+
         pays = []
         for entree in services.catalogue_de_paiement():
             pays.append(
@@ -174,6 +186,7 @@ class OffresView(_ProprietaireSeulement, APIView):
                                     "description": offre["plan"].description,
                                     "mois": offre["plan"].billing_months,
                                     "montant": str(offre["montant"]),
+                                    "montant_final": a_verser(offre["montant"], devise["code"]),
                                     # Ce que ce paiement ferait, a montrer avant
                                     # de payer : montee, descente, a la suite.
                                     "effet": apercu(offre["plan"], devise["code"]),
@@ -207,6 +220,10 @@ class OffresView(_ProprietaireSeulement, APIView):
                     for fonction in ProCapability.objects.filter(active=True)
                 ],
                 "groupe_actuel": abonnement.plan.group if abonnement else "",
+                "remise_parrainage": {
+                    "pourcentage": f"{pourcentage_remise.normalize():f}",
+                    "nombre": len(remises),
+                },
                 # Pour preselectionner ce qui correspond au salon.
                 "suggestion": {
                     "pays": getattr(tenant, "country", ""),

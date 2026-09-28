@@ -208,6 +208,8 @@ export interface SignupPayload {
   accepts_terms: boolean;
   /** Palette obligatoire choisie pendant l'inscription. */
   theme_config: Record<string, string>;
+  /** Code du parrain, facultatif. Un code inconnu fait refuser l'inscription. */
+  code_parrainage?: string;
 }
 
 /**
@@ -227,6 +229,23 @@ export interface SignupResult {
 
 export function signup(payload: SignupPayload): Promise<SignupResult> {
   return accountPost<SignupResult>("/signup", payload);
+}
+
+export interface CodeParrainageVerifie {
+  valide: boolean;
+  code?: string;
+  type?: "salon" | "utilisateur";
+  /** Nom du salon parrain ; vide pour une cliente, dont le nom reste privé. */
+  salon?: string;
+}
+
+/** Un code de parrainage existe-t-il ? Rien d'autre n'en sort. */
+export async function verifierCodeParrainage(code: string): Promise<CodeParrainageVerifie | null> {
+  const response = await fetch(
+    `${browserApi()}/api/v1/account/parrainage/${encodeURIComponent(code)}`,
+  );
+  if (!response.ok) return null;
+  return response.json();
 }
 
 export async function checkSlug(

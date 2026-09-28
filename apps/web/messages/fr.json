@@ -838,6 +838,27 @@
       "arriveeCorps": "Le salon vous a enregistrée. Bonne séance.",
       "termine": "Terminé",
       "termineCorps": "C'est fait. Votre avis aiderait les prochaines clientes."
+    },
+    "parrainage": {
+      "titre": "Parrainez un salon",
+      "accroche": "Recommandez Beauty Salon à un salon que vous aimez. S'il s'inscrit avec votre code et qu'il est validé, vous recevez {pourcentage} % de remise sur l'abonnement d'un salon que vous gérez.",
+      "votreCode": "Votre code personnel",
+      "copierCode": "Copier le code",
+      "copierLien": "Copier le lien",
+      "copie": "Copié",
+      "whatsapp": "Envoyer sur WhatsApp",
+      "salonsParraines": "Salons parrainés",
+      "remisesDisponibles": "Remises disponibles",
+      "statut": {
+        "en_verification": "En vérification",
+        "admissible": "Validé",
+        "non_retenu": "Non retenu"
+      },
+      "utiliserSalon": "Votre remise s'appliquera automatiquement au prochain paiement d'abonnement de votre salon.",
+      "monAbonnement": "Mon abonnement",
+      "utiliserSansSalon": "Votre remise vous attend : elle s'appliquera à l'abonnement d'un salon que vous créerez ou gérerez sur Beauty Salon.",
+      "regles": "Un salon est validé {delai} jours après sa mise en ligne, ou dès son premier paiement. Une remise vaut {plafond} % au plus par paiement, reste valable {mois} mois, et n'est jamais de l'argent : elle ne se retire pas.",
+      "message": "Je vous recommande Beauty Salon pour gérer votre salon : réservations en ligne, rappels, mini-site. Inscrivez-vous avec mon code {code} : {lien}"
     }
   }
 }

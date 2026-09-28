@@ -13,6 +13,8 @@ n'appartiennent a aucun salon.
 
 from django.urls import path
 
+from apps.parrainage.views import VerifierCodeView
+
 from .views import (
     AcceptInvitationView,
     LoginView,
@@ -52,4 +54,10 @@ account_urlpatterns = [
     ),
     path("invitation", PublicInvitationView.as_view(), name="invitation"),
     path("invitation/accept", AcceptInvitationView.as_view(), name="invitation-accept"),
+    # Le formulaire d'inscription verifie un code de parrainage avant l'envoi.
+    path(
+        "parrainage/<str:code>",
+        VerifierCodeView.as_view(),
+        name="parrainage-verifier",
+    ),
 ]

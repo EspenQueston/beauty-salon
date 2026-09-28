@@ -248,6 +248,10 @@ class TenantAdmin(SuppressionDefinitiveMixin, admin.ModelAdmin):
             tenant.save(using=ADMIN_DB, update_fields=["status", "updated_at"])
             # Le sous-domaine peut manquer sur un salon créé à la main.
             ensure_platform_domain(tenant)
+            # Parrainage : le delai d'admissibilite du filleul part d'ici.
+            from apps.parrainage.services import noter_publication
+
+            noter_publication(tenant)
             published.append(tenant.name)
 
             AuditLog.objects.using(ADMIN_DB).create(

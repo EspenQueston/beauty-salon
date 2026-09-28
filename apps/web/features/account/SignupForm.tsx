@@ -42,7 +42,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { DashboardError, checkSlug, signup } from "@/lib/dashboard";
+import {
+  DashboardError,
+  checkSlug,
+  signup,
+  verifierCodeParrainage,
+} from "@/lib/dashboard";
 import { Button, Card, Field, GhostButton, inputClass } from "@/features/ui";
 import { Acquis, ForceMotDePasse, Parcours } from "./Parcours";
 import { PasswordField } from "@/features/ui/PasswordField";
@@ -91,6 +96,11 @@ const schema = z.object({
   accepts_terms: z.literal(true, {
     message: "Vous devez accepter les conditions.",
   }),
+  code_parrainage: z
+    .string()
+    .max(32)
+    .regex(/^[A-Za-z0-9 -]*$/, "Lettres et chiffres uniquement.")
+    .optional(),
 });
 
 type Values = z.infer<typeof schema>;
@@ -113,7 +123,7 @@ const GROUPES = [
   {
     cle: "vous",
     titre: "Vous",
-    champs: ["display_name", "email"],
+    champs: ["display_name", "email", "code_parrainage"],
     requis: ["email"],
   },
   {
@@ -181,6 +191,17 @@ function toSlug(value: string): string {
 
 type SlugState = "idle" | "checking" | "free" | "taken";
 
+/** Un code de parrainage tel qu'on le saisit : « abcd 2345 » -> « ABCD2345 ». */
+function normaliserCode(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+type CodeState =
+  | { etat: "vide" }
+  | { etat: "verification" }
+  | { etat: "valide"; salon: string }
+  | { etat: "inconnu" };
+
 /**
  * Nom et adresse apportés par la page d'accueil (`?nom=…&slug=…`).
  *
@@ -192,8 +213,9 @@ function readPrefill(): {
   name: string;
   slug: string;
   theme: Record<string, string> | null;
+  parrain: string;
 } {
-  if (typeof window === "undefined") return { name: "", slug: "", theme: null };
+  if (typeof window === "undefined") return { name: "", slug: "", theme: null, parrain: "" };
   const params = new URLSearchParams(window.location.search);
 
   /*
@@ -214,6 +236,8 @@ function readPrefill(): {
   return {
     name: params.get("nom") ?? "",
     slug: params.get("slug") ?? "",
+    // Le lien de parrainage (`?parrain=CODE`) pré-remplit le code.
+    parrain: normaliserCode(params.get("parrain") ?? "").slice(0, 16),
     theme: primary && accent && surface && paletteDepuisCouleurs({ primary, accent, surface })
       ? { primary, accent, surface }
       : null,
@@ -231,6 +255,7 @@ export function SignupForm() {
   } | null>(null);
   const [slugTouched, setSlugTouched] = useState(false);
   const [slugState, setSlugState] = useState<SlugState>("idle");
+  const [codeState, setCodeState] = useState<CodeState>({ etat: "vide" });
   const [etape, setEtape] = useState(0);
   const [plan, setPlan] = useState<Etape[]>(PLAN_BUREAU);
   const formulaire = useRef<HTMLFormElement>(null);
@@ -286,6 +311,7 @@ export function SignupForm() {
       display_name: "",
       phone: "",
       palette: paletteDepuisCouleurs(prefill.theme),
+      code_parrainage: prefill.parrain,
     },
   });
 
@@ -296,6 +322,37 @@ export function SignupForm() {
   const email = watch("email");
   const password = watch("password") ?? "";
   const accepted = watch("accepts_terms");
+  const codeSaisi = normaliserCode(watch("code_parrainage") ?? "");
+
+  // Le code se vérifie pendant la saisie : mieux vaut apprendre tout de suite
+  // qu'il est mal recopié que découvrir après l'inscription qu'il n'a pas compté.
+  useEffect(() => {
+    if (codeSaisi.length === 0) {
+      setCodeState({ etat: "vide" });
+      return;
+    }
+    let annule = false;
+    setCodeState({ etat: "verification" });
+    const minuterie = setTimeout(() => {
+      verifierCodeParrainage(codeSaisi)
+        .then((resultat) => {
+          if (annule) return;
+          // Service indisponible : on n'affirme rien, le serveur tranchera à l'envoi.
+          if (resultat === null) setCodeState({ etat: "vide" });
+          else
+            setCodeState(
+              resultat.valide ? { etat: "valide", salon: resultat.salon ?? "" } : { etat: "inconnu" },
+            );
+        })
+        .catch(() => {
+          if (!annule) setCodeState({ etat: "vide" });
+        });
+    }, 450);
+    return () => {
+      annule = true;
+      clearTimeout(minuterie);
+    };
+  }, [codeSaisi]);
 
   // Proposition automatique tant que la personne n'a pas repris la main.
   useEffect(() => {
@@ -370,9 +427,10 @@ export function SignupForm() {
     const valide = await trigger(champs);
     if (!valide) return;
     if (champs.includes("slug") && slugState === "taken") return;
+    if (champs.includes("code_parrainage") && codeState.etat === "inconnu") return;
 
     setEtape(Math.min(etape + 1, dernier));
-  }, [etape, dernier, trigger, slugState, plan]);
+  }, [etape, dernier, trigger, slugState, codeState, plan]);
 
   const precedent = useCallback(() => {
     setEtape((courante) => Math.max(0, courante - 1));
@@ -432,11 +490,13 @@ export function SignupForm() {
   const submit = useCallback(
     async (values: Values) => {
       try {
-        const { palette: paletteKey, ...fields } = values;
+        const { palette: paletteKey, code_parrainage: code, ...fields } = values;
         const couleurs = PALETTES.find((entry) => entry.cle === paletteKey);
         if (!couleurs) return;
+        const codeParrainage = normaliserCode(code ?? "");
         const result = await signup({
           ...fields,
+          code_parrainage: codeParrainage || undefined,
           display_name: values.display_name || undefined,
           phone: values.phone || undefined,
           timezone_name: place.tz,
@@ -748,6 +808,36 @@ export function SignupForm() {
                   className={inputClass}
                 />
               </Field>
+
+              <div className="sm:col-span-2">
+                <Field
+                  label="Code de parrainage"
+                  hint="Facultatif"
+                  error={
+                    errors.code_parrainage?.message ??
+                    (codeState.etat === "inconnu"
+                      ? "Code inconnu. Vérifiez-le, ou laissez ce champ vide."
+                      : undefined)
+                  }
+                >
+                  <input
+                    {...register("code_parrainage")}
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    enterKeyHint="next"
+                    maxLength={20}
+                    placeholder="Ex. : 7KQ2M9XP4T"
+                    className={`${inputClass} font-mono uppercase tracking-[0.12em]`}
+                  />
+                </Field>
+                <Acquis actif={codeState.etat === "valide"}>
+                  {codeState.etat === "valide" && codeState.salon
+                    ? `Parrainé par ${codeState.salon}.`
+                    : "Code reconnu : votre parrain sera remercié."}
+                </Acquis>
+              </div>
             </div>
           </Cadre>
 
@@ -813,7 +903,7 @@ export function SignupForm() {
               <Button
                 type="submit"
                 pending={isSubmitting}
-                disabled={slugState === "taken"}
+                disabled={slugState === "taken" || codeState.etat === "inconnu"}
                 className="w-full py-3"
               >
                 Créer mon salon

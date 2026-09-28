@@ -25,6 +25,10 @@
 
   <div class="paiement-decision__resume">
     <div class="paiement-decision__fait"><span>Montant</span><strong>{{ original.amount|unlocalize }} {{ original.currency }}</strong></div>
+    {% if original.remise_montant %}
+    {# Parrainage : le salon verse le tarif moins ses remises. C'est le montant ci-dessus qu'il faut retrouver. #}
+    <div class="paiement-decision__fait"><span>Remise de parrainage</span><strong>−{{ original.remise_pourcentage|floatformat:"-2" }} % ({{ original.remise_montant|unlocalize }} {{ original.currency }}) sur {{ original.montant_catalogue|unlocalize }}</strong></div>
+    {% endif %}
     <div class="paiement-decision__fait"><span>Offre</span><strong>{{ original.plan.name }} · {{ original.billing_months }} mois</strong></div>
     <div class="paiement-decision__fait"><span>Moyen</span><strong>{{ original.method_label }}</strong></div>
     {% if original.method_account_number %}

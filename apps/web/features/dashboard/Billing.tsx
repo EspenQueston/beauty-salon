@@ -42,6 +42,8 @@ import {
   type ReactNode,
 } from "react";
 
+import Link from "next/link";
+
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
 import {
   Badge,
@@ -106,6 +108,10 @@ interface PaymentRequest {
   country: string;
   currency: string;
   amount: string;
+  /** Tarif avant remises de parrainage (absent sur les anciennes demandes). */
+  montant_catalogue: string | null;
+  remise_pourcentage: string;
+  remise_montant: string;
   method_kind: "wechat" | "alipay" | "mobile_money";
   method_kind_label: string;
   method_label: string;
@@ -157,6 +163,8 @@ interface OffrePlan {
   description: string;
   mois: number;
   montant: string;
+  /** Ce qu'il reste à verser, remises de parrainage déduites. */
+  montant_final?: string;
   effet: Effet | null;
 }
 
@@ -186,6 +194,7 @@ interface Offres {
   fonctions_pro: { code: FonctionPro; nom: string; description: string }[];
   groupe_actuel: string;
   suggestion: { pays: string; devise: string };
+  remise_parrainage?: { pourcentage: string; nombre: number };
 }
 
 interface Invoice {
@@ -894,7 +903,14 @@ function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
         <Fait terme="Offre">
           {demande.plan.name} · {demande.billing_months} mois
         </Fait>
-        <Fait terme="Montant">{montant(demande.amount, demande.currency)}</Fait>
+        <Fait terme="Montant">
+          {montant(demande.amount, demande.currency)}
+          {Number(demande.remise_montant) > 0 && (
+            <span className="ml-1 text-[11px] font-normal text-success">
+              (−{Number(demande.remise_pourcentage)} %)
+            </span>
+          )}
+        </Fait>
         <Fait terme="Moyen">{demande.method_label}</Fait>
         <Fait terme="Référence">
           <span className="font-mono text-xs">{demande.reference}</span>
@@ -990,7 +1006,11 @@ function Commande({
     pays.devises[0];
   const plan = devise.plans.find((item) => item.code === planVoulu) ?? devise.plans[0];
   const moyen = devise.moyens.find((item) => item.id === choixMoyen) ?? devise.moyens[0];
-  const somme = plan ? montant(plan.montant, devise.code) : "";
+  // Le montant a verser : remises de parrainage deduites, calculees par le
+  // serveur. C'est lui qu'on affiche, et lui que le serveur attend.
+  const aVerser = plan ? (plan.montant_final ?? plan.montant) : "";
+  const somme = plan ? montant(aVerser, devise.code) : "";
+  const remise = offres.remise_parrainage;
 
   // Les deux groupes, s'ils sont tous deux en vente dans cette devise : une
   // devise sans prix Pro ne montre pas d'onglet Pro vide.
@@ -1048,7 +1068,7 @@ function Commande({
     corps.set("reference", reference.trim());
     // Le montant affiche : le serveur refuse s'il ne correspond plus au
     // tarif du moment, plutot que d'enregistrer un montant jamais montre.
-    corps.set("montant_attendu", plan.montant);
+    corps.set("montant_attendu", aVerser);
     if (preuve) corps.set("proof", preuve);
 
     setEnvoi(true);
@@ -1133,6 +1153,21 @@ function Commande({
               </button>
             ))}
           </div>
+        )}
+
+        {remise && remise.nombre > 0 && (
+          <p className="mb-3 flex items-start gap-2 rounded-xl bg-success-bg px-3 py-2 text-[12px] leading-relaxed text-success sm:text-[13px]">
+            <Icon name="gift" className="mt-0.5 size-4 shrink-0" />
+            <span>
+              <strong className="font-semibold">Parrainage : −{remise.pourcentage} %</strong> sur ce
+              paiement ({remise.nombre} remise{remise.nombre > 1 ? "s" : ""}). Elle
+              {remise.nombre > 1 ? "s sont utilisées" : " est utilisée"} à la validation, rendue
+              {remise.nombre > 1 ? "s" : ""} si le paiement est refusé.{" "}
+              <Link href="/parrainage" className="font-medium underline underline-offset-2">
+                Mon parrainage
+              </Link>
+            </span>
+          </p>
         )}
 
         <div role="radiogroup" aria-label="Offre" className="grid grid-cols-2 gap-2.5 sm:gap-4">
@@ -1398,7 +1433,9 @@ function CarteOffre({
   onChoisir: () => void;
 }) {
   const annuel = offre.mois === 12;
-  const parMois = annuel ? Number(offre.montant) / offre.mois : null;
+  const final = offre.montant_final ?? offre.montant;
+  const remise = Number(final) < Number(offre.montant);
+  const parMois = annuel ? Number(final) / offre.mois : null;
   const economie =
     devise.economies?.[offre.groupe] ?? (offre.groupe === "standard" ? devise.economie : null);
 
@@ -1432,8 +1469,15 @@ function CarteOffre({
         </span>
       </span>
 
-      <span className="tabular mt-2 text-lg font-bold tracking-tight text-ink sm:text-3xl">
-        {montant(offre.montant, devise.code)}
+      {remise && (
+        <span className="tabular mt-2 text-[11px] text-subtle line-through sm:text-sm">
+          {montant(offre.montant, devise.code)}
+        </span>
+      )}
+      <span
+        className={`tabular text-lg font-bold tracking-tight text-ink sm:text-3xl ${remise ? "" : "mt-2"}`}
+      >
+        {montant(final, devise.code)}
       </span>
       <span className="text-[11px] text-muted sm:text-xs">
         {annuel ? "par an" : "par mois"}
@@ -1670,6 +1714,12 @@ function Historique({
               <p className="mt-1 truncate text-[11.5px] text-muted sm:text-xs">
                 {demande.plan.name} · {demande.method_label}
               </p>
+              {Number(demande.remise_montant) > 0 && (
+                <p className="mt-1 truncate text-[10.5px] font-medium text-success sm:text-xs">
+                  Parrainage −{Number(demande.remise_pourcentage)} % ·{" "}
+                  {montant(demande.remise_montant, demande.currency)} déduits
+                </p>
+              )}
               <p className="mt-0.5 truncate font-mono text-[10.5px] text-subtle sm:text-[11px]">
                 {demande.reference}
               </p>

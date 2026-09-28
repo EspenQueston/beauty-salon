@@ -56,6 +56,7 @@ from apps.notifications.views import (
     PlatformNotificationView,
     PushView,
 )
+from apps.parrainage.views import ParrainageClienteView, ParrainageSalonView
 from apps.payments.views import (
     PaymentChannelViewSet,
     PublicBookingCancelView,
@@ -161,6 +162,7 @@ public_urlpatterns = [
     ),
     path("client/session", ClientSessionView.as_view(), name="client-session"),
     path("client/me", ClientMeView.as_view(), name="client-me"),
+    path("client/parrainage", ParrainageClienteView.as_view(), name="client-parrainage"),
     path("client/bookings", ClientBookingsView.as_view(), name="client-bookings"),
     path(
         "client/bookings/forget",
@@ -227,6 +229,8 @@ urlpatterns = [
         name="subscription-method-qr",
     ),
     path("subscription/paiements", PaiementsView.as_view(), name="subscription-payments"),
+    # Parrainage du salon : son code, ses filleuls, ses remises (proprietaire).
+    path("parrainage", ParrainageSalonView.as_view(), name="parrainage"),
     # Offre Pro : domaine personnalise (demander, verifier, retirer).
     # Offre Pro : assistants IA.
     path("assistant", AssistantPlateformeView.as_view(), name="assistant"),

@@ -838,6 +838,27 @@
       "arriveeCorps": "The salon has checked you in. Enjoy your session.",
       "termine": "Completed",
       "termineCorps": "It's done. Your review would help the next clients."
+    },
+    "parrainage": {
+      "titre": "Refer a salon",
+      "accroche": "Recommend Beauty Salon to a salon you love. If it signs up with your code and is approved, you get {pourcentage}% off the subscription of a salon you run.",
+      "votreCode": "Your personal code",
+      "copierCode": "Copy code",
+      "copierLien": "Copy link",
+      "copie": "Copied",
+      "whatsapp": "Send on WhatsApp",
+      "salonsParraines": "Salons referred",
+      "remisesDisponibles": "Discounts available",
+      "statut": {
+        "en_verification": "Under review",
+        "admissible": "Approved",
+        "non_retenu": "Not accepted"
+      },
+      "utiliserSalon": "Your discount will apply automatically to your salon's next subscription payment.",
+      "monAbonnement": "My subscription",
+      "utiliserSansSalon": "Your discount is waiting: it will apply to the subscription of a salon you create or run on Beauty Salon.",
+      "regles": "A salon is approved {delai} days after going live, or at its first payment. Discounts are capped at {plafond}% per payment, stay valid for {mois} months, and are never money: they can't be withdrawn.",
+      "message": "I recommend Beauty Salon to run your salon: online booking, reminders, a mini-site. Sign up with my code {code}: {lien}"
     }
   }
 }

@@ -106,6 +106,7 @@ LOCAL_APPS = [
     "apps.payments",
     "apps.translations",
     "apps.assistants",
+    "apps.parrainage",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -300,7 +301,17 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.billing.tasks.envoyer_rappels_abonnement",
         "schedule": crontab(minute=20),
     },
+    # Parrainage : admissibilite des filleuls (14 jours apres publication)
+    # et expiration des remises. Idempotent, une passe par jour.
+    "referral-evaluation": {
+        "task": "apps.parrainage.tasks.evaluer_parrainages",
+        "schedule": crontab(hour=3, minute=30),
+    },
 }
+
+# Interrupteur general du parrainage : a False, plus aucun code n'est
+# accepte ni aucune remise appliquee (celles qui existent sont conservees).
+PARRAINAGE_ACTIF = env.bool("PARRAINAGE_ACTIF", default=True)
 
 # ---------------------------------------------------------------------------
 # Sessions, CSRF et CORS
@@ -381,6 +392,9 @@ REST_FRAMEWORK = {
         # Assistants IA : chaque message coute un appel au fournisseur.
         "assistant": "60/hour",
         "assistant_public": "30/hour",
+        # Verification d'un code de parrainage depuis l'inscription. Un code a
+        # dix caracteres ne se devine pas, mais on ne laisse pas essayer.
+        "referral_check": "60/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }
