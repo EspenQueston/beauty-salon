@@ -134,6 +134,9 @@ def test_l_inscription_avec_un_code_enregistre_le_parrain(api_client, salon_a, o
     assert parrainage.parrain_tenant_id == salon_a.tenant.id
     assert parrainage.type_parrain == Parrainage.TypeParrain.SALON
     assert parrainage.statut == Parrainage.Statut.EN_VERIFICATION
+    with as_tenant(parrainage.filleul):
+        abonnement = Subscription.objects.get(tenant=parrainage.filleul)
+        assert abonnement.trial_ends_at - abonnement.current_period_start == timedelta(days=30)
     # Aucune remise avant l'admissibilite.
     assert not Remise.objects.exists()
     assert AuditLog.objects.filter(action=AuditLog.Action.REFERRAL_DETECTED).exists()
@@ -155,6 +158,30 @@ def test_sans_code_l_inscription_ne_change_pas(api_client, offres):
 
     assert reponse.status_code == 201
     assert not Parrainage.objects.exists()
+    tenant = Tenant.objects.get(slug="studio-kine")
+    with as_tenant(tenant):
+        abonnement = Subscription.objects.get(tenant=tenant)
+        assert abonnement.trial_ends_at - abonnement.current_period_start == timedelta(days=14)
+
+
+@ADMIN
+def test_un_parrainage_refuse_ne_prolonge_pas_l_essai(api_client, salon_a, offres):
+    salon_a.owner.phone = "+242 06 123 4567"
+    salon_a.owner.save(update_fields=["phone"])
+    code = services.code_du_salon(salon_a.tenant)
+
+    reponse = api_client.post(
+        "/api/v1/account/signup",
+        signup_payload(code_parrainage=code.code, phone="242061234567"),
+        format="json",
+    )
+
+    assert reponse.status_code == 201, reponse.data
+    tenant = Tenant.objects.get(slug="studio-kine")
+    assert Parrainage.objects.get(filleul=tenant).statut == Parrainage.Statut.REFUSE
+    with as_tenant(tenant):
+        abonnement = Subscription.objects.get(tenant=tenant)
+        assert abonnement.trial_ends_at - abonnement.current_period_start == timedelta(days=14)
 
 
 @pytest.mark.django_db

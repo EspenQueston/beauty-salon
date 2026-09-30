@@ -622,7 +622,7 @@ export function SignupForm() {
         */}
         <p className="mb-6 mt-1.5 text-sm text-muted">
           <strong className="font-medium text-ink">14 jours gratuits</strong>,
-          sans carte bancaire.
+          jusqu&apos;à 30 jours avec un parrainage éligible, sans carte bancaire.
         </p>
 
         <form ref={formulaire} onSubmit={surEnvoi} noValidate>
@@ -835,7 +835,7 @@ export function SignupForm() {
                 <Acquis actif={codeState.etat === "valide"}>
                   {codeState.etat === "valide" && codeState.salon
                     ? `Parrainé par ${codeState.salon}.`
-                    : "Code reconnu : votre parrain sera remercié."}
+                    : "Code reconnu : jusqu'à 30 jours d'essai si le parrainage est éligible."}
                 </Acquis>
               </div>
             </div>

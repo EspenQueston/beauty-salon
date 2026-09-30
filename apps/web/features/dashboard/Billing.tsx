@@ -1475,7 +1475,7 @@ function CarteOffre({
         </span>
       )}
       <span
-        className={`tabular text-lg font-bold tracking-tight text-ink sm:text-3xl ${remise ? "" : "mt-2"}`}
+        className={`tabular min-w-0 break-words text-base font-bold tracking-tight text-ink sm:text-xl lg:text-2xl ${remise ? "" : "mt-2"}`}
       >
         {montant(final, devise.code)}
       </span>

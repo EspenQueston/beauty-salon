@@ -21,6 +21,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { browserApi, csrfToken } from "@/lib/api";
+import { TexteRiche } from "@/features/ui/TexteRiche";
 import { SalonIcon } from "./icons";
 import { whatsappHref } from "./contact";
 
@@ -204,7 +205,11 @@ export function Assistant({ host, salon, slug }: { host: string; salon: string; 
 
             {messages.map((message, index) => (
               <Bulle key={index} role={message.role}>
-                {message.content}
+                {message.role === "assistant" ? (
+                  <TexteRiche texte={message.content} classeLien="text-[var(--salon-ink)]" />
+                ) : (
+                  message.content
+                )}
               </Bulle>
             ))}
 

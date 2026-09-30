@@ -85,6 +85,35 @@ def test_signing_up_then_logging_in(api_client):
     assert api_client.get("/api/v1/auth/session").status_code == 200
 
 
+def test_client_session_can_switch_to_a_salon_account(api_client, salon_a):
+    """Un compte cliente ne donne pas accès au salon et n'empêche pas de changer de compte."""
+    from apps.clients.models import ClientProfile
+
+    cliente = UserFactory(email="cliente-sans-salon@example.com")
+    ClientProfile.objects.create(user=cliente)
+    assert api_client.login(email=cliente.email, password=PASSWORD)
+
+    session_cliente = api_client.get("/api/v1/auth/session")
+    assert session_cliente.status_code == 200
+    assert session_cliente.data["memberships"] == []
+
+    connexion_salon = api_client.post(
+        "/api/v1/auth/login",
+        {"email": salon_a.owner.email, "password": PASSWORD},
+        format="json",
+    )
+    assert connexion_salon.status_code == 200
+    assert len(connexion_salon.data["memberships"]) == 1
+    assert connexion_salon.data["memberships"][0]["tenant"]["id"] == str(
+        salon_a.tenant.id
+    )
+    assert Membership.objects.filter(user=cliente).count() == 0
+
+    session_salon = api_client.get("/api/v1/auth/session")
+    assert session_salon.status_code == 200
+    assert session_salon.data["email"] == salon_a.owner.email
+
+
 def test_a_pending_salon_is_not_published(api_client):
     api_client.post("/api/v1/account/signup", signup_payload(), format="json")
 

@@ -130,7 +130,8 @@
       "CDF": "Congolese franc",
       "EUR": "Euro",
       "USD": "Dollar"
-    }
+    },
+    "indisponible": "Conversion unavailable right now. Prices stay in {devise}."
   },
   "site": {
     "nav": {
@@ -841,7 +842,7 @@
     },
     "parrainage": {
       "titre": "Refer a salon",
-      "accroche": "Recommend Beauty Salon to a salon you love. If it signs up with your code and is approved, you get {pourcentage}% off the subscription of a salon you run.",
+      "accroche": "Invite a salon: it gets a 30-day trial if the referral is eligible. Once approved, you get {pourcentage}% off the subscription of a salon you run.",
       "votreCode": "Your personal code",
       "copierCode": "Copy code",
       "copierLien": "Copy link",
@@ -858,7 +859,7 @@
       "monAbonnement": "My subscription",
       "utiliserSansSalon": "Your discount is waiting: it will apply to the subscription of a salon you create or run on Beauty Salon.",
       "regles": "A salon is approved {delai} days after going live, or at its first payment. Discounts are capped at {plafond}% per payment, stay valid for {mois} months, and are never money: they can't be withdrawn.",
-      "message": "I recommend Beauty Salon to run your salon: online booking, reminders, a mini-site. Sign up with my code {code}: {lien}"
+      "message": "I recommend Beauty Salon to run your salon: online booking, reminders, a mini-site. Sign up with my code {code} for a 30-day trial if the referral is eligible: {lien}"
     }
   }
 }

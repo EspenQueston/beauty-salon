@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { DashboardError, login } from "@/lib/dashboard";
+import { DashboardError, login, type SessionUser } from "@/lib/dashboard";
 import { platformUrl } from "@/lib/site";
 import { Button } from "@/features/ui";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
@@ -17,6 +17,7 @@ import {
   authTitle,
 } from "@/features/ui/AuthShell";
 import { FilmAcces } from "@/features/account/FilmAcces";
+import { adresseDeConnexion } from "./connexion";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { useToast } from "@/features/ui/Toast";
 
@@ -64,12 +65,27 @@ function remember(email: string) {
   }
 }
 
-export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+export function LoginForm({
+  onSuccess,
+  currentAccount,
+}: {
+  onSuccess: () => void;
+  currentAccount?: Pick<SessionUser, "email" | "is_platform_admin">;
+}) {
   const toast = useToast();
   const [prefilled] = useState(emailFromUrl);
+  const [savedEmail] = useState(rememberedEmail);
+  const [unattachedAccount, setUnattachedAccount] = useState<
+    Pick<SessionUser, "email" | "is_platform_admin"> | undefined
+  >();
+  const accountWithoutSalon = unattachedAccount ?? currentAccount;
   // L'adresse de l'URL prime : elle vient de l'inscription qu'on vient de
   // terminer, donc d'une intention plus recente que le souvenir.
-  const [email, setEmail] = useState(() => prefilled || rememberedEmail());
+  // Si une autre session est deja ouverte, ne pas reproposer son adresse :
+  // la ressaisir ramenerait exactement au meme ecran sans salon.
+  const [email, setEmail] = useState(() =>
+    adresseDeConnexion(prefilled, savedEmail, currentAccount?.email),
+  );
   const [password, setPassword] = useState("");
   /*
    * Le curseur va la ou il reste quelque chose a saisir.
@@ -78,9 +94,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
    * focus sauterait pendant la frappe, des le premier caractere tape dans
    * une adresse vide.
    */
-  const [emailWasFilled] = useState(() =>
-    Boolean(prefilled || rememberedEmail()),
-  );
+  const [emailWasFilled] = useState(() => Boolean(email));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -90,6 +104,12 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     setError(null);
     try {
       const user = await login(email, password);
+      if (user.memberships.length === 0) {
+        setUnattachedAccount(user);
+        setEmail("");
+        setPassword("");
+        return;
+      }
       remember(email);
       toast.success(`Bienvenue, ${user.display_name || user.email}.`);
       onSuccess();
@@ -140,12 +160,31 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           d'autre à regarder.
         */}
         <form onSubmit={submit} className={authCard}>
-          <h1 className={authTitle}>Connexion à votre espace professionnel</h1>
+          <h1 className={authTitle}>
+            {accountWithoutSalon
+              ? "Connectez-vous avec un compte salon"
+              : "Connexion à votre espace professionnel"}
+          </h1>
           <p className={authLead}>
-            {prefilled
+            {accountWithoutSalon
+              ? "Le compte actuellement connecté ne donne accès à aucun salon."
+              : prefilled
               ? "Votre salon est créé. Connectez-vous pour y entrer."
               : "Gérez vos rendez-vous, votre équipe et vos clients."}
           </p>
+
+          {accountWithoutSalon && (
+            <p
+              role="status"
+              className="mt-4 rounded-xl border border-line bg-surface p-3 text-sm leading-relaxed text-muted"
+            >
+              Session actuelle :{" "}
+              <span className="font-medium text-ink">{accountWithoutSalon.email}</span>.
+              {accountWithoutSalon.is_platform_admin
+                ? " L'administration de la plateforme utilise son espace dédié."
+                : " Saisissez l'adresse et le mot de passe d'un compte rattaché à votre salon. Si ce compte doit y accéder, demandez au propriétaire de vous inviter."}
+            </p>
+          )}
 
           <div className="mt-6 space-y-4">
             {/* Une colonne, toujours. Deux champs d'identification côte à
@@ -214,12 +253,16 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             bancaire. Sans cela, « Creer le mien » demande un engagement dont
             on ignore le prix. */}
         <p className="mt-5 text-center text-sm text-ink/75">
-          Pas encore de salon ?{" "}
+          {accountWithoutSalon
+            ? "Pas encore de compte salon ? "
+            : "Pas encore de salon ? "}
           <Link href="/inscription" className={authLink}>
-            Créer le mien
+            {accountWithoutSalon ? "Créer un salon" : "Créer le mien"}
           </Link>
           <span className="mt-1 block text-xs text-muted">
-            14 jours gratuits, sans carte bancaire.
+            {accountWithoutSalon
+              ? "L'inscription nécessite une autre adresse e-mail."
+              : "14 jours gratuits, sans carte bancaire."}
           </span>
         </p>
       </div>

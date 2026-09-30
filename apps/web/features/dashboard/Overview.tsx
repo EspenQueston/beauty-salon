@@ -145,7 +145,7 @@ export function Overview() {
       )}
 
       {/* ----- 2. Aujourd'hui, et le mois ------------------------------ */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         <Highlight
           label="Aujourd'hui"
           value={String(today.count)}
@@ -266,7 +266,7 @@ function Highlight({
 }) {
   return (
     <div
-      className={`rounded-2xl p-5 shadow-card ${
+      className={`min-w-0 rounded-2xl p-3 shadow-card sm:p-4 ${
         filled
           ? "salon-gradient text-white"
           : "border border-line bg-surface text-ink"
@@ -274,7 +274,7 @@ function Highlight({
     >
       <div className="flex items-start justify-between gap-3">
         <p
-          className={`text-sm font-medium ${
+          className={`text-xs font-medium sm:text-sm ${
             filled ? "text-white/85" : "text-muted"
           }`}
         >
@@ -282,17 +282,17 @@ function Highlight({
         </p>
         <Icon
           name={icon}
-          className={`size-5 shrink-0 ${
+          className={`size-4 shrink-0 sm:size-5 ${
             filled ? "text-white/70" : "text-subtle"
           }`}
         />
       </div>
 
-      <p className="tabular mt-2 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+      <p className="tabular mt-2 min-w-0 break-words text-lg font-semibold tracking-tight sm:text-xl lg:text-2xl">
         {value}
         {unit && (
           <span
-            className={`text-sm font-normal ${
+            className={`ml-1 text-xs font-normal sm:text-sm ${
               filled ? "text-white/80" : "text-muted"
             }`}
           >
@@ -301,7 +301,7 @@ function Highlight({
         )}
       </p>
 
-      <p className={`mt-2 text-sm ${filled ? "text-white/85" : "text-muted"}`}>
+      <p className={`mt-2 text-xs leading-snug sm:text-sm ${filled ? "text-white/85" : "text-muted"}`}>
         {footer}
       </p>
     </div>
@@ -324,19 +324,21 @@ function Tile({
     // colonnes sur un écran de 375 px, une tuile fait 160 px de large, et une
     // icône en tête y ampute le libellé de trois mots — « Panier moyen »
     // devenait « Panier mo… ». À droite, elle ne vole rien à personne.
-    <Card className="min-w-0">
+    <Card className="min-w-0" padded={false}>
+      <div className="p-3 sm:p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-sm leading-snug text-muted">{label}</p>
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-salon-soft">
-          <Icon name={icon} className="size-4 text-salon" />
+        <p className="min-w-0 text-xs leading-snug text-muted sm:text-sm">{label}</p>
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-salon-soft sm:size-8">
+          <Icon name={icon} className="size-3.5 text-salon sm:size-4" />
         </span>
       </div>
-      <p className="tabular mt-1.5 text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+      <p className="tabular mt-1.5 min-w-0 break-words text-base font-semibold tracking-tight text-ink sm:text-lg lg:text-xl">
         {value}
       </p>
       {hint && (
         <p className="mt-0.5 text-xs leading-snug text-subtle">{hint}</p>
       )}
+      </div>
     </Card>
   );
 }

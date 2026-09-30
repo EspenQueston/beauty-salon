@@ -69,6 +69,7 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 TRIAL_DAYS = 14
+REFERRED_TRIAL_DAYS = 30
 GRACE = timedelta(days=3)
 PAYMENT_TERMS_DAYS = 15
 
@@ -230,14 +231,16 @@ def _evenement(
     )
 
 
-def start_trial(tenant: Tenant, *, plan: Plan | None = None) -> Subscription:
+def start_trial(
+    tenant: Tenant, *, plan: Plan | None = None, days: int = TRIAL_DAYS
+) -> Subscription:
     """Ouvre la periode d'essai d'un salon qui vient de s'inscrire."""
     plan = plan or Plan.objects.filter(code=Plan.Code.TRIAL, active=True).first()
     if plan is None:
         raise BillingError("Aucune offre d'essai n'est configurée.")
 
     now = timezone.now()
-    ends = now + timedelta(days=TRIAL_DAYS)
+    ends = now + timedelta(days=days)
 
     # Appelee depuis l'inscription comme depuis l'administration, ou le
     # contexte de la requete peut etre celui d'un autre salon.

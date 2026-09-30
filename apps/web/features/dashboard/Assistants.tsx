@@ -27,6 +27,7 @@ import {
   Skeleton,
   Toggle,
 } from "@/features/ui";
+import { TexteRiche } from "@/features/ui/TexteRiche";
 import { useToast } from "@/features/ui/Toast";
 import { dateLongue } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
@@ -200,7 +201,11 @@ function Conversation({ tenantId, actif }: { tenantId: string; actif: boolean })
                   : "rounded-bl-md bg-surface-muted text-ink"
               }`}
             >
-              {message.content}
+              {message.role === "assistant" ? (
+                <TexteRiche texte={message.content} classeLien="text-salon" />
+              ) : (
+                message.content
+              )}
             </p>
           </div>
         ))}

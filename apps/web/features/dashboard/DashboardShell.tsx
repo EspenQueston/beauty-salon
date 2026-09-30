@@ -38,6 +38,7 @@ import { AccesProvider, AccessBanner, UpgradeButton, useAcces } from "./AccessBa
 import type { FonctionPro } from "./abonnement";
 import { Notifications } from "./Notifications";
 import { LoginForm } from "./LoginForm";
+import { modeSession } from "./connexion";
 import { Icon, type IconName } from "./icons";
 import {
   Configurator,
@@ -257,32 +258,18 @@ function ShellContent({ children }: { children: ReactNode }) {
     );
   }
 
+  const mode = modeSession(user);
   if (!user) return <LoginForm onSuccess={reload} />;
 
   const membership =
     user.memberships.find((item) => item.tenant.id === tenantId) ??
     user.memberships[0];
 
-  if (!membership) {
-    return (
-      <div className="flex min-h-full items-center justify-center p-8">
-        <div className="max-w-md text-center">
-          <h1 className="text-lg font-semibold text-ink">
-            Aucun salon rattaché
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Votre compte existe, mais n&apos;est rattaché à aucun salon.
-            Contactez l&apos;équipe Beauty Salon, ou créez le vôtre.
-          </p>
-          <Link
-            href="/inscription"
-            className="mt-5 inline-flex rounded-lg bg-salon px-4 py-2.5 text-sm font-medium text-white"
-          >
-            Créer mon salon
-          </Link>
-        </div>
-      </div>
-    );
+  if (mode === "changer_compte" || !membership) {
+    // Une session cliente (ou administrateur plateforme) est valide mais ne
+    // donne aucun droit sur un salon. Laisser la connexion visible permet de
+    // choisir un autre compte sans attribuer de membership par erreur.
+    return <LoginForm onSuccess={reload} currentAccount={user} />;
   }
 
   /*

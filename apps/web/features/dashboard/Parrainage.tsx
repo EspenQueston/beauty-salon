@@ -99,7 +99,7 @@ export function Parrainage() {
   const entete = (
     <PageHeader
       title="Parrainage"
-      description="Recommandez Beauty Salon à d'autres salons. Chaque salon qui vous rejoint grâce à votre code vous vaut une remise sur votre abonnement."
+      description="Invitez un salon : il profite de 30 jours d'essai si le parrainage est éligible, et vous obtenez une remise sur votre abonnement après validation."
     />
   );
 
@@ -211,7 +211,7 @@ export function PartageCode({
     () => typeof navigator !== "undefined" && typeof navigator.share === "function",
   );
 
-  const message = `Je gère mon salon avec Beauty Salon : réservations, rappels, mini-site. Inscrivez le vôtre avec mon code ${code} : ${lien}`;
+  const message = `Je gère mon salon avec Beauty Salon : réservations, rappels, mini-site. Inscrivez le vôtre avec mon code ${code} et profitez de 30 jours d'essai si le parrainage est éligible : ${lien}`;
 
   return (
     <Card className="mb-6 overflow-hidden sm:mb-8" padded={false}>

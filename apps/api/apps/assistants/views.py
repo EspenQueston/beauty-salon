@@ -150,7 +150,7 @@ class AssistantPublicView(APIView):
         tenant = Tenant.objects.get(pk=request.tenant_id)
         try:
             reponse = ia.SERVICE.repondre(
-                ia.SYSTEME_CLIENTES.format(salon=tenant.name), ia.contexte_public(tenant), messages
+                ia.SYSTEME_SITE.format(salon=tenant.name), ia.contexte_public(tenant), messages
             )
         except ia.IAIndisponible:
             return Response(

@@ -114,11 +114,17 @@ def signup_salon(
     # Parrainage : le parrain est fige ici, dans la transaction de
     # l'inscription. Un code refuse (meme personne, meme salon) est retenu
     # comme tel, sans bloquer l'inscription ; un code inconnu la bloque.
+    parrainage_retenu = False
     if code_parrainage:
         from apps.parrainage import services as parrainage
+        from apps.parrainage.models import Parrainage
 
         try:
-            parrainage.detecter(tenant, user, code_parrainage, ip)
+            resultat = parrainage.detecter(tenant, user, code_parrainage, ip)
+            parrainage_retenu = (
+                resultat is not None
+                and resultat.statut == Parrainage.Statut.EN_VERIFICATION
+            )
         except parrainage.CodeInconnu as exc:
             raise SignupError(str(exc)) from exc
 
@@ -138,10 +144,15 @@ def signup_salon(
 
     # Periode d'essai ouverte des l'inscription : sans elle, le salon n'a
     # aucun statut d'abonnement et le tableau de bord n'a rien a montrer.
-    from apps.billing.services import BillingError, start_trial
+    from apps.billing.services import (
+        REFERRED_TRIAL_DAYS,
+        TRIAL_DAYS,
+        BillingError,
+        start_trial,
+    )
 
     try:
-        start_trial(tenant)
+        start_trial(tenant, days=REFERRED_TRIAL_DAYS if parrainage_retenu else TRIAL_DAYS)
     except BillingError:
         # Aucune offre d'essai configuree : l'inscription reste valable,
         # l'equipe rattachera l'abonnement a la main.
