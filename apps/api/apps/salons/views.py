@@ -259,7 +259,11 @@ def _gallery() -> list:
         MediaAsset.objects.filter(
             kind=MediaAsset.Kind.GALLERY,
             visibility=MediaAsset.Visibility.PUBLIC,
-        ).order_by("position", "-created_at")[:60]
+        )
+        # La prestation et la prestataire voyagent avec chaque photo : une
+        # jointure plutot qu'une requete par vignette.
+        .select_related("service__category", "staff_member")
+        .order_by("position", "-created_at")[:60]
     )
     employes = list(MediaAsset.objects.filter(id__in=reserves))
 

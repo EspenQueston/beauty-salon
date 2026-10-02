@@ -15,6 +15,18 @@ export interface MediaAsset {
   position: number;
   /** Mis en avant sur l'accueil du mini-site. */
   featured: boolean;
+  /** Ce que montre la réalisation : de quoi la réserver telle quelle. */
+  prestation?: {
+    id: string;
+    nom: string;
+    prix: string;
+    prix_type: string;
+    duree: number;
+    categorie_id: string;
+    categorie: string;
+  } | null;
+  /** Qui l'a réalisée. */
+  prestataire?: { id: string; nom: string } | null;
 }
 
 /** Moyenne et volume des avis publiés. `average` est nul sans aucun avis. */

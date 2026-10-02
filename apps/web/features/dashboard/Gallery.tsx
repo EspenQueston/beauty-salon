@@ -50,6 +50,14 @@ interface Asset {
   height: number | null;
   position: number;
   featured: boolean;
+  /** Ce que montre la photo, et qui l'a faite : de quoi « Réserver ce look ». */
+  service: string | null;
+  staff_member: string | null;
+}
+
+interface Choix {
+  id: string;
+  name: string;
 }
 
 /** Nombre de médias montrés sur l'accueil du mini-site. */
@@ -85,6 +93,17 @@ export function Gallery() {
     tenantId,
   );
   const profile = useResource<Profile>("/api/v1/salon-profile", tenantId);
+  // Pour relier une photo à sa prestation et à qui l'a faite.
+  const services = useResource<Page<Choix>>(
+    "/api/v1/services/?page_size=200",
+    tenantId,
+  );
+  const equipe = useResource<Page<Choix>>(
+    "/api/v1/staff-members/?page_size=100",
+    tenantId,
+  );
+  const prestations = rows(services.data);
+  const prestataires = rows(equipe.data);
 
   const all = rows(assets.data);
   const logoId = profile.data?.logo ?? null;
@@ -195,6 +214,34 @@ export function Gallery() {
     if (ok) assets.reload();
   }
 
+  /** Relie la photo à une prestation ou à une prestataire (ou défait le lien). */
+  async function relier(
+    asset: Asset,
+    champ: "service" | "staff_member",
+    valeur: string,
+  ) {
+    const ok = await toast.run(
+      () =>
+        dashboardFetch(
+          `/api/v1/media/${asset.id}/`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ [champ]: valeur || null }),
+          },
+          tenantId,
+        ),
+      {
+        success:
+          champ === "service"
+            ? valeur
+              ? "Prestation reliée : la photo propose « Réserver ce look »."
+              : "Prestation retirée de la photo."
+            : "Signature de la photo enregistrée.",
+      },
+    );
+    if (ok) assets.reload();
+  }
+
   /** Décale une photo d'un cran : la première est la vitrine. */
   async function move(asset: Asset, direction: -1 | 1) {
     const index = gallery.indexOf(asset);
@@ -287,6 +334,21 @@ export function Gallery() {
           </p>
         )}
 
+        {gallery.length > 0 && canEdit && (
+          <p className="mb-4 flex items-start gap-2 rounded-xl bg-salon-soft p-3 text-sm text-ink">
+            <Icon
+              name="sparkles"
+              className="mt-0.5 size-4 shrink-0 text-salon"
+            />
+            <span>
+              Reliez chaque photo à sa <strong>prestation</strong> : sur votre
+              mini-site, elle affiche son prix et un bouton « Réserver ce look
+              », et se range dans le bon filtre. Ajoutez qui l&apos;a réalisée
+              pour mettre votre équipe en valeur.
+            </span>
+          </p>
+        )}
+
         {assets.data === null && !assets.error && <Skeleton rows={2} />}
 
         {gallery.length === 0 && assets.data !== null && (
@@ -365,6 +427,40 @@ export function Gallery() {
                     aria-label="Description de la photo"
                     className={inputClass}
                   />
+                  <div className="mt-2 grid gap-2">
+                    <select
+                      value={asset.service ?? ""}
+                      onChange={(event) =>
+                        relier(asset, "service", event.target.value)
+                      }
+                      disabled={!canEdit}
+                      aria-label="Prestation montrée sur la photo"
+                      className={`${inputClass} py-1.5 text-[13px]`}
+                    >
+                      <option value="">Prestation : aucune</option>
+                      {prestations.map((choix) => (
+                        <option key={choix.id} value={choix.id}>
+                          {choix.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={asset.staff_member ?? ""}
+                      onChange={(event) =>
+                        relier(asset, "staff_member", event.target.value)
+                      }
+                      disabled={!canEdit}
+                      aria-label="Prestataire qui a réalisé la photo"
+                      className={`${inputClass} py-1.5 text-[13px]`}
+                    >
+                      <option value="">Réalisée par : non précisé</option>
+                      {prestataires.map((choix) => (
+                        <option key={choix.id} value={choix.id}>
+                          {choix.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <p className="mt-2 text-xs text-subtle">
                     {asset.width && asset.height
                       ? `${asset.width} × ${asset.height} · `

@@ -92,7 +92,7 @@ export function ParrainageCliente({ host }: { host: string }) {
   }
 
   return (
-    <section className="mb-8" aria-labelledby="parrainage-titre">
+    <section id="parrainage" className="mb-8 scroll-mt-32 lg:scroll-mt-24" aria-labelledby="parrainage-titre">
       <div className={`${CARD} overflow-hidden`}>
         <div className="salon-gradient px-4 py-4 text-white sm:px-5">
           <h2 id="parrainage-titre" className="text-base font-semibold sm:text-lg">

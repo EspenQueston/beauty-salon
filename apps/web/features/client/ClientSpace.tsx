@@ -62,6 +62,7 @@ import { Annuler } from "./Annuler";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { Tracker } from "./Tracker";
 import { ParrainageCliente } from "./ParrainageCliente";
+import { MenuEspace } from "./MenuEspace";
 import type { ClientBooking } from "./types";
 
 const CARD =
@@ -297,10 +298,14 @@ function Gate({
           }),
         });
       } else {
-        const reponse = await api<{ mfa_required?: boolean }>("/api/v1/auth/login", host, {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        });
+        const reponse = await api<{ mfa_required?: boolean }>(
+          "/api/v1/auth/login",
+          host,
+          {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+          },
+        );
         if (reponse?.mfa_required) {
           setCodeAttendu(true);
           setPassword("");
@@ -508,7 +513,10 @@ function Gate({
 
           {codeAttendu && (
             <div>
-              <label htmlFor="code-2fa" className="mb-1.5 block text-sm font-medium text-ink">
+              <label
+                htmlFor="code-2fa"
+                className="mb-1.5 block text-sm font-medium text-ink"
+              >
                 {t("compte.code2fa")}
               </label>
               <input
@@ -522,7 +530,9 @@ function Gate({
                 maxLength={20}
                 className={`${authInput} text-center font-mono text-lg tracking-[0.3em]`}
               />
-              <p className="mt-1.5 text-xs text-ink/70">{t("compte.code2faAide")}</p>
+              <p className="mt-1.5 text-xs text-ink/70">
+                {t("compte.code2faAide")}
+              </p>
             </div>
           )}
 
@@ -687,7 +697,7 @@ function Space({
   const firstName = session.client?.full_name?.split(" ")[0] ?? "";
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28">
+    <main className="mx-auto w-full max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:grid lg:max-w-5xl lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-x-8">
       {/*
         L'en-tête porte l'identité, pas seulement un bonjour.
 
@@ -695,7 +705,7 @@ function Space({
         est, et le compte se distingue du mini-site public qu'on vient de
         quitter.
       */}
-      <header className="mb-6 flex flex-wrap items-center gap-3">
+      <header className="mb-6 flex flex-wrap items-center gap-3 lg:col-span-2">
         <span
           aria-hidden
           className="salon-gradient flex size-12 shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-white"
@@ -721,65 +731,92 @@ function Space({
         </button>
       </header>
 
-      {/* Quatre chiffres, en deux colonnes dès le téléphone. Ils répondent à
+      {/* Le menu des sections : colonne collée à gauche sur ordinateur, barre
+          de pastilles sous l'en-tête sur téléphone. Il suit la lecture. */}
+      <MenuEspace
+        titre={t("menu.titre")}
+        entrees={[
+          { id: "apercu", libelle: t("menu.apercu"), icone: "grid" },
+          {
+            id: "a-faire",
+            libelle: t("menu.aFaire"),
+            icone: "clock",
+            badge: toSettle.length + toReview.length,
+          },
+          {
+            id: "rendez-vous",
+            libelle: t("menu.rendezVous"),
+            icone: "calendar",
+          },
+          { id: "parrainage", libelle: t("menu.parrainage"), icone: "sparkle" },
+          { id: "profil", libelle: t("menu.profil"), icone: "user" },
+        ]}
+      />
+
+      <div className="min-w-0">
+        <section id="apercu" className="scroll-mt-32 lg:scroll-mt-24">
+          {/* Quatre chiffres, en deux colonnes dès le téléphone. Ils répondent à
           « où j'en suis » sans faire défiler.
 
           « À noter » a rejoint les trois autres parce que c'est le seul qui
           appelle un geste : les trois premiers décrivent, celui-là demande. */}
-      <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Tile label={t("liste.aVenir")} value={String(upcoming.length)} />
-        <Tile
-          label={visits > 1 ? "Visites" : "Visite"}
-          value={String(visits)}
-        />
-        <Tile
-          label={t("liste.aNoter")}
-          value={String(toReview.length)}
-          accent={toReview.length > 0}
-        />
-        <Tile
-          label="Salon"
-          value={session.client?.preferred_salon_name || salon.name}
-          small
-        />
-      </dl>
+          <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <Tile label={t("liste.aVenir")} value={String(upcoming.length)} />
+            <Tile
+              label={visits > 1 ? "Visites" : "Visite"}
+              value={String(visits)}
+            />
+            <Tile
+              label={t("liste.aNoter")}
+              value={String(toReview.length)}
+              accent={toReview.length > 0}
+            />
+            <Tile
+              label="Salon"
+              value={session.client?.preferred_salon_name || salon.name}
+              small
+            />
+          </dl>
 
-      {session.client?.email_verified === false && (
-        <RappelVerification email={session.email} host={host} />
-      )}
+          {session.client?.email_verified === false && (
+            <RappelVerification email={session.email} host={host} />
+          )}
 
-      {failed && (
-        <p className="mb-6 rounded-xl bg-red-500/10 p-3.5 text-sm text-red-700">
-          {t("liste.echec")}
-        </p>
-      )}
+          {failed && (
+            <p className="mb-6 rounded-xl bg-red-500/10 p-3.5 text-sm text-red-700">
+              {t("liste.echec")}
+            </p>
+          )}
+        </section>
 
-      {/* Ce qui attend un geste passe avant tout le reste. */}
-      {toSettle.length > 0 && (
-        <div className="mb-6 rounded-2xl border-l-4 border-l-amber-500 border-y border-r border-[var(--site-line)] bg-[var(--site-surface)] p-4">
-          <p className="font-medium text-[var(--site-ink)]">
-            {toSettle.length === 1
-              ? t("liste.acompteRestant")
-              : t("liste.acomptesRestants", { n: toSettle.length })}
-          </p>
-          <p className="mt-1 text-sm text-[var(--site-muted)]">
-            {t("liste.acompteRappel")}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {toSettle.map((booking) => (
-              <Lien
-                key={booking.id}
-                href={`/paiement?token=${encodeURIComponent(booking.payment_token)}`}
-                className={`${PRIMARY} px-4 py-2.5 text-sm`}
-              >
-                Régler {booking.service_name}
-              </Lien>
-            ))}
-          </div>
-        </div>
-      )}
+        {(toSettle.length > 0 || toReview.length > 0) && (
+          <section id="a-faire" className="scroll-mt-32 lg:scroll-mt-24">
+            {/* Ce qui attend un geste passe avant tout le reste. */}
+            {toSettle.length > 0 && (
+              <div className="mb-6 rounded-2xl border-l-4 border-l-amber-500 border-y border-r border-[var(--site-line)] bg-[var(--site-surface)] p-4">
+                <p className="font-medium text-[var(--site-ink)]">
+                  {toSettle.length === 1
+                    ? t("liste.acompteRestant")
+                    : t("liste.acomptesRestants", { n: toSettle.length })}
+                </p>
+                <p className="mt-1 text-sm text-[var(--site-muted)]">
+                  {t("liste.acompteRappel")}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {toSettle.map((booking) => (
+                    <Lien
+                      key={booking.id}
+                      href={`/paiement?token=${encodeURIComponent(booking.payment_token)}`}
+                      className={`${PRIMARY} px-4 py-2.5 text-sm`}
+                    >
+                      Régler {booking.service_name}
+                    </Lien>
+                  ))}
+                </div>
+              </div>
+            )}
 
-      {/*
+            {/*
         Les avis en attente, juste après les acomptes.
 
         Ils ne coûtent rien à la cliente si elle les ignore — d'où la place
@@ -787,150 +824,164 @@ function Space({
         le lien ne fonctionne plus. Le dire en jours plutôt qu'en date,
         parce que « il vous reste 6 jours » se comprend sans calcul.
       */}
-      {toReview.length > 0 && (
-        <div className="mb-6 rounded-2xl border-y border-r border-l-4 border-[var(--site-line)] border-l-[var(--salon-primary)] bg-[var(--site-surface)] p-4">
-          <p className="flex flex-wrap items-center gap-2 font-medium text-[var(--site-ink)]">
-            <SalonIcon name="star" className="size-4 text-[var(--salon-ink)]" />
-            {toReview.length === 1
-              ? t("liste.visiteAttendAvis")
-              : t("liste.visitesAvis", { n: toReview.length })}
-          </p>
-          <p className="mt-1 text-sm text-[var(--site-muted)]">
-            {t("liste.avisInvitation")}
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {toReview.map((booking) => (
-              <li key={booking.id}>
-                <a
-                  href={`${salonOrigin(booking.salon_slug, host)}/avis?token=${encodeURIComponent(booking.review_token)}`}
-                  className={`${PRIMARY} px-4 py-2.5 text-sm`}
-                >
-                  Noter {booking.service_name}
-                  <span className="ml-1.5 font-normal opacity-80">
-                    · {remaining(booking.review_until, t)}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+            {toReview.length > 0 && (
+              <div className="mb-6 rounded-2xl border-y border-r border-l-4 border-[var(--site-line)] border-l-[var(--salon-primary)] bg-[var(--site-surface)] p-4">
+                <p className="flex flex-wrap items-center gap-2 font-medium text-[var(--site-ink)]">
+                  <SalonIcon
+                    name="star"
+                    className="size-4 text-[var(--salon-ink)]"
+                  />
+                  {toReview.length === 1
+                    ? t("liste.visiteAttendAvis")
+                    : t("liste.visitesAvis", { n: toReview.length })}
+                </p>
+                <p className="mt-1 text-sm text-[var(--site-muted)]">
+                  {t("liste.avisInvitation")}
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {toReview.map((booking) => (
+                    <li key={booking.id}>
+                      <a
+                        href={`${salonOrigin(booking.salon_slug, host)}/avis?token=${encodeURIComponent(booking.review_token)}`}
+                        className={`${PRIMARY} px-4 py-2.5 text-sm`}
+                      >
+                        Noter {booking.service_name}
+                        <span className="ml-1.5 font-normal opacity-80">
+                          · {remaining(booking.review_until, t)}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
 
-      {data === null && !failed && (
-        <div className={`${CARD} mb-6 h-32 animate-pulse`} />
-      )}
+        <section id="rendez-vous" className="scroll-mt-32 lg:scroll-mt-24">
+          {data === null && !failed && (
+            <div className={`${CARD} mb-6 h-32 animate-pulse`} />
+          )}
 
-      {/* Le prochain rendez-vous, en grand : c'est la seule chose qu'on
+          {/* Le prochain rendez-vous, en grand : c'est la seule chose qu'on
           vient vérifier neuf fois sur dix. */}
-      {nextOne && (
-        <NextBooking booking={nextOne} host={host} onCancelled={relire} />
-      )}
+          {nextOne && (
+            <NextBooking booking={nextOne} host={host} onCancelled={relire} />
+          )}
 
-      {data !== null && upcoming.length === 0 && (
-        <div className={`${CARD} p-6 text-center`}>
-          <p className="font-medium text-[var(--site-ink)]">
-            {t("liste.aucunAVenir")}
-          </p>
-          <p className="mt-1 text-sm text-[var(--site-muted)]">
-            {visits > 0
-              ? t("liste.reprenezLa")
-              : t("liste.choisissezPrestation")}
-          </p>
-          <Lien href="/reserver" className={`${PRIMARY} mt-4`}>
-            Réserver chez {salon.name}
-          </Lien>
-        </div>
-      )}
+          {data !== null && upcoming.length === 0 && (
+            <div className={`${CARD} mb-8 p-6 text-center`}>
+              <p className="font-medium text-[var(--site-ink)]">
+                {t("liste.aucunAVenir")}
+              </p>
+              <p className="mt-1 text-sm text-[var(--site-muted)]">
+                {visits > 0
+                  ? t("liste.reprenezLa")
+                  : t("liste.choisissezPrestation")}
+              </p>
+              <Lien href="/reserver" className={`${PRIMARY} mt-4`}>
+                Réserver chez {salon.name}
+              </Lien>
+            </div>
+          )}
 
-      {(rest.length > 0 || past.length > 0) && (
-        <section className="mb-8">
-          {/* Deux onglets plutôt que deux sections empilées : l'historique
+          {(rest.length > 0 || past.length > 0) && (
+            <section className="mb-8">
+              {/* Deux onglets plutôt que deux sections empilées : l'historique
               d'une cliente fidèle poussait les rendez-vous suivants hors de
               l'écran, et ce sont eux qu'on vient voir. */}
-          <div
-            role="tablist"
-            aria-label={t("liste.vosRdv")}
-            className="mb-3 flex rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] p-1"
-          >
-            {(
-              [
-                ["avenir", "Ensuite", rest.length],
-                ["passe", "Historique", past.length],
-              ] as ["avenir" | "passe", string, number][]
-            ).map(([key, label, count]) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={tab === key}
-                onClick={() => setTab(key)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
-                  tab === key
-                    ? "salon-gradient font-medium text-white shadow-sm"
-                    : "text-[var(--site-muted)] hover:text-[var(--site-ink)]"
-                }`}
+              <div
+                role="tablist"
+                aria-label={t("liste.vosRdv")}
+                className="mb-3 flex rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] p-1"
               >
-                {label}
-                {count > 0 && (
-                  <span
-                    className={`tabular text-xs ${
+                {(
+                  [
+                    ["avenir", "Ensuite", rest.length],
+                    ["passe", "Historique", past.length],
+                  ] as ["avenir" | "passe", string, number][]
+                ).map(([key, label, count]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === key}
+                    onClick={() => setTab(key)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
                       tab === key
-                        ? "text-white/75"
-                        : "text-[var(--site-subtle)]"
+                        ? "salon-gradient font-medium text-white shadow-sm"
+                        : "text-[var(--site-muted)] hover:text-[var(--site-ink)]"
                     }`}
                   >
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {tab === "avenir" ? (
-            rest.length > 0 ? (
-              <ul className="grid gap-2.5 sm:grid-cols-2">
-                {rest.map((booking) => (
-                  <BookingCard key={booking.id} booking={booking} host={host} />
+                    {label}
+                    {count > 0 && (
+                      <span
+                        className={`tabular text-xs ${
+                          tab === key
+                            ? "text-white/75"
+                            : "text-[var(--site-subtle)]"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
                 ))}
-              </ul>
-            ) : (
-              <p
-                className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
-              >
-                {t("liste.rienApres")}
-              </p>
-            )
-          ) : past.length > 0 ? (
-            /* Deux colonnes dès le téléphone : ces cartes sont courtes, et
+              </div>
+
+              {tab === "avenir" ? (
+                rest.length > 0 ? (
+                  <ul className="grid gap-2.5 sm:grid-cols-2">
+                    {rest.map((booking) => (
+                      <BookingCard
+                        key={booking.id}
+                        booking={booking}
+                        host={host}
+                      />
+                    ))}
+                  </ul>
+                ) : (
+                  <p
+                    className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
+                  >
+                    {t("liste.rienApres")}
+                  </p>
+                )
+              ) : past.length > 0 ? (
+                /* Deux colonnes dès le téléphone : ces cartes sont courtes, et
                une seule colonne transformait dix visites en défilement. */
-            <ul className="grid grid-cols-2 gap-2.5">
-              {past.map((booking) => (
-                <BookingCard
-                  key={booking.id}
-                  booking={booking}
-                  host={host}
-                  compact
-                />
-              ))}
-            </ul>
-          ) : (
-            <p
-              className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
-            >
-              {t("liste.passeesIci")}
-            </p>
+                <ul className="grid grid-cols-2 gap-2.5">
+                  {past.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      host={host}
+                      compact
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p
+                  className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
+                >
+                  {t("liste.passeesIci")}
+                </p>
+              )}
+            </section>
           )}
         </section>
-      )}
 
-      <ParrainageCliente host={host} />
+        <ParrainageCliente host={host} />
 
-      <Preferences
-        session={session}
-        host={host}
-        salons={data?.salons ?? []}
-        onSaved={onChange}
-      />
+        <div id="profil" className="scroll-mt-32 lg:scroll-mt-24">
+          <Preferences
+            session={session}
+            host={host}
+            salons={data?.salons ?? []}
+            onSaved={onChange}
+          />
+        </div>
+      </div>
     </main>
   );
 }
@@ -962,10 +1013,15 @@ function RappelVerification({ email, host }: { email: string; host: string }) {
       role="status"
       className={`${CARD} mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-l-4 border-l-[var(--salon-primary)] p-3.5 sm:p-4`}
     >
-      <SalonIcon name="mail" className="size-4 shrink-0 text-[var(--salon-ink)]" />
+      <SalonIcon
+        name="mail"
+        className="size-4 shrink-0 text-[var(--salon-ink)]"
+      />
       <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[var(--site-ink)] sm:text-sm">
         {t("rappel", { email })}
-        {erreur && <span className="block font-medium text-red-600">{erreur}</span>}
+        {erreur && (
+          <span className="block font-medium text-red-600">{erreur}</span>
+        )}
       </p>
       {etat === "envoye" ? (
         <span className="shrink-0 text-xs font-semibold text-[var(--salon-ink)] sm:text-sm">

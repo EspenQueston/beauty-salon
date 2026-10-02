@@ -19,6 +19,8 @@ from .models import SalonProfile, TravelZone
 class MediaAssetSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     variants = serializers.SerializerMethodField()
+    prestation = serializers.SerializerMethodField()
+    prestataire = serializers.SerializerMethodField()
 
     class Meta:
         model = MediaAsset
@@ -36,7 +38,43 @@ class MediaAssetSerializer(serializers.ModelSerializer):
             "kind",
             "position",
             "featured",
+            "prestation",
+            "prestataire",
         )
+
+    def _traduit(self, objet, champ: str) -> str:
+        """Le nom dans la langue du mini-site (voir apps/translations)."""
+        table = self.context.get("traductions") or {}
+        cle = (objet._meta.label_lower, str(objet.pk), champ)
+        return table.get(cle) or getattr(objet, champ)
+
+    def get_prestation(self, asset) -> dict | None:
+        """Ce que montre la realisation : de quoi la reserver telle quelle.
+
+        Rien si la prestation (ou sa categorie) est retiree de la vitrine : la
+        page ne doit pas proposer de reserver ce qui ne se reserve plus.
+        """
+        service = getattr(asset, "service", None)
+        if service is None or not service.active:
+            return None
+        categorie = service.category
+        if categorie is not None and not categorie.active:
+            return None
+        return {
+            "id": str(service.pk),
+            "nom": self._traduit(service, "name"),
+            "prix": str(service.price_amount),
+            "prix_type": service.price_kind,
+            "duree": service.duration_minutes,
+            "categorie_id": str(categorie.pk) if categorie else "",
+            "categorie": self._traduit(categorie, "name") if categorie else "",
+        }
+
+    def get_prestataire(self, asset) -> dict | None:
+        membre = getattr(asset, "staff_member", None)
+        if membre is None or not membre.active or membre.archived_at is not None:
+            return None
+        return {"id": str(membre.pk), "nom": membre.name}
 
     def _absolue(self, url: str) -> str:
         request = self.context.get("request")

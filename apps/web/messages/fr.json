@@ -475,6 +475,32 @@
       "appeler": "Appeler",
       "email": "E-mail",
       "effacer": "Nouvelle conversation"
+    },
+    "galeriePlus": {
+      "reservable": "Réservable",
+      "par": "par {nom}",
+      "realiseePar": "Réalisée par {nom}",
+      "artiste": "Réalisée par",
+      "tarif": "Tarif",
+      "duree": "Durée",
+      "reserverCeLook": "Réserver ce look",
+      "reserver": "Prendre rendez-vous",
+      "partager": "Partager",
+      "lienCopie": "Lien copié",
+      "partageMessage": "Regardez cette réalisation de {salon} : {url}",
+      "coupsDeCoeur": "Nos coups de cœur",
+      "coupsDeCoeurCorps": "Les réalisations dont l'équipe est la plus fière.",
+      "coupDeCoeur": "Coup de cœur",
+      "glisser": "Faites glisser →",
+      "filtrer": "Filtrer les réalisations",
+      "tout": "Tout",
+      "chiffreRealisations": "{n, plural, one {réalisation} other {réalisations}}",
+      "chiffreNote": "{n, plural, =0 {note moyenne} one {note · # avis} other {note · # avis}}",
+      "avisSurtitre": "Avis vérifiés",
+      "avisTitre": "Elles en parlent",
+      "ctaTitre": "Envie du même résultat ?",
+      "ctaCorps": "Choisissez votre prestation et votre créneau en quelques secondes. Une question avant de réserver ? {salon} vous répond.",
+      "ctaReserver": "Réserver maintenant"
     }
   },
   "reservation": {
@@ -876,6 +902,14 @@
       "renvoyer": "Renvoyer le lien",
       "envoi": "Envoi…",
       "envoye": "Lien envoyé ✓"
+    },
+    "menu": {
+      "titre": "Mon espace",
+      "apercu": "Aperçu",
+      "aFaire": "À faire",
+      "rendezVous": "Mes rendez-vous",
+      "parrainage": "Parrainage",
+      "profil": "Mon profil"
     }
   }
 }

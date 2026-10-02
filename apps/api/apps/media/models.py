@@ -167,6 +167,28 @@ class MediaAsset(TenantOwnedModel):
     # decisions sont maintenant independantes.
     featured = models.BooleanField(_("en vedette sur l'accueil"), default=False)
 
+    # Ce que montre la realisation, et qui l'a faite. Facultatifs : sans eux
+    # la photo reste une photo ; avec eux, elle devient un chemin vers la
+    # reservation (« Reserver ce look ») et un filtre par categorie sur la
+    # page des realisations. SET_NULL : retirer une prestation ne retire pas
+    # la photo de ce qui a ete fait.
+    service = models.ForeignKey(
+        "catalog.Service",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="realisations",
+        verbose_name=_("prestation montrée"),
+    )
+    staff_member = models.ForeignKey(
+        "staff.StaffMember",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="realisations",
+        verbose_name=_("réalisée par"),
+    )
+
     class Meta:
         verbose_name = _("média")
         verbose_name_plural = _("médias")

@@ -475,6 +475,32 @@
       "appeler": "Call",
       "email": "Email",
       "effacer": "New conversation"
+    },
+    "galeriePlus": {
+      "reservable": "Bookable",
+      "par": "by {nom}",
+      "realiseePar": "Done by {nom}",
+      "artiste": "Done by",
+      "tarif": "Price",
+      "duree": "Duration",
+      "reserverCeLook": "Book this look",
+      "reserver": "Book an appointment",
+      "partager": "Share",
+      "lienCopie": "Link copied",
+      "partageMessage": "Look at this work by {salon}: {url}",
+      "coupsDeCoeur": "Our favourites",
+      "coupsDeCoeurCorps": "The work the team is proudest of.",
+      "coupDeCoeur": "Favourite",
+      "glisser": "Swipe →",
+      "filtrer": "Filter the gallery",
+      "tout": "All",
+      "chiffreRealisations": "{n, plural, one {piece of work} other {pieces of work}}",
+      "chiffreNote": "{n, plural, =0 {average rating} one {rating · # review} other {rating · # reviews}}",
+      "avisSurtitre": "Verified reviews",
+      "avisTitre": "What clients say",
+      "ctaTitre": "Want the same result?",
+      "ctaCorps": "Pick your service and time slot in seconds. A question before booking? {salon} will answer.",
+      "ctaReserver": "Book now"
     }
   },
   "reservation": {
@@ -876,6 +902,14 @@
       "renvoyer": "Resend the link",
       "envoi": "Sending…",
       "envoye": "Link sent ✓"
+    },
+    "menu": {
+      "titre": "My account",
+      "apercu": "Overview",
+      "aFaire": "To do",
+      "rendezVous": "My appointments",
+      "parrainage": "Referrals",
+      "profil": "My profile"
     }
   }
 }
