@@ -3,7 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { DashboardError, login, type SessionUser } from "@/lib/dashboard";
+import {
+  DashboardError,
+  login,
+  verifierCodeConnexion,
+  type SessionUser,
+} from "@/lib/dashboard";
 import { platformUrl } from "@/lib/site";
 import { Button } from "@/features/ui";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
@@ -97,22 +102,58 @@ export function LoginForm({
   const [emailWasFilled] = useState(() => Boolean(email));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // Deuxième étape, quand la double authentification est active : le mot de
+  // passe est accepté, la session attend le code de l'application.
+  const [etapeCode, setEtapeCode] = useState(false);
+  const [code, setCode] = useState("");
+
+  function entrer(user: SessionUser) {
+    if (user.memberships.length === 0) {
+      setUnattachedAccount(user);
+      setEmail("");
+      setPassword("");
+      setEtapeCode(false);
+      return;
+    }
+    remember(email);
+    toast.success(`Bienvenue, ${user.display_name || user.email}.`);
+    if (typeof user.codes_de_secours_restants === "number") {
+      toast.info(
+        `Code de secours utilisé : il vous en reste ${user.codes_de_secours_restants}. Régénérez-les depuis l'écran Sécurité.`,
+      );
+    }
+    onSuccess();
+  }
+
+  async function submitCode(event: React.FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    try {
+      entrer(await verifierCodeConnexion(code));
+    } catch (caught) {
+      if (caught instanceof DashboardError && caught.code === "mfa_expired") {
+        setEtapeCode(false);
+        setCode("");
+      }
+      setError(caught instanceof DashboardError ? caught.message : "Vérification impossible. Réessayez.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setPending(true);
     setError(null);
     try {
-      const user = await login(email, password);
-      if (user.memberships.length === 0) {
-        setUnattachedAccount(user);
-        setEmail("");
+      const resultat = await login(email, password);
+      if ("mfa_required" in resultat) {
         setPassword("");
+        setEtapeCode(true);
         return;
       }
-      remember(email);
-      toast.success(`Bienvenue, ${user.display_name || user.email}.`);
-      onSuccess();
+      entrer(resultat);
     } catch (caught) {
       // L'erreur reste sous le formulaire : c'est là que le regard revient
       // après un échec, pas dans un coin de l'écran.
@@ -150,6 +191,52 @@ export function LoginForm({
       aside={<FilmAcces />}
     >
       <div className="rise w-full">
+        {etapeCode ? (
+          <form onSubmit={submitCode} className={authCard}>
+            <h1 className={authTitle}>Double authentification</h1>
+            <p className={authLead}>
+              Saisissez le code à six chiffres affiché par votre application
+              d&apos;authentification, ou l&apos;un de vos codes de secours.
+            </p>
+            <div className="mt-6">
+              <label htmlFor="login-code" className="mb-1.5 block text-sm font-medium text-ink">
+                Code
+              </label>
+              <input
+                id="login-code"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                required
+                maxLength={20}
+                placeholder="123 456"
+                className={`${authInput} text-center font-mono text-lg tracking-[0.3em]`}
+              />
+            </div>
+            {error && (
+              <p role="alert" className="mt-4 rounded-xl bg-danger-bg p-3 text-sm font-medium text-danger">
+                {error}
+              </p>
+            )}
+            <Button type="submit" pending={pending} className="mt-5 w-full py-3">
+              Vérifier
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setEtapeCode(false);
+                setCode("");
+                setError(null);
+              }}
+              className={`${authLink} mt-4 block w-full text-center text-sm`}
+            >
+              Revenir au mot de passe
+            </button>
+          </form>
+        ) : (
+        <>
         {/*
           Le titre est passé *dans* la carte.
 
@@ -265,6 +352,8 @@ export function LoginForm({
               : "14 jours gratuits, sans carte bancaire."}
           </span>
         </p>
+        </>
+        )}
       </div>
     </AuthShell>
   );

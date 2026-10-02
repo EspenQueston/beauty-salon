@@ -70,6 +70,9 @@ export function SalonIdentityScreen() {
 
   const [form, setForm] = useState<Identity | null>(null);
   const [saving, setSaving] = useState(false);
+  // Demandé seulement quand l'adresse e-mail change : c'est l'identifiant
+  // de connexion, on ne le remplace pas sur la seule foi d'une session ouverte.
+  const [motDePasse, setMotDePasse] = useState("");
 
   // Le formulaire se remplit quand la lecture arrive, et seulement alors :
   // le réinitialiser à chaque rendu effacerait ce qu'on est en train de taper.
@@ -87,6 +90,9 @@ export function SalonIdentityScreen() {
 
   if (error) return <ErrorState>{error}</ErrorState>;
   if (!form) return <Skeleton rows={5} />;
+
+  const adresseChangee =
+    !!data && form.owner_email.trim().toLowerCase() !== data.owner_email.toLowerCase();
 
   function set<K extends keyof Identity>(key: K, value: Identity[K]) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
@@ -108,6 +114,7 @@ export function SalonIdentityScreen() {
               owner_name: form.owner_name,
               owner_email: form.owner_email,
               owner_phone: form.owner_phone,
+              ...(adresseChangee ? { current_password: motDePasse } : {}),
             }),
           },
           tenantId,
@@ -117,6 +124,7 @@ export function SalonIdentityScreen() {
     setSaving(false);
 
     if (ok) {
+      setMotDePasse("");
       reload();
       // La session porte le nom du salon : sans rechargement, la colonne de
       // gauche continuerait d'afficher l'ancien jusqu'à la prochaine visite.
@@ -252,6 +260,23 @@ export function SalonIdentityScreen() {
                 className={inputClass}
               />
             </Field>
+
+            {adresseChangee && canEdit && (
+              <Field
+                label="Mot de passe actuel"
+                hint="Pour confirmer le changement d'identifiant. Votre ancienne adresse sera prévenue."
+                className="sm:col-span-2"
+              >
+                <input
+                  type="password"
+                  value={motDePasse}
+                  onChange={(event) => setMotDePasse(event.target.value)}
+                  autoComplete="current-password"
+                  required
+                  className={inputClass}
+                />
+              </Field>
+            )}
           </div>
         </Card>
 

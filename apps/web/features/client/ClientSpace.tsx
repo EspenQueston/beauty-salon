@@ -34,7 +34,7 @@
  * bouton.
  */
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { Lien } from "@/features/ui/Lien";
 
@@ -96,6 +96,7 @@ interface Session {
 interface ClientProfile {
   full_name: string;
   email: string;
+  email_verified?: boolean;
   phone: string;
   whatsapp: string;
   wechat: string;
@@ -267,6 +268,10 @@ function Gate({
   const [whatsapp, setWhatsapp] = useState("");
   const [wechat, setWechat] = useState("");
   const [password, setPassword] = useState("");
+  // Compte avec double authentification (un compte d'équipe qui est aussi
+  // cliente) : le mot de passe est accepté, la session attend le code.
+  const [codeAttendu, setCodeAttendu] = useState(false);
+  const [code, setCode] = useState("");
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -274,7 +279,12 @@ function Gate({
     setFailure(null);
 
     try {
-      if (mode === "signup") {
+      if (codeAttendu) {
+        await api("/api/v1/auth/mfa/verify", host, {
+          method: "POST",
+          body: JSON.stringify({ code }),
+        });
+      } else if (mode === "signup") {
         await api("/api/v1/public/client/signup", host, {
           method: "POST",
           body: JSON.stringify({
@@ -287,10 +297,15 @@ function Gate({
           }),
         });
       } else {
-        await api("/api/v1/auth/login", host, {
+        const reponse = await api<{ mfa_required?: boolean }>("/api/v1/auth/login", host, {
           method: "POST",
           body: JSON.stringify({ email, password }),
         });
+        if (reponse?.mfa_required) {
+          setCodeAttendu(true);
+          setPassword("");
+          return;
+        }
       }
       onDone();
     } catch (caught) {
@@ -490,6 +505,26 @@ function Gate({
               ) : undefined
             }
           />
+
+          {codeAttendu && (
+            <div>
+              <label htmlFor="code-2fa" className="mb-1.5 block text-sm font-medium text-ink">
+                {t("compte.code2fa")}
+              </label>
+              <input
+                id="code-2fa"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                required
+                maxLength={20}
+                className={`${authInput} text-center font-mono text-lg tracking-[0.3em]`}
+              />
+              <p className="mt-1.5 text-xs text-ink/70">{t("compte.code2faAide")}</p>
+            </div>
+          )}
 
           {failure && (
             <p
@@ -709,6 +744,10 @@ function Space({
         />
       </dl>
 
+      {session.client?.email_verified === false && (
+        <RappelVerification email={session.email} host={host} />
+      )}
+
       {failed && (
         <p className="mb-6 rounded-xl bg-red-500/10 p-3.5 text-sm text-red-700">
           {t("liste.echec")}
@@ -893,6 +932,56 @@ function Space({
         onSaved={onChange}
       />
     </main>
+  );
+}
+
+/** Adresse pas encore confirmée : un rappel, et le lien à renvoyer. Rien n'est bloqué. */
+function RappelVerification({ email, host }: { email: string; host: string }) {
+  const t = useTranslations("espace.verification");
+  const locale = useLocale();
+  const [etat, setEtat] = useState<"repos" | "envoi" | "envoye">("repos");
+  const [erreur, setErreur] = useState("");
+
+  async function renvoyer() {
+    setEtat("envoi");
+    setErreur("");
+    try {
+      await api("/api/v1/auth/email/verify/resend", host, {
+        method: "POST",
+        body: JSON.stringify({ lang: locale }),
+      });
+      setEtat("envoye");
+    } catch (caught) {
+      setEtat("repos");
+      setErreur(caught instanceof Error ? caught.message : t("echec"));
+    }
+  }
+
+  return (
+    <div
+      role="status"
+      className={`${CARD} mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-l-4 border-l-[var(--salon-primary)] p-3.5 sm:p-4`}
+    >
+      <SalonIcon name="mail" className="size-4 shrink-0 text-[var(--salon-ink)]" />
+      <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[var(--site-ink)] sm:text-sm">
+        {t("rappel", { email })}
+        {erreur && <span className="block font-medium text-red-600">{erreur}</span>}
+      </p>
+      {etat === "envoye" ? (
+        <span className="shrink-0 text-xs font-semibold text-[var(--salon-ink)] sm:text-sm">
+          {t("envoye")}
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => void renvoyer()}
+          disabled={etat === "envoi"}
+          className="shrink-0 rounded-xl border border-[var(--site-line)] px-3 py-1.5 text-xs font-semibold text-[var(--site-ink)] transition hover:border-[var(--salon-primary)] disabled:opacity-60 sm:text-sm"
+        >
+          {etat === "envoi" ? t("envoi") : t("renvoyer")}
+        </button>
+      )}
+    </div>
   );
 }
 

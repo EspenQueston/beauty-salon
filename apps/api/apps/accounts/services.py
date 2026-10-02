@@ -159,6 +159,12 @@ def signup_salon(
         logger.warning("Inscription sans offre d'essai configurée (%s).", tenant.slug)
 
     transaction.on_commit(lambda: _notify_signup(tenant, user))
+    # Le lien de verification part a part, en arriere-plan : l'adresse n'est
+    # prouvee qu'au clic, jamais par sa seule forme.
+    from . import tasks
+
+    user_id = str(user.pk)
+    transaction.on_commit(lambda: tasks.verification.delay(user_id))
 
     # L'equipe de la plateforme est prevenue dans son administration :
     # une inscription est le seul evenement qu'on veut voir arriver le
@@ -264,18 +270,47 @@ def find_invitation(token: str) -> Invitation:
 
 @transaction.atomic
 def accept_invitation(
-    *, token: str, password: str | None = None, display_name: str = ""
+    *,
+    token: str,
+    password: str | None = None,
+    display_name: str = "",
+    utilisateur_connecte=None,
 ) -> tuple[User, Invitation]:
+    """Accepte une invitation, et ouvre la session du compte invite.
+
+    Un compte qui existe deja doit prouver qu'il est bien le sien : etre
+    connecte avec, ou donner son mot de passe. Auparavant, le seul lien
+    suffisait — un e-mail d'invitation transfere, ou lu par-dessus une
+    epaule, ouvrait le compte pendant sept jours sans mot de passe.
+    """
     invitation = find_invitation(token)
 
     user = User.objects.filter(email=invitation.email).first()
+    if user is not None:
+        deja_connecte = getattr(utilisateur_connecte, "pk", None) == user.pk
+        if not deja_connecte and not (
+            password and user.is_active and user.check_password(password)
+        ):
+            raise InvitationError(
+                "Un compte existe déjà pour cette adresse : saisissez son mot de passe "
+                "pour accepter l'invitation."
+            )
     if user is None:
         if not password:
             raise InvitationError("Un mot de passe est requis pour créer le compte.")
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+
+        try:
+            validate_password(password)
+        except ValidationError as exc:
+            raise InvitationError(" ".join(exc.messages)) from exc
         user = User.objects.create_user(
             email=invitation.email,
             password=password,
             display_name=display_name.strip(),
+            # Le lien est arrive dans cette boite : l'adresse est prouvee.
+            email_verified_at=timezone.now(),
         )
 
     membership, created = Membership.objects.get_or_create(

@@ -58,6 +58,10 @@ class IdentitySerializer(serializers.Serializer):
     owner_name = serializers.CharField(max_length=120, allow_blank=True)
     owner_email = serializers.EmailField()
     owner_phone = serializers.CharField(max_length=32, allow_blank=True)
+    # Exige seulement quand l'adresse change : voir `patch`.
+    current_password = serializers.CharField(
+        write_only=True, required=False, allow_blank=True, max_length=128
+    )
 
     # Affichés, jamais écrits.
     slug = serializers.CharField(read_only=True)
@@ -106,6 +110,22 @@ class SalonIdentityView(APIView):
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
 
+        # L'adresse e-mail est l'identifiant de connexion, et la cle de « mot
+        # de passe oublie ». La changer avec une session volee suffisait a
+        # s'approprier le compte pour de bon : on redemande donc le mot de
+        # passe, et l'ancienne adresse est prevenue.
+        ancienne_adresse = user.email
+        change_d_adresse = "owner_email" in data and data["owner_email"] != user.email
+        if change_d_adresse and not user.check_password(data.get("current_password") or ""):
+            return Response(
+                {
+                    "detail": "Saisissez votre mot de passe actuel pour changer d'adresse e-mail.",
+                    "code": "password_required",
+                    "current_password": ["Mot de passe incorrect."],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         # On garde l'avant pour le journal : « nom modifié » sans dire depuis
         # quoi n'aide personne à retrouver ce qui s'est passé.
         avant = {
@@ -127,6 +147,10 @@ class SalonIdentityView(APIView):
             if "owner_email" in data:
                 user.email = data["owner_email"]
                 champs.append("email")
+                if change_d_adresse:
+                    # La nouvelle adresse doit faire ses preuves a son tour.
+                    user.email_verified_at = None
+                    champs.append("email_verified_at")
             if "owner_phone" in data:
                 user.phone = data["owner_phone"].strip()
                 champs.append("phone")
@@ -161,6 +185,28 @@ class SalonIdentityView(APIView):
                     resource_type="tenant",
                     resource_id=str(tenant.id),
                     metadata={"identite": modifie},
+                )
+            if change_d_adresse:
+                from apps.accounts import journal, tasks
+
+                journal.consigner(
+                    "AUTH_EMAIL_CHANGED",
+                    request=request,
+                    user=user,
+                    ancienne=ancienne_adresse,
+                    nouvelle=user.email,
+                )
+
+                nouvelle = user.email
+                user_id = str(user.pk)
+                transaction.on_commit(lambda: tasks.verification.delay(user_id))
+                transaction.on_commit(
+                    lambda: tasks.alerte_securite.delay(
+                        ancienne_adresse,
+                        "adresse",
+                        nom=user.display_name,
+                        nouvelle_adresse=nouvelle,
+                    )
                 )
 
         return Response(self._payload(request), status=status.HTTP_200_OK)

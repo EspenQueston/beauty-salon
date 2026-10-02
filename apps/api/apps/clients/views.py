@@ -64,6 +64,14 @@ class ClientSignupView(APIView):
         # choisi un mot de passe est une etape que personne ne comprend.
         login(request, user)
 
+        # Le lien de verification, vers le mini-site d'ou elle s'inscrit.
+        from apps.accounts import tasks
+
+        langue = str(request.data.get("lang", "fr"))[:2]
+        base = tasks.base_cliente(user, langue)
+        user_id = str(user.pk)
+        transaction.on_commit(lambda: tasks.verification.delay(user_id, base, langue))
+
         return Response(ClientProfileSerializer(profile).data, status=status.HTTP_201_CREATED)
 
 
@@ -79,19 +87,21 @@ class ClientPasswordResetView(APIView):
     throttle_scope = "password_reset"
 
     def post(self, request):
-        from apps.accounts.serializers import PasswordResetRequestSerializer
-        from apps.tenants.models import Tenant
+        from django.db import transaction
 
-        from .services import demander_nouveau_mot_de_passe
+        from apps.accounts import tasks
+        from apps.accounts.serializers import PasswordResetRequestSerializer
 
         payload = PasswordResetRequestSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        tenant = Tenant.objects.filter(pk=getattr(request, "tenant_id", None)).first()
-        if tenant is not None:
-            demander_nouveau_mot_de_passe(
-                payload.validated_data["email"],
-                tenant,
-                langue=str(request.data.get("lang", "fr"))[:2],
+        tenant_id = getattr(request, "tenant_id", None)
+        if tenant_id is not None:
+            # En arriere-plan, dans tous les cas : le temps de reponse ne dit
+            # pas si l'adresse est inscrite (voir `accounts/tasks.py`).
+            email = payload.validated_data["email"].strip().lower()
+            langue = str(request.data.get("lang", "fr"))[:2]
+            transaction.on_commit(
+                lambda: tasks.reinitialisation_cliente.delay(email, str(tenant_id), langue)
             )
         return Response(
             {"detail": "Si un compte existe pour cette adresse, un e-mail vient d'être envoyé."}

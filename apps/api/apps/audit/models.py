@@ -67,6 +67,25 @@ class AuditLog(UUIDModel, TimeStampedModel):
         REFERRAL_REVIEW_REQUIRED = "referral.review_required", _("Parrainage à revoir")
         REFERRAL_REWARD_CREATED = "referral.reward_created", _("Remise de parrainage créée")
         REFERRAL_ADMIN = "referral.admin", _("Parrainage corrigé par l'administration")
+        # Securite des comptes (voir apps/accounts/journal.py).
+        AUTH_LOGIN_SUCCEEDED = "auth.login_succeeded", _("Connexion réussie")
+        AUTH_LOGIN_FAILED = "auth.login_failed", _("Connexion échouée")
+        AUTH_ACCOUNT_LOCKED = "auth.account_locked", _("Connexions suspendues (trop d'échecs)")
+        AUTH_MFA_FAILED = "auth.mfa_failed", _("Code de double authentification refusé")
+        AUTH_MFA_ENABLED = "auth.mfa_enabled", _("Double authentification activée")
+        AUTH_MFA_DISABLED = "auth.mfa_disabled", _("Double authentification désactivée")
+        AUTH_RECOVERY_CODES_REGENERATED = (
+            "auth.recovery_codes_regenerated",
+            _("Codes de secours régénérés"),
+        )
+        AUTH_PASSWORD_RESET = "auth.password_reset", _("Mot de passe réinitialisé")
+        AUTH_PASSWORD_CHANGED = "auth.password_changed", _("Mot de passe changé")
+        AUTH_EMAIL_CHANGED = "auth.email_changed", _("Adresse e-mail changée")
+        AUTH_EMAIL_VERIFIED = "auth.email_verified", _("Adresse e-mail vérifiée")
+        AUTH_PASSWORD_BREACHED = (
+            "auth.password_breached",
+            _("Mot de passe refusé (présent dans des fuites)"),
+        )
 
     tenant = models.ForeignKey(
         "tenants.Tenant",

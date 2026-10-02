@@ -31,6 +31,12 @@ export interface SessionUser {
   email: string;
   display_name: string;
   is_platform_admin: boolean;
+  /** L'adresse a été prouvée par un clic sur le lien reçu. */
+  email_verified?: boolean;
+  /** Double authentification active sur ce compte. */
+  mfa_enabled?: boolean;
+  /** Après une connexion par code de secours : combien il en reste. */
+  codes_de_secours_restants?: number;
   memberships: Membership[];
 }
 
@@ -124,25 +130,69 @@ export async function dashboardFetch<T>(
   return body as T;
 }
 
-export async function login(email: string, password: string): Promise<SessionUser> {
+/** Mot de passe juste, mais la double authentification attend un code. */
+export interface CodeRequis {
+  mfa_required: true;
+  detail: string;
+}
+
+async function postAuth<T>(path: string, body: unknown): Promise<T> {
   const csrf = await ensureCsrfToken();
-  const response = await fetch(`${browserApi()}/api/v1/auth/login`, {
+  const response = await fetch(`${browserApi()}${path}`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   });
 
-  const body = await response.json().catch(() => null);
+  const data = await response.json().catch(() => null);
   if (!response.ok) {
     throw new DashboardError(
       response.status,
-      body?.code ?? "error",
-      body?.detail ?? "Connexion impossible.",
+      data?.code ?? "error",
+      data?.detail ?? "Connexion impossible.",
     );
   }
-  return body as SessionUser;
+  return data as T;
 }
+
+export function login(email: string, password: string): Promise<SessionUser | CodeRequis> {
+  return postAuth("/api/v1/auth/login", { email, password });
+}
+
+/** Le code de l'application d'authentification (ou un code de secours). */
+export function verifierCodeConnexion(code: string): Promise<SessionUser> {
+  return postAuth("/api/v1/auth/mfa/verify", { code });
+}
+
+export interface EtatMfa {
+  enabled: boolean;
+  codes_restants: number;
+}
+
+export const mfa = {
+  etat: () => dashboardFetch<EtatMfa>("/api/v1/auth/mfa"),
+  preparer: () =>
+    dashboardFetch<{ qr_svg: string; secret: string }>("/api/v1/auth/mfa/setup", {
+      method: "POST",
+      body: "{}",
+    }),
+  confirmer: (code: string, password: string) =>
+    dashboardFetch<{ enabled: true; codes: string[] }>("/api/v1/auth/mfa/confirm", {
+      method: "POST",
+      body: JSON.stringify({ code, password }),
+    }),
+  desactiver: (code: string, password: string) =>
+    dashboardFetch<{ enabled: false }>("/api/v1/auth/mfa/disable", {
+      method: "POST",
+      body: JSON.stringify({ code, password }),
+    }),
+  nouveauxCodes: (password: string) =>
+    dashboardFetch<{ codes: string[] }>("/api/v1/auth/mfa/recovery-codes", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+};
 
 export async function logout(): Promise<void> {
   await dashboardFetch("/api/v1/auth/logout", { method: "POST" });
@@ -229,6 +279,16 @@ export interface SignupResult {
 
 export function signup(payload: SignupPayload): Promise<SignupResult> {
   return accountPost<SignupResult>("/signup", payload);
+}
+
+/** Le clic sur le lien de vérification d'adresse. */
+export function verifierAdresse(token: string): Promise<{ detail: string; verified: boolean }> {
+  return accountPost("/email/verify", { token });
+}
+
+/** Renvoyer le lien de vérification, depuis une session ouverte. */
+export function renvoyerVerification(): Promise<{ detail: string; verified: boolean }> {
+  return dashboardFetch("/api/v1/auth/email/verify/resend", { method: "POST", body: "{}" });
 }
 
 export interface CodeParrainageVerifie {

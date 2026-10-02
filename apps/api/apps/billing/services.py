@@ -417,6 +417,15 @@ def soumettre_paiement(
     du tarif configure, et fige sur la demande. A appeler dans le contexte du
     salon ; `preuve` est un fichier deja valide (type et taille).
     """
+    # Un paiement engage le salon : on veut pouvoir joindre qui le declare.
+    # Decide avec le produit (2026-10-02) : adresse verifiee obligatoire.
+    if utilisateur is not None and getattr(utilisateur, "email_verified_at", True) is None:
+        raise PaiementRefuse(
+            "Confirmez d'abord votre adresse e-mail : le lien vous a été envoyé à "
+            "l'inscription (vous pouvez le renvoyer depuis le bandeau en haut de l'écran).",
+            "email_non_verifie",
+        )
+
     plan = Plan.objects.filter(code=code_offre, active=True).first()
     if plan is None or plan.code not in OFFRES_PAYANTES:
         raise PaiementRefuse("Cette offre n'existe pas.", "offre_inconnue")

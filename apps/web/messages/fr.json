@@ -780,7 +780,9 @@
       "creerUnCompte": "Créer un compte",
       "ceuxDeListe": "Ceux de {salon} et ceux de vos autres salons, en une liste.",
       "ceuxDeMemeEndroit": "Ceux de {salon} et ceux de vos autres salons, au même endroit.",
-      "retourChez": "Retour chez {salon}"
+      "retourChez": "Retour chez {salon}",
+      "code2fa": "Code de double authentification",
+      "code2faAide": "Le code à six chiffres de votre application, ou un code de secours."
     },
     "liste": {
       "echec": "Impossible de charger vos rendez-vous.",
@@ -860,6 +862,20 @@
       "utiliserSansSalon": "Votre remise vous attend : elle s'appliquera à l'abonnement d'un salon que vous créerez ou gérerez sur Beauty Salon.",
       "regles": "Un salon est validé {delai} jours après sa mise en ligne, ou dès son premier paiement. Une remise vaut {plafond} % au plus par paiement, reste valable {mois} mois, et n'est jamais de l'argent : elle ne se retire pas.",
       "message": "Je vous recommande Beauty Salon pour gérer votre salon : réservations en ligne, rappels, mini-site. Inscrivez-vous avec mon code {code} et profitez de 30 jours d'essai si le parrainage est éligible : {lien}"
+    },
+    "verification": {
+      "attente": "Vérification de votre adresse…",
+      "okTitre": "Adresse confirmée",
+      "okCorps": "Merci ! Votre adresse e-mail est vérifiée.",
+      "monEspace": "Mon espace",
+      "erreurTitre": "Lien non valable",
+      "erreurAide": "Depuis votre espace, vous pouvez recevoir un nouveau lien.",
+      "incomplet": "Ce lien est incomplet. Ouvrez celui reçu par e-mail.",
+      "echec": "La vérification a échoué. Réessayez dans un instant.",
+      "rappel": "Confirmez votre adresse {email} : cliquez sur le lien reçu par e-mail.",
+      "renvoyer": "Renvoyer le lien",
+      "envoi": "Envoi…",
+      "envoye": "Lien envoyé ✓"
     }
   }
 }

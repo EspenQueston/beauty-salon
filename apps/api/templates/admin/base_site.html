@@ -51,6 +51,11 @@ n'ouvre pas la supervision, et l'API refuserait tout le monde d'autre.
 {% endblock %}
 
 {% block extrabody %}{{ block.super }}
+  {% comment %}
+  Les confirmations de toute l'administration : une vraie fenetre a la place
+  du `confirm()` du navigateur. Voir static/admin/confirmer.js.
+  {% endcomment %}
+  <script src="{% versioned_static 'admin/confirmer.js' %}" defer></script>
   {% if user.is_authenticated and user.is_platform_admin %}
     {% comment %}
     `defer` : le script attend que l'en-tete existe, sans retarder son

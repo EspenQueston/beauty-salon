@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.accounts.admin_login import freiner
 from apps.accounts.mfa import mfa_view
 from apps.common.views import csrf, health
 from apps.domains.views import certificat_autorise
@@ -15,6 +16,9 @@ admin.site.index_title = "Supervision"
 # « Voir le site » pointe par defaut sur « / », qui est ici la racine de
 # l'API : aucune page a afficher. Le site public vit sur un autre hote.
 admin.site.site_url = settings.SITE_BASE_URL
+# Le formulaire de connexion de Django n'a aucune limite de tentatives :
+# on lui pose les memes freins que la connexion de l'API.
+admin.site.login = freiner(admin.site.login)
 
 """
 Chemin de l'administration plateforme.

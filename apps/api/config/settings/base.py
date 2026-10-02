@@ -58,6 +58,8 @@ API_BASE_URL = env(
 
 # Duree de validite des liens de reinitialisation de mot de passe.
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 24
+# Validite du lien de verification d'adresse e-mail (secondes).
+EMAIL_VERIFICATION_TIMEOUT = env.int("EMAIL_VERIFICATION_TIMEOUT", default=60 * 60 * 72)
 
 # ---------------------------------------------------------------------------
 # Applications
@@ -121,6 +123,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # Pose request.user.is_verified(). Doit suivre l'authentification.
     "django_otp.middleware.OTPMiddleware",
+    # Ferme les sessions restees inactives (voir apps/accounts/sessions.py).
+    "apps.accounts.sessions.SessionInactiveMiddleware",
     "apps.accounts.mfa.PlatformAdminMFAMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -242,7 +246,16 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    # Refuse les mots de passe deja publies dans des fuites (k-anonymat,
+    # voir apps/accounts/validators.py).
+    {"NAME": "apps.accounts.validators.PwnedPasswordValidator"},
 ]
+PWNED_PASSWORDS_CHECK = env.bool("PWNED_PASSWORDS_CHECK", default=True)
+
+# Inactivite au-dela de laquelle une session se ferme (secondes). Voir
+# apps/accounts/sessions.py.
+SESSION_IDLE_TIMEOUT = env.int("SESSION_IDLE_TIMEOUT", default=3 * 24 * 60 * 60)
+SESSION_IDLE_TIMEOUT_ADMIN = env.int("SESSION_IDLE_TIMEOUT_ADMIN", default=8 * 60 * 60)
 
 # ---------------------------------------------------------------------------
 # Cache et files d'attente
@@ -395,6 +408,10 @@ REST_FRAMEWORK = {
         # Verification d'un code de parrainage depuis l'inscription. Un code a
         # dix caracteres ne se devine pas, mais on ne laisse pas essayer.
         "referral_check": "60/hour",
+        # Verification d'adresse : clics sur le lien et demandes de renvoi.
+        "email_verification": "20/hour",
+        # Double authentification : saisie du code a la connexion, reglages.
+        "mfa": "30/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

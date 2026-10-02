@@ -19,6 +19,18 @@ URL = "/api/v1/public/client/password/reset"
 HOTE = {"HTTP_HOST": salon_host("blondrose")}
 
 
+@pytest.fixture(autouse=True)
+def apres_validation_immediate(monkeypatch):
+    """L'e-mail part apres la validation de la transaction (voir accounts/tasks.py).
+
+    Ces tests ne valident pas de transaction : on execute donc les rappels
+    tout de suite, comme le ferait un vrai commit.
+    """
+    monkeypatch.setattr(
+        "django.db.transaction.on_commit", lambda rappel, using=None, robust=False: rappel()
+    )
+
+
 @pytest.fixture
 def cliente(db):
     user = User.objects.create_user(

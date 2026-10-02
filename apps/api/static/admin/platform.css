@@ -2863,3 +2863,195 @@ input[type="submit"].default:hover,
   font-size: 0.8125rem;
   color: var(--bs-ink-muted);
 }
+
+/* --------------------------------------------------------------------- */
+/* Fenêtre de confirmation (static/admin/confirmer.js)                    */
+/* --------------------------------------------------------------------- */
+/*
+ * Remplace le `confirm()` gris du navigateur. Les couleurs viennent des
+ * jetons `--bs-*` : la fenêtre suit le thème clair ou sombre comme le reste.
+ */
+
+.bs-confirmer {
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--bs-ink);
+  overflow: visible;
+}
+
+.bs-confirmer::backdrop {
+  background: rgb(23 21 33 / 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.bs-confirmer[open] {
+  animation: bs-confirmer-entree 160ms ease-out;
+}
+
+.bs-confirmer[open]::backdrop {
+  animation: bs-confirmer-voile 160ms ease-out;
+}
+
+@keyframes bs-confirmer-entree {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes bs-confirmer-voile {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bs-confirmer[open],
+  .bs-confirmer[open]::backdrop {
+    animation: none;
+  }
+}
+
+.bs-confirmer__carte {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--bs-line);
+  border-radius: 18px;
+  background: var(--bs-surface);
+  box-shadow: 0 24px 60px -18px rgb(23 21 33 / 0.45);
+}
+
+.bs-confirmer__icone {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: var(--bs-ok-bg);
+  color: var(--bs-ok);
+}
+
+.bs-confirmer[data-ton="danger"] .bs-confirmer__icone {
+  background: var(--bs-bad-bg);
+  color: var(--bs-bad);
+}
+
+.bs-confirmer__titre {
+  margin: 0.25rem 0 0;
+  padding: 0;
+  background: none;
+  font-size: 1.125rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--bs-ink);
+}
+
+.bs-confirmer__message {
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--bs-ink-muted);
+}
+
+.bs-confirmer__details {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: var(--bs-surface-sunken);
+}
+
+.bs-confirmer__ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8125rem;
+}
+
+.bs-confirmer__ligne dt {
+  margin: 0;
+  color: var(--bs-ink-muted);
+  font-weight: 500;
+}
+
+.bs-confirmer__ligne dd {
+  margin: 0;
+  color: var(--bs-ink);
+  font-weight: 650;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.bs-confirmer__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.bs-confirmer__actions button {
+  min-height: 2.6rem;
+  padding: 0 1.1rem;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms ease, background 120ms ease;
+}
+
+.bs-confirmer__annuler {
+  border: 1px solid var(--bs-line);
+  background: var(--bs-surface);
+  color: var(--bs-ink);
+}
+
+.bs-confirmer__annuler:hover {
+  background: var(--bs-surface-hover);
+}
+
+/* Teintes fixes : le blanc y tient plus de 4,5:1 dans les deux thèmes. */
+.bs-confirmer__valider {
+  border: 0;
+  background: #1a7f4b;
+  color: #fff;
+}
+
+.bs-confirmer[data-ton="danger"] .bs-confirmer__valider {
+  background: #b42318;
+}
+
+.bs-confirmer__valider:hover {
+  filter: brightness(1.08);
+}
+
+.bs-confirmer__actions button:focus-visible {
+  outline: 2px solid var(--bs-brand);
+  outline-offset: 2px;
+}
+
+/* Téléphone : boutons pleine largeur, l'action engageante en bas, sous le pouce. */
+@media (max-width: 480px) {
+  .bs-confirmer__carte {
+    padding: 1.25rem;
+  }
+
+  .bs-confirmer__actions {
+    flex-direction: column-reverse;
+  }
+
+  .bs-confirmer__actions button {
+    width: 100%;
+  }
+}

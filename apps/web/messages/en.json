@@ -780,7 +780,9 @@
       "creerUnCompte": "Create an account",
       "ceuxDeListe": "Those from {salon} and from your other salons, in one list.",
       "ceuxDeMemeEndroit": "Those from {salon} and from your other salons, in one place.",
-      "retourChez": "Back to {salon}"
+      "retourChez": "Back to {salon}",
+      "code2fa": "Two-factor code",
+      "code2faAide": "The six-digit code from your app, or a recovery code."
     },
     "liste": {
       "echec": "Could not load your appointments.",
@@ -860,6 +862,20 @@
       "utiliserSansSalon": "Your discount is waiting: it will apply to the subscription of a salon you create or run on Beauty Salon.",
       "regles": "A salon is approved {delai} days after going live, or at its first payment. Discounts are capped at {plafond}% per payment, stay valid for {mois} months, and are never money: they can't be withdrawn.",
       "message": "I recommend Beauty Salon to run your salon: online booking, reminders, a mini-site. Sign up with my code {code} for a 30-day trial if the referral is eligible: {lien}"
+    },
+    "verification": {
+      "attente": "Checking your address…",
+      "okTitre": "Address confirmed",
+      "okCorps": "Thank you! Your email address is verified.",
+      "monEspace": "My account",
+      "erreurTitre": "Invalid link",
+      "erreurAide": "You can request a new link from your account.",
+      "incomplet": "This link is incomplete. Open the one you received by email.",
+      "echec": "Verification failed. Please try again in a moment.",
+      "rappel": "Please confirm your address {email}: click the link we emailed you.",
+      "renvoyer": "Resend the link",
+      "envoi": "Sending…",
+      "envoye": "Link sent ✓"
     }
   }
 }

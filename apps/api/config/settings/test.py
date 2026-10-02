@@ -50,6 +50,9 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 # Desactivee par defaut pour ne pas alourdir chaque test d'admin ; les tests
 # qui la concernent la reactivent explicitement avec override_settings.
 PLATFORM_ADMIN_MFA_REQUIRED = False
+# Pas d'appel reseau dans les tests : la verification des fuites a les siens,
+# avec une reponse simulee (tests/test_securite_avancee.py).
+PWNED_PASSWORDS_CHECK = False
 
 # Le throttling fausserait les tests fonctionnels ; il a sa propre suite.
 # Les portees sont deduites de celles de base.py plutot que reecrites : une

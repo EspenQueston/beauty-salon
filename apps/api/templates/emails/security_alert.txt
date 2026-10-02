@@ -1,0 +1,9 @@
+{% autoescape off %}Bonjour{% if nom %} {{ nom }}{% endif %},
+
+{{ intro }}
+
+{{ aide }}
+{{ reset_url }}
+
+L'équipe Beauty Salon
+{% endautoescape %}

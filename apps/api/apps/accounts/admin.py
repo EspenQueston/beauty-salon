@@ -24,8 +24,21 @@ class UserAdmin(SuppressionDefinitiveMixin, BaseUserAdmin):
     form = UserChangeForm
     change_password_form = AdminPasswordChangeForm
     ordering = ("email",)
-    list_display = ("email", "display_name", "is_platform_admin", "is_active", "is_staff")
-    list_filter = ("is_platform_admin", "is_active", "is_staff")
+    list_display = (
+        "email",
+        "display_name",
+        "adresse_verifiee",
+        "is_platform_admin",
+        "is_active",
+        "is_staff",
+    )
+    list_filter = (
+        ("email_verified_at", admin.EmptyFieldListFilter),
+        "is_platform_admin",
+        "is_active",
+        "is_staff",
+    )
+    actions = ("action_renvoyer_verification",)
     search_fields = ("email", "display_name", "phone")
     inlines = (MembershipInline,)
 
@@ -45,10 +58,41 @@ class UserAdmin(SuppressionDefinitiveMixin, BaseUserAdmin):
                 )
             },
         ),
-        ("Dates", {"fields": ("last_login", "created_at", "updated_at")}),
+        ("Dates", {"fields": ("email_verified_at", "last_login", "created_at", "updated_at")}),
         ("Zone sensible", {"fields": ("lien_suppression",)}),
     )
-    readonly_fields = ("last_login", "created_at", "updated_at", "lien_suppression")
+    readonly_fields = (
+        "email_verified_at",
+        "last_login",
+        "created_at",
+        "updated_at",
+        "lien_suppression",
+    )
+
+    @admin.display(description="E-mail confirmé", boolean=True, ordering="email_verified_at")
+    def adresse_verifiee(self, user) -> bool:
+        return user.email_verified_at is not None
+
+    @admin.action(description="Renvoyer le lien de confirmation d'adresse")
+    def action_renvoyer_verification(self, request, queryset):
+        """La preuve vient toujours du clic de la personne : l'equipe renvoie le lien,
+        elle ne coche pas la case a sa place."""
+        from django.contrib import messages
+        from django.db import transaction
+
+        from . import tasks
+
+        envoyes = 0
+        for user in queryset.filter(email_verified_at__isnull=True, is_active=True):
+            base = tasks.base_cliente(user) if hasattr(user, "client_profile") else ""
+            user_id = str(user.pk)
+            transaction.on_commit(lambda u=user_id, b=base: tasks.verification.delay(u, b))
+            envoyes += 1
+        self.message_user(
+            request,
+            f"Lien renvoyé à {envoyes} compte(s)." if envoyes else "Aucun compte à confirmer.",
+            messages.SUCCESS if envoyes else messages.INFO,
+        )
 
     # --- Suppression definitive (apps/common/suppression.py) ---------------
 

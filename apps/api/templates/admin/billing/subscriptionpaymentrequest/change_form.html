@@ -49,7 +49,11 @@
       <div class="paiement-decision__choix">
         <form method="post" action="{% url 'admin:billing_subscriptionpaymentrequest_approuver' original.pk %}"
               class="paiement-decision__approuver"
-              onsubmit="return confirm('Approuver ce paiement de {{ original.amount|unlocalize }} {{ original.currency }} ? La période sera accordée immédiatement.');">
+              data-confirmer="Le salon sera couvert dès maintenant. Vérifiez que ce versement figure bien sur le compte crédité, avec cette référence."
+              data-confirmer-titre="Approuver ce paiement ?"
+              data-confirmer-bouton="Approuver le paiement"
+              data-confirmer-ton="ok"
+              data-confirmer-details='[["Salon", "{{ original.tenant.name|escapejs }}"], ["Montant", "{{ original.amount|unlocalize }} {{ original.currency }}"], ["Offre", "{{ original.plan.name|escapejs }}"], ["Référence", "{{ original.reference|escapejs }}"]{% if apercu_periode %}, ["Période", "{{ apercu_periode.debut|date:"d/m/Y" }} → {{ apercu_periode.fin|date:"d/m/Y" }}"]{% endif %}]'>
           {% csrf_token %}
           <label for="note-approbation">Note interne (facultative)</label>
           <textarea id="note-approbation" name="note" rows="2" placeholder="Ex. : vérifié sur le relevé MTN du 25/09"></textarea>
@@ -57,7 +61,12 @@
         </form>
 
         <form method="post" action="{% url 'admin:billing_subscriptionpaymentrequest_refuser' original.pk %}"
-              class="paiement-decision__refuser">
+              class="paiement-decision__refuser"
+              data-confirmer="Le salon verra le motif et pourra déclarer un nouveau paiement. Ses remises de parrainage réservées lui sont rendues."
+              data-confirmer-titre="Refuser ce paiement ?"
+              data-confirmer-bouton="Refuser le paiement"
+              data-confirmer-ton="danger"
+              data-confirmer-details='[["Salon", "{{ original.tenant.name|escapejs }}"], ["Montant", "{{ original.amount|unlocalize }} {{ original.currency }}"]]'>
           {% csrf_token %}
           <label for="motif-refus">Motif du refus (montré au salon)</label>
           <input type="text" id="motif-refus" name="motif" maxlength="255" required

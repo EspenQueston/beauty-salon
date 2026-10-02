@@ -47,6 +47,22 @@ class OffreFilter(admin.SimpleListFilter):
         return queryset
 
 
+
+def _proprietaire_verifiee(tenant) -> bool:
+    """Au moins une proprietaire active dont l'adresse e-mail est confirmee.
+
+    Un salon sans proprietaire (cree a la main par l'equipe) n'a personne a
+    verifier : la regle porte sur les comptes, pas sur les salons.
+    """
+    from apps.accounts.models import Membership
+
+    proprietaires = Membership.objects.using(ADMIN_DB).filter(
+        tenant=tenant, role=Membership.Role.OWNER, status=Membership.Status.ACTIVE
+    )
+    if not proprietaires.exists():
+        return True
+    return proprietaires.filter(user__email_verified_at__isnull=False).exists()
+
 @admin.register(Tenant)
 class TenantAdmin(SuppressionDefinitiveMixin, admin.ModelAdmin):
     list_display = (
@@ -239,9 +255,15 @@ class TenantAdmin(SuppressionDefinitiveMixin, admin.ModelAdmin):
         published = []
         skipped = []
 
+        non_verifies = []
         for tenant in queryset:
             if tenant.status == Tenant.Status.ACTIVE:
                 skipped.append(tenant.name)
+                continue
+            # Pas de mini-site public tant que la proprietaire n'a pas prouve
+            # qu'elle lit son adresse (decide avec le produit, 2026-10-02).
+            if not _proprietaire_verifiee(tenant):
+                non_verifies.append(tenant.name)
                 continue
 
             tenant.status = Tenant.Status.ACTIVE
@@ -272,6 +294,13 @@ class TenantAdmin(SuppressionDefinitiveMixin, admin.ModelAdmin):
         if skipped:
             self.message_user(
                 request, f"Déjà actifs : {', '.join(skipped)}.", messages.INFO
+            )
+        if non_verifies:
+            self.message_user(
+                request,
+                "Non publiés, adresse e-mail de la propriétaire pas encore confirmée : "
+                f"{', '.join(non_verifies)}. Elle peut renvoyer le lien depuis son espace.",
+                messages.WARNING,
             )
 
     @admin.action(description="Suspendre (met le mini-site hors ligne)")

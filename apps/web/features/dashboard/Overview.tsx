@@ -39,6 +39,7 @@
  * l'usage : on ouvre cette page pour un coup d'œil, pas pour une lecture.
  */
 
+import { useState } from "react";
 import Link from "next/link";
 
 import { Card, ErrorState, Skeleton } from "@/features/ui";
@@ -102,6 +103,65 @@ const TASKS: {
   },
 ];
 
+const CONSEIL_2FA = "beauty-salon.conseil-2fa-masque";
+
+/**
+ * Pour la propriétaire : la double authentification, recommandée tant
+ * qu'elle n'est pas active. Le compte propriétaire ouvre la facturation, la
+ * suppression du salon et les données de toutes les clientes.
+ * « Plus tard » le masque sur cet appareil ; l'écran Sécurité reste là.
+ */
+function ConseilDoubleAuthentification() {
+  const { user, membership } = useDashboard();
+  const [masque, setMasque] = useState(() => {
+    try {
+      return localStorage.getItem(CONSEIL_2FA) === "1";
+    } catch {
+      return false;
+    }
+  });
+  if (membership.role !== "owner" || user.mfa_enabled !== false || masque) return null;
+
+  return (
+    <Card className="border-l-4 border-l-salon">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-salon-soft text-salon">
+          <Icon name="lock" className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">Protégez votre salon en deux minutes</p>
+          <p className="text-[13px] leading-relaxed text-muted">
+            Activez la double authentification : un mot de passe volé ne suffira plus à ouvrir
+            votre compte.
+          </p>
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Link
+            href="/securite"
+            className="flex-1 rounded-lg bg-salon px-3 py-2 text-center text-sm font-medium text-white transition hover:brightness-110 sm:flex-none"
+          >
+            Activer
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setMasque(true);
+              try {
+                localStorage.setItem(CONSEIL_2FA, "1");
+              } catch {
+                /* rien a garder */
+              }
+            }}
+            className="flex-1 rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink transition hover:bg-surface-hover sm:flex-none"
+          >
+            Plus tard
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function Overview() {
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
@@ -119,6 +179,7 @@ export function Overview() {
   return (
     <div className="space-y-5">
       <SetupChecklist />
+      <ConseilDoubleAuthentification />
 
       {/* ----- 1. Ce qui attend ---------------------------------------- */}
       {pending.length > 0 && (

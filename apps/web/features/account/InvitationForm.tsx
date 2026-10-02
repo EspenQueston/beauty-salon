@@ -70,7 +70,9 @@ export function InvitationForm() {
       () =>
         acceptInvitation({
           token,
-          password: invitation?.account_exists ? undefined : password,
+          // Compte existant : son mot de passe actuel prouve qu'il est bien
+          // le sien. Le lien seul ne suffit plus à l'ouvrir.
+          password,
           display_name: displayName || undefined,
         }),
       {
@@ -154,11 +156,23 @@ export function InvitationForm() {
       <Card>
         <form onSubmit={submit}>
           {invitation.account_exists ? (
-            <p className="mb-5 rounded-lg bg-info-bg p-3 text-sm text-info">
-              Vous avez déjà un compte Beauty Salon. Acceptez l&apos;invitation
-              pour ajouter ce salon — vous basculerez de l&apos;un à
-              l&apos;autre depuis le menu.
-            </p>
+            <>
+              <p className="mb-4 rounded-lg bg-info-bg p-3 text-sm text-info">
+                Vous avez déjà un compte Beauty Salon. Confirmez avec son mot de
+                passe pour ajouter ce salon — vous basculerez de l&apos;un à
+                l&apos;autre depuis le menu.
+              </p>
+              <Field label="Mot de passe de votre compte" className="mb-5">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  required
+                  className={inputClass}
+                />
+              </Field>
+            </>
           ) : (
             <>
               <Field label="Votre nom" className="mb-4">

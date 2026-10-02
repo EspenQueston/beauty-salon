@@ -41,8 +41,18 @@ class UserSerializer(serializers.ModelSerializer):
             "display_name",
             "locale",
             "is_platform_admin",
+            "email_verified",
+            "mfa_enabled",
             "memberships",
         )
+        read_only_fields = ("email_verified",)
+
+    mfa_enabled = serializers.SerializerMethodField()
+
+    def get_mfa_enabled(self, user) -> bool:
+        from .mfa import confirmed_device
+
+        return confirmed_device(user) is not None
 
     def get_memberships(self, user):
         queryset = user.memberships.filter(status=Membership.Status.ACTIVE).select_related(
@@ -189,13 +199,9 @@ class InvitationCreateSerializer(serializers.Serializer):
 
 class AcceptInvitationSerializer(serializers.Serializer):
     token = serializers.CharField()
-    # Requis uniquement si aucun compte n'existe encore pour cette adresse.
+    # Nouveau compte : le mot de passe a choisir (regles de robustesse
+    # appliquees par le service). Compte existant : son mot de passe actuel.
     password = serializers.CharField(
-        write_only=True, min_length=10, required=False, allow_blank=True
+        write_only=True, max_length=128, required=False, allow_blank=True
     )
     display_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
-
-    def validate(self, attrs):
-        if attrs.get("password"):
-            validate_password(attrs["password"])
-        return attrs

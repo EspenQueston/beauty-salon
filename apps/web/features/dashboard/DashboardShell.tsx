@@ -25,8 +25,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
+  DashboardError,
   fetchSession,
   logout,
+  renvoyerVerification,
   type Membership,
   type SessionUser,
 } from "@/lib/dashboard";
@@ -111,6 +113,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/comptes", label: "Comptes", icon: "receipt" },
       { href: "/abonnement", label: "Abonnement", icon: "receipt" },
       { href: "/parrainage", label: "Parrainage", icon: "gift", roles: ["owner"] },
+      { href: "/securite", label: "Sécurité", icon: "lock" },
     ],
   },
   {
@@ -379,6 +382,7 @@ function ShellContent({ children }: { children: ReactNode }) {
             <div className="flex-1 overflow-y-auto">
               {!prefs.navbarFixed && bar}
 
+              {user.email_verified === false && <BandeauVerification email={user.email} />}
               {membership.tenant.status === "pending" && <PendingBanner />}
               <AccessBanner pathname={pathname} />
 
@@ -846,6 +850,55 @@ function TopBar({
  * Un salon en attente de validation ne publie pas son mini-site. Le dire en
  * permanence évite qu'on croie à une panne en le trouvant en 404.
  */
+/**
+ * Adresse e-mail pas encore confirmée.
+ *
+ * Décidé avec le produit : tout reste ouvert pour préparer le salon, mais le
+ * mini-site n'est pas publié et aucun paiement ne se déclare avant la
+ * confirmation. Le bandeau le dit, et renvoie le lien sur demande.
+ */
+function BandeauVerification({ email }: { email: string }) {
+  const [etat, setEtat] = useState<"repos" | "envoi" | "envoye">("repos");
+  const [erreur, setErreur] = useState("");
+
+  async function renvoyer() {
+    setEtat("envoi");
+    setErreur("");
+    try {
+      await renvoyerVerification();
+      setEtat("envoye");
+    } catch (caught) {
+      setEtat("repos");
+      setErreur(caught instanceof DashboardError ? caught.message : "Envoi impossible pour le moment.");
+    }
+  }
+
+  return (
+    <div className="border-b border-line bg-info-bg px-4 py-2.5 sm:px-6 lg:px-8" role="status">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-info sm:text-sm">
+        <Icon name="mail" className="size-4 shrink-0" />
+        <p className="min-w-0 flex-1">
+          Confirmez votre adresse <strong className="break-all">{email}</strong> : cliquez sur le
+          lien reçu par e-mail. Votre mini-site et vos paiements s&apos;ouvrent ensuite.
+          {erreur && <span className="block font-medium text-danger">{erreur}</span>}
+        </p>
+        {etat === "envoye" ? (
+          <span className="shrink-0 font-medium">Lien envoyé ✓</span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void renvoyer()}
+            disabled={etat === "envoi"}
+            className="shrink-0 rounded-lg border border-current px-3 py-1 text-xs font-semibold transition hover:bg-white/40 disabled:opacity-60 sm:text-[13px]"
+          >
+            {etat === "envoi" ? "Envoi…" : "Renvoyer le lien"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function PendingBanner() {
   return (
     <div className="border-b border-line bg-warning-bg px-4 py-2.5 sm:px-6 lg:px-8">
