@@ -13,8 +13,20 @@ n'appartiennent a aucun salon.
 
 from django.urls import path
 
+from apps.parrainage.views import VerifierCodeView
+
+from .mfa_api import (
+    MfaConfirmView,
+    MfaDisableView,
+    MfaRecoveryCodesView,
+    MfaSetupView,
+    MfaStatusView,
+    MfaVerifyView,
+)
 from .views import (
     AcceptInvitationView,
+    EmailVerifyResendView,
+    EmailVerifyView,
     LoginView,
     LogoutView,
     PasswordChangeView,
@@ -34,11 +46,21 @@ urlpatterns = [
     path("logout", LogoutView.as_view(), name="logout"),
     path("session", SessionView.as_view(), name="session"),
     path("password/change", PasswordChangeView.as_view(), name="password-change"),
+    path("email/verify/resend", EmailVerifyResendView.as_view(), name="email-verify-resend"),
+    # Double authentification : le code a la connexion, puis les reglages.
+    path("mfa/verify", MfaVerifyView.as_view(), name="mfa-verify"),
+    path("mfa", MfaStatusView.as_view(), name="mfa-status"),
+    path("mfa/setup", MfaSetupView.as_view(), name="mfa-setup"),
+    path("mfa/confirm", MfaConfirmView.as_view(), name="mfa-confirm"),
+    path("mfa/disable", MfaDisableView.as_view(), name="mfa-disable"),
+    path("mfa/recovery-codes", MfaRecoveryCodesView.as_view(), name="mfa-recovery-codes"),
 ]
 
 # Routes ouvertes, sous /api/v1/account/
 account_urlpatterns = [
     path("signup", SignupView.as_view(), name="signup"),
+    # Le clic sur le lien de verification d'adresse (voir verification.py).
+    path("email/verify", EmailVerifyView.as_view(), name="email-verify"),
     path("slug-availability", SlugAvailabilityView.as_view(), name="slug-availability"),
     path(
         "password/reset",
@@ -52,4 +74,10 @@ account_urlpatterns = [
     ),
     path("invitation", PublicInvitationView.as_view(), name="invitation"),
     path("invitation/accept", AcceptInvitationView.as_view(), name="invitation-accept"),
+    # Le formulaire d'inscription verifie un code de parrainage avant l'envoi.
+    path(
+        "parrainage/<str:code>",
+        VerifierCodeView.as_view(),
+        name="parrainage-verifier",
+    ),
 ]

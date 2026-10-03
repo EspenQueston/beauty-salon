@@ -59,7 +59,18 @@ if len(SECRET_KEY) < 50:
 # Le point initial couvre tous les sous-domaines : chaque salon a le sien, et
 # ils ne sont pas connus a l'avance. Le domaine nu reste necessaire pour le
 # site de la plateforme.
-ALLOWED_HOSTS = [f".{PLATFORM_DOMAIN}", PLATFORM_DOMAIN]
+#
+# S'y ajoutent les noms du reseau interne (`api`, `127.0.0.1`) : le serveur
+# Next rend les pages en appelant `http://api:8000` sans passer par le
+# proxy, Caddy y pose sa question avant chaque certificat, et la sonde de
+# sante du conteneur frappe `127.0.0.1`. Ces noms ne sont joignables que de
+# l'interieur : le proxy n'aiguille vers l'API que les requetes adressees a
+# `api.<domaine>`, et aucun autre nom ne l'atteint depuis l'exterieur.
+ALLOWED_HOSTS = [
+    f".{PLATFORM_DOMAIN}",
+    PLATFORM_DOMAIN,
+    *env.list("DJANGO_INTERNAL_HOSTS", default=[]),
+]
 
 # ---------------------------------------------------------------------------
 # HTTPS de bout en bout
@@ -72,6 +83,13 @@ ALLOWED_HOSTS = [f".{PLATFORM_DOMAIN}", PLATFORM_DOMAIN]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
 
+# Deux routes ne sont jamais appelees par un navigateur, et toujours en
+# clair sur le reseau interne : la sonde de sante, et la question que Caddy
+# pose avant chaque certificat. Redirigees vers HTTPS, la premiere
+# declarerait le conteneur malade, et la seconde ferait refuser tous les
+# certificats de salon — Caddy lit une redirection comme un « non ».
+SECURE_REDIRECT_EXEMPT = [r"^health$", r"^interne/"]
+
 # Un an, sous-domaines compris : chaque salon est un sous-domaine, et les
 # laisser hors de HSTS laisserait ouverte la porte qu'on vient de fermer.
 #
@@ -82,6 +100,27 @@ SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
 SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=31_536_000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
+
+# ---------------------------------------------------------------------------
+# Adresses publiques
+# ---------------------------------------------------------------------------
+# Les medias sont servis par le proxy, sur l'hote de l'API. L'adresse est
+# **absolue**, et c'est ce qui la rend juste.
+#
+# Relative, Django la completerait avec l'hote de la requete. Or une partie
+# des requetes vient du serveur Next, qui appelle `http://api:8000` pour
+# rendre une page : les photos du salon sortaient alors en
+# `http://api:8000/media/…`, adresse qu'aucun navigateur ne peut joindre, et
+# chaque mini-site s'affichait sans une image. Une URL absolue traverse
+# `build_absolute_uri` sans etre touchee.
+MEDIA_URL = env("MEDIA_URL", default=f"https://api.{PLATFORM_DOMAIN}/media/")
+
+# Liens des e-mails. `base.py` les compose pour le developpement — `http`
+# et le port 3100 — ce qui, en production, enverrait chaque cliente vers
+# une adresse morte.
+APP_BASE_URL = env("APP_BASE_URL", default=f"https://app.{PLATFORM_DOMAIN}")
+SITE_BASE_URL = env("SITE_BASE_URL", default=f"https://{PLATFORM_DOMAIN}")
+API_BASE_URL = env("API_BASE_URL", default=f"https://api.{PLATFORM_DOMAIN}")
 
 # ---------------------------------------------------------------------------
 # Cookies
@@ -165,3 +204,16 @@ if SENTRY_DSN:
         # n'est pas un endroit ou stocker le fichier clientes d'un salon.
         send_default_pii=False,
     )
+
+# ---------------------------------------------------------------------------
+# Nom d'hote des e-mails
+# ---------------------------------------------------------------------------
+# Django annonce au serveur SMTP (EHLO) et signe chaque Message-ID avec le nom
+# de la machine. Dans un conteneur, c'est un identifiant aleatoire sans
+# domaine (« f2c508b625e2 ») : un Message-ID `@f2c508b625e2` et un EHLO sans
+# point sont deux signaux que les filtres anti-spam, Gmail en tete,
+# penalisent. On leur donne un vrai nom, dans le domaine de la plateforme.
+from django.core.mail.utils import DNS_NAME  # noqa: E402
+
+EMAIL_HOSTNAME = env("EMAIL_HOSTNAME", default=f"api.{PLATFORM_DOMAIN}")
+DNS_NAME._fqdn = EMAIL_HOSTNAME

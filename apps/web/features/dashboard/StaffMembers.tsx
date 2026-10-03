@@ -66,7 +66,10 @@ export function StaffMembers() {
     "/api/v1/staff-members/?page_size=100",
     tenantId,
   );
-  const services = useResource<Page<Service>>("/api/v1/services/?page_size=200", tenantId);
+  const services = useResource<Page<Service>>(
+    "/api/v1/services/?page_size=200",
+    tenantId,
+  );
 
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
 
@@ -119,7 +122,13 @@ export function StaffMembers() {
               type="button"
               icon={<Icon name="plus" className="size-4" />}
               onClick={() =>
-                setEditing({ name: "", specialty: "", bio: "", active: true, services: [] })
+                setEditing({
+                  name: "",
+                  specialty: "",
+                  bio: "",
+                  active: true,
+                  services: [],
+                })
               }
             >
               Ajouter
@@ -128,7 +137,9 @@ export function StaffMembers() {
         }
       />
 
-      {staff.error && <ErrorState>Impossible de charger les prestataires.</ErrorState>}
+      {staff.error && (
+        <ErrorState>Impossible de charger les prestataires.</ErrorState>
+      )}
 
       {editing && (
         <StaffForm
@@ -155,7 +166,13 @@ export function StaffMembers() {
               <Button
                 type="button"
                 onClick={() =>
-                  setEditing({ name: "", specialty: "", bio: "", active: true, services: [] })
+                  setEditing({
+                    name: "",
+                    specialty: "",
+                    bio: "",
+                    active: true,
+                    services: [],
+                  })
                 }
               >
                 Ajouter la première personne
@@ -192,7 +209,9 @@ export function StaffMembers() {
                     </p>
                   )}
                   {member.specialty && (
-                    <p className="mt-0.5 text-sm text-muted">{member.specialty}</p>
+                    <p className="mt-0.5 text-sm text-muted">
+                      {member.specialty}
+                    </p>
                   )}
 
                   <div className="mt-2">
@@ -212,7 +231,10 @@ export function StaffMembers() {
 
                 {canEdit && (
                   <div className="flex shrink-0 gap-2">
-                    <GhostButton type="button" onClick={() => setEditing(member)}>
+                    <GhostButton
+                      type="button"
+                      onClick={() => setEditing(member)}
+                    >
                       Modifier
                     </GhostButton>
                     <DangerButton type="button" onClick={() => remove(member)}>
@@ -272,7 +294,9 @@ function StaffForm({
     const ok = await toast.run(
       () =>
         dashboardFetch(
-          isNew ? "/api/v1/staff-members/" : `/api/v1/staff-members/${initial.id}/`,
+          isNew
+            ? "/api/v1/staff-members/"
+            : `/api/v1/staff-members/${initial.id}/`,
           {
             method: isNew ? "POST" : "PATCH",
             body: JSON.stringify({
@@ -287,7 +311,9 @@ function StaffForm({
           tenantId,
         ),
       {
-        success: isNew ? `${name} ajouté à l'équipe.` : `Fiche de ${name} enregistrée.`,
+        success: isNew
+          ? `${name} ajouté à l'équipe.`
+          : `Fiche de ${name} enregistrée.`,
       },
     );
 
@@ -353,13 +379,17 @@ function StaffForm({
         </div>
 
         <fieldset className="mt-5">
-          <legend className="mb-1 text-sm font-medium text-ink">Compétences</legend>
+          <legend className="mb-1 text-sm font-medium text-ink">
+            Compétences
+          </legend>
           <p className="mb-3 text-xs text-muted">
             Seules les prestations cochées seront proposées avec cette personne.
           </p>
 
           {services.length === 0 ? (
-            <p className="text-sm text-muted">Créez d&apos;abord des prestations.</p>
+            <p className="text-sm text-muted">
+              Créez d&apos;abord des prestations.
+            </p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {services.map((service) => {

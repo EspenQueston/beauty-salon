@@ -1,0 +1,18 @@
+# Ce qui ne doit jamais entrer dans l'image de production.
+#
+# `node_modules` est reinstalle dans l'image, pour Linux : celui du poste
+# contient des binaires Windows (SWC, lightningcss) qui ne s'y executent pas.
+node_modules/
+.next/
+out/
+
+# Secrets : les variables publiques arrivent en arguments de construction,
+# les autres a l'execution. Aucun fichier `.env` ne doit etre copie.
+.env
+.env.*
+
+npm-debug.log*
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo

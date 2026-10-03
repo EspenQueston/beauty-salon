@@ -781,3 +781,130 @@ def test_a_search_never_reaches_another_salon(api_client, salon_a, salon_b):
     )
 
     assert response.data["results"] == []
+
+
+# ---------------------------------------------------------------------------
+# Ce vers quoi mène la cloche
+# ---------------------------------------------------------------------------
+#
+# Ces filtres existent pour une seule raison : une notification doit mener à
+# ce qu'elle annonce. Sans eux, les trois pastilles et toutes les
+# notifications renvoyaient vers `/agenda`, à charge de retrouver soi-même le
+# rendez-vous concerné dans une grille hebdomadaire.
+
+
+@pytest.mark.django_db
+def test_un_rendez_vous_se_retrouve_par_son_identifiant(api_client, salon_a):
+    """Le lien des notifications.
+
+    La période affichée est ignorée : celui qu'on cherche est presque
+    toujours hors de la semaine en cours.
+    """
+    vise = make_booking(salon_a, hours_ahead=24 * 40)
+    make_booking(salon_a, hours_ahead=24 * 41)
+    login(api_client, salon_a.owner)
+
+    reponse = api_client.get(f"/api/v1/bookings/?id={vise.id}")
+
+    assert reponse.status_code == 200
+    assert [ligne["id"] for ligne in reponse.data["results"]] == [str(vise.id)]
+
+
+@pytest.mark.django_db
+def test_la_liste_des_demandes_dit_la_meme_chose_que_la_pastille(
+    api_client, salon_a
+):
+    """Le compteur et la liste partagent leur définition.
+
+    C'est tout l'intérêt de `FILTRES_ATTENTION` : si les deux divergent, la
+    pastille annonce deux demandes, l'écran en montre trois, et l'on cesse de
+    croire les deux.
+    """
+    make_booking(salon_a, status=Booking.Status.REQUESTED)
+    make_booking(salon_a, hours_ahead=250, status=Booking.Status.REQUESTED)
+    make_booking(salon_a, hours_ahead=260, status=Booking.Status.CONFIRMED)
+
+    login(api_client, salon_a.owner)
+
+    liste = api_client.get("/api/v1/bookings/?attente=demandes")
+    pastille = api_client.get("/api/v1/overview?brief=1")
+
+    assert len(liste.data["results"]) == 2
+    assert pastille.data["attention"]["requests"] == 2
+
+
+@pytest.mark.django_db
+def test_une_liste_inconnue_ne_deverse_pas_tout_l_agenda(api_client, salon_a):
+    """Un signet gardé après un renommage ne doit pas tout montrer.
+
+    Ignorer la clé aurait affiché l'agenda entier sous le titre « acomptes à
+    vérifier » — c'est-à-dire un écran qui ment.
+    """
+    make_booking(salon_a)
+    login(api_client, salon_a.owner)
+
+    reponse = api_client.get("/api/v1/bookings/?attente=liste-qui-n-existe-plus")
+
+    assert reponse.status_code == 200
+    assert reponse.data["results"] == []
+
+
+@pytest.mark.django_db
+def test_les_rendez_vous_a_noter_sont_ceux_qui_sont_passes(api_client, salon_a):
+    passe = make_booking(salon_a, hours_ahead=-48, status=Booking.Status.CONFIRMED)
+    make_booking(salon_a, hours_ahead=48, status=Booking.Status.CONFIRMED)
+    # Déjà réglé : honoré, donc plus rien à noter.
+    make_booking(salon_a, hours_ahead=-72, status=Booking.Status.COMPLETED)
+
+    login(api_client, salon_a.owner)
+    reponse = api_client.get("/api/v1/bookings/?attente=a-noter")
+
+    assert [ligne["id"] for ligne in reponse.data["results"]] == [str(passe.id)]
+
+
+@pytest.mark.django_db
+def test_un_prestataire_ne_voit_pas_les_rendez_vous_des_autres_par_ce_chemin(
+    api_client, salon_a
+):
+    """Le nouveau filtre ne doit pas contourner le cloisonnement par rôle.
+
+    `?id=` prend un identifiant en clair : sans la restriction de rôle qui
+    s'applique après, il suffirait de le connaître pour lire le rendez-vous
+    d'une collègue.
+    """
+    autre = make_booking(salon_a, status=Booking.Status.CONFIRMED)
+
+    prestataire = UserFactory()
+    MembershipFactory(
+        tenant=salon_a.tenant, user=prestataire, role=Membership.Role.STAFF
+    )
+    login(api_client, prestataire)
+
+    reponse = api_client.get(f"/api/v1/bookings/?id={autre.id}")
+
+    assert reponse.status_code == 200
+    assert reponse.data["results"] == []
+
+
+@pytest.mark.django_db
+def test_l_agenda_donne_de_quoi_joindre_la_cliente(api_client, salon_a):
+    """Le nom et le numéro y étaient ; l'adresse manquait.
+
+    Depuis une carte de l'agenda, on appelle ou on écrit. Sans l'adresse, la
+    seconde moitié du geste obligeait à rouvrir la fiche cliente — ou à la
+    chercher dans sa boîte mail.
+
+    Elle peut être vide : une cliente qui réserve par téléphone n'en donne pas
+    toujours, et l'écran n'affiche alors rien.
+    """
+    with as_tenant(salon_a.tenant):
+        salon_a.customer.email = "aminata.sow@example.com"
+        salon_a.customer.save(update_fields=["email"])
+
+    booking = make_booking(salon_a)
+    login(api_client, salon_a.owner)
+
+    ligne = api_client.get(f"/api/v1/bookings/?id={booking.id}").data["results"][0]
+
+    assert ligne["customer_email"] == "aminata.sow@example.com"
+    assert ligne["customer_phone"] == salon_a.customer.phone

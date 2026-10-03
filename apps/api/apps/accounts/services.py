@@ -18,6 +18,7 @@ from django.utils.http import urlsafe_base64_encode
 
 from apps.common.db import tenant_context
 from apps.domains.services import ensure_platform_domain
+from apps.notifications.details import grouper
 from apps.notifications.email import send_email
 from apps.salons.models import SalonProfile
 from apps.tenants.models import Tenant
@@ -65,6 +66,8 @@ def signup_salon(
     timezone_name: str = "Africa/Brazzaville",
     currency: str = Tenant.Currency.XAF,
     theme_config: dict | None = None,
+    code_parrainage: str = "",
+    ip: str = "",
 ) -> tuple[Tenant, User]:
     """Cree un salon et son compte proprietaire.
 
@@ -89,7 +92,6 @@ def signup_salon(
         name=name.strip(),
         slug=slug,
         status=Tenant.Status.PENDING,
-        plan=Tenant.Plan.TRIAL,
         country=country,
         timezone=timezone_name,
         currency=currency,
@@ -109,27 +111,67 @@ def signup_salon(
         status=Membership.Status.ACTIVE,
     )
 
+    # Parrainage : le parrain est fige ici, dans la transaction de
+    # l'inscription. Un code refuse (meme personne, meme salon) est retenu
+    # comme tel, sans bloquer l'inscription ; un code inconnu la bloque.
+    parrainage_retenu = False
+    if code_parrainage:
+        from apps.parrainage import services as parrainage
+        from apps.parrainage.models import Parrainage
+
+        try:
+            resultat = parrainage.detecter(tenant, user, code_parrainage, ip)
+            parrainage_retenu = (
+                resultat is not None
+                and resultat.statut == Parrainage.Statut.EN_VERIFICATION
+            )
+        except parrainage.CodeInconnu as exc:
+            raise SignupError(str(exc)) from exc
+
     # Fiche vide des le depart : le proprietaire a quelque chose a remplir
     # au lieu d'un ecran qui parle de creation.
     with tenant_context(tenant.id):
         # Les couleurs choisies avant l'inscription sont reprises : sans
         # cela, la page d'accueil promettrait un report qui n'a pas lieu.
-        SalonProfile.objects.create(tenant=tenant, theme_config=theme_config or {})
+        # L'e-mail de contact publie part de l'adresse d'inscription : le
+        # mini-site affiche une adresse des le premier jour. Le salon la
+        # change ou l'efface depuis son profil.
+        SalonProfile.objects.create(
+            tenant=tenant, theme_config=theme_config or {}, contact_email=user.email
+        )
         _seed_business_hours(tenant)
         _seed_owner_as_staff(tenant, user, membership)
 
     # Periode d'essai ouverte des l'inscription : sans elle, le salon n'a
     # aucun statut d'abonnement et le tableau de bord n'a rien a montrer.
-    from apps.billing.services import BillingError, start_trial
+    from apps.billing.services import (
+        REFERRED_TRIAL_DAYS,
+        TRIAL_DAYS,
+        BillingError,
+        start_trial,
+    )
 
     try:
-        start_trial(tenant)
+        start_trial(tenant, days=REFERRED_TRIAL_DAYS if parrainage_retenu else TRIAL_DAYS)
     except BillingError:
         # Aucune offre d'essai configuree : l'inscription reste valable,
         # l'equipe rattachera l'abonnement a la main.
         logger.warning("Inscription sans offre d'essai configurée (%s).", tenant.slug)
 
     transaction.on_commit(lambda: _notify_signup(tenant, user))
+    # Le lien de verification part a part, en arriere-plan : l'adresse n'est
+    # prouvee qu'au clic, jamais par sa seule forme.
+    from . import tasks
+
+    user_id = str(user.pk)
+    transaction.on_commit(lambda: tasks.verification.delay(user_id))
+
+    # L'equipe de la plateforme est prevenue dans son administration :
+    # une inscription est le seul evenement qu'on veut voir arriver le
+    # jour meme, pour accompagner un salon qui demarre.
+    from apps.notifications import evenements
+
+    evenements.salon_inscrit(tenant)
     return tenant, user
 
 
@@ -146,11 +188,11 @@ def _notify_signup(tenant: Tenant, user: User) -> None:
             "intro": (
                 f"Votre salon {tenant.name} est créé. Voici où le retrouver."
             ),
-            "details": [
+            "details": grouper([
                 {"label": "Mini-site", "value": hostname},
                 {"label": "Espace professionnel", "value": settings.APP_BASE_URL},
                 {"label": "Compte", "value": user.email, "strong": True},
-            ],
+            ]),
         },
         to=user.email,
     )
@@ -187,7 +229,7 @@ def invite_member(*, tenant, email: str, role: str, invited_by=None) -> Invitati
                 f"{tenant.name} vous invite à rejoindre son équipe "
                 "sur Beauty Salon."
             ),
-            "details": [
+            "details": grouper([
                 {"label": "Salon", "value": tenant.name},
                 {"label": "Rôle", "value": invitation.get_role_display(), "strong": True},
             ]
@@ -195,7 +237,7 @@ def invite_member(*, tenant, email: str, role: str, invited_by=None) -> Invitati
                 [{"label": "Invitée par", "value": invited_by.email}]
                 if invited_by
                 else []
-            ),
+            )),
         },
         to=email,
     )
@@ -228,18 +270,47 @@ def find_invitation(token: str) -> Invitation:
 
 @transaction.atomic
 def accept_invitation(
-    *, token: str, password: str | None = None, display_name: str = ""
+    *,
+    token: str,
+    password: str | None = None,
+    display_name: str = "",
+    utilisateur_connecte=None,
 ) -> tuple[User, Invitation]:
+    """Accepte une invitation, et ouvre la session du compte invite.
+
+    Un compte qui existe deja doit prouver qu'il est bien le sien : etre
+    connecte avec, ou donner son mot de passe. Auparavant, le seul lien
+    suffisait — un e-mail d'invitation transfere, ou lu par-dessus une
+    epaule, ouvrait le compte pendant sept jours sans mot de passe.
+    """
     invitation = find_invitation(token)
 
     user = User.objects.filter(email=invitation.email).first()
+    if user is not None:
+        deja_connecte = getattr(utilisateur_connecte, "pk", None) == user.pk
+        if not deja_connecte and not (
+            password and user.is_active and user.check_password(password)
+        ):
+            raise InvitationError(
+                "Un compte existe déjà pour cette adresse : saisissez son mot de passe "
+                "pour accepter l'invitation."
+            )
     if user is None:
         if not password:
             raise InvitationError("Un mot de passe est requis pour créer le compte.")
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+
+        try:
+            validate_password(password)
+        except ValidationError as exc:
+            raise InvitationError(" ".join(exc.messages)) from exc
         user = User.objects.create_user(
             email=invitation.email,
             password=password,
             display_name=display_name.strip(),
+            # Le lien est arrive dans cette boite : l'adresse est prouvee.
+            email_verified_at=timezone.now(),
         )
 
     membership, created = Membership.objects.get_or_create(

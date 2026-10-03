@@ -41,8 +41,18 @@ class UserSerializer(serializers.ModelSerializer):
             "display_name",
             "locale",
             "is_platform_admin",
+            "email_verified",
+            "mfa_enabled",
             "memberships",
         )
+        read_only_fields = ("email_verified",)
+
+    mfa_enabled = serializers.SerializerMethodField()
+
+    def get_mfa_enabled(self, user) -> bool:
+        from .mfa import confirmed_device
+
+        return confirmed_device(user) is not None
 
     def get_memberships(self, user):
         queryset = user.memberships.filter(status=Membership.Status.ACTIVE).select_related(
@@ -74,6 +84,11 @@ class SignupSerializer(serializers.Serializer):
         choices=Tenant.Currency.choices, default=Tenant.Currency.XAF
     )
     accepts_terms = serializers.BooleanField()
+    # Le code du parrain, facultatif. Un code inconnu est refuse tout de
+    # suite : mieux vaut le corriger que decouvrir plus tard qu'il n'a pas compte.
+    code_parrainage = serializers.CharField(
+        max_length=32, required=False, allow_blank=True, default=""
+    )
 
     # Couleurs composees sur la page d'accueil avant l'inscription. Elles
     # arrivent de l'exterieur : seules trois cles sont acceptees, et chacune
@@ -107,6 +122,16 @@ class SignupSerializer(serializers.Serializer):
         except Exception:
             raise serializers.ValidationError("Fuseau horaire inconnu.") from None
         return value
+
+    def validate_code_parrainage(self, value):
+        from apps.parrainage import services as parrainage
+
+        code = parrainage.normaliser_code(value)
+        if not code or not parrainage.actif():
+            return ""
+        if parrainage.resoudre(code) is None:
+            raise serializers.ValidationError("Code de parrainage inconnu.")
+        return code
 
     def validate_accepts_terms(self, value):
         if not value:
@@ -174,13 +199,9 @@ class InvitationCreateSerializer(serializers.Serializer):
 
 class AcceptInvitationSerializer(serializers.Serializer):
     token = serializers.CharField()
-    # Requis uniquement si aucun compte n'existe encore pour cette adresse.
+    # Nouveau compte : le mot de passe a choisir (regles de robustesse
+    # appliquees par le service). Compte existant : son mot de passe actuel.
     password = serializers.CharField(
-        write_only=True, min_length=10, required=False, allow_blank=True
+        write_only=True, max_length=128, required=False, allow_blank=True
     )
     display_name = serializers.CharField(max_length=120, required=False, allow_blank=True)
-
-    def validate(self, attrs):
-        if attrs.get("password"):
-            validate_password(attrs["password"])
-        return attrs

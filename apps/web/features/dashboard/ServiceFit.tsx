@@ -148,8 +148,8 @@ export function ServiceFit({ tenantId }: { tenantId: string }) {
     <Card className="mt-6">
       <SectionTitle>Ce que vos horaires ne permettent pas</SectionTitle>
       <p className="-mt-2 mb-4 text-sm text-muted">
-        Une prestation n&apos;est proposée que dans une plage assez longue
-        pour la contenir entièrement.
+        Une prestation n&apos;est proposée que dans une plage assez longue pour
+        la contenir entièrement.
       </p>
 
       {/* Deux colonnes dès le téléphone : ces lignes sont courtes, et une
@@ -175,8 +175,8 @@ export function ServiceFit({ tenantId }: { tenantId: string }) {
               <>
                 <Badge tone="warning">Jamais proposée</Badge>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted">
-                  Aucune de vos plages ne dure assez longtemps. Vos clientes
-                  ne la verront nulle part.
+                  Aucune de vos plages ne dure assez longtemps. Vos clientes ne
+                  la verront nulle part.
                 </p>
               </>
             ) : (
@@ -201,8 +201,8 @@ export function ServiceFit({ tenantId }: { tenantId: string }) {
 
       {blocking.length > 0 && (
         <p className="mt-3.5 border-t border-line pt-3 text-xs text-muted">
-          Pour les rendre réservables : allongez une plage, ou raccourcissez
-          la durée annoncée dans <span className="text-ink">Prestations</span>.
+          Pour les rendre réservables : allongez une plage, ou raccourcissez la
+          durée annoncée dans <span className="text-ink">Prestations</span>.
         </p>
       )}
     </Card>

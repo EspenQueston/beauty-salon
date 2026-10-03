@@ -435,7 +435,9 @@ export function Finances() {
 
   const bestMonth = months.reduce<MonthPoint | null>(
     (best, point) =>
-      best === null || Number(point.income) > Number(best.income) ? point : best,
+      best === null || Number(point.income) > Number(best.income)
+        ? point
+        : best,
     null,
   );
 
@@ -553,7 +555,12 @@ export function Finances() {
               note={waiting}
               evolution={
                 compared
-                  ? change(data.totals.income, before?.income, active.against, "up")
+                  ? change(
+                      data.totals.income,
+                      before?.income,
+                      active.against,
+                      "up",
+                    )
                   : null
               }
             />
@@ -585,7 +592,11 @@ export function Finances() {
               value={
                 data.totals.margin === null ? "—" : `${data.totals.margin} %`
               }
-              unit={data.totals.margin === null ? "aucune recette" : "de ce qui rentre"}
+              unit={
+                data.totals.margin === null
+                  ? "aucune recette"
+                  : "de ce qui rentre"
+              }
               note={waiting}
               evolution={
                 compared
@@ -746,7 +757,9 @@ export function Finances() {
                 lead={
                   <>
                     <Icon name="trend" className="size-3.5 shrink-0" />
-                    <span>c&apos;est l&apos;écart entre les deux qui compte</span>
+                    <span>
+                      c&apos;est l&apos;écart entre les deux qui compte
+                    </span>
                   </>
                 }
                 className="h-full"
@@ -780,8 +793,8 @@ export function Finances() {
       {transactions.length === 0 && list.data !== null && (
         <Card>
           <p className="text-sm text-muted">
-            Aucun mouvement sur la période. Les prestations que vous marquez
-            « terminée » apparaîtront ici automatiquement.
+            Aucun mouvement sur la période. Les prestations que vous marquez «
+            terminée » apparaîtront ici automatiquement.
           </p>
         </Card>
       )}
@@ -818,7 +831,8 @@ export function Finances() {
                       {dayLabel(transaction.occurred_on)}
                       {" · "}
                       {transaction.category_label}
-                      {transaction.counterparty && ` · ${transaction.counterparty}`}
+                      {transaction.counterparty &&
+                        ` · ${transaction.counterparty}`}
                     </p>
                   </div>
 
@@ -978,7 +992,9 @@ function TransactionForm({
               className="size-2.5 rounded-sm"
               style={{
                 background:
-                  value === "income" ? "var(--viz-income)" : "var(--viz-expense)",
+                  value === "income"
+                    ? "var(--viz-income)"
+                    : "var(--viz-expense)",
               }}
             />
             {text}
@@ -1073,7 +1089,9 @@ function TransactionForm({
           <input
             value={counterparty}
             onChange={(event) => setCounterparty(event.target.value)}
-            placeholder={kind === "income" ? "Nom de la cliente" : "Fournisseur"}
+            placeholder={
+              kind === "income" ? "Nom de la cliente" : "Fournisseur"
+            }
             className={inputClass}
           />
         </label>

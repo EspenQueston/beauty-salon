@@ -29,7 +29,13 @@ import { Icon } from "./icons";
 type Step = { key: string; label: string; done: boolean; current: boolean };
 
 /** Chemin normal d'un rendez-vous, du plus tôt au plus tard. */
-const PATH = ["pending_payment", "requested", "confirmed", "checked_in", "completed"];
+const PATH = [
+  "pending_payment",
+  "requested",
+  "confirmed",
+  "checked_in",
+  "completed",
+];
 
 const LABELS: Record<string, string> = {
   pending_payment: "Acompte",
@@ -65,7 +71,9 @@ export function BookingProgress({
     );
   }
 
-  const path = hasDeposit ? PATH : PATH.filter((key) => key !== "pending_payment");
+  const path = hasDeposit
+    ? PATH
+    : PATH.filter((key) => key !== "pending_payment");
   const position = path.indexOf(status);
   if (position < 0) return null;
 

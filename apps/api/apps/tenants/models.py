@@ -20,12 +20,6 @@ class Tenant(UUIDModel, TimeStampedModel):
         ACTIVE = "active", _("Actif")
         SUSPENDED = "suspended", _("Suspendu")
 
-    class Plan(models.TextChoices):
-        TRIAL = "trial", _("Essai")
-        SOLO = "solo", _("Solo")
-        SALON = "salon", _("Salon")
-        PRO = "pro", _("Pro")
-
     class Country(models.TextChoices):
         CONGO = "CG", _("Congo-Brazzaville")
         DRC = "CD", _("République démocratique du Congo")
@@ -45,9 +39,10 @@ class Tenant(UUIDModel, TimeStampedModel):
     status = models.CharField(
         _("statut"), max_length=20, choices=Status.choices, default=Status.PENDING
     )
-    plan = models.CharField(
-        _("offre"), max_length=20, choices=Plan.choices, default=Plan.TRIAL
-    )
+    # L'offre d'un salon (essai, Standard, Pro) n'est pas ici : elle vit dans
+    # son abonnement (billing.Subscription), seule source des droits. Un
+    # ancien champ « offre » (Essai/Solo/Salon/Pro) a ete retire : modifiable
+    # dans l'administration, il ne commandait rien.
     country = models.CharField(
         _("pays"), max_length=2, choices=Country.choices, default=Country.CONGO
     )

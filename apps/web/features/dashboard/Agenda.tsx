@@ -9,10 +9,17 @@
  * ne porte que les actions possibles à cet instant précis.
  */
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
-import { formatDate, formatDayKey, formatPrice, formatTime } from "@/lib/format";
+import {
+  formatDate,
+  formatDayKey,
+  formatPrice,
+  formatTime,
+} from "@/lib/format";
 import { useNow } from "@/lib/useNow";
 import {
   Badge,
@@ -28,6 +35,7 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+
 import { Icon } from "./icons";
 import {
   AgendaToolbar,
@@ -43,6 +51,33 @@ import { CheckInButton, CheckInPanel } from "./CheckIn";
 import { ReschedulePanel } from "./Reschedule";
 import { useDashboard } from "./DashboardShell";
 
+/**
+ * Les trois listes de « ce qui attend un geste ».
+ *
+ * Les clés sont celles de l'URL et du serveur
+ * (`overview.FILTRES_ATTENTION`) : c'est lui qui décide ce que contient
+ * chaque liste, ici on ne fait que la nommer. Un libellé inventé de ce côté
+ * finirait par décrire autre chose que ce que la requête ramène.
+ *
+ * Les deux formes sont écrites, plutôt qu'un « s » ajouté à la fin : le
+ * pluriel porte sur le nom, pas sur la phrase — « 2 acomptes à vérifier »
+ * et non « 2 acompte à vérifiers ».
+ */
+const LIBELLES_ATTENTE: Record<string, { un: string; plusieurs: string }> = {
+  acomptes: {
+    un: "acompte à vérifier",
+    plusieurs: "acomptes à vérifier",
+  },
+  demandes: {
+    un: "demande à accepter",
+    plusieurs: "demandes à accepter",
+  },
+  "a-noter": {
+    un: "rendez-vous à noter",
+    plusieurs: "rendez-vous à noter",
+  },
+};
+
 interface Booking {
   id: string;
   starts_at: string;
@@ -54,6 +89,7 @@ interface Booking {
   staff_member_name: string;
   customer_name: string;
   customer_phone: string;
+  customer_email: string;
   total_amount: string;
   deposit_amount: string;
   deposit_paid: boolean;
@@ -98,6 +134,76 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   no_show: { label: "Absente", tone: "danger" },
 };
 
+/**
+ * Une preuve de versement attend-elle un verdict ?
+ *
+ * Tant que c'est le cas, le rendez-vous ne doit avancer que par la décision
+ * sur l'acompte — c'est elle, et elle seule, qui fait entrer l'argent en
+ * caisse.
+ */
+function acompteEnAttente(booking: Booking): boolean {
+  return (
+    booking.deposit_proof?.status === "submitted" &&
+    ["requested", "pending_payment"].includes(booking.status)
+  );
+}
+
+/**
+ * Joindre la cliente, depuis la carte du rendez-vous.
+ *
+ * ===========================================================================
+ * Pourquoi ce sont des liens, et pas du texte
+ * ===========================================================================
+ *
+ * Le numéro était écrit à côté du nom, à lire et à recopier. Or ce qu'on
+ * fait d'un contact dans un agenda, c'est appeler ou écrire — jamais lire.
+ * `tel:` compose sur un téléphone, `mailto:` ouvre le courrier sur un poste
+ * fixe : le geste tient en un toucher au lieu d'une sélection au doigt.
+ *
+ * ===========================================================================
+ * Deux colonnes quand ça tient, une ligne chacun sinon
+ * ===========================================================================
+ *
+ * `flex-wrap` plutôt qu'une grille à deux colonnes figée. Un numéro fait
+ * dix-sept caractères, une adresse en fait souvent trente-cinq : dans une
+ * grille, la colonne de l'e-mail tomberait à dix-huit caractères sur un
+ * écran de 360 px, et une adresse tronquée ne sert plus à rien.
+ *
+ * Ici les deux se placent côte à côte quand ils tiennent, et l'adresse passe
+ * à la ligne quand elle est longue — où elle dispose de toute la largeur.
+ *
+ * L'adresse peut manquer : une cliente qui réserve par téléphone n'en donne
+ * pas toujours. On n'affiche alors rien, plutôt qu'un tiret à expliquer.
+ */
+function Contact({ booking }: { booking: Booking }) {
+  const courriel = booking.customer_email?.trim();
+
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <a
+        href={`tel:${booking.customer_phone.replace(/\s/g, "")}`}
+        onClick={(evenement) => evenement.stopPropagation()}
+        className="tabular inline-flex max-w-full items-center gap-1.5 text-[0.8rem] text-muted transition hover:text-salon"
+      >
+        <Icon name="phone" className="size-3.5 shrink-0" />
+        <span className="truncate">{booking.customer_phone}</span>
+      </a>
+
+      {courriel && (
+        <a
+          href={`mailto:${courriel}`}
+          onClick={(evenement) => evenement.stopPropagation()}
+          title={courriel}
+          className="inline-flex max-w-full items-center gap-1.5 text-[0.8rem] text-muted transition hover:text-salon"
+        >
+          <Icon name="mail" className="size-3.5 shrink-0" />
+          <span className="truncate">{courriel}</span>
+        </a>
+      )}
+    </div>
+  );
+}
+
 /** Actions proposées selon l'état courant du rendez-vous. */
 const NEXT_ACTIONS: Record<string, { status: string; label: string }[]> = {
   requested: [
@@ -129,6 +235,22 @@ export function Agenda() {
   const [statusFilter, setStatusFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+
+  /*
+   * Ce sur quoi la cloche nous a envoyées.
+   *
+   * `?rdv=<id>` : un rendez-vous précis, celui dont parlait la
+   * notification. `?attente=<clé>` : l'une des trois listes de « ce qui
+   * attend un geste », celles que comptent les pastilles.
+   *
+   * Dans les deux cas la période affichée n'a plus de sens — le
+   * rendez-vous cherché est rarement dans la semaine en cours — et on la
+   * met de côté, exactement comme pendant une recherche.
+   */
+  const parametres = useSearchParams();
+  const rdv = parametres.get("rdv");
+  const attente = parametres.get("attente");
+  const cible = Boolean(rdv || attente);
   /* Le rendez-vous dont on est en train de vérifier l'arrivée, s'il y en a
      un : le lecteur s'ouvre alors ciblé sur lui. */
   const [arrival, setArrival] = useState<Booking | null>(null);
@@ -174,6 +296,11 @@ export function Agenda() {
     const params = new URLSearchParams({ page_size: "300" });
     if (searching) {
       params.set("search", debounced);
+    } else if (cible) {
+      // La cible commande : pas de période. On montre exactement ce que
+      // la notification annonçait.
+      if (rdv) params.set("id", rdv);
+      if (attente) params.set("attente", attente);
     } else {
       params.set("from", from.toISOString());
       params.set("to", to.toISOString());
@@ -209,6 +336,9 @@ export function Agenda() {
     statusFilter,
     searching,
     debounced,
+    cible,
+    rdv,
+    attente,
     tenantId,
     reloadToken,
   ]);
@@ -269,7 +399,10 @@ export function Agenda() {
       () =>
         dashboardFetch(
           `/api/v1/bookings/${booking.id}/cancel/`,
-          { method: "POST", body: JSON.stringify({ reason: "Annulé par le salon" }) },
+          {
+            method: "POST",
+            body: JSON.stringify({ reason: "Annulé par le salon" }),
+          },
           tenantId,
         ),
       { success: `Rendez-vous de ${booking.customer_name} annulé.` },
@@ -309,6 +442,31 @@ export function Agenda() {
   const waiting = [...late.values()].filter((state) => !state.overdue).length;
   const unresolved = [...late.values()].filter((state) => state.overdue).length;
 
+  /*
+    Ce que dit le bandeau quand on arrive d'une notification.
+
+    Le cas « plus rien » compte autant que les autres : un acompte peut avoir
+    été vérifié entre la notification et le clic — par une collègue, ou par
+    soi-même depuis un autre appareil. Afficher une liste vide sans
+    explication ferait croire à une panne.
+  */
+  const nombre = bookings?.length ?? 0;
+  const libelleCible =
+    bookings === null
+      ? "Chargement…"
+      : rdv
+        ? nombre > 0
+          ? "Le rendez-vous signalé par votre notification."
+          : "Ce rendez-vous n’existe plus."
+        : nombre > 0
+          ? `${nombre} ${
+              (LIBELLES_ATTENTE[attente ?? ""] ?? {
+                un: "élément",
+                plusieurs: "éléments",
+              })[nombre > 1 ? "plusieurs" : "un"]
+            }.`
+          : "Plus rien à traiter ici — c’est déjà fait.";
+
   return (
     <section>
       <PageHeader
@@ -322,7 +480,11 @@ export function Agenda() {
 
       {summary && (
         <div className="mb-7 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-          <StatTile label="Aujourd’hui" value={summary.today_count} hint="rendez-vous" />
+          <StatTile
+            label="Aujourd’hui"
+            value={summary.today_count}
+            hint="rendez-vous"
+          />
           <StatTile
             label="7 prochains jours"
             value={summary.upcoming_count}
@@ -377,6 +539,25 @@ export function Agenda() {
         </div>
       )}
 
+      {/*
+        On arrive d'une notification.
+
+        Même traitement que la recherche, et pour la même raison : ce qui
+        est affiché ne correspond plus à la période choisie. Sans ce
+        bandeau, on croirait que l'agenda ne contient qu'un rendez-vous.
+      */}
+      {cible && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-salon bg-salon-soft/40 px-4 py-2.5">
+          <p className="text-sm text-ink">{libelleCible}</p>
+          <Link
+            href="/agenda"
+            className="ml-auto rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-hover"
+          >
+            Revenir à l’agenda
+          </Link>
+        </div>
+      )}
+
       {/* Bandeau vivant : il n'existe que tant qu'il y a quelque chose à
           faire, et il disparaît de lui-même dès que c'est réglé. */}
       {(waiting > 0 || unresolved > 0) && (
@@ -428,7 +609,9 @@ export function Agenda() {
         </div>
       )}
 
-      <div className={`space-y-7 ${view === "month" && !searching ? "hidden" : ""}`}>
+      <div
+        className={`space-y-7 ${view === "month" && !searching ? "hidden" : ""}`}
+      >
         {grouped.map(([day, rows]) => (
           <div key={day}>
             <h2 className="mb-2.5 text-sm font-medium text-muted first-letter:uppercase">
@@ -455,8 +638,9 @@ export function Agenda() {
                             {booking.service_name}
                           </p>
                           <p className="mt-0.5 text-sm text-muted">
-                            {booking.customer_name} · {booking.customer_phone}
+                            {booking.customer_name}
                           </p>
+                          <Contact booking={booking} />
                           <p className="mt-0.5 text-sm text-subtle">
                             avec {booking.staff_member_name}
                           </p>
@@ -537,14 +721,33 @@ export function Agenda() {
                       )}
 
                       {Number(booking.deposit_amount) > 0 && (
-                        <DepositLine
-                          booking={booking}
-                          currency={currency}
-                        />
+                        <DepositLine booking={booking} currency={currency} />
                       )}
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {(NEXT_ACTIONS[booking.status] ?? []).map((action) =>
+                        {/*
+                          Ces boutons disparaissent tant qu'une preuve de
+                          versement attend un verdict.
+
+                          Il y avait deux chemins vers « confirmée » : celui-ci
+                          et « J'ai reçu l'acompte — accepter », juste au-dessus.
+                          Le second tranche la preuve, encaisse l'acompte et
+                          confirme ; le premier ne faisait que confirmer.
+
+                          Passer par le premier laissait donc un acompte reçu
+                          et jamais entré en caisse, une preuve éternellement
+                          « à vérifier » — et l'autre bouton, resté visible,
+                          répondait alors « ce rendez-vous n'est plus en attente
+                          d'acceptation » à chaque clic.
+
+                          Le serveur refuse désormais cette transition ; on ne
+                          la propose plus ici non plus, pour ne pas offrir un
+                          geste voué au refus.
+                        */}
+                        {(acompteEnAttente(booking)
+                          ? []
+                          : (NEXT_ACTIONS[booking.status] ?? [])
+                        ).map((action) =>
                           /*
                             « Cliente arrivée » n'écrit plus directement : il
                             ouvre le lecteur, sur *cette* ligne.
@@ -572,7 +775,9 @@ export function Agenda() {
                             <GhostButton
                               key={action.status}
                               type="button"
-                              onClick={() => changeStatus(booking, action.status)}
+                              onClick={() =>
+                                changeStatus(booking, action.status)
+                              }
                             >
                               {action.label}
                             </GhostButton>
@@ -603,8 +808,13 @@ export function Agenda() {
                             Déplacer
                           </GhostButton>
                         )}
-                        {!["cancelled", "completed"].includes(booking.status) && (
-                          <DangerButton type="button" onClick={() => cancel(booking)}>
+                        {!["cancelled", "completed"].includes(
+                          booking.status,
+                        ) && (
+                          <DangerButton
+                            type="button"
+                            onClick={() => cancel(booking)}
+                          >
                             Annuler
                           </DangerButton>
                         )}
@@ -707,10 +917,10 @@ function DepositLine({
             du rendez-vous. */}
         {short && (
           <Badge tone="warning">
-            reste {formatPrice(Number(booking.deposit_amount) - received, currency)}
+            reste{" "}
+            {formatPrice(Number(booking.deposit_amount) - received, currency)}
           </Badge>
         )}
-
       </div>
     );
   }
@@ -859,8 +1069,8 @@ function TravelLine({
   return (
     <div className="mt-3 rounded-lg border border-info/25 bg-info-bg p-3">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-ink">
-        <Icon name="store" className="size-4 shrink-0" />
-        À domicile · {booking.travel_zone_name}
+        <Icon name="store" className="size-4 shrink-0" />À domicile ·{" "}
+        {booking.travel_zone_name}
         {fee > 0 && (
           <span className="tabular font-normal text-muted">
             {formatPrice(booking.travel_fee_amount, currency)} de déplacement,
@@ -921,6 +1131,30 @@ function ProofPanel({
 
   if (!proof) return null;
 
+  /*
+    Le verdict n'a plus d'objet une fois le rendez-vous avancé.
+
+    Cette carte ne regardait que l'état de la **preuve**. Un rendez-vous
+    confirmé par l'autre chemin la laissait donc afficher « J'ai reçu
+    l'acompte — accepter », un bouton que le serveur refusait à chaque clic.
+
+    On le dit au lieu de le proposer : l'acompte n'a pas été enregistré, et
+    c'est une information comptable, pas un détail d'affichage.
+  */
+  const decidable = ["requested", "pending_payment"].includes(booking.status);
+  if (proof.status === "submitted" && !decidable) {
+    return (
+      <p className="mt-3 flex items-start gap-2 text-sm text-warning">
+        <Icon name="bolt" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          Ce rendez-vous a été confirmé sans que le versement soit tranché :
+          l’acompte n’est entré dans aucun compte. Enregistrez-le depuis
+          l’onglet Comptes.
+        </span>
+      </p>
+    );
+  }
+
   if (proof.status === "accepted") {
     return (
       <p className="mt-3 flex items-center gap-2 text-sm text-success">
@@ -933,8 +1167,9 @@ function ProofPanel({
   if (proof.status === "rejected") {
     return (
       <p className="mt-3 text-sm text-muted">
-        Versement non retrouvé{proof.rejection_reason && ` — ${proof.rejection_reason}`}.
-        La cliente peut renvoyer une preuve.
+        Versement non retrouvé
+        {proof.rejection_reason && ` — ${proof.rejection_reason}`}. La cliente
+        peut renvoyer une preuve.
       </p>
     );
   }
@@ -946,7 +1181,8 @@ function ProofPanel({
       </p>
       <p className="mt-0.5 text-xs text-muted">
         {booking.customer_name} dit avoir payé
-        {proof.channel && ` par ${proof.channel === "wechat" ? "WeChat Pay" : "Alipay"}`}
+        {proof.channel &&
+          ` par ${proof.channel === "wechat" ? "WeChat Pay" : "Alipay"}`}
         . Retrouvez le versement dans votre application avant d&apos;accepter.
       </p>
 

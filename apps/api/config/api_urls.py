@@ -16,7 +16,25 @@ from rest_framework.routers import DefaultRouter
 
 from apps.accounts.urls import account_urlpatterns
 from apps.accounts.views import InvitationViewSet, MembershipViewSet
-from apps.billing.views import InvoiceViewSet, SubscriptionView
+from apps.assistants.views import (
+    AssistantPlateformeView,
+    AssistantPublicView,
+    ConversationMessagesView,
+    ConversationsView,
+    N8nView,
+    ReglagesAssistantView,
+    WebhookN8nView,
+    WebhookWhatsAppView,
+    WhatsAppConnexionView,
+)
+from apps.billing.views import (
+    AccesView,
+    InvoiceViewSet,
+    OffresView,
+    PaiementsView,
+    QrCodeView,
+    SubscriptionView,
+)
 from apps.catalog.views import (
     ResourceViewSet,
     ServiceCategoryViewSet,
@@ -28,12 +46,21 @@ from apps.clients.views import (
     ClientBookingsView,
     ClientForgetBookingView,
     ClientMeView,
+    ClientPasswordResetView,
     ClientSessionView,
     ClientSignupView,
 )
 from apps.customers.views import CustomerViewSet
+from apps.domains.views_salon import DomainesView, DomaineVerifierView, DomaineView
 from apps.finance.views import TransactionViewSet
 from apps.media.views import MediaAssetViewSet, PrivateMediaView
+from apps.notifications.views import (
+    NotificationEssaiView,
+    NotificationView,
+    PlatformNotificationView,
+    PushView,
+)
+from apps.parrainage.views import ParrainageClienteView, ParrainageSalonView
 from apps.payments.views import (
     PaymentChannelViewSet,
     PublicBookingCancelView,
@@ -48,9 +75,10 @@ from apps.reviews.views import (
     ReviewViewSet,
 )
 from apps.salons.views import PublicSalonView
-from apps.salons.views_dashboard import SalonProfileView, TravelZoneViewSet
+from apps.salons.views_dashboard import SalonProfileView, SitePersonnaliseView, TravelZoneViewSet
 from apps.scheduling.views import (
     AvailabilityExceptionViewSet,
+    AvailabilityView,
     BookingViewSet,
     BusinessHoursViewSet,
     OverviewView,
@@ -76,9 +104,7 @@ router.register("service-categories", ServiceCategoryViewSet, basename="service-
 router.register("services", ServiceViewSet, basename="service")
 router.register("service-options", ServiceOptionViewSet, basename="service-option")
 router.register("resources", ResourceViewSet, basename="resource")
-router.register(
-    "service-resources", ServiceResourceViewSet, basename="service-resource"
-)
+router.register("service-resources", ServiceResourceViewSet, basename="service-resource")
 router.register("staff-members", StaffMemberViewSet, basename="staff-member")
 router.register("business-hours", BusinessHoursViewSet, basename="business-hours")
 router.register(
@@ -88,13 +114,9 @@ router.register("bookings", BookingViewSet, basename="booking")
 router.register("waitlist", WaitlistViewSet, basename="waitlist")
 router.register("transactions", TransactionViewSet, basename="transaction")
 router.register("products", ProductViewSet, basename="product")
-router.register(
-    "payment-channels", PaymentChannelViewSet, basename="payment-channel"
-)
+router.register("payment-channels", PaymentChannelViewSet, basename="payment-channel")
 router.register("requirements", RequirementViewSet, basename="requirement")
-router.register(
-    "requirement-products", RequirementProductViewSet, basename="requirement-product"
-)
+router.register("requirement-products", RequirementProductViewSet, basename="requirement-product")
 router.register("customers", CustomerViewSet, basename="customer")
 router.register("media", MediaAssetViewSet, basename="media")
 router.register("team", MembershipViewSet, basename="team")
@@ -137,8 +159,14 @@ public_urlpatterns = [
     # mini-site, sans compte d'equipe. Les routes restent authentifiees,
     # sauf l'inscription.
     path("client/signup", ClientSignupView.as_view(), name="client-signup"),
+    path(
+        "client/password/reset",
+        ClientPasswordResetView.as_view(),
+        name="client-password-reset",
+    ),
     path("client/session", ClientSessionView.as_view(), name="client-session"),
     path("client/me", ClientMeView.as_view(), name="client-me"),
+    path("client/parrainage", ParrainageClienteView.as_view(), name="client-parrainage"),
     path("client/bookings", ClientBookingsView.as_view(), name="client-bookings"),
     path(
         "client/bookings/forget",
@@ -146,6 +174,8 @@ public_urlpatterns = [
         name="client-forget-booking",
     ),
     path("reviews", PublicReviewListView.as_view(), name="public-reviews"),
+    # Offre Pro : l'assistant des clientes, sur le mini-site.
+    path("assistant", AssistantPublicView.as_view(), name="public-assistant"),
     path(
         "reviews/invitation",
         ReviewInvitationView.as_view(),
@@ -174,6 +204,10 @@ urlpatterns = [
     path("salon-currency", SalonCurrencyView.as_view(), name="salon-currency"),
     # Accueil du tableau de bord. Une seule lecture pour douze chiffres :
     # en six appels, l'ecran s'assemble par morceaux sur un reseau mobile.
+    # Creneaux libres, cote equipe. Jumelle de `public/availability`, dont
+    # elle ne differe que par la facon de determiner le salon : ici le
+    # membership, la-bas le nom d'hote. Voir `AvailabilityView`.
+    path("availability", AvailabilityView.as_view(), name="availability"),
     path("overview", OverviewView.as_view(), name="overview"),
     # Lecture d'un media prive. C'est la seule sortie des fichiers ranges
     # sous `prive/` : le serveur de fichiers statiques ne les sert pas, et
@@ -188,5 +222,63 @@ urlpatterns = [
         name="media-fichier",
     ),
     path("subscription", SubscriptionView.as_view(), name="subscription"),
+    # Abonnement payant : l'etat de l'acces (tous les membres), les offres et
+    # leurs moyens de reglement, les QR codes, et les paiements declares
+    # (proprietaire). Voir apps/billing/views.py.
+    path("subscription/acces", AccesView.as_view(), name="subscription-access"),
+    path("subscription/offres", OffresView.as_view(), name="subscription-offers"),
+    path(
+        "subscription/moyens/<uuid:pk>/qr",
+        QrCodeView.as_view(),
+        name="subscription-method-qr",
+    ),
+    path("subscription/paiements", PaiementsView.as_view(), name="subscription-payments"),
+    # Parrainage du salon : son code, ses filleuls, ses remises (proprietaire).
+    path("parrainage", ParrainageSalonView.as_view(), name="parrainage"),
+    # Offre Pro : domaine personnalise (demander, verifier, retirer).
+    # Offre Pro : assistants IA.
+    path("assistant", AssistantPlateformeView.as_view(), name="assistant"),
+    path("assistant/reglages", ReglagesAssistantView.as_view(), name="assistant-reglages"),
+    path("assistant/whatsapp", WhatsAppConnexionView.as_view(), name="assistant-whatsapp"),
+    # Offre Pro : n8n et l'historique des conversations de l'assistant.
+    path("assistant/n8n", N8nView.as_view(), name="assistant-n8n"),
+    path("assistant/conversations", ConversationsView.as_view(), name="assistant-conversations"),
+    path(
+        "assistant/conversations/<uuid:pk>",
+        ConversationMessagesView.as_view(),
+        name="assistant-conversation",
+    ),
+    path("webhooks/n8n/<str:cle>/<str:jeton>", WebhookN8nView.as_view(), name="webhook-n8n"),
+    path(
+        "webhooks/whatsapp/<str:instance>/<str:jeton>",
+        WebhookWhatsAppView.as_view(),
+        name="webhook-whatsapp",
+    ),
+    # Offre Pro : personnalisation avancee du mini-site.
+    path("site-pro", SitePersonnaliseView.as_view(), name="site-pro"),
+    path("domaines", DomainesView.as_view(), name="domaines"),
+    path("domaines/<uuid:pk>", DomaineView.as_view(), name="domaine"),
+    path("domaines/<uuid:pk>/verifier", DomaineVerifierView.as_view(), name="domaine-verifier"),
+    # Cloche du tableau de bord. GET pour lire, POST pour marquer lu :
+    # deux gestes sur la meme boite, pas deux ressources.
+    path("notifications", NotificationView.as_view(), name="notifications"),
+    # Un essai, envoye tout de suite sur les appareils de qui le demande.
+    path(
+        "notifications/essai",
+        NotificationEssaiView.as_view(),
+        name="notification-essai",
+    ),
+    # La meme boite, cote plateforme. Route distincte et non un drapeau
+    # sur la precedente : ce qui separe les donnees d'un salon de celles
+    # de la plateforme ne doit pas tenir dans un `if`.
+    path(
+        "plateforme/notifications",
+        PlatformNotificationView.as_view(),
+        name="platform-notifications",
+    ),
+    # Declaration d'un appareil aupres du serveur. Hors du routeur :
+    # il n'y a rien a lister ni a modifier, seulement a s'inscrire et a
+    # se retirer.
+    path("push", PushView.as_view(), name="push"),
     path("", include(router.urls)),
 ]

@@ -31,6 +31,18 @@ CACHES = {
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
+# Aucun envoi push reel pendant la suite.
+#
+# Les taches s'executent en direct sous `ALWAYS_EAGER`, et les cles VAPID de
+# `.env` sont bien la : sans ces deux lignes, chaque test qui cree une
+# reservation tenterait de joindre les serveurs de Google. Vides, elles font
+# repondre `push.configure()` False et la tache s'arrete d'elle-meme.
+#
+# Les tests qui exercent reellement le push posent leurs propres cles avec
+# `override_settings`, et remplacent l'envoi par un double.
+VAPID_PUBLIC_KEY = ""
+VAPID_PRIVATE_KEY = ""
+
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
@@ -38,6 +50,9 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 # Desactivee par defaut pour ne pas alourdir chaque test d'admin ; les tests
 # qui la concernent la reactivent explicitement avec override_settings.
 PLATFORM_ADMIN_MFA_REQUIRED = False
+# Pas d'appel reseau dans les tests : la verification des fuites a les siens,
+# avec une reponse simulee (tests/test_securite_avancee.py).
+PWNED_PASSWORDS_CHECK = False
 
 # Le throttling fausserait les tests fonctionnels ; il a sa propre suite.
 # Les portees sont deduites de celles de base.py plutot que reecrites : une

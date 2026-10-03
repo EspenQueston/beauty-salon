@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 /**
  * En-tetes de securite, poses sur toutes les reponses.
@@ -115,13 +116,46 @@ const HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  /*
+    La pastille de developpement de Next, retiree.
+
+    Elle ne parait qu'en `next dev` — jamais en production — mais elle se
+    pose en bas a gauche, exactement la ou le mini-site met sa barre de
+    reservation et la plateforme son bouton « remonter ». Elle masquait donc
+    ce qu'on cherchait a regarder a chaque capture d'ecran.
+
+    Les erreurs de compilation et d'execution continuent de s'afficher :
+    c'est la pastille qui disparait, pas le rapport d'erreur.
+  */
+  devIndicators: false,
   // Le numero de version de Next dans chaque reponse ne sert qu'a celui qui
   // cherche une faille connue contre la version exacte qu'on execute.
   poweredByHeader: false,
+
+  /*
+    Sortie autonome, pour l'image Docker seulement.
+
+    `.next/standalone` ne contient que les fichiers que le serveur charge
+    reellement, `node_modules` compris : l'image de production passe ainsi
+    d'environ un giga-octet a deux cents mega-octets, et ne transporte
+    aucune dependance de developpement.
+
+    Activee par une variable plutot qu'en permanence : `next start`, que le
+    developpement et la CI utilisent, previent qu'il ne sert pas cette sortie.
+    Seul `infra/production/web.Dockerfile` la pose.
+  */
+  output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
 
   async headers() {
     return [{ source: "/:path*", headers: HEADERS }];
   },
 };
 
-export default nextConfig;
+/*
+  Le greffon de next-intl relie `i18n/request.ts` au rendu serveur.
+
+  Sans lui, `getTranslations` et `useTranslations` ne trouvent aucune
+  configuration et levent des la premiere page : la resolution du fichier de
+  requete se fait a la compilation, pas a l'execution.
+*/
+export default createNextIntlPlugin("./i18n/request.ts")(nextConfig);

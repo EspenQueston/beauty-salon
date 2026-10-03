@@ -35,12 +35,29 @@ interface Asset {
   url: string;
   content_type: string;
   byte_size: number;
-  kind: "gallery" | "logo" | "banner" | "service" | "staff" | "payment" | "about" | "product" | "proof";
+  kind:
+    | "gallery"
+    | "logo"
+    | "banner"
+    | "service"
+    | "staff"
+    | "payment"
+    | "about"
+    | "product"
+    | "proof";
   alt_text: string;
   width: number | null;
   height: number | null;
   position: number;
   featured: boolean;
+  /** Ce que montre la photo, et qui l'a faite : de quoi « Réserver ce look ». */
+  service: string | null;
+  staff_member: string | null;
+}
+
+interface Choix {
+  id: string;
+  name: string;
 }
 
 /** Nombre de médias montrés sur l'accueil du mini-site. */
@@ -71,8 +88,22 @@ export function Gallery() {
   const tenantId = membership.tenant.id;
   const canEdit = ["owner", "manager"].includes(membership.role);
 
-  const assets = useResource<Page<Asset>>("/api/v1/media/?page_size=100", tenantId);
+  const assets = useResource<Page<Asset>>(
+    "/api/v1/media/?page_size=100",
+    tenantId,
+  );
   const profile = useResource<Profile>("/api/v1/salon-profile", tenantId);
+  // Pour relier une photo à sa prestation et à qui l'a faite.
+  const services = useResource<Page<Choix>>(
+    "/api/v1/services/?page_size=200",
+    tenantId,
+  );
+  const equipe = useResource<Page<Choix>>(
+    "/api/v1/staff-members/?page_size=100",
+    tenantId,
+  );
+  const prestations = rows(services.data);
+  const prestataires = rows(equipe.data);
 
   const all = rows(assets.data);
   const logoId = profile.data?.logo ?? null;
@@ -122,7 +153,11 @@ export function Gallery() {
   async function remove(asset: Asset) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(`/api/v1/media/${asset.id}/`, { method: "DELETE" }, tenantId),
+        dashboardFetch(
+          `/api/v1/media/${asset.id}/`,
+          { method: "DELETE" },
+          tenantId,
+        ),
       { success: "Photo supprimée." },
     );
     if (ok) {
@@ -179,6 +214,34 @@ export function Gallery() {
     if (ok) assets.reload();
   }
 
+  /** Relie la photo à une prestation ou à une prestataire (ou défait le lien). */
+  async function relier(
+    asset: Asset,
+    champ: "service" | "staff_member",
+    valeur: string,
+  ) {
+    const ok = await toast.run(
+      () =>
+        dashboardFetch(
+          `/api/v1/media/${asset.id}/`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ [champ]: valeur || null }),
+          },
+          tenantId,
+        ),
+      {
+        success:
+          champ === "service"
+            ? valeur
+              ? "Prestation reliée : la photo propose « Réserver ce look »."
+              : "Prestation retirée de la photo."
+            : "Signature de la photo enregistrée.",
+      },
+    );
+    if (ok) assets.reload();
+  }
+
   /** Décale une photo d'un cran : la première est la vitrine. */
   async function move(asset: Asset, direction: -1 | 1) {
     const index = gallery.indexOf(asset);
@@ -189,7 +252,10 @@ export function Gallery() {
       async () => {
         await dashboardFetch(
           `/api/v1/media/${asset.id}/`,
-          { method: "PATCH", body: JSON.stringify({ position: index + direction }) },
+          {
+            method: "PATCH",
+            body: JSON.stringify({ position: index + direction }),
+          },
           tenantId,
         );
         await dashboardFetch(
@@ -210,7 +276,9 @@ export function Gallery() {
         description="Vos réalisations, votre logo et votre bannière. C'est la première chose que voit une cliente."
       />
 
-      {assets.error && <ErrorState>Impossible de charger vos photos.</ErrorState>}
+      {assets.error && (
+        <ErrorState>Impossible de charger vos photos.</ErrorState>
+      )}
 
       {canEdit && (
         <Uploader
@@ -262,6 +330,21 @@ export function Gallery() {
               L&apos;étoile met une photo en vitrine sur votre page
               d&apos;accueil. Les flèches, elles, changent l&apos;ordre de la
               page « Réalisations » — les deux sont indépendants.
+            </span>
+          </p>
+        )}
+
+        {gallery.length > 0 && canEdit && (
+          <p className="mb-4 flex items-start gap-2 rounded-xl bg-salon-soft p-3 text-sm text-ink">
+            <Icon
+              name="sparkles"
+              className="mt-0.5 size-4 shrink-0 text-salon"
+            />
+            <span>
+              Reliez chaque photo à sa <strong>prestation</strong> : sur votre
+              mini-site, elle affiche son prix et un bouton « Réserver ce look
+              », et se range dans le bon filtre. Ajoutez qui l&apos;a réalisée
+              pour mettre votre équipe en valeur.
             </span>
           </p>
         )}
@@ -344,6 +427,40 @@ export function Gallery() {
                     aria-label="Description de la photo"
                     className={inputClass}
                   />
+                  <div className="mt-2 grid gap-2">
+                    <select
+                      value={asset.service ?? ""}
+                      onChange={(event) =>
+                        relier(asset, "service", event.target.value)
+                      }
+                      disabled={!canEdit}
+                      aria-label="Prestation montrée sur la photo"
+                      className={`${inputClass} py-1.5 text-[13px]`}
+                    >
+                      <option value="">Prestation : aucune</option>
+                      {prestations.map((choix) => (
+                        <option key={choix.id} value={choix.id}>
+                          {choix.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={asset.staff_member ?? ""}
+                      onChange={(event) =>
+                        relier(asset, "staff_member", event.target.value)
+                      }
+                      disabled={!canEdit}
+                      aria-label="Prestataire qui a réalisé la photo"
+                      className={`${inputClass} py-1.5 text-[13px]`}
+                    >
+                      <option value="">Réalisée par : non précisé</option>
+                      {prestataires.map((choix) => (
+                        <option key={choix.id} value={choix.id}>
+                          {choix.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <p className="mt-2 text-xs text-subtle">
                     {asset.width && asset.height
                       ? `${asset.width} × ${asset.height} · `
@@ -409,7 +526,9 @@ function IdentitySlot({
   choices: Asset[];
   onChange: (assetId: string | null) => void;
 }) {
-  const images = choices.filter((item) => !item.content_type.startsWith("video/"));
+  const images = choices.filter(
+    (item) => !item.content_type.startsWith("video/"),
+  );
 
   return (
     <Card>
@@ -513,7 +632,11 @@ function Uploader({
       form.append("alt_text", "");
 
       try {
-        await dashboardFetch("/api/v1/media/", { method: "POST", body: form }, tenantId);
+        await dashboardFetch(
+          "/api/v1/media/",
+          { method: "POST", body: form },
+          tenantId,
+        );
         succeeded += 1;
         setQueue((current) =>
           current.map((item, position) =>
@@ -529,7 +652,9 @@ function Uploader({
                   ...item,
                   state: "failed",
                   message:
-                    caught instanceof Error ? caught.message : "Envoi impossible",
+                    caught instanceof Error
+                      ? caught.message
+                      : "Envoi impossible",
                 }
               : item,
           ),
@@ -579,9 +704,7 @@ function Uploader({
         }`}
       >
         <Icon name="image" className="mx-auto size-8 text-subtle" />
-        <p className="mt-3 font-medium text-ink">
-          Déposez vos photos ici
-        </p>
+        <p className="mt-3 font-medium text-ink">Déposez vos photos ici</p>
         <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted">
           JPEG, PNG, WebP ou vidéo courte MP4 / WebM. 15 Mo maximum par fichier.
         </p>
@@ -633,7 +756,11 @@ function Uploader({
                       : "text-subtle"
                 }
               >
-                {item.state === "done" ? "✓" : item.state === "failed" ? "✕" : "…"}
+                {item.state === "done"
+                  ? "✓"
+                  : item.state === "failed"
+                    ? "✕"
+                    : "…"}
               </span>
               <span className="truncate text-ink">{item.name}</span>
               {item.message && (

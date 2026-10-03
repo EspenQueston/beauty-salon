@@ -45,15 +45,34 @@ interface Invitation {
 }
 
 const ROLES = [
-  { value: "staff", label: "Prestataire", hint: "Voit uniquement son propre agenda." },
-  { value: "receptionist", label: "Réceptionniste", hint: "Gère les rendez-vous et les clientes." },
-  { value: "manager", label: "Gérant", hint: "Gère aussi le catalogue et l'équipe." },
-  { value: "owner", label: "Propriétaire", hint: "Accès complet, facturation comprise." },
+  {
+    value: "staff",
+    label: "Prestataire",
+    hint: "Voit uniquement son propre agenda.",
+  },
+  {
+    value: "receptionist",
+    label: "Réceptionniste",
+    hint: "Gère les rendez-vous et les clientes.",
+  },
+  {
+    value: "manager",
+    label: "Gérant",
+    hint: "Gère aussi le catalogue et l'équipe.",
+  },
+  {
+    value: "owner",
+    label: "Propriétaire",
+    hint: "Accès complet, facturation comprise.",
+  },
 ];
 
 const ROLE_LABELS = Object.fromEntries(ROLES.map((r) => [r.value, r.label]));
 
-const INVITATION_TONES: Record<string, "warning" | "success" | "neutral" | "danger"> = {
+const INVITATION_TONES: Record<
+  string,
+  "warning" | "success" | "neutral" | "danger"
+> = {
   pending: "warning",
   accepted: "success",
   revoked: "neutral",
@@ -77,13 +96,16 @@ export function Team() {
 
   // Les prestataires sans compte : ils expliquent l'écart entre cette liste
   // et celle des Prestataires, que rien ne rapprochait jusqu'ici.
-  const staff = useResource<Page<{ id: string; name: string; has_access: boolean }>>(
-    "/api/v1/staff-members/",
+  const staff = useResource<
+    Page<{ id: string; name: string; has_access: boolean }>
+  >("/api/v1/staff-members/", tenantId);
+  const invitations = useResource<Page<Invitation>>(
+    "/api/v1/invitations/",
     tenantId,
+    {
+      enabled: canManage,
+    },
   );
-  const invitations = useResource<Page<Invitation>>("/api/v1/invitations/", tenantId, {
-    enabled: canManage,
-  });
 
   async function revoke(invitation: Invitation) {
     const ok = await toast.run(
@@ -105,11 +127,15 @@ export function Team() {
         description="Qui a accès à cet espace, et avec quels droits. Réaliser des prestations ne demande pas de compte : ces deux listes ne se recouvrent pas forcément."
       />
 
-      {members.error && <ErrorState>Impossible de charger l’équipe.</ErrorState>}
+      {members.error && (
+        <ErrorState>Impossible de charger l’équipe.</ErrorState>
+      )}
 
       <WithoutAccount staff={rows(staff.data)} />
 
-      {canManage && <InviteForm tenantId={tenantId} onInvited={invitations.reload} />}
+      {canManage && (
+        <InviteForm tenantId={tenantId} onInvited={invitations.reload} />
+      )}
 
       <div className="mt-7">
         <SectionTitle>Membres</SectionTitle>
@@ -132,7 +158,9 @@ export function Team() {
                     <Badge tone={member.role === "owner" ? "salon" : "neutral"}>
                       {ROLE_LABELS[member.role] ?? member.role}
                     </Badge>
-                    {member.status !== "active" && <Badge tone="warning">{member.status}</Badge>}
+                    {member.status !== "active" && (
+                      <Badge tone="warning">{member.status}</Badge>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -167,11 +195,17 @@ export function Team() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Badge tone={INVITATION_TONES[invitation.status] ?? "neutral"}>
-                        {INVITATION_LABELS[invitation.status] ?? invitation.status}
+                      <Badge
+                        tone={INVITATION_TONES[invitation.status] ?? "neutral"}
+                      >
+                        {INVITATION_LABELS[invitation.status] ??
+                          invitation.status}
                       </Badge>
                       {invitation.status === "pending" && (
-                        <DangerButton type="button" onClick={() => revoke(invitation)}>
+                        <DangerButton
+                          type="button"
+                          onClick={() => revoke(invitation)}
+                        >
                           Annuler
                         </DangerButton>
                       )}
@@ -186,7 +220,8 @@ export function Team() {
 
       {!canManage && (
         <p className="mt-6 text-sm text-muted">
-          Seuls le propriétaire et le gérant peuvent inviter de nouvelles personnes.
+          Seuls le propriétaire et le gérant peuvent inviter de nouvelles
+          personnes.
         </p>
       )}
     </section>
@@ -218,7 +253,9 @@ function InviteForm({
           { method: "POST", body: JSON.stringify({ email, role }) },
           tenantId,
         ),
-      { success: `Invitation envoyée à ${email}. Le lien est valable 7 jours.` },
+      {
+        success: `Invitation envoyée à ${email}. Le lien est valable 7 jours.`,
+      },
     );
 
     setPending(false);
@@ -298,8 +335,9 @@ function WithoutAccount({
       </p>
       <p className="mt-1 text-xs text-muted">
         {orphans.length > 1 ? "Elles apparaissent" : "Elle apparaît"} à
-        l&apos;agenda et à la réservation sans se connecter. Invitez-{orphans.length > 1 ? "les" : "la"}{" "}
-        ci-dessus seulement si {orphans.length > 1 ? "elles doivent" : "elle doit"} ouvrir cet espace.
+        l&apos;agenda et à la réservation sans se connecter. Invitez-
+        {orphans.length > 1 ? "les" : "la"} ci-dessus seulement si{" "}
+        {orphans.length > 1 ? "elles doivent" : "elle doit"} ouvrir cet espace.
       </p>
     </div>
   );

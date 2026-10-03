@@ -75,9 +75,19 @@ const KINDS: {
   hint: string;
 }[] = [
   { value: "basin", label: "Bac à shampooing", short: "Bac", hint: "Lavage" },
-  { value: "chair", label: "Fauteuil", short: "Fauteuil", hint: "Poste de travail" },
+  {
+    value: "chair",
+    label: "Fauteuil",
+    short: "Fauteuil",
+    hint: "Poste de travail",
+  },
   { value: "room", label: "Cabine", short: "Cabine", hint: "Espace fermé" },
-  { value: "equipment", label: "Matériel", short: "Matériel", hint: "Casque, vapeur…" },
+  {
+    value: "equipment",
+    label: "Matériel",
+    short: "Matériel",
+    hint: "Casque, vapeur…",
+  },
 ];
 
 const KIND_LABELS = Object.fromEntries(KINDS.map((k) => [k.value, k.label]));
@@ -93,7 +103,10 @@ export function Resources({
   canEdit: boolean;
 }) {
   const toast = useToast();
-  const resources = useResource<Page<SalonResource>>("/api/v1/resources/", tenantId);
+  const resources = useResource<Page<SalonResource>>(
+    "/api/v1/resources/",
+    tenantId,
+  );
   const links = useResource<Page<Link>>("/api/v1/service-resources/", tenantId);
   const services = useResource<Page<ServiceRow>>(
     "/api/v1/services/?page_size=200",
@@ -120,7 +133,10 @@ export function Resources({
     return map;
   }, [allLinks]);
 
-  async function patch(resource: SalonResource, changes: Partial<SalonResource>) {
+  async function patch(
+    resource: SalonResource,
+    changes: Partial<SalonResource>,
+  ) {
     const ok = await toast.run(
       () =>
         dashboardFetch(
@@ -176,7 +192,10 @@ export function Resources({
               "/api/v1/service-resources/",
               {
                 method: "POST",
-                body: JSON.stringify({ service: service.id, resource: resource.id }),
+                body: JSON.stringify({
+                  service: service.id,
+                  resource: resource.id,
+                }),
               },
               tenantId,
             ),
@@ -226,14 +245,16 @@ export function Resources({
         </p>
       </div>
 
-      {resources.error && <ErrorState>Impossible de charger les ressources.</ErrorState>}
+      {resources.error && (
+        <ErrorState>Impossible de charger les ressources.</ErrorState>
+      )}
       {loading && <Skeleton rows={2} />}
 
       {resources.data !== null && list.length === 0 && !creating && (
         <Card>
           <p className="text-sm text-muted">
-            Aucune ressource déclarée. Vos créneaux ne dépendent aujourd&apos;hui
-            que de la disponibilité des prestataires.
+            Aucune ressource déclarée. Vos créneaux ne dépendent
+            aujourd&apos;hui que de la disponibilité des prestataires.
           </p>
         </Card>
       )}
@@ -264,7 +285,10 @@ export function Resources({
       {canEdit && (
         <div className="mt-3">
           {creating ? (
-            <NewResource onCancel={() => setCreating(false)} onCreate={create} />
+            <NewResource
+              onCancel={() => setCreating(false)}
+              onCreate={create}
+            />
           ) : (
             <GhostButton
               type="button"
@@ -459,7 +483,9 @@ function ResourceRow({
                       <span
                         aria-hidden
                         className={`flex size-3.5 shrink-0 items-center justify-center rounded border ${
-                          on ? "border-salon bg-salon text-white" : "border-line"
+                          on
+                            ? "border-salon bg-salon text-white"
+                            : "border-line"
                         }`}
                       >
                         {on && <Icon name="check" className="size-2.5" />}
@@ -528,7 +554,9 @@ function NewResource({
         />
         <select
           value={kind}
-          onChange={(event) => setKind(event.target.value as SalonResource["kind"])}
+          onChange={(event) =>
+            setKind(event.target.value as SalonResource["kind"])
+          }
           aria-label="Type de ressource"
           className={inputClass}
         >
@@ -591,14 +619,19 @@ export function ServiceResources({
   canEdit: boolean;
 }) {
   const toast = useToast();
-  const resources = useResource<Page<SalonResource>>("/api/v1/resources/", tenantId);
+  const resources = useResource<Page<SalonResource>>(
+    "/api/v1/resources/",
+    tenantId,
+  );
   const links = useResource<Page<Link>>(
     `/api/v1/service-resources/?service=${serviceId}`,
     tenantId,
   );
 
   const all = rows(resources.data).filter((resource) => resource.active);
-  const linked = new Map(rows(links.data).map((link) => [link.resource, link.id]));
+  const linked = new Map(
+    rows(links.data).map((link) => [link.resource, link.id]),
+  );
 
   if (all.length === 0) return null;
 
@@ -617,7 +650,10 @@ export function ServiceResources({
               "/api/v1/service-resources/",
               {
                 method: "POST",
-                body: JSON.stringify({ service: serviceId, resource: resource.id }),
+                body: JSON.stringify({
+                  service: serviceId,
+                  resource: resource.id,
+                }),
               },
               tenantId,
             ),
@@ -657,7 +693,8 @@ export function ServiceResources({
                   {resource.name}
                 </span>
                 <span className="tabular text-xs text-subtle">
-                  {resource.capacity} disponible{resource.capacity > 1 ? "s" : ""}
+                  {resource.capacity} disponible
+                  {resource.capacity > 1 ? "s" : ""}
                 </span>
               </button>
             </li>

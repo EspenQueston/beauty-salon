@@ -90,7 +90,10 @@ export function MonthlyBars({
 
   const max = niceMax(
     Math.max(
-      ...points.flatMap((point) => [Number(point.income), Number(point.expense)]),
+      ...points.flatMap((point) => [
+        Number(point.income),
+        Number(point.expense),
+      ]),
       0,
     ),
   );
@@ -194,7 +197,9 @@ export function MonthlyBars({
                   y={H - 8}
                   textAnchor="middle"
                   className={`text-[11px] ${
-                    active ? "fill-[var(--color-ink)]" : "fill-[var(--color-subtle)]"
+                    active
+                      ? "fill-[var(--color-ink)]"
+                      : "fill-[var(--color-subtle)]"
                   }`}
                 >
                   {monthLabel(point.month)}
@@ -271,7 +276,9 @@ export function CumulativeCurve({
     PAD.left + (index / Math.max(points.length - 1, 1)) * plotW;
   const y = (value: number) => PAD.top + plotH - ((value - min) / span) * plotH;
 
-  const line = values.map((value, index) => `${x(index)},${y(value)}`).join(" ");
+  const line = values
+    .map((value, index) => `${x(index)},${y(value)}`)
+    .join(" ");
   const area = `${PAD.left},${y(0)} ${line} ${x(values.length - 1)},${y(0)}`;
   const last = values[values.length - 1] ?? 0;
   const positive = last >= 0;
@@ -416,15 +423,14 @@ export function DonutChart({
   // Les décalages sont calculés d'avance plutôt qu'accumulés dans le rendu :
   // muter une variable pendant le rendu rend le résultat dépendant du nombre
   // de passes de React, donc instable.
-  const arcs = slices.reduce<{ slice: Slice; length: number; offset: number }[]>(
-    (acc, slice) => {
-      const length = (Number(slice.total) / total) * circumference;
-      const previous = acc[acc.length - 1];
-      const offset = previous ? previous.offset + previous.length : 0;
-      return [...acc, { slice, length, offset }];
-    },
-    [],
-  );
+  const arcs = slices.reduce<
+    { slice: Slice; length: number; offset: number }[]
+  >((acc, slice) => {
+    const length = (Number(slice.total) / total) * circumference;
+    const previous = acc[acc.length - 1];
+    const offset = previous ? previous.offset + previous.length : 0;
+    return [...acc, { slice, length, offset }];
+  }, []);
 
   return (
     <figure className="m-0 flex flex-wrap items-center gap-5">
@@ -468,9 +474,13 @@ export function DonutChart({
               <span
                 aria-hidden
                 className="size-2.5 shrink-0 rounded-sm"
-                style={{ background: DONUT_COLORS[index] ?? "var(--viz-other)" }}
+                style={{
+                  background: DONUT_COLORS[index] ?? "var(--viz-other)",
+                }}
               />
-              <span className="min-w-0 flex-1 truncate text-ink">{slice.label}</span>
+              <span className="min-w-0 flex-1 truncate text-ink">
+                {slice.label}
+              </span>
               <span className="tabular font-medium text-ink">
                 {Math.round(share * 100)} %
               </span>
@@ -528,7 +538,9 @@ export function RankedBars({
         return (
           <li key={row.category}>
             <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2">
-              <span className="min-w-0 truncate text-sm text-ink">{row.label}</span>
+              <span className="min-w-0 truncate text-sm text-ink">
+                {row.label}
+              </span>
               <span className="tabular text-sm font-medium text-ink">
                 {value.toLocaleString("fr-FR")} {currency}
               </span>

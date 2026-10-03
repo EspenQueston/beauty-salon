@@ -29,16 +29,25 @@
 import { useEffect, useState } from "react";
 
 import { appUrl } from "@/lib/site";
+import { useTranslations } from "next-intl";
+
+import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
+import { BeautySalonBrand } from "@/features/ui/BeautySalonBrand";
 
 const LINKS = [
-  { href: "#fonctionnalites", label: "Fonctionnalités" },
-  { href: "#apercu", label: "Aperçu" },
-  { href: "#etapes", label: "Comment ça marche" },
-  { href: "#questions", label: "Questions" },
+  /* Les libellés viennent du catalogue : seule l'ancre est écrite ici,
+     parce qu'elle désigne un `id` du document et ne se traduit pas. */
+  { href: "#fonctionnalites", cle: "fonctionnalites" },
+  { href: "#film", cle: "film" },
+  { href: "#apercu", cle: "apercu" },
+  { href: "#etapes", cle: "etapes" },
+  { href: "#questions", cle: "questions" },
 ];
 
 export function SiteHeader() {
+  const t = useTranslations("site");
+  const c = useTranslations("commun");
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -52,53 +61,67 @@ export function SiteHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 sm:px-4 sm:pt-4">
       <div
-        className={`mx-auto max-w-5xl rounded-2xl border border-line bg-surface/85 backdrop-blur-xl transition-shadow duration-300 ${
+        className={`mx-auto w-full max-w-7xl rounded-2xl border border-line bg-surface/85 backdrop-blur-xl transition-shadow duration-300 ${
           scrolled ? "shadow-float" : "shadow-card"
         }`}
       >
-        <div className="flex items-center gap-4 px-3 py-2.5 sm:px-4">
-          <a href="#haut" className="flex items-center gap-2.5">
-            <span className="salon-gradient inline-flex size-8 items-center justify-center rounded-xl text-sm font-semibold text-white">
-              BS
-            </span>
-            <span className="font-semibold tracking-tight text-ink">
-              Beauty Salon
-            </span>
+        <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4 xl:gap-4">
+          <a href="#haut" className="flex shrink-0 items-center gap-2.5">
+            <BeautySalonBrand compact />
           </a>
 
           <nav
-            aria-label="Navigation principale"
-            className="ml-auto hidden md:block"
+            aria-label={t("nav.principale")}
+            className="ml-auto hidden min-w-0 xl:block"
           >
             <ul className="flex items-center gap-1">
               {LINKS.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink"
+                    className="whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink"
                   >
-                    {link.label}
+                    {t(`nav.${link.cle}`)}
                   </a>
                 </li>
               ))}
             </ul>
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
+            {/* Sous 640 px la barre garde le logo, le thème, l'appel à
+                l'action et le menu : la langue rejoint le menu. */}
+            {/*
+              `bg-salon` et non `salon-gradient` sur la pastille active.
+
+              Mesuré : sur une pastille de 34 × 24 px, le dégradé à 135°
+              parcourt presque toute sa course, et son extrémité claire —
+              rgb(237, 209, 219) — ne donne que 1,42:1 au blanc posé dessus.
+              Sur un bouton large le dégradé reste sombre sous le texte ; sur
+              une pastille, non. L'aplat de marque donne 5,6:1 d'un bord à
+              l'autre.
+            */}
+            <span className="hidden sm:block">
+              <SelecteurLangue
+                className="border-line bg-surface"
+                classeActive="bg-salon text-white"
+                classeInactive="text-muted hover:text-ink"
+              />
+            </span>
             <ThemeToggle />
 
             <a
               href={appUrl}
-              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink sm:inline-flex"
+              className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink 2xl:inline-flex"
             >
-              Se connecter
+              {c("seConnecter")}
             </a>
 
             <a
               href={`${appUrl}/inscription`}
-              className="salon-gradient hidden rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex"
+              className="salon-gradient hidden whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex"
             >
-              Créer mon salon
+              {c("creerSalon")}
             </a>
 
             <button
@@ -106,8 +129,8 @@ export function SiteHeader() {
               onClick={() => setOpen((value) => !value)}
               aria-expanded={open}
               aria-controls="menu-mobile"
-              aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
-              className="inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink md:hidden"
+              aria-label={open ? c("fermerMenu") : c("ouvrirMenu")}
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink xl:hidden"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -132,7 +155,7 @@ export function SiteHeader() {
         <div
           id="menu-mobile"
           hidden={!open}
-          className="border-t border-line px-3 py-3 md:hidden"
+          className="border-t border-line px-3 py-3 xl:hidden"
         >
           <ul className="grid grid-cols-2 gap-1">
             {LINKS.map((link) => (
@@ -142,7 +165,7 @@ export function SiteHeader() {
                   onClick={() => setOpen(false)}
                   className="block rounded-lg px-3 py-2.5 text-sm font-medium text-ink transition hover:bg-surface-hover"
                 >
-                  {link.label}
+                  {t(`nav.${link.cle}`)}
                 </a>
               </li>
             ))}
@@ -153,14 +176,25 @@ export function SiteHeader() {
               href={`${appUrl}/inscription`}
               className="salon-gradient rounded-xl px-4 py-2.5 text-center text-sm font-semibold text-white"
             >
-              Créer mon salon
+              {c("creerSalon")}
             </a>
             <a
               href={appUrl}
               className="rounded-xl border border-line px-4 py-2.5 text-center text-sm font-medium text-ink"
             >
-              Se connecter
+              {c("seConnecter")}
             </a>
+          </div>
+
+          {/* La langue n'est dans la barre qu'à partir de 640 px : sous
+              cette largeur, c'est ici qu'on la trouve. */}
+          <div className="mt-3 border-t border-line pt-3 sm:hidden">
+            <SelecteurLangue
+              large
+              className="border-line bg-surface"
+              classeActive="bg-salon text-white"
+              classeInactive="text-muted"
+            />
           </div>
         </div>
       </div>

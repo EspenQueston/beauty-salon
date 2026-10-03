@@ -19,7 +19,14 @@ import {
   fetchInvitation,
   type InvitationPreview,
 } from "@/lib/dashboard";
-import { Badge, Button, Card, Field, Skeleton, inputClass } from "@/features/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  Skeleton,
+  inputClass,
+} from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
 
 export function InvitationForm() {
@@ -63,10 +70,14 @@ export function InvitationForm() {
       () =>
         acceptInvitation({
           token,
-          password: invitation?.account_exists ? undefined : password,
+          // Compte existant : son mot de passe actuel prouve qu'il est bien
+          // le sien. Le lien seul ne suffit plus à l'ouvrir.
+          password,
           display_name: displayName || undefined,
         }),
-      { success: `Vous faites partie de l'équipe de ${invitation?.salon_name}.` },
+      {
+        success: `Vous faites partie de l'équipe de ${invitation?.salon_name}.`,
+      },
     );
 
     setPending(false);
@@ -96,7 +107,12 @@ export function InvitationForm() {
     return (
       <Card>
         <span className="inline-flex size-11 items-center justify-center rounded-2xl bg-success-bg text-success">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-6">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            className="size-6"
+          >
             <path
               d="M20 6 9 17l-5-5"
               strokeWidth="2.2"
@@ -140,11 +156,23 @@ export function InvitationForm() {
       <Card>
         <form onSubmit={submit}>
           {invitation.account_exists ? (
-            <p className="mb-5 rounded-lg bg-info-bg p-3 text-sm text-info">
-              Vous avez déjà un compte Beauty Salon. Acceptez l&apos;invitation
-              pour ajouter ce salon — vous basculerez de l&apos;un à l&apos;autre
-              depuis le menu.
-            </p>
+            <>
+              <p className="mb-4 rounded-lg bg-info-bg p-3 text-sm text-info">
+                Vous avez déjà un compte Beauty Salon. Confirmez avec son mot de
+                passe pour ajouter ce salon — vous basculerez de l&apos;un à
+                l&apos;autre depuis le menu.
+              </p>
+              <Field label="Mot de passe de votre compte" className="mb-5">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="current-password"
+                  required
+                  className={inputClass}
+                />
+              </Field>
+            </>
           ) : (
             <>
               <Field label="Votre nom" className="mb-4">

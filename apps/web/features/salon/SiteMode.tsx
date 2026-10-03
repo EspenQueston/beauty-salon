@@ -84,13 +84,18 @@ export function SiteModeToggle({
     <button
       type="button"
       onClick={() => apply(slug, next)}
-      aria-label={next === "dark" ? "Passer en mode sombre" : "Passer en mode clair"}
+      aria-label={
+        next === "dark" ? "Passer en mode sombre" : "Passer en mode clair"
+      }
       title={next === "dark" ? "Mode sombre" : "Mode clair"}
       className={`inline-flex size-9 items-center justify-center rounded-lg border transition ${className}`}
     >
       {/* L'icône montre le mode *actuel*, pas la destination : c'est la
           convention que les gens connaissent, et l'infobulle dit le reste. */}
-      <SalonIcon name={mode === "dark" ? "moon" : "sun"} className="size-[1.1rem]" />
+      <SalonIcon
+        name={mode === "dark" ? "moon" : "sun"}
+        className="size-[1.1rem]"
+      />
     </button>
   );
 }

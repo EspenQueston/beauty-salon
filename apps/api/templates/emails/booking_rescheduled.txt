@@ -1,17 +1,13 @@
-{% autoescape off %}Bonjour {{ customer.full_name }},
+{% extends "emails/base_client.txt" %}
 
-{{ salon.name }} a déplacé votre rendez-vous.
+{% block extra %}
+{{ ancien_titre }}
+{{ t.deplace_ancien_corps }}
+{% endblock %}
 
-Prestation : {{ booking.service_name }}
-Ancienne date : {{ ancienne_date }} à {{ ancienne_heure }}
-NOUVELLE DATE : {{ date_label }} à {{ time_label }}
-{% if booking.staff_member %}Avec : {{ booking.staff_member.name }}
-{% endif %}
-Rien d'autre ne change : ni le tarif, ni la prestation{% if booking.deposit_paid %}, ni l'acompte déjà versé{% endif %}.
-
-Si cette nouvelle date ne vous convient pas, écrivez au salon.
+{% block action %}
+{{ inchange }}
 {% if status_url %}
-Suivre ce rendez-vous : {{ status_url }}
+{{ t.voir_rdv }} : {{ status_url }}
 {% endif %}
-{{ salon.name }}
-{% endautoescape %}
+{% endblock %}

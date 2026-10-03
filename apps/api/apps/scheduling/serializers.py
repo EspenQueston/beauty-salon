@@ -44,14 +44,32 @@ class AvailabilityQuerySerializer(serializers.Serializer):
         return attrs
 
 
+# Les coordonnees demandees sur le mini-site : reservation et liste d'attente.
+MESSAGES_EMAIL = {
+    "required": "Indiquez votre adresse e-mail.",
+    "blank": "Indiquez votre adresse e-mail.",
+    "invalid": ("Adresse e-mail invalide : il faut un « @ » et un domaine (ex. nom@exemple.com)."),
+}
+
+
+def _telephone_valide(value: str) -> str:
+    from apps.customers.coordonnees import TelephoneInvalide, normaliser_telephone
+
+    try:
+        return normaliser_telephone(value)
+    except TelephoneInvalide as erreur:
+        raise serializers.ValidationError(str(erreur)) from erreur
+
+
 class PublicBookingCreateSerializer(serializers.Serializer):
     service = serializers.UUIDField()
     staff_member = serializers.UUIDField(required=False, allow_null=True)
     starts_at = serializers.DateTimeField()
 
     full_name = serializers.CharField(max_length=150)
-    phone = serializers.CharField(max_length=32)
-    email = serializers.EmailField(required=False, allow_blank=True)
+    # Tous deux obligatoires sur le mini-site (voir customers/coordonnees.py).
+    phone = serializers.CharField(max_length=40)
+    email = serializers.EmailField(max_length=254, error_messages=MESSAGES_EMAIL)
     contact_preference = serializers.ChoiceField(
         choices=Customer.ContactPreference.choices,
         default=Customer.ContactPreference.WHATSAPP,
@@ -88,14 +106,22 @@ class PublicBookingCreateSerializer(serializers.Serializer):
     # d'annulation en cas de litige.
     accepts_policy = serializers.BooleanField()
 
+    # La langue de lecture du mini-site, transmise par le serveur Next.
+    #
+    # Un choix ferme et non un champ libre : cette valeur finit dans le nom
+    # d un gabarit d e-mail, et une chaine arbitraire y chercherait un fichier
+    # que personne n a ecrit.
+    language = serializers.ChoiceField(choices=[("fr", "fr"), ("en", "en")], default="fr")
+
     # Champ piege : invisible pour une humaine, rempli par les robots.
     website = serializers.CharField(required=False, allow_blank=True)
 
+    def validate_phone(self, value):
+        return _telephone_valide(value)
+
     def validate_accepts_policy(self, value):
         if not value:
-            raise serializers.ValidationError(
-                "La politique d'annulation doit être acceptée."
-            )
+            raise serializers.ValidationError("La politique d'annulation doit être acceptée.")
         return value
 
     def validate_starts_at(self, value):
@@ -109,6 +135,10 @@ class BookingSerializer(serializers.ModelSerializer):
 
     customer_name = serializers.CharField(source="customer.full_name", read_only=True)
     customer_phone = serializers.CharField(source="customer.phone", read_only=True)
+    # L'adresse, pour ecrire depuis l'agenda. Elle peut etre vide : une
+    # cliente peut reserver par telephone sans en donner, et ce n'est pas
+    # une anomalie - l'ecran doit simplement ne rien afficher.
+    customer_email = serializers.CharField(source="customer.email", read_only=True)
     staff_member_name = serializers.CharField(source="staff_member.name", read_only=True)
 
     class Meta:
@@ -126,6 +156,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "customer",
             "customer_name",
             "customer_phone",
+            "customer_email",
             "total_amount",
             "deposit_amount",
             "deposit_paid",
@@ -230,6 +261,13 @@ class PublicBookingConfirmationSerializer(serializers.ModelSerializer):
 
         return payment_token(booking)
 
+    def to_representation(self, instance):
+        from apps.translations.booking import public_booking_labels
+
+        data = super().to_representation(instance)
+        data.update(public_booking_labels(instance, instance.language))
+        return data
+
 
 class BusinessHoursSerializer(serializers.ModelSerializer):
     class Meta:
@@ -318,7 +356,17 @@ class PublicWaitlistSerializer(WaitlistEntrySerializer):
 
     Le statut n'est pas dans les champs modifiables : une inscription arrive
     toujours « en attente », et seul le salon la fait avancer.
+
+    Les coordonnees suivent la regle de la reservation (voir
+    customers/coordonnees.py) : telephone en chiffres, e-mail obligatoire.
+    Le salon, lui, garde la saisie libre depuis son espace.
     """
+
+    phone = serializers.CharField(max_length=40)
+    email = serializers.EmailField(max_length=254, error_messages=MESSAGES_EMAIL)
+
+    def validate_phone(self, value):
+        return _telephone_valide(value)
 
     class Meta(WaitlistEntrySerializer.Meta):
         fields = (

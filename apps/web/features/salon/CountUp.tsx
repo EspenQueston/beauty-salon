@@ -46,7 +46,9 @@ export function CountUp({ value }: { value: number }) {
     const element = ref.current;
     if (!element) return;
 
-    const calme = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const calme = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     if (calme || typeof IntersectionObserver === "undefined") return;
 
     let frame = 0;

@@ -10,11 +10,11 @@ const LOCALE = "fr-FR";
  */
 const ZERO_DECIMAL = new Set(["XAF", "CDF", "JPY"]);
 
-export function formatPrice(amount: string | number, currency: string): string {
+export function formatPrice(amount: string | number, currency: string, locale = LOCALE): string {
   const value = typeof amount === "string" ? Number(amount) : amount;
   const digits = ZERO_DECIMAL.has(currency) ? 0 : 2;
 
-  return new Intl.NumberFormat(LOCALE, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: digits,
@@ -22,10 +22,12 @@ export function formatPrice(amount: string | number, currency: string): string {
   }).format(value);
 }
 
-export function formatServicePrice(service: PublicService, currency: string): string {
-  if (service.price_kind === "quote") return "Sur devis";
-  const price = formatPrice(service.price_amount, currency);
-  return service.price_kind === "from" ? `À partir de ${price}` : price;
+export function formatServicePrice(service: PublicService, currency: string, locale = LOCALE): string {
+  if (service.price_kind === "quote") return locale.startsWith("en") ? "On request" : "Sur devis";
+  const price = formatPrice(service.price_amount, currency, locale);
+  return service.price_kind === "from"
+    ? `${locale.startsWith("en") ? "From" : "À partir de"} ${price}`
+    : price;
 }
 
 export function formatDuration(minutes: number): string {
@@ -45,8 +47,8 @@ export function formatTime(iso: string, timeZone: string): string {
   }).format(new Date(iso));
 }
 
-export function formatDate(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat(LOCALE, {
+export function formatDate(iso: string, timeZone: string, locale = LOCALE): string {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",

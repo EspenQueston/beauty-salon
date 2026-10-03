@@ -10,6 +10,8 @@
  * silence est plus neutre que le vide annoncé.
  */
 
+import { useTranslations } from "next-intl";
+
 import { formatDate } from "@/lib/format";
 import type { PublicReview, RatingSummary } from "@/lib/types";
 import { Stars } from "./Stars";
@@ -23,9 +25,7 @@ export function RatingBadge({ rating }: { rating: RatingSummary }) {
     <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5 text-sm backdrop-blur">
       <Stars value={rating.average} size="size-3.5" />
       <span className="tabular font-semibold">{rating.average.toFixed(1)}</span>
-      <span className="opacity-80">
-        · {rating.count} avis
-      </span>
+      <span className="opacity-80">· {rating.count} avis</span>
     </span>
   );
 }
@@ -39,6 +39,7 @@ export function ReviewList({
   rating: RatingSummary;
   timeZone: string;
 }) {
+  const t = useTranslations("salon");
   if (reviews.length === 0) return null;
 
   return (
@@ -56,12 +57,11 @@ export function ReviewList({
           <div>
             <Stars value={rating.average} size="size-5" />
             <p className="mt-1 text-sm text-[var(--site-muted)]">
-              {rating.count} avis vérifié{rating.count > 1 ? "s" : ""}
+              {t("hero.avis", { n: rating.count })}
             </p>
           </div>
           <p className="ml-auto max-w-xs text-xs leading-relaxed text-[var(--site-subtle)]">
-            Chaque avis est rattaché à un rendez-vous réellement honoré. Le
-            salon ne peut ni les modifier ni les supprimer.
+            {t("avisGarantie")}
           </p>
         </div>
       )}
@@ -94,7 +94,9 @@ export function ReviewList({
               Il est décoratif : le texte se lit sans lui, et un lecteur
               d'écran n'annonce pas un guillemet.
             */}
-            <article className={`${SURFACE} lift relative flex h-full flex-col p-4 sm:p-5`}>
+            <article
+              className={`${SURFACE} lift relative flex h-full flex-col p-4 sm:p-5`}
+            >
               <span
                 aria-hidden
                 className="pointer-events-none absolute right-3 top-1 select-none font-serif text-5xl leading-none text-[var(--salon-primary)]/15 sm:text-6xl"
@@ -141,7 +143,8 @@ export function ReviewList({
                   {review.author_name}
                 </p>
                 <p className="mt-0.5 text-xs text-[var(--site-subtle)]">
-                  {review.service_name} · {formatDate(review.created_at, timeZone)}
+                  {review.service_name} ·{" "}
+                  {formatDate(review.created_at, timeZone)}
                 </p>
               </footer>
             </article>

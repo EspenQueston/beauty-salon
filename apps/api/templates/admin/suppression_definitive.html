@@ -1,0 +1,92 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+  Suppression definitive d'un salon ou d'un compte (apps/common/admin_suppression.py).
+  Ce qui part est dit avant, chiffres a l'appui ; ce qui bloque est dit aussi.
+{% endcomment %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  › <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  › <a href="{% url opts|admin_urlname:'change' objet.pk|admin_urlquote %}">{{ objet }}</a>
+  › Suppression définitive
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="paiement-decision">
+  <h2>{{ title }}</h2>
+
+  {% if obstacles %}
+    <ul class="messagelist">
+      {% for obstacle in obstacles %}<li class="error">{{ obstacle }}</li>{% endfor %}
+    </ul>
+    <p><a href="{% url opts|admin_urlname:'change' objet.pk|admin_urlquote %}" class="button">Retour à la fiche</a></p>
+  {% else %}
+    <p class="errornote">
+      Irréversible. Rien de ce qui est listé ci-dessous ne pourra être restauré depuis
+      l'application — seulement depuis une sauvegarde du serveur. Faites-en une avant
+      (<code>infra/production/scripts/sauvegarder.sh</code>).
+    </p>
+
+    {% if donnees %}
+      <h3>Ce qui sera effacé</h3>
+      <table>
+        <tbody>
+          {% for nom, nombre in donnees.items %}
+            <tr><td>{{ nom|capfirst }}</td><td style="text-align:right">{{ nombre }}</td></tr>
+          {% endfor %}
+          {% if fichiers %}<tr><td>Fichiers sur le disque (photos, preuves de versement)</td><td style="text-align:right">{{ fichiers }}</td></tr>{% endif %}
+          {% if domaines %}<tr><td>Adresses</td><td>{{ domaines|join:", " }}</td></tr>{% endif %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    {% if resume %}<p>{{ resume }}</p>{% endif %}
+
+    {% if comptes_equipe or comptes_clientes %}
+      <h3>Comptes qui n'appartiennent qu'à ce salon</h3>
+      <p class="help">Gardés, sauf si vous cochez la case plus bas.</p>
+      <ul>
+        {% for compte in comptes_equipe %}<li>Équipe — {{ compte.email }}</li>{% endfor %}
+        {% for compte in comptes_clientes %}<li>Cliente — {{ compte.email }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if conserve %}
+      <h3>Ce qui est gardé</h3>
+      <ul>{% for ligne in conserve %}<li>{{ ligne }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    <form method="post" autocomplete="off">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="errorlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      {% endif %}
+      <fieldset class="module aligned">
+        <p>Pour confirmer, retapez <strong><code>{{ identifiant }}</code></strong>.</p>
+        {{ form.confirmation.errors }}
+        <div class="form-row">{{ form.confirmation.label_tag }} {{ form.confirmation }}</div>
+        {{ form.motif.errors }}
+        <div class="form-row">{{ form.motif.label_tag }} {{ form.motif }}
+          <div class="help">{{ form.motif.help_text }}</div></div>
+        {% if form.avec_comptes %}
+          <div class="form-row">{{ form.avec_comptes }} {{ form.avec_comptes.label_tag }}
+            <div class="help">{{ form.avec_comptes.help_text }}</div></div>
+        {% endif %}
+        {{ form.mot_de_passe.errors }}
+        <div class="form-row">{{ form.mot_de_passe.label_tag }} {{ form.mot_de_passe }}</div>
+        {% if double_authentification %}
+          <div class="form-row">{{ form.code.label_tag }} {{ form.code }}
+            <div class="help">Le code à six chiffres de votre application, ou un code de secours.</div></div>
+        {% endif %}
+      </fieldset>
+      <div class="submit-row">
+        <input type="submit" value="Supprimer définitivement" class="deletelink" style="background:#ba2121;color:#fff;border:0;padding:10px 15px;border-radius:4px;cursor:pointer">
+        <a href="{% url opts|admin_urlname:'change' objet.pk|admin_urlquote %}" class="button cancel-link">Annuler</a>
+      </div>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% autoescape off %}Bonjour,
+
+{{ titre }}
+
+{{ accroche }}
+{% if montant %}
+{{ montant.label }} : {{ montant.texte }}{% if montant.aide %} ({{ montant.aide }}){% endif %}
+{% endif %}{% if faits %}
+{% for fait in faits %}{{ fait.label }} : {{ fait.value }}
+{% endfor %}{% endif %}{% if avis %}
+{{ avis.titre }}{% if avis.texte %}
+{{ avis.texte }}{% endif %}
+{% endif %}{% for paragraphe in paragraphes %}{% if paragraphe %}
+{{ paragraphe }}
+{% endif %}{% endfor %}{% if bouton_url %}
+{{ bouton_texte }} : {{ bouton_url }}
+{% endif %}
+L'équipe Beauty Salon
+
+{{ pied }}
+{% endautoescape %}

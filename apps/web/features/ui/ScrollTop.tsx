@@ -16,6 +16,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { decouper } from "@/i18n/langues";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -45,7 +46,8 @@ export function ScrollTop({ home = "/", offset = "6.5rem" }: Props) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const atHome = pathname === home;
+  // Comparé sans le préfixe de langue : `/en` est aussi l'accueil.
+  const atHome = decouper(pathname).reste === home;
 
   return (
     <div

@@ -70,6 +70,11 @@ class SalonProfile(TenantOwnedModel):
 
     phone = models.CharField(_("téléphone"), max_length=32, blank=True)
     whatsapp_number = models.CharField(_("numéro WhatsApp"), max_length=32, blank=True)
+    # L'adresse publiee sur le mini-site, distincte de celle du compte : un
+    # salon ne veut pas forcement exposer l'adresse avec laquelle il se
+    # connecte. Vide tant qu'il ne l'a pas renseignee — rien n'est publie a
+    # sa place.
+    contact_email = models.EmailField(_("e-mail de contact"), blank=True)
     # {"instagram": "...", "tiktok": "...", "wechat": "...", "facebook": "..."}
     social_links = models.JSONField(default=dict, blank=True)
 
@@ -110,6 +115,11 @@ class SalonProfile(TenantOwnedModel):
 
     # {"primary": "#8B5CF6", "accent": "...", "font": "...", "radius": "..."}
     theme_config = models.JSONField(default=dict, blank=True)
+    # Personnalisation avancee (offre Pro) : polices, menu, ordre des sections
+    # de l'accueil, accroche. Validee par `personnalisation.valider` — jamais
+    # de HTML, de CSS ni de script. Conservee sans Pro, mais le mini-site ne
+    # l'applique que si le salon a la fonction.
+    site_config = models.JSONField(default=dict, blank=True)
 
     logo = models.ForeignKey(
         "media.MediaAsset",
@@ -131,9 +141,7 @@ class SalonProfile(TenantOwnedModel):
     # une accroche. Un salon qui existe depuis quinze ans a une histoire plus
     # longue a raconter, et c'est souvent elle qui decide une nouvelle
     # cliente. Elle a donc sa propre page, et le salon la redige lui-meme.
-    about_title = models.CharField(
-        _("titre de la page À propos"), max_length=120, blank=True
-    )
+    about_title = models.CharField(_("titre de la page À propos"), max_length=120, blank=True)
     about_content = models.TextField(_("texte de la page À propos"), blank=True)
     about_image = models.ForeignKey(
         "media.MediaAsset",
@@ -184,9 +192,7 @@ class SalonProfile(TenantOwnedModel):
         _("acompte demandé (%)"),
         default=0,
         validators=[MaxValueValidator(100)],
-        help_text=_(
-            "Part de la prestation et des options demandée à la réservation."
-        ),
+        help_text=_("Part de la prestation et des options demandée à la réservation."),
     )
     deposit_minimum = models.DecimalField(
         _("acompte minimum"),
@@ -203,8 +209,7 @@ class SalonProfile(TenantOwnedModel):
         _("faire régler les fournitures en entier"),
         default=True,
         help_text=_(
-            "Les articles de votre boutique sont payés d'avance : vous les "
-            "avez déjà achetés."
+            "Les articles de votre boutique sont payés d'avance : vous les avez déjà achetés."
         ),
     )
 
@@ -221,9 +226,7 @@ class SalonProfile(TenantOwnedModel):
     late_tolerance_minutes = models.PositiveSmallIntegerField(
         _("tolérance de retard (minutes)"),
         default=15,
-        help_text=_(
-            "Au-delà de ce délai, l'agenda signale le rendez-vous comme en retard."
-        ),
+        help_text=_("Au-delà de ce délai, l'agenda signale le rendez-vous comme en retard."),
     )
     late_policy = models.TextField(
         _("politique de retard"),
@@ -267,9 +270,7 @@ class SalonProfile(TenantOwnedModel):
     class Meta:
         verbose_name = _("profil de salon")
         verbose_name_plural = _("profils de salon")
-        constraints = [
-            models.UniqueConstraint(fields=["tenant"], name="one_profile_per_tenant")
-        ]
+        constraints = [models.UniqueConstraint(fields=["tenant"], name="one_profile_per_tenant")]
 
     def __str__(self) -> str:
         return f"Profil de {self.tenant_id}"
@@ -312,9 +313,7 @@ class TravelZone(TenantOwnedModel):
         constraints = [
             # Deux zones du meme nom rendraient le choix de la cliente
             # ambigu, et le salon ne saurait pas laquelle il a tarifee.
-            models.UniqueConstraint(
-                fields=("tenant", "name"), name="unique_travel_zone_per_tenant"
-            )
+            models.UniqueConstraint(fields=("tenant", "name"), name="unique_travel_zone_per_tenant")
         ]
 
     def __str__(self) -> str:

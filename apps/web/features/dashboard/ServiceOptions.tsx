@@ -143,13 +143,15 @@ export function ServiceOptions({
         )}
       </div>
 
-      {options.error && <ErrorState>Impossible de charger les options.</ErrorState>}
+      {options.error && (
+        <ErrorState>Impossible de charger les options.</ErrorState>
+      )}
       {options.data === null && !options.error && <Skeleton rows={1} />}
 
       {options.data !== null && list.length === 0 && !creating && (
         <p className="text-sm text-muted">
-          Aucune option. Ajoutez « longueur XL », « mèches fournies »,
-          « retrait de l&apos;ancienne coiffure »…
+          Aucune option. Ajoutez « longueur XL », « mèches fournies », « retrait
+          de l&apos;ancienne coiffure »…
         </p>
       )}
 

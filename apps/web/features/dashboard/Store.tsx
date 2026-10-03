@@ -184,7 +184,8 @@ export function Store() {
           )}
           {low.length > 0 && (
             <p className="mt-1 text-sm text-muted">
-              Bientôt épuisé : {low.map((p) => `${p.name} (${p.stock})`).join(", ")}
+              Bientôt épuisé :{" "}
+              {low.map((p) => `${p.name} (${p.stock})`).join(", ")}
             </p>
           )}
         </div>
@@ -208,7 +209,9 @@ export function Store() {
             aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm transition ${
-              tab === key ? "bg-salon font-medium text-white" : "text-muted hover:text-ink"
+              tab === key
+                ? "bg-salon font-medium text-white"
+                : "text-muted hover:text-ink"
             }`}
           >
             {label}
@@ -313,8 +316,8 @@ function Articles({
             )
           }
         >
-          Mèches, perruques, kits d&apos;entretien… Ce que vous vendez ici pourra
-          être proposé à vos clientes au moment où elles réservent.
+          Mèches, perruques, kits d&apos;entretien… Ce que vous vendez ici
+          pourra être proposé à vos clientes au moment où elles réservent.
         </EmptyState>
       )}
 
@@ -431,7 +434,9 @@ function ProductCard({
   onPatch: (changes: Partial<Product>) => void;
   onRemove: () => void;
 }) {
-  const [stock, setStock] = useState(product.stock === null ? "" : String(product.stock));
+  const [stock, setStock] = useState(
+    product.stock === null ? "" : String(product.stock),
+  );
 
   function commitStock() {
     const next = stock.trim() === "" ? null : Math.max(0, Number(stock) || 0);
@@ -854,7 +859,9 @@ function ToBring({
     const ok = await toast.run(
       async () => {
         if (attached) {
-          const page = await dashboardFetch<Page<{ id: string; product: string }>>(
+          const page = await dashboardFetch<
+            Page<{ id: string; product: string }>
+          >(
             `/api/v1/requirement-products/?requirement=${requirement.id}`,
             {},
             tenantId,
@@ -994,13 +1001,17 @@ function ToBring({
                       </p>
                       <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3 lg:grid-cols-4">
                         {products.map((product) => {
-                          const on = requirement.product_ids.includes(product.id);
+                          const on = requirement.product_ids.includes(
+                            product.id,
+                          );
                           return (
                             <li key={product.id}>
                               <button
                                 type="button"
                                 disabled={!canEdit}
-                                onClick={() => toggleOffer(requirement, product)}
+                                onClick={() =>
+                                  toggleOffer(requirement, product)
+                                }
                                 aria-pressed={on}
                                 className={`w-full rounded-lg border px-2.5 py-2 text-left transition ${
                                   on

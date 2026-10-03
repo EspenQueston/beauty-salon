@@ -37,13 +37,13 @@ C'est la faille SSRF, et elle se protege en quatre points :
 
 from __future__ import annotations
 
-import ipaddress
-import socket
 from urllib.error import URLError
-from urllib.parse import urljoin, urlparse, urlsplit
+from urllib.parse import urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from django.core.files.base import ContentFile
+
+from apps.common.reseau import AdresseInterdite, verifier_adresse_publique
 
 from .models import ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, MAX_UPLOAD_BYTES
 
@@ -182,28 +182,14 @@ def _absolute(base: str, location: str) -> str:
 
 
 def _guard(url: str) -> None:
-    """Refuse tout ce qui ne doit pas etre atteint depuis notre reseau."""
-    parts = urlparse(url)
+    """Refuse tout ce qui ne doit pas etre atteint depuis notre reseau.
 
-    if parts.scheme not in ("http", "https"):
-        raise RemoteMediaError("Seules les adresses http et https sont acceptées.")
-    if not parts.hostname:
-        raise RemoteMediaError("Cette adresse est incomplète.")
-
+    La regle elle-meme vit dans `apps/common/reseau.py` : les abonnements
+    push la partagent, et deux copies d'un controle de securite finissent
+    toujours par diverger. Seul le type d'exception change ici, pour que les
+    appelants de ce module n'aient qu'une famille d'erreurs a connaitre.
+    """
     try:
-        infos = socket.getaddrinfo(parts.hostname, parts.port or 0)
-    except socket.gaierror as exc:
-        raise RemoteMediaError(
-            "Ce nom de domaine est introuvable. Vérifiez le lien."
-        ) from exc
-
-    for *_, sockaddr in infos:
-        address = ipaddress.ip_address(sockaddr[0])
-        if not address.is_global or address.is_multicast:
-            # `is_global` couvre d'un coup le bouclage, les plages privees,
-            # le lien-local (dont 169.254.169.254, les metadonnees cloud) et
-            # les plages reservees.
-            raise RemoteMediaError(
-                "Cette adresse pointe vers un réseau interne et ne peut pas "
-                "être importée."
-            )
+        verifier_adresse_publique(url)
+    except AdresseInterdite as exc:
+        raise RemoteMediaError(str(exc)) from exc
