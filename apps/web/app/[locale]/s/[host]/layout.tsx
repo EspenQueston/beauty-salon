@@ -163,6 +163,7 @@ export default async function SiteLayout({ children, params }: Props) {
       <DeviseProvider salonSlug={salon.slug} devise={salon.currency}>
         <SalonNav
           name={salon.name}
+          host={host}
           slug={salon.slug}
           logo={salon.logo}
           show={show}

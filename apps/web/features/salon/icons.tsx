@@ -45,7 +45,9 @@ export type SalonIconName =
   | "globe"
   | "search"
   | "grid"
-  | "mail";
+  | "mail"
+  | "bell"
+  | "logout";
 
 const PATHS: Record<SalonIconName, ReactNode> = {
   user: (
@@ -175,6 +177,20 @@ const PATHS: Record<SalonIconName, ReactNode> = {
   ),
   // « Toutes les catégories » : quatre carreaux, l'ensemble plutôt qu'une
   // famille.
+  // Les rappels de l'espace cliente : une cloche, le battant dessous.
+  bell: (
+    <>
+      <path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5h-14z" />
+      <path d="M10 20.5a2.2 2.2 0 0 0 4 0" />
+    </>
+  ),
+  // Sortir : une porte entrouverte et la fleche qui s'en va.
+  logout: (
+    <>
+      <path d="M14 4.5H7.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2H14" />
+      <path d="M11 12h9m-3-3.5L20.5 12 17 15.5" />
+    </>
+  ),
   mail: (
     <>
       <rect x="3.5" y="5.5" width="17" height="13" rx="2.4" />

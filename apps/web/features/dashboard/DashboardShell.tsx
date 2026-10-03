@@ -37,6 +37,7 @@ import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { BeautySalonBrand, BeautySalonSymbol } from "@/features/ui/BeautySalonBrand";
 
 import { AccesProvider, AccessBanner, UpgradeButton, useAcces } from "./AccessBanner";
+import { RappelNotifications } from "./RappelNotifications";
 import type { FonctionPro } from "./abonnement";
 import { Notifications } from "./Notifications";
 import { LoginForm } from "./LoginForm";
@@ -393,6 +394,10 @@ function ShellContent({ children }: { children: ReactNode }) {
           </div>
         </div>
       </AccesProvider>
+
+      {/* L'invitation aux notifications : une fois le tableau de bord chargé,
+          jamais quand tout est déjà réglé. */}
+      <RappelNotifications tenantId={membership.tenant.id} />
 
       <Configurator />
     </DashboardContext.Provider>

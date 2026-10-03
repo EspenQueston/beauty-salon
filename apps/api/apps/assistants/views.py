@@ -321,3 +321,175 @@ class WebhookWhatsAppView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         logger.info("Webhook WhatsApp %s : %s", instance, resultat)
         return Response({"ok": True})
+
+
+# ---------------------------------------------------------------------------
+# n8n et historique des conversations (offre Pro)
+# ---------------------------------------------------------------------------
+
+
+def _etat_n8n(request, reglages) -> dict:
+    from .models import MessageAssistant
+
+    return {
+        "numero": reglages.n8n_numero,
+        "relie": bool(reglages.n8n_empreinte),
+        "derniere_reception": reglages.n8n_derniere_reception,
+        "messages": MessageAssistant.objects.filter(conversation__canal="n8n").count(),
+    }
+
+
+class N8nView(APIView):
+    """Le branchement n8n : numero, adresse du webhook (creee, regeneree, retiree)."""
+
+    permission_classes = [IsTenantMember, HasTenantRole, ExigeFonctionPro]
+    required_roles = DIRECTION
+    safe_roles = DIRECTION
+    fonction_pro = "whatsapp_assistant"
+
+    def get(self, request):
+        return Response(_etat_n8n(request, _reglages(request.tenant_id)))
+
+    def patch(self, request):
+        """Le numero WhatsApp que l'automatisation n8n utilise."""
+        from apps.customers.coordonnees import TelephoneInvalide, normaliser_telephone
+
+        reglages = _reglages(request.tenant_id)
+        numero = str(request.data.get("numero", "")).strip()
+        if numero:
+            try:
+                numero = normaliser_telephone(numero)
+            except TelephoneInvalide as exc:
+                return Response({"detail": str(exc), "numero": [str(exc)]}, status=400)
+        reglages.n8n_numero = numero
+        reglages.save(update_fields=["n8n_numero", "updated_at"])
+        _journaliser(request, "n8n_numero", numero=numero)
+        return Response(_etat_n8n(request, reglages))
+
+    def post(self, request):
+        """Cree l'adresse du webhook, ou la remplace. Le jeton n'est montre qu'ici."""
+        from . import historique
+
+        if request.membership.role != Membership.Role.OWNER:
+            return Response(
+                {"detail": "Seul le propriétaire du salon branche n8n.", "code": "proprietaire"},
+                status=403,
+            )
+        reglages = _reglages(request.tenant_id)
+        cle, jeton = historique.nouvelle_adresse(reglages)
+        _journaliser(request, "n8n_adresse")
+        # L'adresse publique de l'API, comme pour WhatsApp : l'hote de la
+        # requete est celui du tableau de bord quand elle passe par lui.
+        base = settings.API_BASE_URL.rstrip("/")
+        adresse = f"{base}/api/v1/webhooks/n8n/{cle}/{jeton}"
+        return Response({**_etat_n8n(request, reglages), "adresse": adresse}, status=201)
+
+    def delete(self, request):
+        if request.membership.role != Membership.Role.OWNER:
+            return Response(
+                {"detail": "Seul le propriétaire du salon débranche n8n.", "code": "proprietaire"},
+                status=403,
+            )
+        reglages = _reglages(request.tenant_id)
+        reglages.n8n_empreinte = ""
+        reglages.save(update_fields=["n8n_empreinte", "updated_at"])
+        _journaliser(request, "n8n_retire")
+        return Response(_etat_n8n(request, reglages))
+
+
+class WebhookN8nView(APIView):
+    """Les messages envoyes par l'automatisation n8n du salon."""
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+    throttle_scope = "webhook_n8n"
+
+    def post(self, request, cle: str, jeton: str):
+        from apps.common.db import tenant_context
+
+        from . import historique
+
+        try:
+            reglages = historique.reglages_du_webhook(cle, jeton)
+        except historique.Refus:
+            # Meme reponse qu'une adresse inexistante : rien a apprendre ici.
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        try:
+            with tenant_context(reglages.tenant_id):
+                resultat = historique.recevoir(reglages, request.data)
+        except historique.MessageInvalide as exc:
+            return Response({"detail": str(exc), "code": "message_invalide"}, status=400)
+        return Response({"ok": True, **resultat})
+
+
+class ConversationsView(APIView):
+    """Les fils de discussion de l'assistant, du plus recent au plus ancien."""
+
+    permission_classes = [IsTenantMember, HasTenantRole, ExigeFonctionPro]
+    required_roles = DIRECTION
+    safe_roles = DIRECTION
+    fonction_pro = "whatsapp_assistant"
+
+    def get(self, request):
+        from django.db.models import Q
+
+        from .models import ConversationAssistant
+
+        fils = ConversationAssistant.objects.all()
+        recherche = str(request.query_params.get("q", "")).strip()[:64]
+        if recherche:
+            fils = fils.filter(Q(contact__icontains=recherche) | Q(nom__icontains=recherche))
+        canal = request.query_params.get("canal")
+        if canal in ConversationAssistant.Canal.values:
+            fils = fils.filter(canal=canal)
+        return Response(
+            {
+                "conversations": [
+                    {
+                        "id": str(fil.id),
+                        "canal": fil.canal,
+                        "contact": fil.contact,
+                        "nom": fil.nom,
+                        "dernier_message_le": fil.dernier_message_le,
+                        "dernier_apercu": fil.dernier_apercu,
+                        "nombre_messages": fil.nombre_messages,
+                    }
+                    for fil in fils.order_by("-dernier_message_le")[:100]
+                ]
+            }
+        )
+
+
+class ConversationMessagesView(APIView):
+    """Les messages d'un fil, dans l'ordre (les 300 derniers)."""
+
+    permission_classes = [IsTenantMember, HasTenantRole, ExigeFonctionPro]
+    required_roles = DIRECTION
+    safe_roles = DIRECTION
+    fonction_pro = "whatsapp_assistant"
+
+    def get(self, request, pk):
+        from django.shortcuts import get_object_or_404
+
+        from .models import ConversationAssistant
+
+        fil = get_object_or_404(ConversationAssistant, pk=pk)
+        derniers = list(fil.messages.order_by("-envoye_le")[:300])
+        derniers.reverse()
+        return Response(
+            {
+                "id": str(fil.id),
+                "canal": fil.canal,
+                "contact": fil.contact,
+                "nom": fil.nom,
+                "messages": [
+                    {
+                        "id": str(message.id),
+                        "direction": message.direction,
+                        "texte": message.texte,
+                        "envoye_le": message.envoye_le,
+                    }
+                    for message in derniers
+                ],
+            }
+        )

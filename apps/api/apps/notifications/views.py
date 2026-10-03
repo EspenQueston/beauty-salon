@@ -194,6 +194,13 @@ class PushView(APIView):
                 {"detail": "Réservé aux administrateurs de la plateforme."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        if donnees["portee"] == PushSubscription.Portee.CLIENTE and not hasattr(
+            request.user, "client_profile"
+        ):
+            return Response(
+                {"detail": "Réservé aux comptes clientes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # `update_or_create` sur l'endpoint : il designe un navigateur, pas
         # un compte. Sur un poste partage a l'accueil, la derniere personne

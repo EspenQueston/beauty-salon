@@ -224,6 +224,10 @@ class PushSubscription(UUIDModel, TimeStampedModel):
 
         SALON = "salon", _("Tableau de bord")
         PLATEFORME = "plateforme", _("Administration")
+        # L'espace cliente, sur le mini-site d'un salon. Il montre les
+        # rendez-vous de tous les salons de la cliente : le lien d'une
+        # notification y mene donc quel que soit le site ou elle a accepte.
+        CLIENTE = "cliente", _("Espace cliente")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

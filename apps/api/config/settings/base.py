@@ -412,6 +412,8 @@ REST_FRAMEWORK = {
         "email_verification": "20/hour",
         # Double authentification : saisie du code a la connexion, reglages.
         "mfa": "30/hour",
+        # Messages envoyes par l'automatisation n8n d'un salon (historique).
+        "webhook_n8n": "1200/hour",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

@@ -32,7 +32,22 @@
 
 import { dashboardFetch } from "@/lib/dashboard";
 
-export type Portee = "salon" | "plateforme";
+export type Portee = "salon" | "plateforme" | "cliente";
+
+/**
+ * Le chemin des appels à l'API.
+ *
+ * Le tableau de bord passe par `dashboardFetch` (en-tête X-Tenant-Id).
+ * L'espace cliente vit sur le mini-site d'un salon et a son propre helper
+ * (en-tête X-Tenant-Host, session cliente) : il le fournit ici, et tout le
+ * reste — permission, service worker, abonnement — est partagé.
+ */
+export type Appel = <T>(chemin: string, init?: RequestInit) => Promise<T>;
+
+function lier(tenantId?: string, appel?: Appel): Appel {
+  return appel ?? (<T,>(chemin: string, init?: RequestInit) =>
+    dashboardFetch<T>(chemin, init ?? {}, tenantId));
+}
 
 /**
  * Marque d'adhésion, lue par `app/ServiceWorker.tsx`.
@@ -159,7 +174,10 @@ async function serviceWorker(): Promise<ServiceWorkerRegistration> {
  * appelée à l'ouverture du panneau, et une fenêtre système qui surgit sans
  * qu'on ait cliqué est ce qui fait refuser définitivement.
  */
-export async function etatPush(tenantId?: string): Promise<EtatPush> {
+export async function etatPush(
+  tenantId?: string,
+  appel?: Appel,
+): Promise<EtatPush> {
   if (typeof window === "undefined") return "incompatible";
 
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -171,7 +189,7 @@ export async function etatPush(tenantId?: string): Promise<EtatPush> {
 
   let serveur: EtatServeur;
   try {
-    serveur = await dashboardFetch<EtatServeur>("/api/v1/push", {}, tenantId);
+    serveur = await lier(tenantId, appel)<EtatServeur>("/api/v1/push");
   } catch {
     return "incompatible";
   }
@@ -213,8 +231,10 @@ export async function etatPush(tenantId?: string): Promise<EtatPush> {
 export async function activerPush(
   portee: Portee = "salon",
   tenantId?: string,
+  appel?: Appel,
 ): Promise<EtatPush> {
-  const etat = await etatPush(tenantId);
+  const api = lier(tenantId, appel);
+  const etat = await etatPush(tenantId, api);
   if (etat !== "possible" && etat !== "pret") return etat;
 
   const permission = await Notification.requestPermission();
@@ -232,7 +252,7 @@ export async function activerPush(
   }
 
   const enregistrement = await serviceWorker();
-  const serveur = await dashboardFetch<EtatServeur>("/api/v1/push", {}, tenantId);
+  const serveur = await api<EtatServeur>("/api/v1/push");
   if (!serveur.actif) return "desactive";
 
   /*
@@ -268,26 +288,25 @@ export async function activerPush(
     keys: { p256dh: string; auth: string };
   };
 
-  await dashboardFetch(
-    "/api/v1/push",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        endpoint: brut.endpoint,
-        cle_p256dh: brut.keys.p256dh,
-        cle_auth: brut.keys.auth,
-        appareil: nomAppareil(),
-        portee,
-      }),
-    },
-    tenantId,
-  );
+  await api("/api/v1/push", {
+    method: "POST",
+    body: JSON.stringify({
+      endpoint: brut.endpoint,
+      cle_p256dh: brut.keys.p256dh,
+      cle_auth: brut.keys.auth,
+      appareil: nomAppareil(),
+      portee,
+    }),
+  });
 
   return "pret";
 }
 
 /** Retire cet appareil, des deux côtés. */
-export async function desactiverPush(tenantId?: string): Promise<void> {
+export async function desactiverPush(
+  tenantId?: string,
+  appel?: Appel,
+): Promise<void> {
   try {
     localStorage.removeItem(CLE_OPTIN);
   } catch {
@@ -303,11 +322,10 @@ export async function desactiverPush(tenantId?: string): Promise<void> {
   // Le serveur d'abord : si l'on commence par le navigateur et que l'appel
   // échoue, la ligne reste en base et le serveur continuera d'écrire dans
   // une boîte que plus personne ne relève.
-  await dashboardFetch(
-    "/api/v1/push",
-    { method: "DELETE", body: JSON.stringify({ endpoint }) },
-    tenantId,
-  ).catch(() => undefined);
+  await lier(tenantId, appel)("/api/v1/push", {
+    method: "DELETE",
+    body: JSON.stringify({ endpoint }),
+  }).catch(() => undefined);
 
   await abonnement.unsubscribe();
 }

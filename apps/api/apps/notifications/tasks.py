@@ -19,6 +19,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.common.db import tenant_context
+from apps.notifications.cliente import prevenir_cliente
 from apps.notifications.details import grouper
 from apps.notifications.email import send_email
 from apps.notifications.textes import Textes, textes
@@ -143,6 +144,12 @@ def send_booking_reminders():
                     },
                     to=[booking.customer.email],
                     salon=booking.tenant,
+                )
+                prevenir_cliente(
+                    booking,
+                    "rappel",
+                    date=rappel["date_label"],
+                    heure=rappel["time_label"],
                 )
                 # Marque meme sans e-mail : sinon la cliente sans adresse
                 # serait reexaminee a chaque passage de la tache.
@@ -607,6 +614,12 @@ def send_booking_accepted(self, booking_id: str, tenant_id: str):
                 to=[booking.customer.email],
                 salon=booking.tenant,
             )
+            prevenir_cliente(
+                booking,
+                "accepte",
+                date=accepte["date_label"],
+                heure=accepte["time_label"],
+            )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec de confirmation pour %s.", booking_id)
         raise self.retry(exc=exc) from exc
@@ -646,6 +659,12 @@ def send_deposit_rejected(self, booking_id: str, tenant_id: str):
                 context=context,
                 to=[booking.customer.email],
                 salon=booking.tenant,
+            )
+            prevenir_cliente(
+                booking,
+                "acompte_refuse",
+                date=context["date_label"],
+                heure=context["time_label"],
             )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec d'avis de refus pour %s.", booking_id)
@@ -726,6 +745,15 @@ def send_booking_cancelled(self, booking_id: str, tenant_id: str, by_salon: bool
                 to=[booking.customer.email],
                 salon=booking.tenant,
             )
+            # Sur l'appareil, seulement quand c'est le salon qui annule : la
+            # cliente qui vient d'annuler elle-meme le sait deja.
+            if by_salon:
+                prevenir_cliente(
+                    booking,
+                    "annule",
+                    date=context["date_label"],
+                    heure=context["time_label"],
+                )
 
             # Le salon aussi : une annulation libère un créneau qu'il peut
             # reproposer, et la liste d'attente n'existe que pour ça.
@@ -809,6 +837,12 @@ def send_booking_rescheduled(
                 context=context,
                 to=[booking.customer.email],
                 salon=booking.tenant,
+            )
+            prevenir_cliente(
+                booking,
+                "deplace",
+                date=context["date_label"],
+                heure=context["time_label"],
             )
     except Exception as exc:  # noqa: BLE001
         raise self.retry(exc=exc) from exc

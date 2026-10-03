@@ -172,9 +172,27 @@ def repondre(tenant, jid: str, texte: str) -> str:
             return "ignore:ia-indisponible"
         reponse = _accuse_de_reception(tenant)
     evolution.envoyer_texte(reglages.whatsapp_instance, jid.split("@")[0], reponse)
+    _historiser(tenant.id, jid, texte, reponse)
     fil.append({"role": "assistant", "content": reponse})
     cache.set(fil_cle, fil[-FIL_MAX:], 24 * 3600)
     AssistantReglages.objects.filter(pk=reglages.pk).update(
         whatsapp_derniere_activite=timezone.now()
     )
     return "reponse:envoyee"
+
+
+def _historiser(tenant_id, jid: str, recu: str, envoye: str) -> None:
+    """Le message recu et la reponse, dans l'historique des conversations.
+
+    L'historique est un service rendu au salon : s'il echoue, la reponse est
+    deja partie, et rien ne doit le faire remonter.
+    """
+    from . import historique
+
+    try:
+        for direction, texte in (("entrant", recu), ("sortant", envoye)):
+            historique.consigner(
+                tenant_id, canal="whatsapp", contact=jid, direction=direction, texte=texte
+            )
+    except Exception:  # noqa: BLE001
+        logger.exception("Historique WhatsApp non ecrit.")

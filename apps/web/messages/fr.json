@@ -501,7 +501,9 @@
       "ctaTitre": "Envie du même résultat ?",
       "ctaCorps": "Choisissez votre prestation et votre créneau en quelques secondes. Une question avant de réserver ? {salon} vous répond.",
       "ctaReserver": "Réserver maintenant"
-    }
+    },
+    "compteConnecte": "Mon espace — connectée ({nom})",
+    "seConnecterCompte": "Se connecter à mon espace"
   },
   "reservation": {
     "retour": "Retour",
@@ -808,7 +810,12 @@
       "ceuxDeMemeEndroit": "Ceux de {salon} et ceux de vos autres salons, au même endroit.",
       "retourChez": "Retour chez {salon}",
       "code2fa": "Code de double authentification",
-      "code2faAide": "Le code à six chiffres de votre application, ou un code de secours."
+      "code2faAide": "Le code à six chiffres de votre application, ou un code de secours.",
+      "bonjour": "Bonjour {nom}",
+      "deconnexionTitre": "Se déconnecter ?",
+      "deconnexionCorps": "Vous devrez saisir à nouveau votre e-mail et votre mot de passe pour revoir vos rendez-vous.",
+      "annuler": "Annuler",
+      "confirmerDeconnexion": "Se déconnecter"
     },
     "liste": {
       "echec": "Impossible de charger vos rendez-vous.",
@@ -844,7 +851,9 @@
       "dernierJour": "dernier jour",
       "joursRestants": "{n} jours",
       "acomptesRestants": "{n, plural, one {# acompte reste à régler} other {# acomptes restent à régler}}",
-      "visitesAvis": "{n, plural, one {# visite attend votre avis} other {# visites attendent votre avis}}"
+      "visitesAvis": "{n, plural, one {# visite attend votre avis} other {# visites attendent votre avis}}",
+      "visites": "{n, plural, =0 {Visite} one {Visite} other {Visites}}",
+      "reserverChez": "Réserver chez {salon}"
     },
     "annuler": {
       "leContacter": "Le contacter",
@@ -910,6 +919,24 @@
       "rendezVous": "Mes rendez-vous",
       "parrainage": "Parrainage",
       "profil": "Mon profil"
+    },
+    "notifications": {
+      "titre": "Ne manquez aucun rendez-vous",
+      "corps": "Recevez sur ce téléphone la confirmation, le rappel de la veille et tout changement d'horaire.",
+      "iosCorps": "Sur iPhone, les notifications arrivent une fois ce site ajouté à l'écran d'accueil.",
+      "ios1": "Touchez Partager (le carré avec une flèche) dans Safari.",
+      "ios2": "Choisissez « Sur l'écran d'accueil ».",
+      "ios3": "Ouvrez le site depuis la nouvelle icône, puis activez les notifications.",
+      "point1": "Confirmation",
+      "point2": "Rappel la veille",
+      "point3": "Changement d'horaire",
+      "activer": "Activer",
+      "plusTard": "Plus tard",
+      "compris": "J'ai compris",
+      "activees": "Notifications activées",
+      "activeesCorps": "Vous serez prévenue sur cet appareil.",
+      "refuseTitre": "Notifications bloquées",
+      "refuseCorps": "Ce téléphone ne vous rappellera pas vos rendez-vous. Pour les rouvrir : touchez le cadenas à gauche de l'adresse, puis « Notifications » → « Autoriser », et rechargez la page."
     }
   }
 }

@@ -25,10 +25,13 @@ import { useTranslations } from "next-intl";
 import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
 import { decouper } from "@/i18n/langues";
 import { SiteModeToggle } from "./SiteMode";
+import { useSessionCliente } from "@/features/client/session";
 import type { MediaAsset, PagePerso, RubriqueMenu, SiteConfig } from "@/lib/types";
 
 interface Props {
   name: string;
+  /** L'hôte du mini-site : la session cliente se lit en son nom. */
+  host: string;
   /** Identifiant du salon : le mode clair/sombre est mémorisé par salon. */
   slug: string;
   logo: MediaAsset | null;
@@ -60,11 +63,18 @@ const RUBRIQUES: Record<Exclude<RubriqueMenu, `page:${string}`>, { href: string;
 const ORDRE: RubriqueMenu[] = ["prestations", "realisations", "equipe", "a-propos", "infos"];
 const PREFIXE_PAGE = "page:";
 
-export function SalonNav({ name, slug, logo, show, menu, bouton, pages = [] }: Props) {
+export function SalonNav({ name, host, slug, logo, show, menu, bouton, pages = [] }: Props) {
   const t = useTranslations("salon");
   const c = useTranslations("commun");
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const session = useSessionCliente(host);
+  const connectee = session.etat === "connectee";
+  const quiEst = connectee ? session.nom || session.email : "";
+  const initiale = quiEst.trim()[0]?.toUpperCase() ?? "";
+  const libelleCompte = connectee
+    ? t("compteConnecte", { nom: quiEst })
+    : t("seConnecterCompte");
 
   /**
    * Le tiroir ne doit pas survivre à un changement de page.
@@ -239,17 +249,39 @@ export function SalonNav({ name, slug, logo, show, menu, bouton, pages = [] }: P
             surtout pas concurrencer « Réserver », qui reste la seule action
             que la page cherche à obtenir.
           */}
+          {/*
+            Connectée : son initiale sur la couleur du salon, et un point vert
+            — on sait d'un coup d'œil qu'on est chez soi. Visiteuse : la
+            silhouette au trait, comme une porte encore fermée.
+          */}
           <Lien
             href="/compte"
-            aria-label={t("monEspace")}
-            title={t("monEspace")}
-            className={`inline-flex size-9 items-center justify-center rounded-full border transition ${
-              overlay
-                ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
-                : "border-[var(--site-line)] bg-[var(--site-surface)] text-[var(--site-muted)] hover:text-[var(--site-ink)]"
+            aria-label={libelleCompte}
+            title={libelleCompte}
+            data-session={session.etat}
+            className={`relative inline-flex size-9 items-center justify-center rounded-full transition ${
+              connectee
+                ? `salon-gradient text-sm font-semibold text-white shadow-sm ring-2 hover:brightness-110 ${
+                    overlay ? "ring-white/40" : "ring-[var(--site-surface)]"
+                  }`
+                : overlay
+                  ? "border border-white/30 bg-white/10 text-white hover:bg-white/20"
+                  : "border border-[var(--site-line)] bg-[var(--site-surface)] text-[var(--site-muted)] hover:text-[var(--site-ink)]"
             }`}
           >
-            <SalonIcon name="user" className="size-4" />
+            {connectee && initiale ? (
+              <span aria-hidden className="leading-none">
+                {initiale}
+              </span>
+            ) : (
+              <SalonIcon name="user" className="size-4" />
+            )}
+            {connectee && (
+              <span
+                aria-hidden
+                className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-[var(--site-surface)] bg-emerald-500"
+              />
+            )}
           </Lien>
 
           <Lien

@@ -198,12 +198,18 @@ class ClientSessionView(APIView):
     s'il doit interroger l'espace salon ou l'espace cliente.
     """
 
-    permission_classes = [IsAuthenticated]
+    # Ouverte aux visiteuses anonymes : l'icone du compte, dans la barre de
+    # chaque page du mini-site, demande « connectee ou pas ? ». Un 403 a
+    # chaque page vue remplirait la console de toutes les visiteuses.
+    permission_classes = [AllowAny]
 
     def get(self, request):
+        if not request.user.is_authenticated:
+            return Response({"connecte": False})
         is_client = hasattr(request.user, "client_profile")
         return Response(
             {
+                "connecte": True,
                 "email": request.user.email,
                 "display_name": request.user.display_name,
                 "is_client": is_client,

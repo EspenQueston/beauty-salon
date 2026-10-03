@@ -63,6 +63,9 @@ import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { Tracker } from "./Tracker";
 import { ParrainageCliente } from "./ParrainageCliente";
 import { MenuEspace } from "./MenuEspace";
+import { BoutonDeconnexion } from "./ConfirmerDeconnexion";
+import { RappelNotificationsCliente } from "./RappelNotificationsCliente";
+import { EVENEMENT_SESSION } from "./session";
 import type { ClientBooking } from "./types";
 
 const CARD =
@@ -168,8 +171,13 @@ export function ClientSpace({
   useEffect(() => {
     let cancelled = false;
 
-    api<Session>("/api/v1/public/client/session", host)
-      .then((data) => !cancelled && setSession(data))
+    api<Session | { connecte: false }>("/api/v1/public/client/session", host)
+      .then((data) => {
+        if (cancelled) return;
+        setSession("email" in data ? data : "anonymous");
+        // L'icône du compte, dans la barre du haut, suit l'état de session.
+        window.dispatchEvent(new Event(EVENEMENT_SESSION));
+      })
       .catch(() => !cancelled && setSession("anonymous"));
 
     return () => {
@@ -715,21 +723,19 @@ function Space({
 
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-semibold tracking-tight text-[var(--site-ink)] sm:text-2xl">
-            Bonjour {firstName}
+            {t("compte.bonjour", { nom: firstName })}
           </h1>
           <p className="truncate text-sm text-[var(--site-muted)]">
             {session.email}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void logout()}
-          className="shrink-0 rounded-xl border border-[var(--site-line)] px-3 py-2 text-sm text-[var(--site-muted)] transition hover:text-[var(--site-ink)]"
-        >
-          {t("compte.seDeconnecter")}
-        </button>
+        <BoutonDeconnexion onConfirmer={logout} />
       </header>
+
+      {/* Les notifications sur l'appareil : proposées une fois l'espace
+          ouvert, jamais demandées sans un geste. */}
+      <RappelNotificationsCliente host={host} />
 
       {/* Le menu des sections : colonne collée à gauche sur ordinateur, barre
           de pastilles sous l'en-tête sur téléphone. Il suit la lecture. */}
@@ -763,7 +769,7 @@ function Space({
           <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <Tile label={t("liste.aVenir")} value={String(upcoming.length)} />
             <Tile
-              label={visits > 1 ? "Visites" : "Visite"}
+              label={t("liste.visites", { n: visits })}
               value={String(visits)}
             />
             <Tile
@@ -880,7 +886,7 @@ function Space({
                   : t("liste.choisissezPrestation")}
               </p>
               <Lien href="/reserver" className={`${PRIMARY} mt-4`}>
-                Réserver chez {salon.name}
+                {t("liste.reserverChez", { salon: salon.name })}
               </Lien>
             </div>
           )}

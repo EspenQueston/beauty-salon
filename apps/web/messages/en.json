@@ -501,7 +501,9 @@
       "ctaTitre": "Want the same result?",
       "ctaCorps": "Pick your service and time slot in seconds. A question before booking? {salon} will answer.",
       "ctaReserver": "Book now"
-    }
+    },
+    "compteConnecte": "My account — signed in ({nom})",
+    "seConnecterCompte": "Sign in to my account"
   },
   "reservation": {
     "retour": "Back",
@@ -808,7 +810,12 @@
       "ceuxDeMemeEndroit": "Those from {salon} and from your other salons, in one place.",
       "retourChez": "Back to {salon}",
       "code2fa": "Two-factor code",
-      "code2faAide": "The six-digit code from your app, or a recovery code."
+      "code2faAide": "The six-digit code from your app, or a recovery code.",
+      "bonjour": "Hello {nom}",
+      "deconnexionTitre": "Sign out?",
+      "deconnexionCorps": "You will need to enter your email and password again to see your appointments.",
+      "annuler": "Cancel",
+      "confirmerDeconnexion": "Sign out"
     },
     "liste": {
       "echec": "Could not load your appointments.",
@@ -844,7 +851,9 @@
       "dernierJour": "last day",
       "joursRestants": "{n} days",
       "acomptesRestants": "{n, plural, one {# deposit is still due} other {# deposits are still due}}",
-      "visitesAvis": "{n, plural, one {# visit is waiting for your review} other {# visits are waiting for your review}}"
+      "visitesAvis": "{n, plural, one {# visit is waiting for your review} other {# visits are waiting for your review}}",
+      "visites": "{n, plural, =0 {Visits} one {Visit} other {Visits}}",
+      "reserverChez": "Book at {salon}"
     },
     "annuler": {
       "leContacter": "Contact them",
@@ -910,6 +919,24 @@
       "rendezVous": "My appointments",
       "parrainage": "Referrals",
       "profil": "My profile"
+    },
+    "notifications": {
+      "titre": "Never miss an appointment",
+      "corps": "Get the confirmation, the day-before reminder and any time change on this phone.",
+      "iosCorps": "On iPhone, notifications work once this site is added to your Home Screen.",
+      "ios1": "Tap Share (the square with an arrow) in Safari.",
+      "ios2": "Choose “Add to Home Screen”.",
+      "ios3": "Open the site from the new icon, then turn notifications on.",
+      "point1": "Confirmation",
+      "point2": "Day-before reminder",
+      "point3": "Time changes",
+      "activer": "Turn on",
+      "plusTard": "Later",
+      "compris": "Got it",
+      "activees": "Notifications on",
+      "activeesCorps": "You will be notified on this device.",
+      "refuseTitre": "Notifications blocked",
+      "refuseCorps": "This phone will not remind you of your appointments. To allow them: tap the padlock left of the address, then “Notifications” → “Allow”, and reload the page."
     }
   }
 }

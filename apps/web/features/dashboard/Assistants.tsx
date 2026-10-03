@@ -7,7 +7,9 @@
  *     (agenda de la semaine, catalogue, « où se règle… ») ; il lit, il ne
  *     modifie rien — et chacun n'y voit que ce que son rôle permet de voir ;
  *   - l'assistant des clientes, sur le mini-site, 24 h/24 ;
- *   - l'assistant WhatsApp, branché sur le numéro du salon.
+ *   - l'assistant WhatsApp, branché sur le numéro du salon — ou celui que le
+ *     salon fait tourner sur n8n ;
+ *   - l'historique de leurs conversations (voir `AssistantHistorique.tsx`).
  *
  * Les interrupteurs sont réservés à la direction, la connexion WhatsApp au
  * propriétaire. Le serveur vérifie les deux, et l'offre Pro, à chaque appel.
@@ -30,6 +32,7 @@ import {
 import { TexteRiche } from "@/features/ui/TexteRiche";
 import { useToast } from "@/features/ui/Toast";
 import { dateLongue } from "./abonnement";
+import { CarteN8n, HistoriqueConversations } from "./AssistantHistorique";
 import { useDashboard } from "./DashboardShell";
 import { Icon } from "./icons";
 import { EnteteCarte, VerrouPro, useFonction } from "./Pro";
@@ -99,11 +102,16 @@ export function Assistants() {
                   proprietaire={membership.role === "owner"}
                   onChange={etat.reload}
                 />
+                <CarteN8n tenantId={tenantId} proprietaire={membership.role === "owner"} />
               </>
             )}
           </div>
         )}
       </div>
+
+      {/* Ce que les assistants ont répondu, contact par contact. Réservé à
+          la direction : ce sont des conversations privées de clientes. */}
+      {direction && <HistoriqueConversations tenantId={tenantId} />}
     </section>
   );
 }

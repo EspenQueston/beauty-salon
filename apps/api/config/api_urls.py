@@ -19,7 +19,11 @@ from apps.accounts.views import InvitationViewSet, MembershipViewSet
 from apps.assistants.views import (
     AssistantPlateformeView,
     AssistantPublicView,
+    ConversationMessagesView,
+    ConversationsView,
+    N8nView,
     ReglagesAssistantView,
+    WebhookN8nView,
     WebhookWhatsAppView,
     WhatsAppConnexionView,
 )
@@ -236,6 +240,15 @@ urlpatterns = [
     path("assistant", AssistantPlateformeView.as_view(), name="assistant"),
     path("assistant/reglages", ReglagesAssistantView.as_view(), name="assistant-reglages"),
     path("assistant/whatsapp", WhatsAppConnexionView.as_view(), name="assistant-whatsapp"),
+    # Offre Pro : n8n et l'historique des conversations de l'assistant.
+    path("assistant/n8n", N8nView.as_view(), name="assistant-n8n"),
+    path("assistant/conversations", ConversationsView.as_view(), name="assistant-conversations"),
+    path(
+        "assistant/conversations/<uuid:pk>",
+        ConversationMessagesView.as_view(),
+        name="assistant-conversation",
+    ),
+    path("webhooks/n8n/<str:cle>/<str:jeton>", WebhookN8nView.as_view(), name="webhook-n8n"),
     path(
         "webhooks/whatsapp/<str:instance>/<str:jeton>",
         WebhookWhatsAppView.as_view(),
