@@ -15,7 +15,7 @@ from .serializers import (
     ClientProfileSerializer,
     ClientSignupSerializer,
 )
-from .services import bookings_for, linked_salons
+from .services import bookings_for, est_cliente, linked_salons, retrouver_historique
 
 
 class IsClient(IsAuthenticated):
@@ -29,7 +29,7 @@ class IsClient(IsAuthenticated):
     message = "Cet espace est réservé aux clientes."
 
     def has_permission(self, request, view):
-        return super().has_permission(request, view) and hasattr(request.user, "client_profile")
+        return super().has_permission(request, view) and est_cliente(request.user)
 
 
 class ClientSignupView(APIView):
@@ -179,6 +179,12 @@ class ClientBookingsView(APIView):
     permission_classes = [IsClient]
 
     def get(self, request):
+        # Les rendez-vous pris sans compte avec la meme adresse : cherches une
+        # fois par session (les nouveaux sont rattaches a la reservation).
+        if not request.session.get("historique_retrouve"):
+            retrouver_historique(request.user)
+            if request.user.email_verified_at:
+                request.session["historique_retrouve"] = True
         rows = bookings_for(request.user)
         return Response(
             {
@@ -206,7 +212,8 @@ class ClientSessionView(APIView):
     def get(self, request):
         if not request.user.is_authenticated:
             return Response({"connecte": False})
-        is_client = hasattr(request.user, "client_profile")
+        # Un compte professionnel n'est jamais cliente, meme avec un profil.
+        is_client = est_cliente(request.user)
         return Response(
             {
                 "connecte": True,

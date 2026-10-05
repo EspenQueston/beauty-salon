@@ -77,7 +77,7 @@ def send_booking_notifications(self, booking_id: str, tenant_id: str):
                     # creneau expire alors que la cliente voulait payer.
                     "payment_url": _payment_url(booking),
                 },
-                to=[booking.customer.email],
+                to=[email_du_rendez_vous(booking)],
                 salon=booking.tenant,
             )
             _send(
@@ -142,7 +142,7 @@ def send_booking_reminders():
                             salon=booking.tenant.name,
                         ),
                     },
-                    to=[booking.customer.email],
+                    to=[email_du_rendez_vous(booking)],
                     salon=booking.tenant,
                 )
                 prevenir_cliente(
@@ -159,6 +159,17 @@ def send_booking_reminders():
 
     logger.info("Rappels envoyes : %s", sent)
     return sent
+
+
+def email_du_rendez_vous(booking: Booking) -> str:
+    """L'adresse ou ecrire au sujet de ce rendez-vous.
+
+    Celle donnee pour le rendez-vous lui-meme, et non celle de la fiche : la
+    fiche est retrouvee par le telephone, et une reservation faite avec le
+    numero d'une autre ne doit ni detourner ses e-mails, ni les recevoir a
+    sa place. La fiche ne sert que pour les rendez-vous d'avant la colonne.
+    """
+    return booking.contact_email or booking.customer.email
 
 
 def _booking_context(booking: Booking) -> dict:
@@ -435,7 +446,7 @@ def _invite_to_review(booking) -> bool:
         subject=context["t"].dire("avis_objet", salon=booking.tenant.name),
         template="review_request",
         context=context,
-        to=[booking.customer.email],
+        to=[email_du_rendez_vous(booking)],
         salon=booking.tenant,
     )
 
@@ -611,7 +622,7 @@ def send_booking_accepted(self, booking_id: str, tenant_id: str):
                         heure=accepte["time_label"],
                     ),
                 },
-                to=[booking.customer.email],
+                to=[email_du_rendez_vous(booking)],
                 salon=booking.tenant,
             )
             prevenir_cliente(
@@ -657,7 +668,7 @@ def send_deposit_rejected(self, booking_id: str, tenant_id: str):
                 ),
                 template="deposit_rejected",
                 context=context,
-                to=[booking.customer.email],
+                to=[email_du_rendez_vous(booking)],
                 salon=booking.tenant,
             )
             prevenir_cliente(
@@ -742,7 +753,7 @@ def send_booking_cancelled(self, booking_id: str, tenant_id: str, by_salon: bool
                 ),
                 template="booking_cancelled",
                 context=context,
-                to=[booking.customer.email],
+                to=[email_du_rendez_vous(booking)],
                 salon=booking.tenant,
             )
             # Sur l'appareil, seulement quand c'est le salon qui annule : la
@@ -835,7 +846,7 @@ def send_booking_rescheduled(
                 ),
                 template="booking_rescheduled",
                 context=context,
-                to=[booking.customer.email],
+                to=[email_du_rendez_vous(booking)],
                 salon=booking.tenant,
             )
             prevenir_cliente(

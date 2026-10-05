@@ -9,6 +9,7 @@ chemin qu'on n'avait pas prevu.
 
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import DateTimeRangeField, RangeBoundary, RangeOperators
 from django.core.validators import MinValueValidator
@@ -182,6 +183,29 @@ class Booking(TenantOwnedModel):
     # Le francais par defaut : une reservation prise au telephone par le salon
     # n en porte aucune, et c est la langue du salon qui vaut alors.
     language = models.CharField(_("langue de la cliente"), max_length=5, default="fr")
+
+    # A qui appartient ce rendez-vous, cote espace cliente.
+    #
+    # La fiche cliente d'un salon se retrouve par le **telephone** : un
+    # numero saisi par n'importe qui. Elle ne peut donc pas dire a quel
+    # compte un rendez-vous appartient — sinon il suffirait de reserver avec
+    # le numero d'une autre pour lire son historique. Ce qui le dit :
+    #
+    #   - l'adresse donnee pour CE rendez-vous (en minuscules), montree
+    #     seulement au compte qui a prouve la posseder ;
+    #   - le compte cliente connecte au moment de la reservation.
+    #
+    # L'adresse sert aussi aux e-mails du rendez-vous : ils partent a qui l'a
+    # pris, et non a l'adresse que la fiche portait avant.
+    contact_email = models.EmailField(_("e-mail du rendez-vous"), blank=True, db_index=True)
+    compte = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name=_("compte cliente"),
+    )
 
     # Instantanes : le catalogue evolue, une reservation passee doit rester
     # lisible telle qu'elle a ete vendue.

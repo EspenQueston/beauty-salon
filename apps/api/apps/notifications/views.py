@@ -194,8 +194,10 @@ class PushView(APIView):
                 {"detail": "Réservé aux administrateurs de la plateforme."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if donnees["portee"] == PushSubscription.Portee.CLIENTE and not hasattr(
-            request.user, "client_profile"
+        from apps.clients.services import est_cliente
+
+        if donnees["portee"] == PushSubscription.Portee.CLIENTE and not est_cliente(
+            request.user
         ):
             return Response(
                 {"detail": "Réservé aux comptes clientes."},

@@ -380,7 +380,16 @@ function ShellContent({ children }: { children: ReactNode }) {
             */}
             {prefs.navbarFixed && bar}
 
-            <div className="flex-1 overflow-y-auto">
+            {/*
+              La zone qui défile ne défile que de haut en bas.
+
+              `overflow-y: auto` seul rend aussi l'axe horizontal défilable
+              (la norme le calcule ainsi) : un seul élément un peu trop large
+              — un montant long, un nom sans espace — et la page entière
+              glissait de gauche à droite sous le doigt, sur téléphone. L'axe
+              horizontal est donc fermé ici, une fois pour toutes les pages.
+            */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none">
               {!prefs.navbarFixed && bar}
 
               {user.email_verified === false && <BandeauVerification email={user.email} />}

@@ -83,6 +83,15 @@ def verifier(valeur: str):
 
     user.email_verified_at = timezone.now()
     user.save(update_fields=["email_verified_at", "updated_at"])
+
+    # L'adresse est prouvee : les rendez-vous pris avec elle avant la
+    # creation du compte rejoignent l'espace cliente, des maintenant.
+    from apps.clients.services import retrouver_historique
+
+    try:
+        retrouver_historique(user)
+    except Exception:  # noqa: BLE001 - l'espace le refera a la prochaine visite
+        logging.getLogger(__name__).exception("Historique cliente non rattache.")
     return user
 
 

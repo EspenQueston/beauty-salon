@@ -349,7 +349,7 @@ function Highlight({
         />
       </div>
 
-      <p className="tabular mt-2 min-w-0 break-words text-lg font-semibold tracking-tight sm:text-xl lg:text-2xl">
+      <p className="tabular mt-2 min-w-0 text-lg font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-xl lg:text-2xl">
         {value}
         {unit && (
           <span
@@ -393,7 +393,7 @@ function Tile({
           <Icon name={icon} className="size-3.5 text-salon sm:size-4" />
         </span>
       </div>
-      <p className="tabular mt-1.5 min-w-0 break-words text-base font-semibold tracking-tight text-ink sm:text-lg lg:text-xl">
+      <p className="tabular mt-1.5 min-w-0 text-base font-semibold tracking-tight text-ink [overflow-wrap:anywhere] sm:text-lg lg:text-xl">
         {value}
       </p>
       {hint && (

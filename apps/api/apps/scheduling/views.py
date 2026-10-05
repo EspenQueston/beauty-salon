@@ -182,6 +182,8 @@ class BookingViewSet(TenantModelViewSet):
             ends_at=starts_at + timedelta(minutes=service.duration_minutes),
             status=Booking.Status.CONFIRMED,
             source=Booking.Source.STAFF,
+            # Saisi par le salon : l'adresse est celle que le salon connait.
+            contact_email=(customer.email or "").strip().lower(),
             service_name=service.name,
             total_amount=service.price_amount,
             deposit_amount=deposit_due,

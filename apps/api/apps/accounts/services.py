@@ -286,6 +286,13 @@ def accept_invitation(
     invitation = find_invitation(token)
 
     user = User.objects.filter(email=invitation.email).first()
+    if user is not None and hasattr(user, "client_profile"):
+        # Un compte cliente ne devient pas un compte d'equipe : les deux
+        # natures restent separees (voir `clients.services.est_cliente`).
+        raise InvitationError(
+            "Cette adresse est celle d'un compte client. Un compte professionnel "
+            "utilise une autre adresse e-mail : demandez une invitation sur une autre adresse."
+        )
     if user is not None:
         deja_connecte = getattr(utilisateur_connecte, "pk", None) == user.pk
         if not deja_connecte and not (

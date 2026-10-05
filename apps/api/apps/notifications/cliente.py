@@ -2,8 +2,9 @@
 
 Les e-mails partent toujours ; le push s'y ajoute pour les comptes clientes
 qui l'ont accepte depuis leur espace (portee « cliente »). Il ne touche que
-les rendez-vous rattaches a un compte (`ClientSalonLink`) : une cliente qui a
-reserve sans compte n'a pas d'appareil inscrit, et n'est donc jamais visee.
+les rendez-vous qui appartiennent a un compte (voir `comptes_de_la_cliente`) :
+une cliente qui a reserve sans compte n'a pas d'appareil inscrit, et n'est
+donc jamais visee.
 
 Cinq moments, ceux ou rater l'information coute un rendez-vous : la
 confirmation, le rappel de la veille, l'annulation par le salon, le
@@ -47,17 +48,30 @@ TEXTES = {
 
 
 def comptes_de_la_cliente(booking) -> list[str]:
-    """Les comptes clientes rattaches a la fiche de ce rendez-vous."""
-    from apps.clients.models import ClientSalonLink
+    """Les comptes a qui ce rendez-vous appartient.
 
-    if not booking.customer_id:
-        return []
-    return [
-        str(identifiant)
-        for identifiant in ClientSalonLink.objects.filter(
-            tenant_id=booking.tenant_id, customer_id=booking.customer_id
-        ).values_list("user_id", flat=True)
-    ]
+    Les memes que ceux qui le voient dans leur espace
+    (`clients.services.bookings_for`) : le compte connecte qui l'a pris, et
+    le compte cliente verifie qui porte l'adresse du rendez-vous. Jamais
+    les comptes rattaches a la fiche : elle est retrouvee par le telephone,
+    et pousser a ses comptes previendrait qui a reserve un jour avec le
+    numero d'une autre.
+    """
+    from apps.accounts.models import User
+    from apps.clients.services import est_cliente
+
+    candidats = []
+    if booking.compte_id:
+        candidats += list(User.objects.filter(pk=booking.compte_id, is_active=True))
+    if booking.contact_email:
+        candidats += list(
+            User.objects.filter(
+                email__iexact=booking.contact_email,
+                is_active=True,
+                email_verified_at__isnull=False,
+            )
+        )
+    return sorted({str(user.pk) for user in candidats if est_cliente(user)})
 
 
 def prevenir_cliente(booking, genre: str, *, date: str, heure: str) -> None:

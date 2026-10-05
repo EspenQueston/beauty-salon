@@ -102,6 +102,9 @@ def create_booking(
     # La langue de lecture du mini-site au moment de la reservation. Elle ne
     # sert qu aux e-mails, mais elle se perd si on ne la retient pas ici.
     language: str = "fr",
+    # Le compte cliente connecte qui reserve, s'il y en a un (voir
+    # `Booking.compte`). Jamais deduit de la fiche ni de l'adresse saisie.
+    compte=None,
 ) -> Booking:
     if idempotency_key:
         existing = replay_booking(tenant, idempotency_key)
@@ -201,6 +204,8 @@ def create_booking(
                 ),
                 source=source,
                 language=language,
+                contact_email=(customer.email or "").strip().lower(),
+                compte=compte,
                 service_name=service.name,
                 total_amount=total,
                 # Instantane : renommer ou retarifer une option demain ne
@@ -419,9 +424,12 @@ def _upsert_customer(tenant, details: CustomerDetails) -> Customer:
         if details.full_name and customer.full_name != details.full_name.strip():
             customer.full_name = details.full_name.strip()
             changed.append("full_name")
-        if details.email and not customer.email:
-            customer.email = details.email.strip()
-            changed.append("email")
+        # L'adresse d'une fiche existante n'est jamais remplie ni changee
+        # par une reservation en ligne. La fiche est retrouvee par le seul
+        # telephone, que n'importe qui peut saisir : y ecrire l'adresse de
+        # qui reserve permettrait de s'approprier la fiche d'une autre. Le
+        # rendez-vous garde sa propre adresse (`Booking.contact_email`), et
+        # c'est a elle que partent ses e-mails.
         # Le consentement s'ajoute mais ne se retire jamais implicitement :
         # le retirer demande une action explicite de la cliente.
         if details.marketing_consent and not customer.marketing_consent:

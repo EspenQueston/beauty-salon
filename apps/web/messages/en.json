@@ -907,10 +907,11 @@
       "erreurAide": "You can request a new link from your account.",
       "incomplet": "This link is incomplete. Open the one you received by email.",
       "echec": "Verification failed. Please try again in a moment.",
-      "rappel": "Please confirm your address {email}: click the link we emailed you.",
       "renvoyer": "Resend the link",
       "envoi": "Sending…",
-      "envoye": "Link sent ✓"
+      "envoye": "Link sent",
+      "rappelTitre": "Confirm your email address",
+      "rappelCorps": "Open the link sent to <adresse>{email}</adresse>. Appointments you booked without an account using this address will appear here too."
     },
     "menu": {
       "titre": "My account",

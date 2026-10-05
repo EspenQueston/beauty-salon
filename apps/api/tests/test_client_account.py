@@ -46,6 +46,10 @@ def make_booking(salon, customer, **overrides):
             status=Booking.Status.COMPLETED,
             service_name=overrides.get("service_name", "Box braids"),
             total_amount=Decimal("450"),
+            # A qui le rendez-vous appartient (voir `Booking.compte`) : la
+            # fiche seule ne suffit plus a le montrer dans un espace.
+            compte=overrides.get("compte"),
+            contact_email=overrides.get("contact_email", ""),
         )
 
 
@@ -120,8 +124,8 @@ def test_her_history_gathers_every_salon_she_visited(api_client, salon_a, salon_
     signup(api_client, HOST_A)
     user = ClientProfile.objects.get(user__email="awa@example.com").user
 
-    make_booking(salon_a, salon_a.customer, service_name="Box braids")
-    make_booking(salon_b, salon_b.customer, service_name="Pose de gel")
+    make_booking(salon_a, salon_a.customer, service_name="Box braids", compte=user)
+    make_booking(salon_b, salon_b.customer, service_name="Pose de gel", compte=user)
     ClientSalonLink.objects.create(
         user=user, tenant=salon_a.tenant, customer_id=salon_a.customer.id
     )
@@ -147,8 +151,8 @@ def test_she_sees_nothing_from_a_salon_she_is_not_linked_to(api_client, salon_a,
     signup(api_client, HOST_A)
     user = ClientProfile.objects.get(user__email="awa@example.com").user
 
-    make_booking(salon_a, salon_a.customer, service_name="Box braids")
-    make_booking(salon_b, salon_b.customer, service_name="Secret du salon B")
+    make_booking(salon_a, salon_a.customer, service_name="Box braids", compte=user)
+    make_booking(salon_b, salon_b.customer, service_name="Secret du salon B", compte=user)
     # Rattachee au salon A uniquement.
     ClientSalonLink.objects.create(
         user=user, tenant=salon_a.tenant, customer_id=salon_a.customer.id
@@ -162,9 +166,7 @@ def test_she_sees_nothing_from_a_salon_she_is_not_linked_to(api_client, salon_a,
 
 
 @pytest.mark.django_db
-def test_a_link_pointing_at_another_salons_customer_leaks_nothing(
-    api_client, salon_a, salon_b
-):
+def test_a_link_pointing_at_another_salons_customer_leaks_nothing(api_client, salon_a, salon_b):
     """Le pire cas : un rattachement incoherent.
 
     Si un lien designait la fiche d'un salon B tout en nommant le salon A,
@@ -327,11 +329,11 @@ def test_she_cannot_promote_herself_into_a_salon(api_client, salon_a):
 
 
 @pytest.mark.django_db
-def test_a_team_member_who_is_also_a_client_keeps_both_hats(api_client, salon_a, salon_b):
-    """Une gerante du salon A peut etre cliente du salon B.
+def test_a_team_member_is_never_a_client_too(api_client, salon_a, salon_b):
+    """Une gerante du salon A n'est pas cliente du salon B sur le meme compte.
 
-    Les deux natures coexistent sur le meme compte : ce qui les distingue
-    est ce que la personne possede, pas un type fige.
+    Les deux natures sont separees (decision du 2026-10-05) : un compte
+    professionnel qui garde un ancien profil cliente est traite en pro.
     """
     person = UserFactory()
     MembershipFactory(tenant=salon_a.tenant, user=person, role=Membership.Role.MANAGER)
@@ -340,7 +342,7 @@ def test_a_team_member_who_is_also_a_client_keeps_both_hats(api_client, salon_a,
     api_client.login(email=person.email, password=PASSWORD)
     session = api_client.get("/api/v1/public/client/session", headers=HOST_A)
 
-    assert session.data["is_client"] is True
+    assert session.data["is_client"] is False
     assert session.data["is_staff_member"] is True
 
 
@@ -429,7 +431,7 @@ def test_every_booking_carries_a_link_to_its_own_status_page(api_client, salon_a
     signup(api_client, HOST_A)
     user = ClientProfile.objects.get(user__email="awa@example.com").user
 
-    make_booking(salon_a, salon_a.customer, service_name="Box braids")
+    make_booking(salon_a, salon_a.customer, service_name="Box braids", compte=user)
     ClientSalonLink.objects.create(
         user=user, tenant=salon_a.tenant, customer_id=salon_a.customer.id
     )
@@ -474,6 +476,7 @@ def test_an_expired_deposit_stops_asking_to_be_paid(api_client, salon_a):
     debut = timezone.now() + timedelta(days=3)
     with as_tenant(salon_a.tenant):
         reservation = Booking.objects.create(
+            compte=user,
             tenant=salon_a.tenant,
             customer=salon_a.customer,
             staff_member=salon_a.staff,
@@ -497,9 +500,7 @@ def test_an_expired_deposit_stops_asking_to_be_paid(api_client, salon_a):
     response = api_client.get("/api/v1/public/client/bookings", headers=HOST_A)
 
     assert response.status_code == 200
-    ligne = next(
-        row for row in response.data["bookings"] if row["id"] == str(reservation.id)
-    )
+    ligne = next(row for row in response.data["bookings"] if row["id"] == str(reservation.id))
     assert ligne["status"] == Booking.Status.CANCELLED
     # Plus aucun chemin vers le paiement : c'est le bouton de la capture.
     assert ligne["payment_token"] == ""
@@ -520,6 +521,7 @@ def test_a_deposit_still_within_its_window_keeps_its_button(api_client, salon_a)
     debut = timezone.now() + timedelta(days=3)
     with as_tenant(salon_a.tenant):
         reservation = Booking.objects.create(
+            compte=user,
             tenant=salon_a.tenant,
             customer=salon_a.customer,
             staff_member=salon_a.staff,
@@ -538,8 +540,6 @@ def test_a_deposit_still_within_its_window_keeps_its_button(api_client, salon_a)
 
     response = api_client.get("/api/v1/public/client/bookings", headers=HOST_A)
 
-    ligne = next(
-        row for row in response.data["bookings"] if row["id"] == str(reservation.id)
-    )
+    ligne = next(row for row in response.data["bookings"] if row["id"] == str(reservation.id))
     assert ligne["status"] == Booking.Status.PENDING_PAYMENT
     assert ligne["payment_token"] != ""

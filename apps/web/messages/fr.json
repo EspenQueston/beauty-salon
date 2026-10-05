@@ -907,10 +907,11 @@
       "erreurAide": "Depuis votre espace, vous pouvez recevoir un nouveau lien.",
       "incomplet": "Ce lien est incomplet. Ouvrez celui reçu par e-mail.",
       "echec": "La vérification a échoué. Réessayez dans un instant.",
-      "rappel": "Confirmez votre adresse {email} : cliquez sur le lien reçu par e-mail.",
       "renvoyer": "Renvoyer le lien",
       "envoi": "Envoi…",
-      "envoye": "Lien envoyé ✓"
+      "envoye": "Lien envoyé",
+      "rappelTitre": "Confirmez votre adresse e-mail",
+      "rappelCorps": "Ouvrez le lien envoyé à <adresse>{email}</adresse>. Vos rendez-vous pris sans compte avec cette adresse apparaîtront aussi ici."
     },
     "menu": {
       "titre": "Mon espace",

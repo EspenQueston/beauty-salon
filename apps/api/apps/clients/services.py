@@ -10,6 +10,8 @@ prestation, le montant, la note interne - est lu derriere la politique RLS
 du salon concerne.
 """
 
+from django.db.models import Q
+
 from apps.common.db import tenant_context
 from apps.reviews.models import Review
 
@@ -17,6 +19,89 @@ from .models import ClientSalonLink, HiddenBooking
 
 # Un historique de cliente se consulte, il ne se depouille pas.
 MAX_BOOKINGS_PER_SALON = 40
+
+
+def est_cliente(user) -> bool:
+    """Un compte cliente, et seulement cliente.
+
+    Un compte professionnel (proprietaire, gerante, equipe d'un salon) n'est
+    jamais aussi une cliente : ses rendez-vous, ses avis et ses parrainages
+    se melangeraient a l'activite qu'il gere, et un salon pourrait se noter
+    ou se parrainer lui-meme. Les deux natures restent donc separees — une
+    personne qui veut les deux utilise deux adresses e-mail.
+    """
+    from apps.accounts.models import Membership
+
+    if not getattr(user, "is_authenticated", False) or not hasattr(user, "client_profile"):
+        return False
+    return not Membership.objects.filter(user=user, status=Membership.Status.ACTIVE).exists()
+
+
+def retrouver_historique(user) -> int:
+    """Rattache au compte les rendez-vous pris avec son adresse, sans compte.
+
+    -----------------------------------------------------------------------
+    La continuite
+    -----------------------------------------------------------------------
+
+    On reserve sans compte, en laissant son e-mail. Le jour ou l'on cree un
+    compte avec la meme adresse, l'historique doit suivre : chaque salon ou
+    un rendez-vous a ete pris avec cette adresse rejoint la liste des salons
+    du compte, et ces rendez-vous-la apparaissent dans l'espace (voir
+    `bookings_for`) — pas les autres rendez-vous de la fiche.
+
+    -----------------------------------------------------------------------
+    Seulement une adresse verifiee
+    -----------------------------------------------------------------------
+
+    Sans la verification, il suffirait de s'inscrire avec l'adresse d'une
+    autre pour lire ses rendez-vous. Tant que le lien recu par e-mail n'a
+    pas ete ouvert, rien n'est rattache.
+
+    Un salon a la fois, chacun dans son contexte : la recherche ne traverse
+    jamais les salons, elle n'en ressort que des identifiants.
+    """
+    from apps.scheduling.models import Booking
+    from apps.tenants.models import Tenant
+
+    if not user.email_verified_at or not est_cliente(user):
+        return 0
+    email = user.email.strip().lower()
+    deja = set(ClientSalonLink.objects.filter(user=user).values_list("tenant_id", flat=True))
+
+    ajoutes = 0
+    with tenant_context(None):
+        for tenant_id in Tenant.objects.exclude(id__in=deja).values_list("id", flat=True):
+            # Les rendez-vous pris avec cette adresse, et non les fiches qui
+            # la portent : l'adresse d'une fiche n'est pas une preuve.
+            with tenant_context(tenant_id):
+                fiche = (
+                    Booking.objects.filter(contact_email=email)
+                    .order_by("-created_at")
+                    .values_list("customer_id", flat=True)
+                    .first()
+                )
+            if fiche is not None:
+                _, cree = ClientSalonLink.objects.get_or_create(
+                    user=user, tenant_id=tenant_id, defaults={"customer_id": fiche}
+                )
+                ajoutes += int(cree)
+    return ajoutes
+
+
+def compte_de_l_adresse(email: str):
+    """Le compte cliente verifie qui porte cette adresse, s'il y en a un."""
+    from apps.accounts.models import User
+
+    email = (email or "").strip().lower()
+    if not email:
+        return None
+    user = (
+        User.objects.filter(email=email, is_active=True, email_verified_at__isnull=False)
+        .select_related("client_profile")
+        .first()
+    )
+    return user if user is not None and est_cliente(user) else None
 
 
 def linked_salons(user):
@@ -53,6 +138,18 @@ def bookings_for(user) -> list[dict]:
     if not links:
         return []
 
+    # Ce que ce compte voit, rendez-vous par rendez-vous — jamais toute une
+    # fiche cliente.
+    #
+    # La fiche d'un salon se retrouve par le telephone, que n'importe qui
+    # peut saisir : la montrer en entier laisserait lire l'historique d'une
+    # autre en reservant une fois avec son numero. Sont a elle :
+    #
+    #   - les rendez-vous pris connectee a ce compte ;
+    #   - ceux pris avec son adresse, une fois l'adresse verifiee (avant, il
+    #     suffirait de s'inscrire avec l'adresse d'une autre).
+    email = user.email.strip().lower() if user.email_verified_at else ""
+
     # On sort d'abord du contexte pose par le middleware.
     #
     # Une requete arrivant sur `blondrose.localhost` s'execute dans le
@@ -70,8 +167,11 @@ def bookings_for(user) -> list[dict]:
             # Un contexte par salon. C'est ce qui garantit qu'aucune ligne
             # d'un salon ne peut apparaitre dans la lecture d'un autre.
             with tenant_context(link.tenant_id):
+                siens = Q(compte=user)
+                if email:
+                    siens |= Q(contact_email=email)
                 bookings = (
-                    Booking.objects.filter(customer_id=link.customer_id)
+                    Booking.objects.filter(siens)
                     .select_related("staff_member")
                     .order_by("-starts_at")[:MAX_BOOKINGS_PER_SALON]
                 )

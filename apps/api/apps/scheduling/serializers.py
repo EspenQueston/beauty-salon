@@ -138,7 +138,9 @@ class BookingSerializer(serializers.ModelSerializer):
     # L'adresse, pour ecrire depuis l'agenda. Elle peut etre vide : une
     # cliente peut reserver par telephone sans en donner, et ce n'est pas
     # une anomalie - l'ecran doit simplement ne rien afficher.
-    customer_email = serializers.CharField(source="customer.email", read_only=True)
+    # Celle donnee pour ce rendez-vous d'abord : c'est la personne qui l'a
+    # pris, meme si la fiche (retrouvee par le telephone) en porte une autre.
+    customer_email = serializers.SerializerMethodField()
     staff_member_name = serializers.CharField(source="staff_member.name", read_only=True)
 
     class Meta:
@@ -189,6 +191,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "deposit_method",
             "deposit_received",
         )
+
+    def get_customer_email(self, booking) -> str:
+        return booking.contact_email or booking.customer.email
 
     def get_deposit_proof(self, booking) -> dict | None:
         """Ce que la cliente a envoye pour dire qu'elle a paye.

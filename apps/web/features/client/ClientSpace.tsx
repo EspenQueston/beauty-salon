@@ -1014,23 +1014,45 @@ function RappelVerification({ email, host }: { email: string; host: string }) {
     }
   }
 
+  /*
+    Titre, explication, bouton — empilés sur téléphone.
+
+    Tout tenait sur une ligne : une adresse longue, sans espace où se couper,
+    débordait sous le bouton « Renvoyer le lien ». L'adresse se coupe donc où
+    il faut (`break-all`), et le bouton passe dessous, pleine largeur, tant
+    que l'écran est étroit.
+  */
   return (
     <div
       role="status"
-      className={`${CARD} mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-l-4 border-l-[var(--salon-primary)] p-3.5 sm:p-4`}
+      className={`${CARD} mb-6 flex flex-col gap-3 border-l-4 border-l-[var(--salon-primary)] p-3.5 sm:flex-row sm:items-center sm:gap-4 sm:p-4`}
     >
-      <SalonIcon
-        name="mail"
-        className="size-4 shrink-0 text-[var(--salon-ink)]"
-      />
-      <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-[var(--site-ink)] sm:text-sm">
-        {t("rappel", { email })}
-        {erreur && (
-          <span className="block font-medium text-red-600">{erreur}</span>
-        )}
-      </p>
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--salon-primary-soft)] text-[var(--salon-ink)]">
+          <SalonIcon name="mail" className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-[var(--site-ink)] sm:text-sm">
+            {t("rappelTitre")}
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-[var(--site-muted)] sm:text-[13px]">
+            {t.rich("rappelCorps", {
+              email,
+              adresse: (morceau) => (
+                <span className="break-all font-medium text-[var(--site-ink)]">
+                  {morceau}
+                </span>
+              ),
+            })}
+          </p>
+          {erreur && (
+            <p className="mt-1 text-xs font-medium text-red-600">{erreur}</p>
+          )}
+        </div>
+      </div>
       {etat === "envoye" ? (
-        <span className="shrink-0 text-xs font-semibold text-[var(--salon-ink)] sm:text-sm">
+        <span className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--salon-primary-soft)] px-3 py-2 text-xs font-semibold text-[var(--salon-ink)] sm:shrink-0 sm:text-sm">
+          <SalonIcon name="check" className="size-3.5" />
           {t("envoye")}
         </span>
       ) : (
@@ -1038,7 +1060,7 @@ function RappelVerification({ email, host }: { email: string; host: string }) {
           type="button"
           onClick={() => void renvoyer()}
           disabled={etat === "envoi"}
-          className="shrink-0 rounded-xl border border-[var(--site-line)] px-3 py-1.5 text-xs font-semibold text-[var(--site-ink)] transition hover:border-[var(--salon-primary)] disabled:opacity-60 sm:text-sm"
+          className="w-full rounded-xl border border-[var(--site-line)] px-3 py-2 text-xs font-semibold text-[var(--site-ink)] transition hover:border-[var(--salon-primary)] disabled:opacity-60 sm:w-auto sm:shrink-0 sm:text-sm"
         >
           {etat === "envoi" ? t("envoi") : t("renvoyer")}
         </button>

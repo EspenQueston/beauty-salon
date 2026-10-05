@@ -234,6 +234,8 @@ class PublicBookingCreateView(APIView):
             marketing_consent=data.get("marketing_consent", False),
         )
 
+        from apps.clients.services import attach, compte_de_l_adresse, est_cliente
+
         try:
             booking = create_booking(
                 tenant=tenant,
@@ -248,6 +250,7 @@ class PublicBookingCreateView(APIView):
                 address=data.get("address", "").strip(),
                 idempotency_key=idempotency_key,
                 language=data.get("language", "fr"),
+                compte=request.user if est_cliente(request.user) else None,
             )
         except BookingRefused as exc:
             return Response(
@@ -264,14 +267,21 @@ class PublicBookingCreateView(APIView):
         # ne lit pas ses mails entre deux clientes.
         evenements.nouvelle_reservation(booking)
 
-        # Si la cliente est connectee a son espace, le rendez-vous
-        # rejoint son historique. Sans ce rattachement il existerait bel et
-        # bien, mais resterait invisible dans son compte - et elle croirait
-        # que sa reservation n'a pas pris.
-        if request.user.is_authenticated and hasattr(request.user, "client_profile"):
-            from apps.clients.services import attach
-
+        # Le salon rejoint la liste des salons du compte : connecte, ou sans
+        # session avec l'adresse d'un compte cliente verifie. Rien n'est dit
+        # a la personne qui reserve — la reponse ne revele pas qu'un compte
+        # existe pour cette adresse.
+        #
+        # Ce rattachement n'est qu'un index des salons. Ce que le compte voit
+        # se decide rendez-vous par rendez-vous (`clients.services.bookings_for`) :
+        # jamais toute la fiche, retrouvee par un telephone que n'importe qui
+        # peut saisir.
+        if est_cliente(request.user):
             attach(request.user, request.tenant_id, booking.customer_id)
+        else:
+            titulaire = compte_de_l_adresse(details.email)
+            if titulaire is not None:
+                attach(titulaire, request.tenant_id, booking.customer_id)
 
         return Response(
             PublicBookingConfirmationSerializer(booking).data,

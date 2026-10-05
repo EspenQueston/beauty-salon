@@ -13,6 +13,7 @@ from apps.clients.models import ClientProfile, ClientSalonLink
 from apps.notifications import tasks
 from apps.notifications.models import PushSubscription
 from apps.scheduling.models import Booking
+from conftest import as_tenant
 from tests.factories import UserFactory
 from tests.test_dashboard_api import make_booking
 
@@ -39,7 +40,7 @@ def test_la_confirmation_part_sur_l_appareil_de_la_cliente(
 ):
     compte = cliente_de(salon_a)
     autre = UserFactory()  # un compte sans lien : jamais vise
-    booking = make_booking(salon_a, status=Booking.Status.CONFIRMED, language="fr")
+    booking = make_booking(salon_a, status=Booking.Status.CONFIRMED, language="fr", compte=compte)
 
     with django_capture_on_commit_callbacks(execute=True):
         tasks.send_booking_accepted(str(booking.id), str(salon_a.tenant.id))
@@ -55,8 +56,8 @@ def test_la_confirmation_part_sur_l_appareil_de_la_cliente(
 def test_en_anglais_le_texte_et_le_lien_suivent(
     salon_a, pousses, django_capture_on_commit_callbacks
 ):
-    cliente_de(salon_a)
-    booking = make_booking(salon_a, status=Booking.Status.CONFIRMED, language="en")
+    compte = cliente_de(salon_a)
+    booking = make_booking(salon_a, status=Booking.Status.CONFIRMED, language="en", compte=compte)
 
     with django_capture_on_commit_callbacks(execute=True):
         tasks.send_booking_rescheduled(str(booking.id), str(salon_a.tenant.id))
@@ -75,7 +76,9 @@ def test_sans_compte_ou_quand_elle_annule_elle_meme_rien_ne_part(
         tasks.send_booking_accepted(str(booking.id), str(salon_a.tenant.id))
     assert pousses == []
 
-    cliente_de(salon_a)
+    compte = cliente_de(salon_a)
+    with as_tenant(salon_a.tenant):
+        Booking.objects.filter(pk=booking.pk).update(compte=compte)
     with django_capture_on_commit_callbacks(execute=True):
         tasks.send_booking_cancelled(str(booking.id), str(salon_a.tenant.id), by_salon=False)
     assert pousses == []
@@ -86,7 +89,15 @@ def test_sans_compte_ou_quand_elle_annule_elle_meme_rien_ne_part(
 
 
 @pytest.mark.django_db
-def test_seule_une_cliente_inscrit_un_appareil_a_sa_portee(api_client, salon_a, settings):
+def test_seule_une_cliente_inscrit_un_appareil_a_sa_portee(
+    api_client, salon_a, settings, monkeypatch
+):
+    # Le garde SSRF résout l'hôte de remise : on le fixe à une adresse
+    # publique, sans dépendre du DNS du poste (un DNS « fake-ip » renvoie
+    # des adresses privées, que le garde refuse à juste titre).
+    from tests.test_notifications_push import resolvant_vers
+
+    resolvant_vers(monkeypatch, "142.250.74.170")
     abonnement = {
         "endpoint": ENDPOINT,
         "cle_p256dh": "B" * 87,
@@ -119,3 +130,50 @@ def test_la_session_repond_aux_visiteuses_sans_erreur(api_client, salon_a):
 
     assert anonyme.status_code == 200 and anonyme.json() == {"connecte": False}
     assert connectee.json()["connecte"] is True and connectee.json()["is_client"] is True
+
+
+# ---------------------------------------------------------------------------
+# La fiche retrouvee par le telephone ne designe pas les destinataires
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_un_compte_rattache_a_la_fiche_ne_recoit_pas_les_rendez_vous_d_une_autre(
+    salon_a, pousses, django_capture_on_commit_callbacks
+):
+    """Rattache a la fiche (ancien lien, ou reservation avec le numero d'une
+    autre) : il ne recoit pas pour autant les notifications de ses rendez-vous."""
+    cliente_de(salon_a)  # lien vers la fiche partagee
+    booking = make_booking(
+        salon_a, status=Booking.Status.CONFIRMED, contact_email="vraie@example.com"
+    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        tasks.send_booking_accepted(str(booking.id), str(salon_a.tenant.id))
+
+    assert pousses == []
+
+
+@pytest.mark.django_db
+def test_le_compte_verifie_de_l_adresse_du_rendez_vous_est_prevenu(
+    salon_a, pousses, django_capture_on_commit_callbacks
+):
+    from django.utils import timezone
+
+    compte = UserFactory(email="awa@example.com", email_verified_at=timezone.now())
+    ClientProfile.objects.create(user=compte)
+    pas_verifie = UserFactory(email="autre@example.com", email_verified_at=None)
+    ClientProfile.objects.create(user=pas_verifie)
+    a_elle = make_booking(salon_a, status=Booking.Status.CONFIRMED, contact_email="awa@example.com")
+    pas_a_elle = make_booking(
+        salon_a,
+        hours_ahead=300,
+        status=Booking.Status.CONFIRMED,
+        contact_email="autre@example.com",
+    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        tasks.send_booking_accepted(str(a_elle.id), str(salon_a.tenant.id))
+        tasks.send_booking_accepted(str(pas_a_elle.id), str(salon_a.tenant.id))
+
+    assert [envoi[0] for envoi in pousses] == [[str(compte.id)]]

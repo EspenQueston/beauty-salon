@@ -182,6 +182,25 @@
   --shadow-float: var(--ui-shadow-lg);
 }
 
+/*
+ * Jamais de défilement horizontal de la page.
+ *
+ * Sur téléphone, un élément plus large que l'écran (une image, un montant,
+ * un décor qui déborde) suffisait à faire glisser tout le site de gauche à
+ * droite. `clip` coupe sans créer de zone de défilement — `position:
+ * sticky` continue de fonctionner — ; `hidden` reste le repli des
+ * navigateurs qui ne le connaissent pas.
+ */
+html {
+  overflow-x: hidden;
+}
+
+@supports (overflow: clip) {
+  html {
+    overflow-x: clip;
+  }
+}
+
 body {
   background: var(--ui-bg);
   color: var(--ui-text);

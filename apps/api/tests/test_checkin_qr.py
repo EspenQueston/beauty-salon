@@ -196,6 +196,12 @@ def make_client(api_client, salon):
     ClientSalonLink.objects.create(
         user=user, tenant=salon.tenant, customer_id=salon.customer.id
     )
+    # Les rendez-vous deja poses sur la fiche sont les siens : pris connectee
+    # a ce compte (voir `Booking.compte`). Le lien seul ne montre plus rien.
+    from apps.scheduling.models import Booking
+
+    with as_tenant(salon.tenant):
+        Booking.objects.filter(customer=salon.customer).update(compte=user)
     return user
 
 
