@@ -201,6 +201,26 @@ html {
   }
 }
 
+/*
+ * Une grille sans gabarit de colonnes n'est jamais plus large que son parent.
+ *
+ * `grid` seul crée une colonne implicite dimensionnée sur son contenu : une
+ * ligne tronquée (`truncate`, donc sans retour) l'élargit à sa longueur
+ * complète, et la carte qui la contient sort de l'écran sur téléphone — c'est
+ * ce qui coupait « Activité » et « Remplissage » sur le tableau de bord.
+ *
+ * Une seule colonne `minmax(0, 1fr)`, comme `grid-cols-1`. Sous `:where` :
+ * spécificité nulle, donc `sm:grid-cols-2` et toutes les autres utilitaires
+ * gardent la main dès leur point de rupture. Et dans `@layer base` : hors
+ * couche, une règle l'emporte sur toutes les utilitaires de Tailwind, quelle
+ * que soit sa spécificité (voir le garde-fou des images plus bas).
+ */
+@layer base {
+  :where(.grid:not([class^="grid-cols-"]):not([class*=" grid-cols-"])) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 body {
   background: var(--ui-bg);
   color: var(--ui-text);

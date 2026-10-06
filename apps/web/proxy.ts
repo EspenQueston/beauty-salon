@@ -179,6 +179,6 @@ export const config = {
       `/fr/dashboard/notification-image/…`, elle n'existerait pas, et chaque
       notification arriverait sans son image.
     */
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|notification-image/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp4|webm)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|notification-image/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|webm)$).*)",
   ],
 };

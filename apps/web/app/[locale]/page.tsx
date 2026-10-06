@@ -18,13 +18,16 @@ import { SitePreview } from "@/features/site/SitePreview";
 import { Relief } from "@/features/ui/Relief";
 import { Reveal } from "@/features/ui/Reveal";
 import { ScrollTop } from "@/features/ui/ScrollTop";
-import { ILLUSTRATIONS, illustrationUrl } from "@/lib/illustrations";
 import { appUrl } from "@/lib/site";
 
-/** Salon contemporain : la photo qui dit le métier en un coup d'œil. */
-const HERO_IMAGE = ILLUSTRATIONS.find(
-  (entry) => entry.id === "photo-1600948836101-f9ffda59d250",
-)!;
+/*
+  Salon contemporain : la photo qui dit le métier en un coup d'œil.
+  Unsplash « photo-1600948836101-f9ffda59d250 », copiée dans
+  `public/accueil/` (licence Unsplash) en AVIF et WebP, 700 et 1100 px.
+*/
+/** Un GIF transparent d'un pixel : ce que reçoit un téléphone à la place. */
+const PIXEL_VIDE =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 /**
  * Page de la plateforme, servie sur le domaine racine.
@@ -158,7 +161,6 @@ export default async function PlatformHome() {
   const promesse = t.raw("promesse") as string[];
   const territoires = t.raw("territoires") as string[];
 
-  const photo = illustrationUrl(HERO_IMAGE.id, { width: 1100, ratio: 1.05 });
 
   return (
     <div id="haut" className="flex min-h-svh flex-col bg-bg">
@@ -262,12 +264,39 @@ export default async function PlatformHome() {
               <Relief force={0.6} reflet={false}>
                 <div className="relative">
                   <div className="lisere relative overflow-hidden rounded-3xl border border-line shadow-float">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo}
-                      alt=""
-                      className="aspect-[4/3] size-full object-cover lg:aspect-[5/6]"
-                    />
+                    {/*
+                      Servie par le site lui-même, et non par images.unsplash.com.
+
+                      Une image d'un autre domaine coûte une connexion de plus
+                      (DNS, TCP, TLS) avant le premier octet : depuis la Chine,
+                      à 700 ms l'aller-retour, c'étaient trois secondes pour
+                      l'élément le plus visible de la page.
+
+                      Le premier `source` sert un pixel vide sous 640 px : ce
+                      bloc y est masqué (`hidden sm:block`), et un `img`
+                      masqué se télécharge quand même — sur téléphone, il
+                      coûtait sa connexion et ses 50 ko pour rien.
+                    */}
+                    <picture>
+                      <source media="(max-width: 639px)" srcSet={PIXEL_VIDE} />
+                      <source
+                        type="image/avif"
+                        srcSet="/accueil/salon-700.avif 700w, /accueil/salon-1100.avif 1100w"
+                        sizes="(min-width: 1024px) 560px, 90vw"
+                      />
+                      { }
+                      <img
+                        src="/accueil/salon-1100.webp"
+                        srcSet="/accueil/salon-700.webp 700w, /accueil/salon-1100.webp 1100w"
+                        sizes="(min-width: 1024px) 560px, 90vw"
+                        alt=""
+                        width={1100}
+                        height={1155}
+                        fetchPriority="high"
+                        decoding="async"
+                        className="aspect-[4/3] size-full object-cover lg:aspect-[5/6]"
+                      />
+                    </picture>
                   </div>
 
                   <span className="couche-3 verre absolute left-2 top-4 flex items-center gap-2 rounded-xl px-3 py-2 shadow-float sm:-left-4 sm:top-10">

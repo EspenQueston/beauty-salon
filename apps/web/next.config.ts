@@ -147,7 +147,24 @@ const nextConfig: NextConfig = {
   output: process.env.NEXT_OUTPUT_STANDALONE === "1" ? "standalone" : undefined,
 
   async headers() {
-    return [{ source: "/:path*", headers: HEADERS }];
+    /*
+      Les fichiers lourds de `public/` se gardent une semaine.
+
+      Next les sert avec `max-age=0` : chaque visite redemandait au serveur
+      si le film et les photos avaient change. Une question par fichier,
+      c'est un aller-retour — 700 ms depuis la Chine — pour une reponse
+      presque toujours « non ». Une semaine, et non un an : leurs noms ne
+      changent pas quand leur contenu change.
+    */
+    const semaine = [
+      { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+    ];
+    return [
+      { source: "/:path*", headers: HEADERS },
+      { source: "/film/:fichier*", headers: semaine },
+      { source: "/accueil/:fichier*", headers: semaine },
+      { source: "/icones/:fichier*", headers: semaine },
+    ];
   },
 };
 

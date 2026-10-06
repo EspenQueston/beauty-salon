@@ -185,7 +185,7 @@ export function Overview() {
       {pending.length > 0 && (
         <Card className="border-l-4 border-l-warning">
           <p className="text-sm font-semibold text-ink">À traiter</p>
-          <ul className="mt-2.5 grid gap-2 sm:grid-cols-3">
+          <ul className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {pending.map((task) => (
               <li key={task.key}>
                 <Link
@@ -289,12 +289,15 @@ export function Overview() {
       </div>
 
       {/* ----- 4. Le détail -------------------------------------------- */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* `grid-cols-1` et non la colonne implicite : celle-ci s'élargit à la
+          ligne la plus longue d'un enfant (un avis tronqué sur une ligne), et
+          la carte débordait de l'écran sur téléphone. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <TopServices rows={data.top_services} currency={currency} />
         <Ratings rows={data.ratings} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Occupancy value={data.occupancy} />
         <Feed entries={data.feed} />
       </div>
