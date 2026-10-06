@@ -8,6 +8,7 @@ et validation stricte des identifiants recus.
 import logging
 
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -363,10 +364,18 @@ class PublicWaitlistView(APIView):
     throttle_scope = "waitlist_create"
 
     def post(self, request):
+        from zoneinfo import ZoneInfo
+
+        from apps.customers.coordonnees import memes_chiffres
+
         from .models import WaitlistEntry
         from .serializers import PublicWaitlistSerializer
 
-        payload = PublicWaitlistSerializer(data=request.data)
+        tenant = Tenant.objects.get(pk=request.tenant_id)
+        aujourd_hui = timezone.now().astimezone(ZoneInfo(tenant.timezone)).date()
+        payload = PublicWaitlistSerializer(
+            data=request.data, context={"aujourd_hui": aujourd_hui}
+        )
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
 
@@ -374,21 +383,44 @@ class PublicWaitlistView(APIView):
         # courant : le manager tenant s'en charge, on ajoute `active`.
         service = get_object_or_404(Service, pk=data["service"].id, active=True)
 
-        entry = WaitlistEntry.objects.create(
-            tenant_id=request.tenant_id,
-            service=service,
-            staff_member=data.get("staff_member"),
-            full_name=data["full_name"].strip(),
-            phone=data["phone"].strip(),
-            email=data.get("email", "").strip(),
-            preferred_from=data["preferred_from"],
-            preferred_to=data["preferred_to"],
-            note=data.get("note", "").strip(),
+        champs = {
+            "staff_member": data.get("staff_member"),
+            "full_name": data["full_name"].strip(),
+            "phone": data["phone"].strip(),
+            "email": data.get("email", "").strip(),
+            "preferred_from": data["preferred_from"],
+            "preferred_to": data["preferred_to"],
+            "note": data.get("note", "").strip(),
+        }
+
+        # Elle revient et se reinscrit pour la meme prestation : sa demande
+        # encore ouverte est mise a jour, plutot qu'une deuxieme ligne — et
+        # une deuxieme alerte — que le salon devrait recouper a la main. Le
+        # meme numero s'ecrit de plusieurs facons : on compare les chiffres.
+        ouverte = (
+            memes_chiffres(
+                WaitlistEntry.objects.filter(
+                    service=service,
+                    status__in=(WaitlistEntry.Status.WAITING, WaitlistEntry.Status.CONTACTED),
+                ),
+                champs["phone"],
+            )
+            .order_by("-created_at")
+            .first()
         )
+        if ouverte is not None:
+            for nom, valeur in champs.items():
+                setattr(ouverte, nom, valeur)
+            ouverte.save(update_fields=[*champs, "updated_at"])
+            entry = ouverte
+        else:
+            entry = WaitlistEntry.objects.create(
+                tenant_id=request.tenant_id, service=service, **champs
+            )
 
-        from apps.notifications import evenements
+            from apps.notifications import evenements
 
-        evenements.liste_attente(entry)
+            evenements.liste_attente(entry)
 
         return Response(
             {

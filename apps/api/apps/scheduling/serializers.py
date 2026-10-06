@@ -370,8 +370,60 @@ class PublicWaitlistSerializer(WaitlistEntrySerializer):
     phone = serializers.CharField(max_length=40)
     email = serializers.EmailField(max_length=254, error_messages=MESSAGES_EMAIL)
 
+    # Au-dela d'un an, une demande de rappel ne veut plus rien dire : le
+    # salon ne saurait pas quand rappeler, et la cliente aura oublie.
+    HORIZON_JOURS = 365
+
     def validate_phone(self, value):
         return _telephone_valide(value)
+
+    def validate(self, attrs):
+        """La periode, vue depuis la date du jour **du salon**.
+
+        - deja passee : refusee, elle ne menerait a aucun rappel ;
+        - commencee avant aujourd'hui : elle commence aujourd'hui. Un
+          telephone peut proposer « hier » (sa date est calculee en UTC, a
+          huit heures de Pekin) ; on ne refuse pas une cliente pour ca ;
+        - au-dela d'un an, ou plus longue qu'un an : refusee.
+
+        Le prestataire, s'il est choisi, doit faire cette prestation et
+        travailler encore : sinon le salon rappellerait pour un rendez-vous
+        impossible.
+        """
+        from datetime import timedelta
+
+        attrs = super().validate(attrs)
+        aujourd_hui = self.context.get("aujourd_hui")
+        debut, fin = attrs.get("preferred_from"), attrs.get("preferred_to")
+        if aujourd_hui and debut and fin:
+            if fin < aujourd_hui:
+                raise serializers.ValidationError(
+                    {
+                        "preferred_to": "Cette période est déjà passée : "
+                        "choisissez des dates à venir."
+                    }
+                )
+            if debut < aujourd_hui:
+                attrs["preferred_from"] = debut = aujourd_hui
+            limite = aujourd_hui + timedelta(days=self.HORIZON_JOURS)
+            if fin > limite or (fin - debut).days > self.HORIZON_JOURS:
+                raise serializers.ValidationError(
+                    {"preferred_to": "Choisissez une période dans l'année qui vient."}
+                )
+
+        membre = attrs.get("staff_member")
+        service = attrs.get("service")
+        if membre is not None and service is not None:
+            from apps.staff.models import StaffService
+
+            fait_la_prestation = StaffService.objects.filter(
+                staff_member=membre, service=service
+            ).exists()
+            if not membre.active or not fait_la_prestation:
+                raise serializers.ValidationError(
+                    {"staff_member": "Ce prestataire ne réalise pas cette prestation."}
+                )
+        return attrs
 
     class Meta(WaitlistEntrySerializer.Meta):
         fields = (

@@ -2336,6 +2336,13 @@ function OptionsStep({
  * priorité qui n'existe pas produirait des clientes qui se présentent sans
  * rendez-vous.
  */
+/** AAAA-MM-JJ dans le fuseau de l'appareil (ce qu'attend `<input type="date">`). */
+function dateLocale(jour: Date): string {
+  const mois = String(jour.getMonth() + 1).padStart(2, "0");
+  const quantieme = String(jour.getDate()).padStart(2, "0");
+  return `${jour.getFullYear()}-${mois}-${quantieme}`;
+}
+
 function WaitlistForm({
   host,
   service,
@@ -2357,11 +2364,21 @@ function WaitlistForm({
   const [erreurs, setErreurs] = useState<{ phone?: string; email?: string }>({});
   const [note, setNote] = useState("");
 
+  /*
+    Les dates du téléphone, pas celles de l'UTC.
+
+    `toISOString()` donne la date à Greenwich : à Pékin, entre minuit et
+    huit heures, « à partir du » proposait la veille. Le serveur la ramène à
+    aujourd'hui, mais la cliente voyait une date fausse.
+  */
   const today = new Date();
   const horizon = new Date(today);
   horizon.setDate(horizon.getDate() + HORIZON_DAYS);
-  const [from, setFrom] = useState(today.toISOString().slice(0, 10));
-  const [to, setTo] = useState(horizon.toISOString().slice(0, 10));
+  // Le serveur n'accepte pas de période au-delà d'un an.
+  const limite = new Date(today);
+  limite.setDate(limite.getDate() + 365);
+  const [from, setFrom] = useState(() => dateLocale(today));
+  const [to, setTo] = useState(() => dateLocale(horizon));
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -2501,8 +2518,14 @@ function WaitlistForm({
           </span>
           <input
             value={from}
-            onChange={(event) => setFrom(event.target.value)}
+            onChange={(event) => {
+              setFrom(event.target.value);
+              // La fin suit : une période à l'envers serait refusée.
+              if (event.target.value > to) setTo(event.target.value);
+            }}
             type="date"
+            min={dateLocale(today)}
+            max={dateLocale(limite)}
             className={INPUT}
           />
         </label>
@@ -2516,6 +2539,7 @@ function WaitlistForm({
             onChange={(event) => setTo(event.target.value)}
             type="date"
             min={from}
+            max={dateLocale(limite)}
             className={INPUT}
           />
         </label>
