@@ -24,9 +24,16 @@ class Tenant(UUIDModel, TimeStampedModel):
         CONGO = "CG", _("Congo-Brazzaville")
         DRC = "CD", _("République démocratique du Congo")
         CHINA = "CN", _("Chine")
+        BENIN = "BJ", _("Bénin")
+        BURKINA_FASO = "BF", _("Burkina Faso")
+        IVORY_COAST = "CI", _("Côte d’Ivoire")
+        TOGO = "TG", _("Togo")
+        SENEGAL = "SN", _("Sénégal")
+        NIGER = "NE", _("Niger")
 
     class Currency(models.TextChoices):
         XAF = "XAF", _("Franc CFA")
+        XOF = "XOF", _("Franc CFA BCEAO")
         CDF = "CDF", _("Franc congolais")
         CNY = "CNY", _("Yuan")
         USD = "USD", _("Dollar américain")

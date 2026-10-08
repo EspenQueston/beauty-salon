@@ -257,6 +257,9 @@ export interface BookingConfirmation {
   service_name: string;
   staff_member_name: string;
   total_amount: string;
+  prix_initial?: string | null;
+  promotion_montant?: string;
+  reduction_parrainage?: string;
   deposit_amount: string;
   /**
    * Laissez-passer vers la page de paiement. Vide quand rien n'est à régler

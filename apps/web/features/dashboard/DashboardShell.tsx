@@ -111,7 +111,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     title: "Compte",
     items: [
       { href: "/identite", label: "Identité", icon: "edit" },
-      { href: "/comptes", label: "Comptes", icon: "receipt" },
+      { href: "/comptes", label: "Finances", icon: "receipt" },
       { href: "/abonnement", label: "Abonnement", icon: "receipt" },
       { href: "/parrainage", label: "Parrainage", icon: "gift", roles: ["owner"] },
       { href: "/securite", label: "Sécurité", icon: "lock" },

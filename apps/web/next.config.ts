@@ -68,6 +68,7 @@ const CSP = [
   `img-src 'self' data: blob: https:${CLAIR}`,
   `media-src 'self' blob: https:${CLAIR}`,
   `connect-src 'self' https:${CLAIR}`,
+  "frame-src 'self' https://widget-v3.kkiapay.me",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

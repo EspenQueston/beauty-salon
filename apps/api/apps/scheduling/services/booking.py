@@ -84,6 +84,7 @@ def est_un_conflit_de_creneau(exc: Exception) -> bool:
     return getattr(exc.__cause__, "sqlstate", None) == DEADLOCK
 
 
+@transaction.atomic
 def create_booking(
     *,
     tenant,
@@ -105,6 +106,7 @@ def create_booking(
     # Le compte cliente connecte qui reserve, s'il y en a un (voir
     # `Booking.compte`). Jamais deduit de la fiche ni de l'adresse saisie.
     compte=None,
+    code_parrainage_client: str = "",
 ) -> Booking:
     if idempotency_key:
         existing = replay_booking(tenant, idempotency_key)
@@ -113,6 +115,8 @@ def create_booking(
 
     if not service.active:
         raise BookingRefused("Cette prestation n'est plus proposée.")
+    from apps.parrainage.clients import verrou_identite
+    verrou_identite(tenant.id, customer.email)
     if not staff_member.active:
         raise BookingRefused("Ce prestataire n'accepte plus de rendez-vous.")
 
@@ -208,6 +212,7 @@ def create_booking(
                 compte=compte,
                 service_name=service.name,
                 total_amount=total,
+                prix_initial=total,
                 # Instantane : renommer ou retarifer une option demain ne
                 # doit pas reecrire ce qui a ete vendu aujourd'hui.
                 options_snapshot=[
@@ -232,6 +237,9 @@ def create_booking(
                 travel_fee_amount=travel_fee,
                 customer_note=customer_note,
             )
+            from apps.parrainage.clients import capturer, reserver
+            capturer(booking, code_parrainage_client)
+            reserver(booking, compte)
     except CRENEAU_PRIS as exc:
         if not est_un_conflit_de_creneau(exc):
             raise

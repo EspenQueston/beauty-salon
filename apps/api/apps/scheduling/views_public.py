@@ -252,6 +252,7 @@ class PublicBookingCreateView(APIView):
                 idempotency_key=idempotency_key,
                 language=data.get("language", "fr"),
                 compte=request.user if est_cliente(request.user) else None,
+                code_parrainage_client=data.get("code_parrainage_client", ""),
             )
         except BookingRefused as exc:
             return Response(

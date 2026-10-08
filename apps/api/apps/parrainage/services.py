@@ -8,7 +8,7 @@ Integrite
 ---------------------------------------------------------------------------
 
   - **Idempotence** : chaque remise porte la reference de l'evenement qui la
-    cree (`inscription:<parrainage>`, `paiement:<demande>`), unique en base.
+    cree (`premier_paiement:<parrainage>`), unique en base.
     Un evenement rejoue retrouve la remise existante au lieu d'en creer une
     seconde.
   - **Pas de remise sur un paiement non confirme** : la remise « paiement »
@@ -40,17 +40,10 @@ from .models import CodeParrainage, Parrainage, Remise
 logger = logging.getLogger(__name__)
 
 POURCENTAGE = Decimal("10")
-PLAFOND_PAR_PAIEMENT = Decimal("30")
-VALIDITE = timedelta(days=365)
-DELAI_ADMISSIBILITE = timedelta(days=14)
-REMISES_PAIEMENT_MAX = 12
-# Au-dela, sur 30 jours, les nouveaux filleuls d'un meme parrain attendent
-# une validation humaine : c'est la signature d'une fabrique de faux salons.
-ADMISSIBLES_PAR_MOIS = 10
 # Sans chiffres ni lettres ambigus (0/O, 1/I/L) : un code se recopie.
 ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 LONGUEUR_CODE = 10
-DEVISES_SANS_DECIMALES = {"XAF", "CDF"}
+DEVISES_SANS_DECIMALES = {"XAF", "XOF", "CDF"}
 
 
 class CodeInconnu(ValueError):
@@ -180,7 +173,7 @@ def detecter(filleul, proprietaire, saisie: str, ip: str = "") -> Parrainage | N
 
 
 def noter_publication(tenant, quand: datetime | None = None) -> None:
-    """Le salon filleul vient d'etre publie : le delai de 14 jours part d'ici."""
+    """Conserve la date de publication ; elle ne débloque aucun avantage."""
     Parrainage.objects.filter(filleul=tenant, publie_le__isnull=True).update(
         publie_le=quand or timezone.now()
     )
@@ -191,146 +184,38 @@ def noter_publication(tenant, quand: datetime | None = None) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _beneficiaire(parrainage: Parrainage) -> dict:
-    if parrainage.type_parrain == Parrainage.TypeParrain.SALON:
-        return {"beneficiaire_tenant_id": parrainage.parrain_tenant_id}
-    return {"beneficiaire_user_id": parrainage.parrain_user_id}
-
-
-def _creer_remise(
-    parrainage: Parrainage, declencheur: str, reference: str, maintenant
-) -> Remise | None:
-    """Idempotent : un evenement deja traite retrouve sa remise."""
-    beneficiaire = _beneficiaire(parrainage)
-    if not any(beneficiaire.values()):
-        return None  # parrain supprime depuis
-    remise, creee = Remise.objects.get_or_create(
-        reference=reference,
-        defaults={
-            "parrainage": parrainage,
-            "filleul_nom": parrainage.filleul.name[:120],
-            "declencheur": declencheur,
-            "pourcentage": POURCENTAGE,
-            "expire_le": maintenant + VALIDITE,
-            **beneficiaire,
-        },
-    )
-    if creee:
-        _journaliser(
-            "REFERRAL_REWARD_CREATED",
-            parrainage,
-            extra={"remise": str(remise.id), "declencheur": declencheur, "reference": reference},
-        )
-    return remise
-
-
-def rendre_admissible(parrainage_id, maintenant=None, via: str = "delai") -> Parrainage | None:
-    maintenant = maintenant or timezone.now()
-    with transaction.atomic():
-        parrainage = (
-            Parrainage.objects.select_for_update()
-            .select_related("filleul")
-            .filter(pk=parrainage_id)
-            .first()
-        )
-        if parrainage is None or parrainage.statut != Parrainage.Statut.EN_VERIFICATION:
-            return parrainage
-        parrainage.statut = Parrainage.Statut.ADMISSIBLE
-        parrainage.admissible_le = maintenant
-        parrainage.revue_requise = False
-        parrainage.save(update_fields=["statut", "admissible_le", "revue_requise", "maj_le"])
-        _journaliser("REFERRAL_ELIGIBLE", parrainage, extra={"via": via})
-        _creer_remise(
-            parrainage, Remise.Declencheur.INSCRIPTION, f"inscription:{parrainage.pk}", maintenant
-        )
-        return parrainage
-
-
-def _salon_suspendu(tenant_id) -> bool:
-    from apps.billing.models import Subscription
-    from apps.common.db import bypass_tenant_context, tenant_context
-
-    with bypass_tenant_context(), tenant_context(tenant_id):
-        return Subscription.objects.filter(
-            tenant_id=tenant_id, status=Subscription.Status.SUSPENDED
-        ).exists()
-
-
-def _meme_parrain(parrainage: Parrainage) -> dict:
-    if parrainage.parrain_tenant_id:
-        return {"parrain_tenant_id": parrainage.parrain_tenant_id}
-    return {"parrain_user_id": parrainage.parrain_user_id}
+def rendre_admissible(parrainage_id, maintenant=None, via: str = "delai"):
+    # La publication et les corrections administratives ne remplacent plus un paiement.
+    raise ValueError("Seul le premier paiement d’abonnement confirmé valide le parrainage.")
 
 
 def evaluer(maintenant=None) -> dict:
-    """Passe quotidienne : fait avancer les parrainages en verification."""
-    from apps.tenants.models import Tenant
+    from .cycles import evaluer as traiter
 
-    maintenant = maintenant or timezone.now()
-    admis = revues = 0
-    if not actif():
-        return {"admissibles": 0, "revues": 0, "expirees": 0}
-    for parrainage in Parrainage.objects.select_related("filleul").filter(
-        statut=Parrainage.Statut.EN_VERIFICATION
-    ):
-        filleul = parrainage.filleul
-        if filleul.status != Tenant.Status.ACTIVE:
-            continue
-        if parrainage.publie_le is None:
-            # Publie avant que la passe ne le voie : le delai part d'ici.
-            Parrainage.objects.filter(pk=parrainage.pk).update(publie_le=maintenant)
-            continue
-        if maintenant - parrainage.publie_le < DELAI_ADMISSIBILITE or _salon_suspendu(filleul.pk):
-            continue
-        if parrainage.revue_requise:
-            continue
-        recents = 0
-        if parrainage.parrain_tenant_id or parrainage.parrain_user_id:
-            recents = Parrainage.objects.filter(
-                **_meme_parrain(parrainage),
-                statut=Parrainage.Statut.ADMISSIBLE,
-                admissible_le__gte=maintenant - timedelta(days=30),
-            ).count()
-        if recents >= ADMISSIBLES_PAR_MOIS:
-            Parrainage.objects.filter(pk=parrainage.pk).update(revue_requise=True)
-            _journaliser("REFERRAL_REVIEW_REQUIRED", parrainage, extra={"recents": recents})
-            revues += 1
-            continue
-        rendre_admissible(parrainage.pk, maintenant, via="delai")
-        admis += 1
-    expirees = expirer(maintenant)
-    return {"admissibles": admis, "revues": revues, "expirees": expirees}
+    return traiter(maintenant)
 
 
 def recompenser_paiement(demande, maintenant=None) -> None:
-    """Un paiement du filleul vient d'etre approuve. Dans la transaction d'approbation."""
-    if not actif():
-        return
-    maintenant = maintenant or timezone.now()
-    parrainage = Parrainage.objects.filter(filleul_id=demande.tenant_id).first()
-    if parrainage is None or parrainage.statut in (
-        Parrainage.Statut.REFUSE,
-        Parrainage.Statut.INVALIDE,
-    ):
-        return
-    if parrainage.statut == Parrainage.Statut.EN_VERIFICATION:
-        # Un paiement approuve prouve le salon mieux qu'un delai.
-        parrainage = rendre_admissible(parrainage.pk, maintenant, via="premier_paiement")
-    if parrainage.type_parrain != Parrainage.TypeParrain.SALON:
-        return  # une cliente marraine n'est recompensee qu'une fois
-    deja = Remise.objects.filter(
-        parrainage=parrainage, declencheur=Remise.Declencheur.PAIEMENT
-    ).count()
-    if deja >= REMISES_PAIEMENT_MAX:
-        return
-    _creer_remise(parrainage, Remise.Declencheur.PAIEMENT, f"paiement:{demande.pk}", maintenant)
+    if actif():
+        from .cycles import paiement_confirme
+
+        paiement_confirme(demande, maintenant)
 
 
+@transaction.atomic
 def expirer(maintenant=None) -> int:
+    from .cycles import journal
+
     maintenant = maintenant or timezone.now()
-    return Remise.objects.filter(statut=Remise.Statut.DISPONIBLE, expire_le__lte=maintenant).update(
-        statut=Remise.Statut.EXPIREE, maj_le=maintenant
-    )
+    n = 0
+    for r in Remise.objects.select_for_update().filter(
+        statut="disponible", expire_le__lte=maintenant
+    ):
+        r.statut = "expiree"
+        r.save(update_fields=["statut", "maj_le"])
+        journal(r, "expiration")
+        n += 1
+    return n
 
 
 # ---------------------------------------------------------------------------
@@ -354,35 +239,24 @@ class Calcul:
 
 
 def utilisables(tenant_id, utilisateur, maintenant=None, verrouiller: bool = False):
-    """Les remises applicables au prochain paiement de ce salon, par ce proprietaire.
-
-    Celles du salon, et celles de l'utilisateur lui-meme (une cliente
-    marraine qui a ouvert un salon). Les plus proches de l'expiration d'abord.
-    """
-    from django.db.models import Q
-
+    """Une seule remise du salon, la plus proche de son expiration."""
     maintenant = maintenant or timezone.now()
     if not actif():
         return []
-    filtre = Q(beneficiaire_tenant_id=tenant_id)
-    if getattr(utilisateur, "pk", None):
-        filtre |= Q(beneficiaire_user_id=utilisateur.pk)
     requete = Remise.objects.filter(
-        filtre, statut=Remise.Statut.DISPONIBLE, expire_le__gt=maintenant
+        beneficiaire_tenant_id=tenant_id,
+        statut=Remise.Statut.DISPONIBLE,
+        expire_le__gt=maintenant,
     ).order_by("expire_le", "cree_le")
     if verrouiller:
         requete = requete.select_for_update()
-    remises, total = [], Decimal("0")
-    for remise in requete:
-        if total + remise.pourcentage > PLAFOND_PAR_PAIEMENT:
-            break
-        remises.append(remise)
-        total += remise.pourcentage
-    return remises
+    # Les droits historiques sont conservés, mais jamais additionnés automatiquement.
+    return list(requete[:1])
 
 
 def calculer(montant_catalogue: Decimal, devise: str, remises) -> Calcul:
     """Le montant a payer, remises deduites. Chaque remise porte sa part, arrondie."""
+    remises = list(remises)[:1]
     parts = {r.id: arrondir(montant_catalogue * r.pourcentage / 100, devise) for r in remises}
     deduction = min(sum(parts.values(), Decimal("0")), montant_catalogue)
     return Calcul(
@@ -395,38 +269,79 @@ def calculer(montant_catalogue: Decimal, devise: str, remises) -> Calcul:
     )
 
 
+@transaction.atomic
 def reserver(demande, calcul: Calcul) -> None:
     """Les remises du calcul sont liees a la demande. Dans sa transaction."""
+    from .cycles import journal, politique
+
+    if len(calcul.remises) > 1:
+        raise ValueError("Une seule remise par échéance.")
     for remise in calcul.remises:
-        Remise.objects.filter(pk=remise.pk, statut=Remise.Statut.DISPONIBLE).update(
-            statut=Remise.Statut.RESERVEE,
-            demande=demande,
-            montant_deduit=calcul.parts[remise.id],
-            devise=demande.currency,
+        r = Remise.objects.select_for_update().get(pk=remise.pk)
+        if r.statut != "disponible" or not r.expire_le or r.expire_le <= timezone.now():
+            raise ValueError("Cette remise n’est plus disponible.")
+        p = politique()
+        heures = r.conditions.get("reservation_heures") or (p.reservation_heures if p else None)
+        if not heures:
+            raise ValueError("Le délai de réservation de la remise doit être configuré.")
+        r.conditions = {
+            **r.conditions,
+            "reservation_fin": (timezone.now() + timedelta(hours=heures)).isoformat(),
+        }
+        r.statut, r.demande = "reservee", demande
+        r.montant_deduit, r.devise = calcul.parts[r.id], demande.currency
+        r.save(
+            update_fields=["statut", "demande", "montant_deduit", "devise", "conditions", "maj_le"]
         )
+        journal(r, "reservation", paiement=str(demande.pk), montant=str(r.montant_deduit))
 
 
+def reservation_expiree(demande, maintenant=None):
+    from django.utils.dateparse import parse_datetime
+
+    maintenant = maintenant or timezone.now()
+    for r in Remise.objects.filter(demande=demande, statut="reservee"):
+        fin = parse_datetime(r.conditions.get("reservation_fin", ""))
+        if fin and fin <= maintenant:
+            return True
+    return False
+
+
+@transaction.atomic
 def consommer(demande, maintenant=None) -> None:
     """La demande est approuvee : ses remises sont utilisees."""
+    from .cycles import journal
+
     maintenant = maintenant or timezone.now()
-    Remise.objects.filter(demande=demande, statut=Remise.Statut.RESERVEE).update(
-        statut=Remise.Statut.UTILISEE, utilisee_le=maintenant
-    )
+    for r in Remise.objects.select_for_update().filter(demande=demande, statut="reservee"):
+        r.statut, r.utilisee_le = "utilisee", maintenant
+        r.save(update_fields=["statut", "utilisee_le", "maj_le"])
+        journal(r, "utilisation", paiement=str(demande.pk), montant=str(r.montant_deduit))
 
 
+@transaction.atomic
 def liberer(demande, maintenant=None) -> None:
     """La demande est refusee : ses remises redeviennent disponibles (ou expirent)."""
+    from .cycles import journal
+
     maintenant = maintenant or timezone.now()
     for remise in Remise.objects.select_for_update().filter(
         demande=demande, statut=Remise.Statut.RESERVEE
     ):
+        invalide = (
+            remise.parrainage_id
+            and Parrainage.objects.filter(pk=remise.parrainage_id, statut="invalide").exists()
+        )
         remise.statut = (
-            Remise.Statut.DISPONIBLE if remise.expire_le > maintenant else Remise.Statut.EXPIREE
+            "annulee"
+            if invalide
+            else ("disponible" if remise.expire_le and remise.expire_le > maintenant else "expiree")
         )
         remise.demande = None
         remise.montant_deduit = None
         remise.devise = ""
         remise.save(update_fields=["statut", "demande", "montant_deduit", "devise", "maj_le"])
+        journal(remise, "liberation", paiement=str(demande.pk), statut=remise.statut)
 
 
 # ---------------------------------------------------------------------------
@@ -456,9 +371,16 @@ def invalider(parrainage: Parrainage, administrateur, motif: str) -> int:
         Parrainage.objects.filter(pk=parrainage.pk).update(
             statut=Parrainage.Statut.INVALIDE, motif=motif[:255]
         )
-        annulees = Remise.objects.filter(
-            parrainage=parrainage, statut=Remise.Statut.DISPONIBLE
-        ).update(statut=Remise.Statut.ANNULEE, annulee_le=timezone.now(), motif=motif[:255])
+        from .cycles import journal
+
+        annulees = 0
+        for r in Remise.objects.select_for_update().filter(
+            parrainage=parrainage, statut__in=("disponible", "en_attente", "suspendue")
+        ):
+            r.statut, r.annulee_le, r.motif = "annulee", timezone.now(), motif[:255]
+            r.save(update_fields=["statut", "annulee_le", "motif", "maj_le"])
+            journal(r, "annulation", acteur=str(administrateur.pk), motif=motif)
+            annulees += 1
         _journaliser(
             "REFERRAL_ADMIN",
             parrainage,
@@ -468,14 +390,19 @@ def invalider(parrainage: Parrainage, administrateur, motif: str) -> int:
     return annulees
 
 
+@transaction.atomic
 def annuler_remise(remise: Remise, administrateur, motif: str) -> None:
     _exiger_motif(motif)
+    remise = Remise.objects.select_for_update().get(pk=remise.pk)
     if remise.statut != Remise.Statut.DISPONIBLE:
         raise ValueError("Seule une remise disponible s'annule.")
     remise.statut = Remise.Statut.ANNULEE
     remise.annulee_le = timezone.now()
     remise.motif = motif[:255]
     remise.save(update_fields=["statut", "annulee_le", "motif", "maj_le"])
+    from .cycles import journal
+
+    journal(remise, "annulation", acteur=str(administrateur.pk), motif=motif)
     if remise.parrainage_id:
         _journaliser(
             "REFERRAL_ADMIN",

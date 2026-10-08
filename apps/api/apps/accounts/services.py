@@ -152,7 +152,11 @@ def signup_salon(
     )
 
     try:
-        start_trial(tenant, days=REFERRED_TRIAL_DAYS if parrainage_retenu else TRIAL_DAYS)
+        essai = start_trial(tenant, days=REFERRED_TRIAL_DAYS if parrainage_retenu else TRIAL_DAYS)
+        if parrainage_retenu:
+            Parrainage.objects.filter(filleul=tenant).update(
+                essai_debut=essai.current_period_start, essai_fin=essai.trial_ends_at,
+            )
     except BillingError:
         # Aucune offre d'essai configuree : l'inscription reste valable,
         # l'equipe rattachera l'abonnement a la main.

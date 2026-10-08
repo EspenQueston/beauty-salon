@@ -46,6 +46,7 @@ CREATIONS_PUBLIQUES = frozenset({"/api/v1/public/bookings", "/api/v1/public/wait
 # `/api/v1/subscription` n'ouvre pas une route future `/api/v1/subscriptions`.
 PERMISES_SANS_ABONNEMENT = (
     "/api/v1/subscription",
+    "/api/v1/billing/kkiapay",
     "/api/v1/auth",
     "/api/v1/notifications",
     "/api/v1/push",

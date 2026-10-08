@@ -33,7 +33,7 @@ from django.views.decorators.http import require_POST
 from apps.common.admin import ADMIN_DB, TenantScopedAdmin, TenantScopedTabularInline
 from apps.common.db import bypass_tenant_context, tenant_context
 
-from . import services
+from . import admin_kkiapay, services  # noqa: F401
 from .models import (
     Invoice,
     Plan,
@@ -412,6 +412,7 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
     list_select_related = ("tenant", "plan", "reviewed_by")
     ordering = ("-created_at",)
     readonly_fields = (
+        "etat_encaissement",
         "tenant",
         "plan",
         "billing_months",
@@ -447,6 +448,7 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
             "Paiement déclaré",
             {
                 "fields": (
+                    "etat_encaissement",
                     "amount",
                     "montant_catalogue",
                     "remise_pourcentage",
@@ -522,6 +524,11 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
     def get_urls(self):
         return [
             path(
+                "<uuid:pk>/encaissement/",
+                self.admin_site.admin_view(require_POST(self.vue_encaissement)),
+                name="billing_subscriptionpaymentrequest_encaissement",
+            ),
+            path(
                 "<uuid:pk>/preuve/",
                 self.admin_site.admin_view(self.vue_preuve),
                 name="billing_subscriptionpaymentrequest_preuve",
@@ -538,6 +545,26 @@ class SubscriptionPaymentRequestAdmin(TenantScopedAdmin):
             ),
             *super().get_urls(),
         ]
+
+    def vue_encaissement(self, request, pk):
+        from .encaissements import constater
+
+        try:
+            constater(
+                pk,
+                administrateur=request.user,
+                etat=request.POST.get("etat", ""),
+                motif=request.POST.get("motif", ""),
+            )
+        except PaiementRefuse as refus:
+            self.message_user(request, str(refus), messages.WARNING)
+        else:
+            self.message_user(
+                request,
+                "État constaté et journalisé. Aucun transfert d’argent n’a été lancé.",
+                messages.SUCCESS,
+            )
+        return self._retour(pk)
 
     def vue_preuve(self, request, pk):
         """La capture, servie a qui peut lire les paiements, et a lui seul."""

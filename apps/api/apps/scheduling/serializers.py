@@ -62,6 +62,7 @@ def _telephone_valide(value: str) -> str:
 
 
 class PublicBookingCreateSerializer(serializers.Serializer):
+    code_parrainage_client = serializers.CharField(required=False, allow_blank=True, max_length=16)
     service = serializers.UUIDField()
     staff_member = serializers.UUIDField(required=False, allow_null=True)
     starts_at = serializers.DateTimeField()
@@ -133,6 +134,21 @@ class PublicBookingCreateSerializer(serializers.Serializer):
 class BookingSerializer(serializers.ModelSerializer):
     deposit_proof = serializers.SerializerMethodField()
 
+    def validate(self, attrs):
+        b = self.instance
+        if b and b.reduction_parrainage > 0:
+            if b.status == Booking.Status.CANCELLED and attrs.get("status", b.status) != b.status:
+                raise serializers.ValidationError(
+                    "Créez un nouveau rendez-vous pour réutiliser une réduction restituée."
+                )
+            for champ in ("total_amount", "deposit_amount", "service", "customer"):
+                if champ in attrs and attrs[champ] != getattr(b, champ):
+                    raise serializers.ValidationError(
+                        "Le prix et le bénéficiaire de cette réduction sont figés "
+                        "sur le rendez-vous."
+                    )
+        return attrs
+
     customer_name = serializers.CharField(source="customer.full_name", read_only=True)
     customer_phone = serializers.CharField(source="customer.phone", read_only=True)
     # L'adresse, pour ecrire depuis l'agenda. Elle peut etre vide : une
@@ -160,6 +176,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "customer_phone",
             "customer_email",
             "total_amount",
+            "prix_initial",
+            "promotion_montant",
+            "reduction_parrainage",
             "deposit_amount",
             "deposit_paid",
             "deposit_paid_at",
@@ -179,6 +198,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = (
+            "prix_initial",
+            "promotion_montant",
+            "reduction_parrainage",
             "service_name",
             "options_snapshot",
             "options_amount",
@@ -248,6 +270,9 @@ class PublicBookingConfirmationSerializer(serializers.ModelSerializer):
             "service_name",
             "staff_member_name",
             "total_amount",
+            "prix_initial",
+            "promotion_montant",
+            "reduction_parrainage",
             "deposit_amount",
             "options_snapshot",
             "options_amount",

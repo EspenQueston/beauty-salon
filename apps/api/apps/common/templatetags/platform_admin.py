@@ -26,6 +26,59 @@ from apps.tenants.models import Tenant
 
 register = template.Library()
 
+
+@register.inclusion_tag("admin/programmes.html", takes_context=True)
+def programmes_panel(context):
+    request = context.get("request")
+    if request is None or not request.user.is_authenticated:
+        return {"liens": []}
+    definitions = (
+        (
+            "parrainage.view_politiquesalon",
+            "parrainage_politiquesalon",
+            "Clients → clients",
+            "Règles de chaque salon, taux et plafond (Cas A).",
+        ),
+        (
+            "parrainage.view_recompenseclient",
+            "parrainage_recompenseclient",
+            "Récompenses clients",
+            "Disponibilité, utilisation et historique des réductions.",
+        ),
+        (
+            "parrainage.view_politiqueplateforme",
+            "parrainage_politiqueplateforme",
+            "Vers un nouveau salon",
+            "Essai de 30 jours, délai de sécurité et remise de 10 % (Cas B).",
+        ),
+        (
+            "parrainage.view_remise",
+            "parrainage_remise",
+            "Remises d’abonnement",
+            "Paiement déclencheur, dates et conditions accordées.",
+        ),
+        (
+            "billing.view_kkiapayintent",
+            "billing_kkiapayintent",
+            "KKIAPAY",
+            "Configuration et suivi des paiements d’abonnement.",
+        ),
+        (
+            "parrainage.view_evenementparrainage",
+            "parrainage_evenementparrainage",
+            "Journal du parrainage",
+            "Décisions et transitions des deux programmes.",
+        ),
+    )
+    return {
+        "liens": [
+            {"titre": titre, "aide": aide, "url": reverse(f"admin:{modele}_changelist")}
+            for permission, modele, titre, aide in definitions
+            if request.user.has_perm(permission)
+        ]
+    }
+
+
 PENDING_PREVIEW = 8
 
 
@@ -38,9 +91,7 @@ def supervision_panel(context):
     now = timezone.now()
 
     pending = (
-        Tenant.objects.using(ADMIN_DB)
-        .filter(status=Tenant.Status.PENDING)
-        .order_by("-created_at")
+        Tenant.objects.using(ADMIN_DB).filter(status=Tenant.Status.PENDING).order_by("-created_at")
     )
     pending_count = pending.count()
 
@@ -58,9 +109,7 @@ def supervision_panel(context):
     # RLS : sans double authentification, un mot de passe volé donne acces
     # aux donnees de tous les salons.
     protected = set(
-        TOTPDevice.objects.using(ADMIN_DB)
-        .filter(confirmed=True)
-        .values_list("user_id", flat=True)
+        TOTPDevice.objects.using(ADMIN_DB).filter(confirmed=True).values_list("user_id", flat=True)
     )
     admins = User.objects.using(ADMIN_DB).filter(is_platform_admin=True, is_active=True)
     unprotected = [account for account in admins if account.id not in protected]
@@ -70,18 +119,12 @@ def supervision_panel(context):
         "pending_count": pending_count,
         "pending_rows": list(pending[:PENDING_PREVIEW]),
         "pending_more": max(pending_count - PENDING_PREVIEW, 0),
-        "pending_url": (
-            f"{reverse('admin:tenants_tenant_changelist')}?status__exact=pending"
-        ),
-        "active_count": Tenant.objects.using(ADMIN_DB)
-        .filter(status=Tenant.Status.ACTIVE)
-        .count(),
+        "pending_url": (f"{reverse('admin:tenants_tenant_changelist')}?status__exact=pending"),
+        "active_count": Tenant.objects.using(ADMIN_DB).filter(status=Tenant.Status.ACTIVE).count(),
         "tenant_url": reverse("admin:tenants_tenant_changelist"),
         "overdue_count": overdue.count(),
         "overdue_total": overdue_total,
-        "invoice_url": (
-            f"{reverse('admin:billing_invoice_changelist')}?status__exact=issued"
-        ),
+        "invoice_url": (f"{reverse('admin:billing_invoice_changelist')}?status__exact=issued"),
         "booking_count": bookings.count(),
         "unprotected": unprotected,
         "user_url": reverse("admin:accounts_user_changelist"),

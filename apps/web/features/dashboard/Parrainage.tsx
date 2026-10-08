@@ -21,13 +21,14 @@ import { dateLongue, montant } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
 import { Icon } from "./icons";
 import { useResource } from "./useResource";
+import { ParrainageClients } from "./ParrainageClients";
 
 // ---------------------------------------------------------------------------
 // Formes de l'API
 // ---------------------------------------------------------------------------
 
 type StatutFilleul = "en_verification" | "admissible" | "non_retenu";
-type StatutRemise = "disponible" | "reservee" | "utilisee" | "expiree" | "annulee";
+type StatutRemise = "en_attente" | "suspendue" | "disponible" | "reservee" | "utilisee" | "expiree" | "annulee";
 
 export interface Filleul {
   nom: string;
@@ -43,7 +44,7 @@ export interface RemiseParrainage {
   declencheur: "inscription" | "paiement";
   filleul: string;
   cree_le: string;
-  expire_le: string;
+  expire_le: string | null;
   utilisee_le: string | null;
   montant_deduit: string | null;
   devise: string;
@@ -53,8 +54,11 @@ export interface RemiseParrainage {
 export interface Regles {
   pourcentage: string;
   plafond: string;
-  validite_mois: number;
-  delai_jours: number;
+  validite_mois: number | null;
+  validite_jours?: number;
+  configure?: boolean;
+  cooling_mode?: string;
+  delai_jours: number | null;
   recompenses_paiement_max: number;
 }
 
@@ -78,6 +82,8 @@ export const STATUT_REMISE: Record<
   StatutRemise,
   { label: string; tone: "success" | "warning" | "neutral" | "danger" }
 > = {
+  en_attente: { label: "Délai de sécurité", tone: "warning" },
+  suspendue: { label: "À vérifier", tone: "warning" },
   disponible: { label: "Disponible", tone: "success" },
   reservee: { label: "Réservée", tone: "warning" },
   utilisee: { label: "Utilisée", tone: "neutral" },
@@ -151,6 +157,8 @@ export function Parrainage() {
     <>
       {entete}
 
+      <ParrainageClients tenantId={tenantId} devise={membership.tenant.currency} />
+      <h2 className="mb-3 text-base font-semibold text-ink">Vers un nouveau salon — plateforme</h2>
       <PartageCode code={data.code} lien={data.lien} regles={data.regles} />
 
       <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:mb-8 sm:grid-cols-4 sm:gap-4">
@@ -391,7 +399,7 @@ export function ListeRemises({ remises }: { remises: RemiseParrainage[] }) {
                       : ""
                   }`
                 : remise.statut === "disponible" || remise.statut === "reservee"
-                  ? `Jusqu'au ${dateLongue.format(new Date(remise.expire_le))}`
+                  ? `Jusqu'au ${dateLongue.format(new Date(remise.expire_le ?? remise.cree_le))}`
                   : `Créée le ${dateLongue.format(new Date(remise.cree_le))}`}
             </p>
           </li>
@@ -413,17 +421,17 @@ export function Regles({ regles, salon }: { regles: Regles; salon: boolean }) {
     },
     {
       titre: "Le salon est validé",
-      texte: `${regles.delai_jours} jours après sa mise en ligne, ou dès son premier paiement d'abonnement.`,
+      texte: "Après son premier paiement confirmé : Standard ou Pro, mensuel ou annuel.",
     },
     {
       titre: `Vous recevez −${regles.pourcentage} %`,
       texte: salon
-        ? `Puis −${regles.pourcentage} % à chacun de ses paiements d'abonnement, ${regles.recompenses_paiement_max} fois au plus.`
-        : "Une remise sur l'abonnement d'un salon que vous gérez.",
+        ? "Une remise unique de 10 %, après un délai de sécurité égal à la moitié de la période payée."
+        : "Le salon filleul reçoit 30 jours d’essai. Aucun avantage client supplémentaire n’est annoncé.",
     },
     {
       titre: "Elle s'applique toute seule",
-      texte: `Sur votre prochain paiement, ${regles.plafond} % au plus par paiement, valable ${regles.validite_mois} mois.`,
+      texte: regles.configure ? `Sur une seule échéance, sans cumul de remises, valable ${regles.validite_jours} jours après disponibilité.` : "Les paramètres doivent être validés dans l’administration avant le déblocage des remises.",
     },
   ];
   return (

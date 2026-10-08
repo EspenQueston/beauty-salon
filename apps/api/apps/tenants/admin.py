@@ -131,7 +131,7 @@ class TenantAdmin(SuppressionDefinitiveMixin, admin.ModelAdmin):
         if groupe is None:
             return "—"
         if getattr(tenant, "offre_statut", "") == Subscription.Status.TRIALING:
-            return format_html('<span class="pill">Essai</span>')
+            return format_html('<span class="pill">{}</span>', "Essai")
         if groupe == "pro":
             return format_html('<span class="pill pill--ok">Pro · {}</span>', tenant.offre_nom)
         return format_html('<span class="pill">Standard · {}</span>', tenant.offre_nom)

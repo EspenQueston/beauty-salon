@@ -35,6 +35,7 @@ from apps.billing.views import (
     QrCodeView,
     SubscriptionView,
 )
+from apps.billing.views_kkiapay import KkiapayView, KkiapayConfirmationView, KkiapayWebhookView
 from apps.catalog.views import (
     ResourceViewSet,
     ServiceCategoryViewSet,
@@ -61,6 +62,7 @@ from apps.notifications.views import (
     PushView,
 )
 from apps.parrainage.views import ParrainageClienteView, ParrainageSalonView
+from apps.parrainage.views_clients import ParrainageClientsSalonView, ParrainageClientSalonView, DevisParrainageView
 from apps.payments.views import (
     PaymentChannelViewSet,
     PublicBookingCancelView,
@@ -167,6 +169,8 @@ public_urlpatterns = [
     path("client/session", ClientSessionView.as_view(), name="client-session"),
     path("client/me", ClientMeView.as_view(), name="client-me"),
     path("client/parrainage", ParrainageClienteView.as_view(), name="client-parrainage"),
+    path("client/parrainage-salon", ParrainageClientSalonView.as_view(), name="client-parrainage-salon"),
+    path("parrainage/devis", DevisParrainageView.as_view(), name="parrainage-devis"),
     path("client/bookings", ClientBookingsView.as_view(), name="client-bookings"),
     path(
         "client/bookings/forget",
@@ -235,6 +239,10 @@ urlpatterns = [
     path("subscription/paiements", PaiementsView.as_view(), name="subscription-payments"),
     # Parrainage du salon : son code, ses filleuls, ses remises (proprietaire).
     path("parrainage", ParrainageSalonView.as_view(), name="parrainage"),
+    path("billing/kkiapay", KkiapayView.as_view(), name="kkiapay-preparer"),
+    path("billing/kkiapay/confirm", KkiapayConfirmationView.as_view(), name="kkiapay-confirmer"),
+    path("webhooks/kkiapay/<str:environnement>", KkiapayWebhookView.as_view(), name="kkiapay-webhook"),
+    path("parrainage/clients", ParrainageClientsSalonView.as_view(), name="parrainage-clients"),
     # Offre Pro : domaine personnalise (demander, verifier, retirer).
     # Offre Pro : assistants IA.
     path("assistant", AssistantPlateformeView.as_view(), name="assistant"),

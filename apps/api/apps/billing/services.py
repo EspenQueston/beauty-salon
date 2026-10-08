@@ -8,9 +8,9 @@ Un salon s'inscrit : il a 14 jours d'essai. Pour continuer, il choisit une
 offre — mensuelle ou annuelle —, paie hors ligne (WeChat Pay, Alipay, Mobile
 Money) et declare son paiement avec la reference de la transaction. Un
 administrateur verifie sur le compte crediteur, puis approuve ou refuse.
-Seule l'approbation ouvre une periode payee. Aucune passerelle n'est branchee,
-et aucun paiement n'est jamais tenu pour verifie tant qu'un humain autorise
-ne l'a pas dit.
+Les moyens manuels sont approuvés par un administrateur autorisé. KKIAPAY,
+quand il est configuré, exige une vérification par son API privée et une
+association fiable avec l’intention locale avant de confirmer le paiement.
 
 ---------------------------------------------------------------------------
 Les regles, decidees avec le produit
@@ -410,6 +410,7 @@ def soumettre_paiement(
     reference: str,
     preuve=None,
     montant_attendu: Decimal | None = None,
+    integration: bool = False,
 ) -> SubscriptionPaymentRequest:
     """Enregistre la declaration d'un paiement. N'active rien.
 
@@ -442,6 +443,8 @@ def soumettre_paiement(
             "tarif_absent",
         )
     moyen = PlatformPaymentMethod.objects.filter(pk=moyen_id).first()
+    if moyen and moyen.kind == PlatformPaymentMethod.Kind.KKIAPAY and not integration:
+        raise PaiementRefuse("Utilisez le paiement KKIAPAY intégré.", "integration_requise")
     if (
         moyen is None
         or not moyen.est_utilisable
@@ -598,9 +601,10 @@ def soumettre_paiement(
             ) from erreur
         raise
 
-    _prevenir_apres_validation("paiement_abonnement_a_verifier", demande)
-    _ecrire_apres_validation("paiement_recu", demande.tenant_id, demande.id)
-    _ecrire_apres_validation("paiement_a_verifier", demande.tenant_id, demande.id)
+    if demande.method_kind != PlatformPaymentMethod.Kind.KKIAPAY:
+        _prevenir_apres_validation("paiement_abonnement_a_verifier", demande)
+        _ecrire_apres_validation("paiement_recu", demande.tenant_id, demande.id)
+        _ecrire_apres_validation("paiement_a_verifier", demande.tenant_id, demande.id)
     return demande
 
 
@@ -627,7 +631,9 @@ def _tenant_de_la_demande(demande_id):
     )
 
 
-def approuver_paiement(demande_id, *, administrateur, note: str = "") -> SubscriptionPaymentRequest:
+def approuver_paiement(
+    demande_id, *, administrateur, note: str = "", integration: bool = False
+) -> SubscriptionPaymentRequest:
     """Approuve une demande et accorde sa periode, une seule fois.
 
     Verrouille la demande puis l'abonnement. Si la demande n'est plus en
@@ -648,6 +654,18 @@ def approuver_paiement(demande_id, *, administrateur, note: str = "") -> Subscri
             raise PaiementRefuse(
                 f"Ce paiement a déjà été traité ({demande.get_status_display().lower()}).",
                 "deja_traitee",
+            )
+        if demande.method_kind == PlatformPaymentMethod.Kind.KKIAPAY and not integration:
+            raise PaiementRefuse(
+                "Ce paiement nécessite une vérification serveur KKIAPAY.", "integration_requise"
+            )
+
+        from apps.parrainage.services import reservation_expiree
+
+        if reservation_expiree(demande):
+            raise PaiementRefuse(
+                "La réservation de la remise a expiré. Préparez un nouveau paiement.",
+                "remise_expiree",
             )
 
         abonnement = (

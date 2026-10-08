@@ -1149,7 +1149,7 @@ function ProofPanel({
         <span>
           Ce rendez-vous a été confirmé sans que le versement soit tranché :
           l’acompte n’est entré dans aucun compte. Enregistrez-le depuis
-          l’onglet Comptes.
+          l’onglet Finances.
         </span>
       </p>
     );

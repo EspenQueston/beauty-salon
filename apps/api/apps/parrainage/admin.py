@@ -14,10 +14,19 @@ from django.contrib.admin import helpers
 from django.template.response import TemplateResponse
 from django.utils.html import format_html
 
-from apps.common.admin import ADMIN_DB
+from apps.common.admin import ADMIN_DB, TenantScopedAdmin
 
 from . import services
-from .models import CodeParrainage, Parrainage, Remise
+from .models import (
+    CodeClientSalon,
+    CodeParrainage,
+    EvenementParrainage,
+    Parrainage,
+    PolitiquePlateforme,
+    PolitiqueSalon,
+    RecompenseClient,
+    Remise,
+)
 
 PERM_CORRIGER = "parrainage.corriger_parrainage"
 
@@ -27,6 +36,8 @@ TONS = {
     Parrainage.Statut.REFUSE: "danger",
     Parrainage.Statut.INVALIDE: "danger",
     Remise.Statut.DISPONIBLE: "ok",
+    Remise.Statut.EN_ATTENTE: "warning",
+    Remise.Statut.SUSPENDUE: "warning",
     Remise.Statut.RESERVEE: "warning",
     Remise.Statut.UTILISEE: "",
     Remise.Statut.EXPIREE: "",
@@ -63,6 +74,11 @@ class _LectureSeule(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_readonly_fields(self, request, obj=None):
+        return self.readonly_fields or tuple(
+            f.name for f in self.model._meta.fields if f.name not in (self.exclude or ())
+        )
 
     def _geste(self, request, queryset, *, titre, aide, action, executer, libelle):
         if not request.user.has_perm(PERM_CORRIGER):
@@ -205,10 +221,12 @@ class ParrainageAdmin(_LectureSeule):
         "revue_requise",
         "publie_le",
         "admissible_le",
+        "essai_debut",
+        "essai_fin",
         "cree_le",
     )
     exclude = ("empreinte_ip",)
-    actions = ("action_valider", "action_invalider")
+    actions = ("action_invalider",)
 
     def get_queryset(self, request):
         return Parrainage.objects.using(ADMIN_DB).select_related(
@@ -222,21 +240,6 @@ class ParrainageAdmin(_LectureSeule):
     @admin.display(description="Statut", ordering="statut")
     def statut_(self, parrainage):
         return _pastille(parrainage.get_statut_display(), TONS.get(parrainage.statut, ""))
-
-    @admin.action(description="Valider manuellement (rendre admissible)…")
-    def action_valider(self, request, queryset):
-        return self._geste(
-            request,
-            queryset,
-            titre="Valider manuellement",
-            aide=(
-                "Le parrainage devient admissible tout de suite et le parrain reçoit sa "
-                "remise de 10 %. Seuls les parrainages en vérification sont concernés."
-            ),
-            action="action_valider",
-            executer=lambda p, motif: services.valider_manuellement(p, request.user, motif),
-            libelle=lambda p: f"{p.filleul} ← {self.parrain(p)}",
-        )
 
     @admin.action(description="Invalider (fraude, erreur)…")
     def action_invalider(self, request, queryset):
@@ -286,6 +289,10 @@ class RemiseAdmin(_LectureSeule):
         "pourcentage",
         "statut",
         "expire_le",
+        "paiement_declencheur",
+        "paiement_confirme_le",
+        "disponible_le",
+        "conditions",
         "demande",
         "montant_deduit",
         "devise",
@@ -323,3 +330,128 @@ class RemiseAdmin(_LectureSeule):
             executer=lambda r, motif: services.annuler_remise(r, request.user, motif),
             libelle=lambda r: f"{r.pourcentage} % — {self.beneficiaire(r)} ({r.filleul_nom})",
         )
+
+
+@admin.register(PolitiquePlateforme)
+class PolitiquePlateformeAdmin(admin.ModelAdmin):
+    list_display = ("active", "cooling_mode", "validite_jours", "reservation_heures")
+    fieldsets = (
+        (
+            "Programme salon → nouveau salon (Cas B)",
+            {
+                "fields": ("active",),
+                "description": (
+                    "Essai de 30 jours pour le filleul. Une remise de 10 % pour le salon parrain, "
+                    "après le premier abonnement payé et le délai de sécurité. "
+                    "Les conditions déjà accordées restent figées."
+                ),
+            },
+        ),
+        (
+            "Disponibilité et validité",
+            {
+                "fields": (
+                    "cooling_mode",
+                    "cooling_jours",
+                    "validite_jours",
+                    "validite_depuis_disponibilite",
+                )
+            },
+        ),
+        (
+            "Utilisation et annulation",
+            {
+                "fields": (
+                    "recompenses_max_par_parrain",
+                    "remises_max_par_echeance",
+                    "reservation_heures",
+                    "apres_remboursement",
+                ),
+                "description": (
+                    "Un remboursement pendant le délai de sécurité annule la récompense. "
+                    "Après disponibilité, elle est conservée. Une seule remise par échéance."
+                ),
+            },
+        ),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).using(ADMIN_DB)
+
+    def has_add_permission(self, request):
+        return not PolitiquePlateforme.objects.using(
+            ADMIN_DB
+        ).exists() and super().has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        obj.full_clean()
+        obj.save(using=ADMIN_DB)
+        EvenementParrainage.objects.using(ADMIN_DB).create(
+            cas="B",
+            tenant=None,
+            ressource="00000000-0000-0000-0000-000000000001",
+            action="configuration",
+            details={"acteur": str(request.user.pk), "champs": form.changed_data},
+        )
+
+
+class _LectureSeuleTenant(TenantScopedAdmin):
+    def get_readonly_fields(self, request, obj=None):
+        return tuple(f.name for f in self.model._meta.fields if f.name != "identite_filleul")
+
+
+@admin.register(PolitiqueSalon)
+class PolitiqueSalonAdmin(_LectureSeuleTenant):
+    list_display = ("tenant", "active", "taux", "validite_jours", "plafond_montant", "devise")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(RecompenseClient)
+class RecompenseClientAdmin(_LectureSeuleTenant):
+    list_display = ("tenant", "parrain", "statut", "taux", "plafond_montant", "expire_le")
+    list_filter = ("tenant", "statut")
+    search_fields = ("parrain__email", "tenant__name")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(CodeClientSalon)
+class CodeClientSalonAdmin(_LectureSeuleTenant):
+    list_display = ("tenant", "user", "code", "actif")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(EvenementParrainage)
+class EvenementParrainageAdmin(_LectureSeule):
+    list_display = ("cas", "tenant", "ressource", "action", "cree_le")
+    list_filter = ("cas", "action", "tenant")
+    search_fields = ("ressource", "details", "tenant__name")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).using(ADMIN_DB)

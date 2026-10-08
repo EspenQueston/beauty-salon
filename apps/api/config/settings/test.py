@@ -54,6 +54,9 @@ PLATFORM_ADMIN_MFA_REQUIRED = False
 # avec une reponse simulee (tests/test_securite_avancee.py).
 PWNED_PASSWORDS_CHECK = False
 
+# Les tests de traduction simulent le fournisseur ; aucune facture API réelle.
+OPENAI_API_KEY = ""
+
 # Le throttling fausserait les tests fonctionnels ; il a sa propre suite.
 # Les portees sont deduites de celles de base.py plutot que reecrites : une
 # nouvelle portee ajoutee cote production ne fait pas echouer la suite avec

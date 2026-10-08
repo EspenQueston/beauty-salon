@@ -879,7 +879,7 @@
     },
     "parrainage": {
       "titre": "Refer a salon",
-      "accroche": "Invite a salon: it gets a 30-day trial if the referral is eligible. Once approved, you get {pourcentage}% off the subscription of a salon you run.",
+      "accroche": "Invite a salon: it gets a 30-day trial if the referral is eligible. Follow its registration from your account.",
       "votreCode": "Your personal code",
       "copierCode": "Copy code",
       "copierLien": "Copy link",
@@ -892,10 +892,10 @@
         "admissible": "Approved",
         "non_retenu": "Not accepted"
       },
-      "utiliserSalon": "Your discount will apply automatically to your salon's next subscription payment.",
+      "utiliserSalon": "Subscription discounts are reserved for referring salons.",
       "monAbonnement": "My subscription",
-      "utiliserSansSalon": "Your discount is waiting: it will apply to the subscription of a salon you create or run on Beauty Salon.",
-      "regles": "A salon is approved {delai} days after going live, or at its first payment. Discounts are capped at {plafond}% per payment, stay valid for {mois} months, and are never money: they can't be withdrawn.",
+      "utiliserSansSalon": "No reward is announced for a client referring a salon.",
+      "regles": "The first paid subscription validates the referral. A salon subscription discount then waits for the cooling period and can be used only once.",
       "message": "I recommend Beauty Salon to run your salon: online booking, reminders, a mini-site. Sign up with my code {code} for a 30-day trial if the referral is eligible: {lien}"
     },
     "verification": {

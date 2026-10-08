@@ -314,11 +314,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.billing.tasks.envoyer_rappels_abonnement",
         "schedule": crontab(minute=20),
     },
-    # Parrainage : admissibilite des filleuls (14 jours apres publication)
-    # et expiration des remises. Idempotent, une passe par jour.
+    # Parrainage : cooling, expiration et libération des paiements abandonnés.
+    # Traitement idempotent toutes les dix minutes.
     "referral-evaluation": {
         "task": "apps.parrainage.tasks.evaluer_parrainages",
-        "schedule": crontab(hour=3, minute=30),
+        "schedule": crontab(minute="*/10"),
     },
 }
 
@@ -399,6 +399,7 @@ REST_FRAMEWORK = {
         # Declaration d'un paiement d'abonnement. Une seule peut attendre a
         # la fois ; dix envois par heure couvrent les corrections apres refus.
         "subscription_payment": "10/hour",
+        "kkiapay_webhook": "1200/hour",
         # Verification DNS d'un domaine personnalise : chaque essai interroge des
         # serveurs externes. Vingt par heure couvrent l'attente de la propagation.
         "domain_check": "20/hour",
@@ -494,3 +495,18 @@ LOGGING = {
         },
     },
 }
+
+# KKIAPAY : credentials distincts, jamais exposés au navigateur sauf clé publique.
+KKIAPAY_ENABLED = env.bool("KKIAPAY_ENABLED", default=False)
+KKIAPAY_SANDBOX = env.bool("KKIAPAY_SANDBOX", default=True)
+KKIAPAY_ALLOWED_COUNTRIES = tuple(
+    env.list("KKIAPAY_ALLOWED_COUNTRIES", default=["BJ", "BF", "CI", "TG", "SN", "NE"])
+)
+KKIAPAY_TEST_PUBLIC_KEY = env("KKIAPAY_TEST_PUBLIC_KEY", default="")
+KKIAPAY_TEST_PRIVATE_KEY = env("KKIAPAY_TEST_PRIVATE_KEY", default="")
+KKIAPAY_TEST_SECRET_KEY = env("KKIAPAY_TEST_SECRET_KEY", default="")
+KKIAPAY_TEST_WEBHOOK_SECRET = env("KKIAPAY_TEST_WEBHOOK_SECRET", default="")
+KKIAPAY_LIVE_PUBLIC_KEY = env("KKIAPAY_LIVE_PUBLIC_KEY", default="")
+KKIAPAY_LIVE_PRIVATE_KEY = env("KKIAPAY_LIVE_PRIVATE_KEY", default="")
+KKIAPAY_LIVE_SECRET_KEY = env("KKIAPAY_LIVE_SECRET_KEY", default="")
+KKIAPAY_LIVE_WEBHOOK_SECRET = env("KKIAPAY_LIVE_WEBHOOK_SECRET", default="")

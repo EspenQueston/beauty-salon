@@ -8,4 +8,6 @@ from . import services
 @shared_task
 def evaluer_parrainages() -> dict:
     """Admissibilite des filleuls et expiration des remises. Idempotente."""
-    return services.evaluer()
+    from .maintenance import entretenir
+
+    return {**services.evaluer(), **entretenir()}

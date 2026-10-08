@@ -1,5 +1,7 @@
 "use client";
 
+import { KkiapayButton } from "./KkiapayButton";
+
 /**
  * Abonnement du salon : l'état, le choix d'une offre, le règlement.
  *
@@ -112,7 +114,7 @@ interface PaymentRequest {
   montant_catalogue: string | null;
   remise_pourcentage: string;
   remise_montant: string;
-  method_kind: "wechat" | "alipay" | "mobile_money";
+  method_kind: "wechat" | "alipay" | "mobile_money" | "kkiapay";
   method_kind_label: string;
   method_label: string;
   method_account_number: string;
@@ -147,7 +149,7 @@ interface Subscription {
 
 interface Moyen {
   id: string;
-  kind: "wechat" | "alipay" | "mobile_money";
+  kind: "wechat" | "alipay" | "mobile_money" | "kkiapay";
   kind_label: string;
   libelle: string;
   account_number: string;
@@ -880,6 +882,7 @@ function PasserALAnnuel({
 // ---------------------------------------------------------------------------
 
 function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
+  const { membership } = useDashboard();
   return (
     <Card className="mb-6 sm:mb-8">
       <div className="flex items-start gap-3">
@@ -892,9 +895,9 @@ function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
             Paiement en cours de vérification
           </p>
           <p className="mt-1 text-[12.5px] leading-relaxed text-muted sm:text-sm">
-            L&apos;équipe Beauty Salon retrouve votre versement sur le compte
+            {demande.method_kind === "kkiapay" ? "KKIAPAY confirme votre transaction auprès du serveur. Votre période s’ouvre après cette confirmation." : <>L&apos;équipe Beauty Salon retrouve votre versement sur le compte
             crédité, puis ouvre votre période. Cette page se met à jour
-            d&apos;elle-même ; vous recevez aussi un e-mail et une notification.
+            d&apos;elle-même ; vous recevez aussi un e-mail et une notification.</>}
           </p>
         </div>
       </div>
@@ -1232,11 +1235,14 @@ function Commande({
           </div>
         )}
 
-        {moyen && plan && <PanneauMoyen moyen={moyen} somme={somme} />}
+        {moyen && plan && moyen.kind === "kkiapay" ? (
+          <KkiapayButton tenantId={tenantId} choix={{ plan: plan.code, country: pays.code,
+            currency: devise.code, method: moyen.id, montant_attendu: aVerser }} onConfirme={onEnvoye} />
+        ) : moyen && plan && <PanneauMoyen moyen={moyen} somme={somme} />}
       </div>
 
       {/* 3. La déclaration */}
-      <div>
+      {moyen?.kind !== "kkiapay" && <div>
         <Etape numero={3} titre="Déclarez votre paiement" />
         <Card padded={false}>
           <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
@@ -1343,7 +1349,7 @@ function Commande({
           Votre accès s&apos;ouvre à la vérification du versement, pas à
           l&apos;envoi de ce formulaire.
         </p>
-      </div>
+      </div>}
     </form>
   );
 }

@@ -42,12 +42,18 @@ def _pct(valeur) -> str:
 
 
 def _regles() -> dict:
+    from .cycles import politique
+
+    p = politique()
     return {
         "pourcentage": _pct(services.POURCENTAGE),
-        "plafond": _pct(services.PLAFOND_PAR_PAIEMENT),
-        "validite_mois": 12,
-        "delai_jours": services.DELAI_ADMISSIBILITE.days,
-        "recompenses_paiement_max": services.REMISES_PAIEMENT_MAX,
+        "plafond": "10",
+        "validite_mois": p.validite_jours / 30 if p else None,
+        "delai_jours": p.cooling_jours if p and p.cooling_mode == "jours" else None,
+        "cooling_mode": p.cooling_mode if p else "demi_periode",
+        "validite_jours": p.validite_jours if p else None,
+        "configure": bool(p),
+        "recompenses_paiement_max": 1,
     }
 
 
@@ -73,6 +79,7 @@ def _remises(remises) -> list[dict]:
             "filleul": r.filleul_nom,
             "cree_le": r.cree_le,
             "expire_le": r.expire_le,
+            "disponible_le": r.disponible_le,
             "utilisee_le": r.utilisee_le,
             "montant_deduit": str(r.montant_deduit) if r.montant_deduit is not None else None,
             "devise": r.devise,
@@ -136,7 +143,7 @@ class ParrainageClienteView(APIView):
                 "lien": services.lien(code),
                 "regles": _regles(),
                 "filleuls": _filleuls(Parrainage.objects.filter(parrain_user_id=request.user.pk)),
-                "remises": _remises(Remise.objects.filter(beneficiaire_user_id=request.user.pk)),
+                "remises": [],
                 # Une remise de cliente s'utilise sur l'abonnement d'un salon
                 # qu'elle possede : on lui dit si c'est deja son cas.
                 "possede_un_salon": Membership.objects.filter(

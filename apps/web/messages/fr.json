@@ -879,7 +879,7 @@
     },
     "parrainage": {
       "titre": "Parrainez un salon",
-      "accroche": "Invitez un salon : il reçoit 30 jours d'essai si le parrainage est éligible. Après validation, vous obtenez {pourcentage} % de remise sur l'abonnement d'un salon que vous gérez.",
+      "accroche": "Invitez un salon : il reçoit 30 jours d'essai si le parrainage est éligible. Suivez ensuite son inscription depuis votre espace.",
       "votreCode": "Votre code personnel",
       "copierCode": "Copier le code",
       "copierLien": "Copier le lien",
@@ -892,10 +892,10 @@
         "admissible": "Validé",
         "non_retenu": "Non retenu"
       },
-      "utiliserSalon": "Votre remise s'appliquera automatiquement au prochain paiement d'abonnement de votre salon.",
+      "utiliserSalon": "Les réductions d'abonnement sont réservées aux salons parrains.",
       "monAbonnement": "Mon abonnement",
-      "utiliserSansSalon": "Votre remise vous attend : elle s'appliquera à l'abonnement d'un salon que vous créerez ou gérerez sur Beauty Salon.",
-      "regles": "Un salon est validé {delai} jours après sa mise en ligne, ou dès son premier paiement. Une remise vaut {plafond} % au plus par paiement, reste valable {mois} mois, et n'est jamais de l'argent : elle ne se retire pas.",
+      "utiliserSansSalon": "Aucune récompense n'est annoncée pour le parrainage d'un salon par un client.",
+      "regles": "Le premier abonnement payé valide le parrainage. Une réduction d'abonnement salon attend ensuite la fin du délai de sécurité, puis s'utilise une seule fois.",
       "message": "Je vous recommande Beauty Salon pour gérer votre salon : réservations en ligne, rappels, mini-site. Inscrivez-vous avec mon code {code} et profitez de 30 jours d'essai si le parrainage est éligible : {lien}"
     },
     "verification": {

@@ -1,10 +1,8 @@
-"""Le parrainage : codes, admissibilite, remises, application aux paiements.
+"""Codes, essai de 30 jours, droits historiques et nouvelles règles Cas B.
 
-Regles decidees avec le produit (voir apps/parrainage/models.py) : un parrain
-par filleul, fige a l'inscription ; admissible 14 jours apres publication ou
-au premier paiement approuve ; 10 % par filleul admissible, et 10 % par
-paiement approuve du filleul pour un salon parrain (12 au plus) ; 30 % au plus
-par paiement ; 12 mois de validite ; jamais de l'argent.
+La publication seule ne récompense plus ; un premier abonnement payé crée
+une seule récompense qui attend le délai de sécurité. Une seule remise
+par échéance. Les détails du Cas A et de KKIAPAY sont dans test_parrainage_v2.
 """
 
 from datetime import timedelta
@@ -22,7 +20,7 @@ from apps.billing.models import Invoice, Subscription, SubscriptionPaymentReques
 from apps.billing.services import PaiementRefuse
 from apps.clients.models import ClientProfile
 from apps.parrainage import services
-from apps.parrainage.models import CodeParrainage, Parrainage, Remise
+from apps.parrainage.models import CodeParrainage, Parrainage, PolitiquePlateforme, Remise
 from apps.tenants.models import Tenant
 from conftest import as_tenant
 from tests.factories import MembershipFactory, TenantFactory, UserFactory
@@ -42,6 +40,33 @@ FIXTURES_PARTAGEES = (medias_temporaires, moyens, offres)
 # ---------------------------------------------------------------------------
 # Outils
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def politique_validee(db):
+    PolitiquePlateforme.objects.update_or_create(
+        pk=1,
+        defaults={
+            "active": True,
+            "cooling_mode": "demi_periode",
+            "validite_jours": 90,
+            "validite_depuis_disponibilite": True,
+            "recompenses_max_par_parrain": 100,
+            "remises_max_par_echeance": 1,
+            "reservation_heures": 24,
+            "apres_remboursement": "maintenir",
+        },
+    )
+
+
+def donnees_historiques(parrainage):
+    # Fixture des droits existant avant la migration, conservés en lecture et usage.
+    Parrainage.objects.filter(pk=parrainage.pk).update(
+        statut="admissible", admissible_le=timezone.now()
+    )
+    r = remise_pour(parrainage.parrain_tenant)
+    r.parrainage = parrainage
+    r.save(update_fields=["parrainage"])
 
 
 def filleul_de(code, *, nom="Filleul", publie_il_y_a=None, statut=Tenant.Status.ACTIVE, phone=""):
@@ -224,35 +249,23 @@ def test_une_cliente_ne_se_parraine_pas_elle_meme():
 
 
 @ADMIN
-def test_admissible_apres_14_jours_de_publication(salon_a, offres):
-    code = services.code_du_salon(salon_a.tenant)
-    parrainage = filleul_de(code, publie_il_y_a=timedelta(days=15))
-    abonnement_de_tenant(parrainage.filleul)
-
-    resultat = services.evaluer()
-
-    parrainage.refresh_from_db()
-    assert resultat["admissibles"] == 1
-    assert parrainage.statut == Parrainage.Statut.ADMISSIBLE
-    remise = Remise.objects.get()
-    assert remise.beneficiaire_tenant_id == salon_a.tenant.id
-    assert remise.pourcentage == Decimal("10")
-    assert remise.declencheur == Remise.Declencheur.INSCRIPTION
-    assert abs((remise.expire_le - timezone.now() - timedelta(days=365)).total_seconds()) < 60
+def test_publication_seule_ne_debloque_plus_de_recompense(salon_a, offres):
+    p = filleul_de(services.code_du_salon(salon_a.tenant), publie_il_y_a=timedelta(days=15))
+    abonnement_de_tenant(p.filleul)
+    assert services.evaluer()["admissibles"] == 0
+    p.refresh_from_db()
+    assert p.statut == "en_verification" and not Remise.objects.exists()
 
 
 @ADMIN
-def test_l_evaluation_rejouee_ne_cree_pas_de_seconde_remise(salon_a, offres):
-    parrainage = filleul_de(
-        services.code_du_salon(salon_a.tenant), publie_il_y_a=timedelta(days=20)
-    )
-    abonnement_de_tenant(parrainage.filleul)
-
+def test_evaluation_rejouee_sans_paiement_ne_cree_pas_de_remise(salon_a, offres):
+    p = filleul_de(services.code_du_salon(salon_a.tenant), publie_il_y_a=timedelta(days=20))
+    abonnement_de_tenant(p.filleul)
     services.evaluer()
     services.evaluer()
-    services.rendre_admissible(parrainage.pk)
-
-    assert Remise.objects.count() == 1
+    with pytest.raises(ValueError):
+        services.rendre_admissible(p.pk)
+    assert not Remise.objects.exists()
 
 
 @ADMIN
@@ -285,24 +298,11 @@ def test_un_filleul_suspendu_n_est_pas_admissible(salon_a, offres):
 
 
 @ADMIN
-def test_au_dela_de_10_filleuls_en_30_jours_une_revue_est_exigee(salon_a, offres):
-    code = services.code_du_salon(salon_a.tenant)
-    for i in range(services.ADMISSIBLES_PAR_MOIS):
-        p = filleul_de(code, nom=f"Filleul {i}")
-        services.rendre_admissible(p.pk)
-    suivant = filleul_de(code, nom="Onzième", publie_il_y_a=timedelta(days=20))
-    abonnement_de_tenant(suivant.filleul)
-
-    resultat = services.evaluer()
-
-    suivant.refresh_from_db()
-    assert resultat["revues"] == 1
-    assert suivant.revue_requise is True
-    assert suivant.statut == Parrainage.Statut.EN_VERIFICATION
-    # Validation humaine : motivee, puis admissible.
-    services.valider_manuellement(suivant, _admin(), "Salons vérifiés un par un par téléphone.")
-    suivant.refresh_from_db()
-    assert suivant.statut == Parrainage.Statut.ADMISSIBLE
+def test_validation_administrative_ne_remplace_pas_paiement(salon_a, offres):
+    p = filleul_de(services.code_du_salon(salon_a.tenant))
+    with pytest.raises(ValueError):
+        services.valider_manuellement(p, _admin(), "Salons vérifiés par téléphone.")
+    assert not Remise.objects.exists()
 
 
 def abonnement_de_tenant(tenant, *, statut=Subscription.Status.ACTIVE):
@@ -364,17 +364,17 @@ def test_un_paiement_refuse_rend_la_remise(salon_a, moyens):
 
 
 @ADMIN
-def test_trente_pour_cent_au_plus_par_paiement(salon_a, moyens):
+def test_une_seule_remise_de_dix_pour_cent_par_paiement(salon_a, moyens):
     abonnement_de(salon_a)
     remises = [remise_pour(salon_a.tenant, jours=100 + i) for i in range(4)]
-
-    demande = declarer(salon_a, moyens["momo"])
-
-    assert demande.remise_pourcentage == Decimal("30")
-    assert demande.amount == Decimal("10500")
-    # Les plus proches de l'expiration d'abord ; la quatrieme attend.
-    statuts = [Remise.objects.get(pk=r.pk).statut for r in remises]
-    assert statuts == [Remise.Statut.RESERVEE] * 3 + [Remise.Statut.DISPONIBLE]
+    d = declarer(salon_a, moyens["momo"])
+    assert d.remise_pourcentage == 10 and d.amount == 13500
+    assert [Remise.objects.get(pk=r.pk).statut for r in remises] == [
+        "reservee",
+        "disponible",
+        "disponible",
+        "disponible",
+    ]
 
 
 @ADMIN
@@ -441,7 +441,8 @@ def test_le_premier_paiement_du_filleul_le_rend_admissible_et_recompense(salon_a
     parrainage = Parrainage.objects.get()
     assert parrainage.statut == Parrainage.Statut.ADMISSIBLE
     references = set(Remise.objects.values_list("reference", flat=True))
-    assert references == {f"inscription:{parrainage.pk}", f"paiement:{demande.pk}"}
+    assert references == {f"premier_paiement:{parrainage.pk}"}
+    assert Remise.objects.get().statut == "en_attente"
     assert set(Remise.objects.values_list("beneficiaire_tenant", flat=True)) == {salon_a.tenant.id}
 
 
@@ -459,54 +460,41 @@ def test_la_recompense_d_un_paiement_est_idempotente(salon_a, salon_b, moyens):
     assert Remise.objects.filter(declencheur=Remise.Declencheur.PAIEMENT).count() == 1
 
 
-@pytest.mark.django_db
-def test_douze_remises_de_paiement_au_plus_par_filleul(salon_a):
-    parrainage = filleul_de(services.code_du_salon(salon_a.tenant))
-    services.rendre_admissible(parrainage.pk)
-
-    class Demande:
-        def __init__(self, pk):
-            self.pk = pk
-            self.tenant_id = parrainage.filleul_id
-
-    for i in range(15):
-        services.recompenser_paiement(Demande(f"d{i}"))
-
-    assert Remise.objects.filter(declencheur=Remise.Declencheur.PAIEMENT).count() == 12
-
-
-@pytest.mark.django_db
-def test_une_cliente_marraine_n_est_recompensee_qu_une_fois():
-    cliente = UserFactory()
-    parrainage = filleul_de(services.code_de_l_utilisateur(cliente))
-
-    class Demande:
-        pk = "d1"
-        tenant_id = parrainage.filleul_id
-
-    services.recompenser_paiement(Demande())
-    services.recompenser_paiement(Demande())
-
-    remise = Remise.objects.get()
-    assert remise.beneficiaire_user_id == cliente.pk
-    assert remise.declencheur == Remise.Declencheur.INSCRIPTION
+@ADMIN
+def test_paiements_suivants_ne_recompensent_pas_a_nouveau(salon_a, salon_b, moyens):
+    abonnement_de(salon_b)
+    services.detecter(salon_b.tenant, salon_b.owner, services.code_du_salon(salon_a.tenant).code)
+    for i in range(3):
+        d = declarer(salon_b, moyens["momo"], reference=f"REF-UNIQUE-{i}")
+        billing_admin = _admin()
+        facturation.approuver_paiement(d.pk, administrateur=billing_admin)
+    assert Remise.objects.count() == 1
 
 
 @ADMIN
-def test_la_remise_d_une_cliente_sert_sur_le_salon_qu_elle_possede(salon_a, moyens):
+def test_cliente_marraine_salon_sans_recompense_inventee(salon_b, moyens):
+    u = UserFactory()
+    ClientProfile.objects.create(user=u)
+    abonnement_de(salon_b)
+    p = services.detecter(salon_b.tenant, salon_b.owner, services.code_de_l_utilisateur(u).code)
+    d = declarer(salon_b, moyens["momo"])
+    facturation.approuver_paiement(d.pk, administrateur=_admin())
+    p.refresh_from_db()
+    assert p.statut == "admissible" and not Remise.objects.exists()
+
+
+@ADMIN
+def test_droit_legacy_cliente_non_applicable_sur_abonnement_salon(salon_a, moyens):
     abonnement_de(salon_a)
     Remise.objects.create(
         beneficiaire_user=salon_a.owner,
-        filleul_nom="Un filleul",
-        declencheur=Remise.Declencheur.INSCRIPTION,
-        reference="test:cliente",
-        pourcentage=Decimal("10"),
+        filleul_nom="Filleul",
+        declencheur="inscription",
+        reference="legacy-client",
+        pourcentage=10,
         expire_le=timezone.now() + timedelta(days=30),
     )
-
-    demande = declarer(salon_a, moyens["momo"])
-
-    assert demande.amount == Decimal("13500")
+    assert declarer(salon_a, moyens["momo"]).amount == 15000
 
 
 @ADMIN
@@ -531,7 +519,7 @@ def test_un_parrainage_refuse_ne_recompense_rien(salon_a, salon_b, moyens):
 @pytest.mark.django_db
 def test_invalider_annule_les_remises_disponibles_avec_un_motif(salon_a):
     parrainage = filleul_de(services.code_du_salon(salon_a.tenant))
-    services.rendre_admissible(parrainage.pk)
+    donnees_historiques(parrainage)
     admin = _admin()
 
     with pytest.raises(ValueError):
@@ -564,7 +552,7 @@ def test_annuler_une_remise_deja_utilisee_est_refuse(salon_a):
 @pytest.mark.django_db
 def test_le_proprietaire_voit_son_code_ses_filleuls_et_ses_remises(api_client, salon_a):
     parrainage = filleul_de(services.code_du_salon(salon_a.tenant), nom="Salon Filleul")
-    services.rendre_admissible(parrainage.pk)
+    donnees_historiques(parrainage)
     api_client.force_login(salon_a.owner)
 
     donnees = api_client.get("/api/v1/parrainage").json()
@@ -686,7 +674,7 @@ def admin_client(client):
 )
 def test_les_ecrans_du_parrainage_s_ouvrent_avec_des_donnees(admin_client, salon_a, route):
     parrainage = filleul_de(services.code_du_salon(salon_a.tenant), nom="Salon Filleul")
-    services.rendre_admissible(parrainage.pk)
+    donnees_historiques(parrainage)
 
     reponse = admin_client.get(reverse(route))
 
@@ -696,7 +684,7 @@ def test_les_ecrans_du_parrainage_s_ouvrent_avec_des_donnees(admin_client, salon
 @ADMIN
 def test_la_fiche_d_un_parrainage_se_lit_sans_se_modifier(admin_client, salon_a):
     parrainage = filleul_de(services.code_du_salon(salon_a.tenant))
-    services.rendre_admissible(parrainage.pk)
+    donnees_historiques(parrainage)
 
     reponse = admin_client.get(reverse("admin:parrainage_parrainage_change", args=[parrainage.pk]))
 
@@ -707,7 +695,7 @@ def test_la_fiche_d_un_parrainage_se_lit_sans_se_modifier(admin_client, salon_a)
 @ADMIN
 def test_invalider_depuis_l_admin_exige_un_motif(admin_client, salon_a):
     parrainage = filleul_de(services.code_du_salon(salon_a.tenant))
-    services.rendre_admissible(parrainage.pk)
+    donnees_historiques(parrainage)
     url = reverse("admin:parrainage_parrainage_changelist")
     base = {"action": "action_invalider", helpers.ACTION_CHECKBOX_NAME: [str(parrainage.pk)]}
 

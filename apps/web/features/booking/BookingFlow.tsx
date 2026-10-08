@@ -20,6 +20,7 @@ import { z } from "zod";
 import {
   ApiRequestError,
   createBooking,
+  browserRequest,
   fetchAvailability,
   joinWaitlist,
 } from "@/lib/api";
@@ -1241,6 +1242,19 @@ function ContactStep({
   const t = useTranslations("reservation");
   const langue = useLocale();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [codeParrain, setCodeParrain] = useState("");
+  const [devis, setDevis] = useState<{prix_initial: string; promotions: string; reduction_parrainage: string; montant_final: string; code_actif: boolean} | null>(null);
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("parrain_client");
+    if (code) Promise.resolve().then(() => setCodeParrain(code.slice(0, 16)));
+  }, []);
+  const optionsDevis = options.map((o) => `options=${encodeURIComponent(o.id)}`).join("&");
+  useEffect(() => {
+    let active = true;
+    browserRequest<typeof devis>(`/api/v1/public/parrainage/devis?service=${service.id}&${optionsDevis}`, host)
+      .then((result) => active && setDevis(result)).catch(() => active && setDevis(null));
+    return () => { active = false; };
+  }, [host, service.id, optionsDevis]);
 
   /*
    * Lieu du rendez-vous.
@@ -1311,6 +1325,7 @@ function ContactStep({
             full_name: values.full_name,
             phone: values.phone,
             email: values.email.trim(),
+            code_parrainage_client: codeParrain,
             customer_note: values.customer_note,
             options: options.map((option) => option.id),
             // Seuls l'identifiant et la quantité partent : le prix est relu
@@ -1367,6 +1382,7 @@ function ContactStep({
       onSlotLost,
       t,
       langue,
+      codeParrain,
     ],
   );
 
@@ -1468,7 +1484,7 @@ function ContactStep({
                           0,
                         ) +
                         basketTotal(requirements, basket) +
-                        Number(zone.fee_amount),
+                        Number(zone.fee_amount) - Number(devis?.reduction_parrainage ?? 0),
                     ),
                     salon.currency,
                     langue,
@@ -1620,6 +1636,18 @@ function ContactStep({
           </label>
         </div>
 
+        {(devis?.code_actif || codeParrain) && <Field label={langue === "en" ? "Referral code (optional)" : "Code de parrainage (facultatif)"}>
+          <input className="w-full min-w-0 rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-2.5 text-sm text-[var(--site-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--salon-primary)]" value={codeParrain} maxLength={16} autoCapitalize="characters"
+            onChange={(e) => setCodeParrain(e.target.value.toUpperCase())} />
+        </Field>}
+        {devis && Number(devis.reduction_parrainage) > 0 && <dl className="my-4 grid grid-cols-2 gap-2 rounded-xl border border-[var(--site-line)] p-3 text-xs">
+          <dt>{langue === "en" ? "Service before discounts" : "Prestation avant réduction"}</dt><dd className="text-right">{formatPrice(devis.prix_initial, salon.currency, langue)}</dd>
+          <dt>{langue === "en" ? "Promotions" : "Promotions"}</dt><dd className="text-right">−{formatPrice(devis.promotions, salon.currency, langue)}</dd>
+          <dt>{langue === "en" ? "Referral discount" : "Réduction de parrainage"}</dt><dd className="text-right">−{formatPrice(devis.reduction_parrainage, salon.currency, langue)}</dd>
+          <dt>{langue === "en" ? "Service after discounts" : "Prestation après réduction"}</dt><dd className="text-right font-semibold">{formatPrice(devis.montant_final, salon.currency, langue)}</dd>
+          <p className="col-span-2 text-[var(--site-muted)]">{langue === "en" ? "Products and travel are charged separately. Availability is checked when booking." : "Les produits et le déplacement s’ajoutent à ce montant. La disponibilité de la réduction est vérifiée à la réservation."}</p>
+        </dl>}
+
         {submitError && (
           <p
             role="alert"
@@ -1740,12 +1768,18 @@ function Confirmation({
           </ul>
         )}
 
+        {Number(confirmation.reduction_parrainage ?? 0) > 0 && <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <dt>{locale === "en" ? "Initial price" : "Prix initial"}</dt><dd className="text-right">{formatPrice(confirmation.prix_initial ?? confirmation.total_amount, salon.currency, locale)}</dd>
+          <dt>Promotions</dt><dd className="text-right">−{formatPrice(confirmation.promotion_montant ?? "0", salon.currency, locale)}</dd>
+          <dt>{locale === "en" ? "Referral discount" : "Réduction de parrainage"}</dt><dd className="text-right">−{formatPrice(confirmation.reduction_parrainage ?? "0", salon.currency, locale)}</dd>
+        </dl>}
+
         {/* Le total dès que quelque chose s'ajoute à la prestation :
             c'est le chiffre que la cliente vient vérifier, et le seul
             qu'elle ne pouvait pas deviner en arrivant sur la page. */}
         {(confirmation.items_snapshot.length > 0 ||
           confirmation.options_snapshot.length > 0 ||
-          Number(confirmation.travel_fee_amount ?? 0) > 0) && (
+          Number(confirmation.travel_fee_amount ?? 0) > 0 || Number(confirmation.reduction_parrainage ?? 0) > 0) && (
           <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-[var(--site-line)] pt-3 text-sm font-medium text-[var(--site-ink)]">
             <span>{t("total")}</span>
             <span className="tabular">

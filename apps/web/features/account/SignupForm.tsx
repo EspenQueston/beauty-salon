@@ -72,6 +72,12 @@ const COUNTRIES = [
     currency: "CDF",
   },
   { code: "CN", label: "Chine", tz: "Asia/Shanghai", currency: "CNY" },
+  { code: "BJ", label: "Bénin", tz: "Africa/Porto-Novo", currency: "XOF" },
+  { code: "BF", label: "Burkina Faso", tz: "Africa/Ouagadougou", currency: "XOF" },
+  { code: "CI", label: "Côte d’Ivoire", tz: "Africa/Abidjan", currency: "XOF" },
+  { code: "TG", label: "Togo", tz: "Africa/Lome", currency: "XOF" },
+  { code: "SN", label: "Sénégal", tz: "Africa/Dakar", currency: "XOF" },
+  { code: "NE", label: "Niger", tz: "Africa/Niamey", currency: "XOF" },
 ];
 
 const schema = z.object({

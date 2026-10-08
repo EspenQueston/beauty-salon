@@ -13,7 +13,7 @@ from django.conf import settings
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import DateTimeRangeField, RangeBoundary, RangeOperators
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Func, Q
 from django.utils.translation import gettext_lazy as _
 
@@ -222,6 +222,9 @@ class Booking(TenantOwnedModel):
     # mentirait, ce qui est la pire des deux erreurs.
     currency = models.CharField(_("devise"), max_length=3, blank=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    prix_initial = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    promotion_montant = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    reduction_parrainage = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     deposit_paid = models.BooleanField(_("acompte encaissé"), default=False)
     deposit_paid_at = models.DateTimeField(null=True, blank=True)
@@ -354,6 +357,7 @@ class Booking(TenantOwnedModel):
             ),
         ]
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
         """Fige la devise a la creation, si personne ne l'a posee.
 

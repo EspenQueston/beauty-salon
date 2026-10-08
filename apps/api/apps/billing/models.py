@@ -31,6 +31,7 @@ DEVISES_ABONNEMENT = [
     ("USD", _("Dollar américain (USD)")),
     ("CDF", _("Franc congolais (CDF)")),
     ("XAF", _("Franc CFA (XAF)")),
+    ("XOF", _("Franc CFA BCEAO (XOF)")),
 ]
 
 
@@ -349,6 +350,7 @@ class PlatformPaymentMethod(UUIDModel, TimeStampedModel):
         WECHAT = "wechat", _("WeChat Pay")
         ALIPAY = "alipay", _("Alipay")
         MOBILE_MONEY = "mobile_money", _("Mobile Money")
+        KKIAPAY = "kkiapay", _("KKIAPAY")
 
     QR_KINDS = (Kind.WECHAT, Kind.ALIPAY)
 
@@ -397,6 +399,13 @@ class PlatformPaymentMethod(UUIDModel, TimeStampedModel):
         manques = []
         if self.country not in Tenant.Country.values:
             manques.append(str(_("pays inconnu")))
+        if self.kind == self.Kind.KKIAPAY:
+            from .kkiapay import disponible
+
+            if self.country not in {"BJ", "BF", "CI", "TG", "SN", "NE"} or self.currency != "XOF":
+                manques.append("KKIAPAY : pays pris en charge et devise XOF obligatoires")
+            if not disponible():
+                manques.append("KKIAPAY : paramètres serveur incomplets ou désactivés")
         if self.kind in self.QR_KINDS and not self.qr_image:
             manques.append(str(_("QR code manquant")))
         if self.kind == self.Kind.MOBILE_MONEY:
@@ -511,6 +520,16 @@ class SubscriptionPaymentRequest(TenantOwnedModel):
         related_name="+",
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    etat_encaissement = models.CharField(
+        max_length=12,
+        default="confirme",
+        choices=[
+            ("confirme", "Confirmé"),
+            ("annule", "Annulé"),
+            ("rembourse", "Remboursé"),
+            ("conteste", "Contesté"),
+        ],
+    )
     review_note = models.TextField(_("note de vérification"), blank=True)
     rejection_reason = models.CharField(_("motif du refus"), max_length=255, blank=True)
 
@@ -556,6 +575,42 @@ class SubscriptionPaymentRequest(TenantOwnedModel):
 
     def __str__(self) -> str:
         return f"{self.plan.name} — {self.amount} {self.currency} ({self.get_status_display()})"
+
+
+class KkiapayIntent(UUIDModel, TimeStampedModel):
+    """Index plateforme pour webhooks ; toute lecture utilisateur filtre le salon."""
+
+    tenant = models.ForeignKey("tenants.Tenant", on_delete=models.SET_NULL, null=True, blank=True)
+    demande = models.OneToOneField(
+        SubscriptionPaymentRequest, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    sandbox = models.BooleanField()
+    transaction_id = models.CharField(max_length=100, blank=True)
+    statut = models.CharField(
+        max_length=12,
+        default="en_attente",
+        choices=[
+            ("en_attente", "En attente"),
+            ("confirme", "Confirmé"),
+            ("expire", "Expiré"),
+            ("annule", "Annulé"),
+        ],
+    )
+    expire_le = models.DateTimeField()
+
+    class Meta:
+        verbose_name = "intention de paiement KKIAPAY"
+        verbose_name_plural = "paiements KKIAPAY"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sandbox", "transaction_id"],
+                condition=~Q(transaction_id=""),
+                name="kkiapay_transaction_unique",
+            )
+        ]
+
+    def __str__(self):
+        return f"KKIAPAY — {self.tenant or 'salon supprimé'} — {self.get_statut_display()}"
 
 
 class SubscriptionEvent(TenantOwnedModel):

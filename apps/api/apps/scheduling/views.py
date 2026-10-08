@@ -4,6 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -44,6 +45,7 @@ class BusinessHoursViewSet(TenantModelViewSet):
     select_related = ("staff_member",)
     required_roles = MANAGERS
     safe_roles = EVERYONE
+
     pagination_class = None  # une grille hebdomadaire tient en une reponse
 
 
@@ -75,6 +77,22 @@ class BookingViewSet(TenantModelViewSet):
     select_related = ("customer", "staff_member", "service")
     required_roles = FRONT_DESK
     safe_roles = EVERYONE
+
+    def destroy(self, request, *args, **kwargs):
+        booking = self.get_object()
+        from apps.parrainage.models import RecompenseClient
+
+        if RecompenseClient.objects.filter(
+            Q(declencheur=booking) | Q(utilisation=booking)
+        ).exists():
+            return Response(
+                {
+                    "detail": "Ce rendez-vous appartient à un historique de parrainage. "
+                    "Annulez-le pour conserver sa trace."
+                },
+                status=400,
+            )
+        return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -200,8 +218,10 @@ class BookingViewSet(TenantModelViewSet):
             # Meme forcee, une saisie manuelle ne peut pas superposer deux
             # rendez-vous chez la meme personne.
             return Response(
-                {"detail": "Ce prestataire a déjà un rendez-vous sur ce créneau.",
-                 "code": "slot_unavailable"},
+                {
+                    "detail": "Ce prestataire a déjà un rendez-vous sur ce créneau.",
+                    "code": "slot_unavailable",
+                },
                 status=status.HTTP_409_CONFLICT,
             )
 
@@ -213,9 +233,7 @@ class BookingViewSet(TenantModelViewSet):
             resource_id=str(booking.id),
             metadata={"source": "staff"},
         )
-        return Response(
-            BookingSerializer(booking).data, status=status.HTTP_201_CREATED
-        )
+        return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
@@ -247,8 +265,7 @@ class BookingViewSet(TenantModelViewSet):
             reschedule_booking(booking=booking, starts_at=starts_at, actor=request.user)
         except SlotUnavailable as exc:
             return Response(
-                {"detail": str(exc.detail), "code": "slot_unavailable",
-                 "extra": exc.extra},
+                {"detail": str(exc.detail), "code": "slot_unavailable", "extra": exc.extra},
                 status=status.HTTP_409_CONFLICT,
             )
         except BookingRefused as exc:
@@ -275,8 +292,7 @@ class BookingViewSet(TenantModelViewSet):
         }
         if new_status not in allowed:
             return Response(
-                {"detail": "Statut non autorisé par cette route.",
-                 "code": "invalid_status"},
+                {"detail": "Statut non autorisé par cette route.", "code": "invalid_status"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -302,9 +318,7 @@ class BookingViewSet(TenantModelViewSet):
         from apps.payments.models import DepositProof
 
         proof = getattr(booking, "deposit_proof", None)
-        en_attente = (
-            proof is not None and proof.status == DepositProof.Status.SUBMITTED
-        )
+        en_attente = proof is not None and proof.status == DepositProof.Status.SUBMITTED
         if en_attente and booking.status in (
             Booking.Status.REQUESTED,
             Booking.Status.PENDING_PAYMENT,
@@ -378,8 +392,7 @@ class BookingViewSet(TenantModelViewSet):
 
         if booking.deposit_amount <= 0:
             return Response(
-                {"detail": "Cette prestation ne demande pas d'acompte.",
-                 "code": "no_deposit"},
+                {"detail": "Cette prestation ne demande pas d'acompte.", "code": "no_deposit"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if booking.deposit_paid:
@@ -395,9 +408,7 @@ class BookingViewSet(TenantModelViewSet):
         booking.deposit_paid_at = timezone.now()
         booking.deposit_method = payload.validated_data["method"]
         # A defaut de montant precise, le montant attendu fait foi.
-        booking.deposit_received = payload.validated_data.get(
-            "amount", booking.deposit_amount
-        )
+        booking.deposit_received = payload.validated_data.get("amount", booking.deposit_amount)
         booking.save(
             update_fields=[
                 "deposit_paid",
@@ -503,8 +514,7 @@ class BookingViewSet(TenantModelViewSet):
 
         if not booking.deposit_paid:
             return Response(
-                {"detail": "Aucun acompte n'est noté comme encaissé.",
-                 "code": "not_paid"},
+                {"detail": "Aucun acompte n'est noté comme encaissé.", "code": "not_paid"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -620,9 +630,7 @@ class BookingViewSet(TenantModelViewSet):
             # metier qu'on n'avait jamais ecrite.
             vise = str(request.data.get("booking", "")).strip()
             if vise:
-                booking, ambiguous = code_du_rendez_vous(
-                    typed, vise, request.tenant_id
-                )
+                booking, ambiguous = code_du_rendez_vous(typed, vise, request.tenant_id)
             else:
                 booking, ambiguous = booking_from_code(typed, request.tenant_id)
             if ambiguous:
@@ -645,8 +653,7 @@ class BookingViewSet(TenantModelViewSet):
                 )
         else:
             return Response(
-                {"detail": "Scannez un QR ou saisissez un code d'arrivée.",
-                 "code": "missing_code"},
+                {"detail": "Scannez un QR ou saisissez un code d'arrivée.", "code": "missing_code"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -654,8 +661,10 @@ class BookingViewSet(TenantModelViewSet):
         # le QR d'une cliente d'un autre salon serait accepte ici.
         if booking is None or str(booking.tenant_id) != str(request.tenant_id):
             return Response(
-                {"detail": "Ce code ne correspond à aucun rendez-vous de votre salon.",
-                 "code": "unknown_code"},
+                {
+                    "detail": "Ce code ne correspond à aucun rendez-vous de votre salon.",
+                    "code": "unknown_code",
+                },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -696,9 +705,11 @@ class BookingViewSet(TenantModelViewSet):
 
         if booking.status == Booking.Status.CHECKED_IN:
             return Response(
-                {"detail": f"{booking.customer.full_name} est déjà notée arrivée.",
-                 "code": "already_checked_in",
-                 "booking": BookingSerializer(booking).data}
+                {
+                    "detail": f"{booking.customer.full_name} est déjà notée arrivée.",
+                    "code": "already_checked_in",
+                    "booking": BookingSerializer(booking).data,
+                }
             )
 
         if booking.status != Booking.Status.CONFIRMED:
@@ -707,10 +718,12 @@ class BookingViewSet(TenantModelViewSet):
                 # annule, et pour qui, est ce qui permet de trancher au
                 # comptoir. Sans lui, le salon relit tout son agenda pour
                 # comprendre ce que le message lui reproche.
-                {"detail": "Ce rendez-vous n'est pas confirmé : "
-                           f"il est « {booking.get_status_display().lower()} ».",
-                 "code": "not_confirmed",
-                 "booking": BookingSerializer(booking).data},
+                {
+                    "detail": "Ce rendez-vous n'est pas confirmé : "
+                    f"il est « {booking.get_status_display().lower()} ».",
+                    "code": "not_confirmed",
+                    "booking": BookingSerializer(booking).data,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -757,13 +770,9 @@ class BookingViewSet(TenantModelViewSet):
         return Response(
             {
                 "currency": tenant.currency,
-                "late_tolerance_minutes": (
-                    profile.late_tolerance_minutes if profile else 15
-                ),
+                "late_tolerance_minutes": (profile.late_tolerance_minutes if profile else 15),
                 "upcoming_count": upcoming.count(),
-                "today_count": upcoming.filter(
-                    starts_at__lt=now + timedelta(days=1)
-                ).count(),
+                "today_count": upcoming.filter(starts_at__lt=now + timedelta(days=1)).count(),
                 "no_show_last_30_days": Booking.objects.filter(
                     status=Booking.Status.NO_SHOW,
                     starts_at__gte=now - timedelta(days=30),

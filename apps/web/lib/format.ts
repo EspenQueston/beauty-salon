@@ -8,7 +8,7 @@ const LOCALE = "fr-FR";
  * afficher « 25 000 FCFA » plutot que « 25 000,00 » evite de faire passer
  * un tarif simple pour un devis comptable.
  */
-const ZERO_DECIMAL = new Set(["XAF", "CDF", "JPY"]);
+const ZERO_DECIMAL = new Set(["XAF", "XOF", "CDF", "JPY"]);
 
 export function formatPrice(amount: string | number, currency: string, locale = LOCALE): string {
   const value = typeof amount === "string" ? Number(amount) : amount;
