@@ -28,11 +28,13 @@
  * pas nous.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-import { platformUrl } from "@/lib/site";
+import { Lien } from "@/features/ui/Lien";
+
 import type { PublicSalon } from "@/lib/types";
-import { contactLinks, mapsHref, socialLinks, SERVICE_MODES } from "./contact";
+import { BeautySalonCredit } from "./BeautySalonCredit";
+import { footerContacts, mapsHref, socialLinks } from "./contact";
 import { SalonIcon } from "./icons";
 import { SalonLogo } from "./SalonLogo";
 
@@ -42,7 +44,9 @@ interface Colonne {
 }
 
 export function SalonFooter({ salon }: { salon: PublicSalon }) {
-  const contacts = contactLinks(salon);
+  const t = useTranslations("salon");
+  const c = useTranslations("commun");
+  const contacts = footerContacts(salon);
   const socials = socialLinks(salon);
   const maps = mapsHref(salon);
 
@@ -57,49 +61,52 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
   */
   const colonnes: Colonne[] = [
     {
-      titre: "Le salon",
+      titre: t("leSalon"),
       liens: [
-        { href: "/prestations", label: "Prestations" },
-        { href: "/realisations", label: "Réalisations" },
-        { href: "/equipe", label: "L'équipe" },
+        { href: "/prestations", label: t("prestations") },
+        { href: "/realisations", label: t("realisations") },
+        { href: "/equipe", label: t("equipe") },
       ],
     },
     {
-      titre: "Pratique",
+      titre: t("pratique"),
       liens: [
         ...(salon.about_content?.trim()
-          ? [{ href: "/a-propos", label: "À propos" }]
+          ? [{ href: "/a-propos", label: t("aPropos") }]
           : []),
-        { href: "/infos", label: "Infos pratiques" },
-        { href: "/reserver", label: "Réserver" },
+        { href: "/infos", label: t("infosPratiques") },
+        { href: "/reserver", label: c("reserver") },
       ],
     },
   ];
 
   if (contacts.length > 0 || maps) {
     colonnes.push({
-      titre: "Contact",
+      titre: t("contact"),
       liens: [
         ...contacts.map((contact) => ({
           href: contact.href,
           label: contact.value,
           external: contact.external,
         })),
-        ...(maps ? [{ href: maps, label: "Itinéraire", external: true }] : []),
+        ...(maps
+          ? [{ href: maps, label: t("itineraire"), external: true }]
+          : []),
       ],
     });
   }
 
   // Deux classes littérales plutôt qu'une chaîne composée : Tailwind lit le
   // source, il ne voit pas les noms fabriqués à l'exécution.
-  const grilleLiens = colonnes.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
+  const grilleLiens =
+    colonnes.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
 
-  const sousTitre = [salon.city, SERVICE_MODES[salon.service_mode]]
+  const sousTitre = [salon.city, t(`modes.${salon.service_mode}`)]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <footer className="mt-20 px-3 pb-8 sm:px-5 sm:pb-10">
+    <footer className="mt-20 px-3 pb-28 sm:px-5 sm:pb-28">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-[var(--site-line)] bg-[var(--site-surface)] px-5 py-10 sm:rounded-[2rem] sm:px-8 sm:py-12 lg:px-12">
         {/*
           Le halo, en deux foyers venus du bas.
@@ -183,7 +190,7 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
             du dernier paragraphe de la page.
           */}
           <nav
-            aria-label="Pied de page"
+            aria-label={t("piedDePage")}
             className={`grid grid-cols-2 gap-x-6 gap-y-8 ${grilleLiens}`}
           >
             {colonnes.map((colonne) => (
@@ -204,12 +211,12 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
                           {lien.label}
                         </a>
                       ) : (
-                        <Link
+                        <Lien
                           href={lien.href}
                           className="inline-block text-[0.82rem] text-[var(--site-muted)] transition hover:translate-x-0.5 hover:text-[var(--salon-ink)] sm:text-[0.9rem]"
                         >
                           {lien.label}
-                        </Link>
+                        </Lien>
                       )}
                     </li>
                   ))}
@@ -217,6 +224,9 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
               </div>
             ))}
           </nav>
+        </div>
+        <div className="relative mt-8 flex justify-center border-t border-[var(--site-line)] pt-5 sm:mt-10 sm:pt-6">
+          <BeautySalonCredit />
         </div>
       </div>
 
@@ -227,19 +237,10 @@ export function SalonFooter({ salon }: { salon: PublicSalon }) {
         un texte de cette taille. La mention doit rester secondaire, pas
         devenir décorative.
       */}
-      <div className="mt-6 flex flex-col items-center gap-1 text-center text-xs text-[var(--site-muted)] sm:flex-row sm:justify-center sm:gap-2 sm:text-[0.8rem]">
+      <div className="mt-5 text-center text-xs text-[var(--site-muted)] sm:text-[0.8rem]">
         <span>
-          © {new Date().getFullYear()} {salon.name}. Tous droits réservés.
+          © {new Date().getFullYear()} {salon.name}. {t("tousDroitsReserves")}
         </span>
-        <span aria-hidden className="hidden opacity-45 sm:inline">
-          ·
-        </span>
-        <a
-          href={platformUrl}
-          className="underline-offset-4 transition hover:text-[var(--site-muted)] hover:underline"
-        >
-          Propulsé par Beauty Salon
-        </a>
       </div>
     </footer>
   );

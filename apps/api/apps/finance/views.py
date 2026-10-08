@@ -1,4 +1,4 @@
-"""Recettes et depenses : saisie, synthese, export."""
+"""Finances : historique en lecture seule, synthèse et export."""
 
 from datetime import date, timedelta
 
@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.accounts.models import Membership
-from apps.common.viewsets import TenantModelViewSet
+from apps.common.viewsets import TenantReadOnlyViewSet
 from apps.tenants.models import Tenant
 
 from . import services
@@ -57,7 +57,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             "from_booking",
             "created_at",
         )
-        read_only_fields = ("created_at", "source")
+        read_only_fields = fields
 
     def get_from_booking(self, transaction) -> bool:
         """Dit si la ligne est nee d'un rendez-vous.
@@ -68,49 +68,9 @@ class TransactionSerializer(serializers.ModelSerializer):
         """
         return transaction.booking_id is not None
 
-    def validate(self, attrs):
-        kind = attrs.get("kind", getattr(self.instance, "kind", None))
-        category = attrs.get("category", getattr(self.instance, "category", None))
-
-        if kind and category:
-            allowed = (
-                Transaction.IncomeCategory
-                if kind == Transaction.Kind.INCOME
-                else Transaction.ExpenseCategory
-            )
-            if category not in allowed.values:
-                raise serializers.ValidationError(
-                    {
-                        "category": "Ce poste n'existe pas pour "
-                        + ("une recette." if kind == Transaction.Kind.INCOME else "une dépense.")
-                    }
-                )
-
-        occurred_on = attrs.get("occurred_on")
-        if occurred_on and occurred_on > self._today():
-            # Une depense future est une prevision, pas un mouvement. La
-            # melanger au realise fausserait tous les totaux.
-            raise serializers.ValidationError(
-                {"occurred_on": "Une date future ne peut pas être enregistrée."}
-            )
-
-        return attrs
-
-    def _today(self) -> date:
-        """La date du jour **chez le salon**.
-
-        Comparer a `date.today()` revenait a comparer a la date du serveur.
-        Un salon a Shanghai saisissant une depense du jour se la voyait
-        refuser comme « future » pendant les huit heures ou UTC est encore la
-        veille - un message incomprehensible devant une depense bien reelle.
-        """
-        request = self.context.get("request")
-        tenant_id = getattr(request, "tenant_id", None)
-        tenant = Tenant.objects.filter(pk=tenant_id).first() if tenant_id else None
-        return services.aujourdhui_du_salon(tenant) if tenant else date.today()
-
-
-class TransactionViewSet(TenantModelViewSet):
+class TransactionViewSet(TenantReadOnlyViewSet):
+    # Historique conservé ; aucune écriture, correction ou suppression manuelle.
+    http_method_names = ["get", "head", "options"]
     serializer_class = TransactionSerializer
     model = Transaction
     required_roles = OWNERS

@@ -117,7 +117,12 @@ const TONES: Record<Tone, { bg: string; fg: string; icon: ReactNode }> = {
     bg: "bg-success-bg",
     fg: "text-success",
     icon: (
-      <path d="M20 6 9 17l-5-5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M20 6 9 17l-5-5"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     ),
   },
   error: {
@@ -160,7 +165,12 @@ function ToastCard({
         aria-hidden
         className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full ${tone.bg} ${tone.fg}`}
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-4">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          className="size-4"
+        >
           {tone.icon}
         </svg>
       </span>
@@ -173,8 +183,17 @@ function ToastCard({
         aria-label="Fermer"
         className="-m-1 rounded-md p-1 text-subtle transition hover:bg-surface-hover hover:text-ink"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="size-4">
-          <path d="m6 6 12 12M18 6 6 18" strokeWidth="2" strokeLinecap="round" />
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          className="size-4"
+        >
+          <path
+            d="m6 6 12 12M18 6 6 18"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
         </svg>
       </button>
     </div>

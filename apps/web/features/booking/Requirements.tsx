@@ -35,6 +35,7 @@
  * avoir la semaine suivante.
  */
 
+import { useLocale, useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/format";
 import type { ServiceRequirement } from "@/lib/types";
 import { SalonIcon } from "@/features/salon/icons";
@@ -92,6 +93,8 @@ export function RequirementsStep({
   currency: string;
   onChange: (basket: Basket) => void;
 }) {
+  const t = useTranslations("reservation");
+  const locale = useLocale();
   // Tous les articles de l'étape, toutes exigences confondues : deux
   // fournitures voisines ne doivent pas porter la même photo.
   const fallbacks = productIllustrations(
@@ -114,7 +117,11 @@ export function RequirementsStep({
     onChange({ owned, items });
   }
 
-  function setQuantity(productId: string, quantity: number, requirementId: string) {
+  function setQuantity(
+    productId: string,
+    quantity: number,
+    requirementId: string,
+  ) {
     const items = { ...basket.items };
     if (quantity <= 0) delete items[productId];
     else items[productId] = Math.min(quantity, 20);
@@ -141,11 +148,11 @@ export function RequirementsStep({
                   {requirement.label}
                   {requirement.mandatory ? (
                     <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[0.7rem] font-medium text-amber-700 dark:text-amber-400">
-                      Indispensable
+                      {t("exigences.indispensable")}
                     </span>
                   ) : (
                     <span className="rounded-full bg-black/[0.06] px-2 py-0.5 text-[0.7rem] text-[var(--site-muted)] dark:bg-white/10">
-                      Facultatif
+                      {t("exigences.facultatif")}
                     </span>
                   )}
                 </p>
@@ -159,7 +166,7 @@ export function RequirementsStep({
               {answered && (
                 <SalonIcon
                   name="check"
-                  aria-label="Réglé"
+                  aria-label={t("exigences.regle")}
                   className="size-5 shrink-0 text-emerald-600"
                 />
               )}
@@ -179,9 +186,9 @@ export function RequirementsStep({
                     : "border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--salon-primary)]/50"
                 }`}
               >
-                <span className="block font-medium">Je l&apos;apporte</span>
+                <span className="block font-medium">{t("exigences.jeLapporte")}</span>
                 <span className="text-xs text-[var(--site-subtle)]">
-                  rien à payer
+                  {t("exigences.rienAPayer")}
                 </span>
               </button>
 
@@ -194,13 +201,13 @@ export function RequirementsStep({
               >
                 <span className="block font-medium text-[var(--site-ink)]">
                   {requirement.products.length > 0
-                    ? "Je l'achète ici"
-                    : "À apporter"}
+                    ? t("exigences.jeLAchete")
+                    : t("exigences.aApporter")}
                 </span>
                 <span className="text-xs text-[var(--site-subtle)]">
                   {requirement.products.length > 0
-                    ? "au salon, le jour même"
-                    : "le salon n'en vend pas"}
+                    ? t("exigences.auSalonJourMeme")
+                    : t("exigences.salonNenVendPas")}
                 </span>
               </div>
             </div>
@@ -240,10 +247,10 @@ export function RequirementsStep({
                           {product.name}
                         </p>
                         <p className="tabular text-sm text-[var(--salon-ink)]">
-                          {formatPrice(product.price, currency)}
+                          {formatPrice(product.price, currency, locale)}
                           {!product.available && (
                             <span className="ml-2 text-xs font-medium text-[var(--site-subtle)]">
-                              en rupture
+                              {t("exigences.enRupture")}
                             </span>
                           )}
                         </p>
@@ -254,10 +261,16 @@ export function RequirementsStep({
                           <button
                             type="button"
                             onClick={() =>
-                              setQuantity(product.id, quantity - 1, requirement.id)
+                              setQuantity(
+                                product.id,
+                                quantity - 1,
+                                requirement.id,
+                              )
                             }
                             disabled={quantity === 0}
-                            aria-label={`Retirer un ${product.name}`}
+                            aria-label={t("exigences.retirer", {
+                              produit: product.name,
+                            })}
                             className="flex size-8 items-center justify-center rounded-lg border border-[var(--site-line)] text-[var(--site-muted)] transition disabled:opacity-40"
                           >
                             −
@@ -279,9 +292,15 @@ export function RequirementsStep({
                           <button
                             type="button"
                             onClick={() =>
-                              setQuantity(product.id, quantity + 1, requirement.id)
+                              setQuantity(
+                                product.id,
+                                quantity + 1,
+                                requirement.id,
+                              )
                             }
-                            aria-label={`Ajouter un ${product.name}`}
+                            aria-label={t("exigences.ajouter", {
+                              produit: product.name,
+                            })}
                             className="flex size-8 items-center justify-center rounded-lg border border-[var(--site-line)] text-[var(--site-muted)] transition hover:border-[var(--salon-primary)]"
                           >
                             +

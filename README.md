@@ -271,7 +271,8 @@ devinent pas en lisant le code :
 - **Les médias privés ne sont pas servis par le serveur de fichiers.** Une
   preuve de versement vit sous `MEDIA_ROOT/prive/` et ne sort que par
   `/api/v1/media/<id>/fichier`, qui vérifie l'appartenance au salon. Côté
-  déploiement : `location /media/prive/ { deny all; }`.
+  déploiement, le `Caddyfile` de `infra/production/` répond 404 sous
+  `/media/prive/`, variantes encodées comprises.
 - **Les réglages sont vérifiés par des tests**, pas par une consigne :
   `tests/test_securite_deploiement.py` charge le module de production comme le
   ferait un déploiement. Un drapeau qui repasse à `False` échoue avant la mise
@@ -400,7 +401,7 @@ multi-salons.
 | Internationalisation | Tout passe par `gettext`, mais un seul catalogue (`fr`). |
 | SMS | Aucun. |
 | Application mobile, marketplace | Non commencés, et conditionnés dans la feuille de route elle-même. |
-| Déploiement | Les réglages de production existent et sont testés ; aucun pipeline de déploiement n'est fourni. |
+| Déploiement | Sur une machine, par Docker Compose et Caddy (HTTPS automatique) : voir [`infra/production/`](infra/production/README.md). Manuel — un script à lancer sur le serveur — et non déclenché par la CI. |
 
 ### Dettes assumées
 

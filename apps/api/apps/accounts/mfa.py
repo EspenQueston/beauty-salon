@@ -86,6 +86,10 @@ def mfa_view(request):
     device = confirmed_device(user)
 
     if request.method == "POST":
+        # « Revenir a la connexion » : on repart de zero.
+        if request.POST.get("action") == "deconnexion":
+            return _recommencer(request)
+
         token = (request.POST.get("token") or "").strip().replace(" ", "")
 
         if device is not None:
@@ -148,6 +152,27 @@ def _enroll(request, token: str):
     )
 
 
+def _recommencer(request):
+    """Ferme la session et renvoie a l'ecran de connexion.
+
+    Un simple lien vers l'administration ne suffirait pas : le middleware y
+    renvoie ici tant que la session n'est pas verifiee, et l'on tournerait en
+    rond sans jamais revoir le formulaire de connexion. Il faut donc vraiment
+    fermer la session.
+
+    C'est aussi la seule sortie honnete de cet ecran. Sans elle, quelqu'un
+    qui s'est trompe de compte - ou dont le telephone est reste a la maison -
+    n'a d'autre choix que de vider ses cookies a la main.
+
+    `logout()` fait tourner la cle de session : le mot de passe devra etre
+    ressaisi, ce qui est exactement le sens de « recommencer ».
+    """
+    from django.contrib.auth import logout
+
+    logout(request)
+    return HttpResponseRedirect(reverse("admin:login"))
+
+
 def _next_url(request) -> str:
     candidate = request.GET.get("next") or request.POST.get("next")
     # Redirection ouverte : on n'accepte qu'un chemin interne.
@@ -164,10 +189,24 @@ class PlatformAdminMFAMiddleware:
     meme si la personne a deja enrole son telephone.
     """
 
-    EXEMPT = ("/admin/login", "/admin/logout", "/admin/jsi18n")
+    # Les sous-chemins exemptes, relatifs au chemin de l'administration.
+    EXEMPT = ("login", "logout", "jsi18n")
 
     def __init__(self, get_response):
         self.get_response = get_response
+
+    @staticmethod
+    def _prefixe() -> str:
+        """Le chemin reel de l'administration : `ADMIN_PATH`, pas `/admin/`.
+
+        Il etait code en dur. En production, l'administration est servie
+        sous un chemin tire au hasard (`ADMIN_PATH`) : aucune requete ne
+        commencait par `/admin/`, et la double authentification n'etait
+        donc jamais exigee — un mot de passe suffisait a ouvrir l'alias qui
+        contourne l'isolation des salons.
+        """
+        chemin = getattr(settings, "ADMIN_PATH", "admin/") or "admin/"
+        return "/" + chemin.strip("/") + "/"
 
     def __call__(self, request):
         if self._requires_mfa(request):
@@ -179,9 +218,10 @@ class PlatformAdminMFAMiddleware:
     def _requires_mfa(self, request) -> bool:
         if not getattr(settings, "PLATFORM_ADMIN_MFA_REQUIRED", True):
             return False
-        if not request.path.startswith("/admin/"):
+        prefixe = self._prefixe()
+        if not request.path.startswith(prefixe):
             return False
-        if request.path.startswith(self.EXEMPT):
+        if request.path.startswith(tuple(prefixe + sortie for sortie in self.EXEMPT)):
             return False
 
         user = getattr(request, "user", None)

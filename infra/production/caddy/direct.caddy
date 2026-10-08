@@ -1,0 +1,7 @@
+# ---------------------------------------------------------------------------
+# Mode « direct » : Caddy tient lui-meme les ports 80 et 443.
+#
+# Importe dans les options globales du Caddyfile quand ENTREE=direct. Rien a
+# ajouter : les reglages par defaut de Caddy sont ceux qu'on veut quand il
+# est seul devant Internet. Voir coolify.caddy pour l'autre mode.
+# ---------------------------------------------------------------------------

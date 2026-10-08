@@ -25,13 +25,17 @@
  * D'où `onElapsed` : à zéro, on redemande au serveur. Lui seul tranche.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { SalonIcon } from "@/features/salon/icons";
 
 /** Secondes restantes, jamais négatives. */
 function secondsLeft(deadline: string): number {
-  return Math.max(0, Math.round((new Date(deadline).getTime() - Date.now()) / 1000));
+  return Math.max(
+    0,
+    Math.round((new Date(deadline).getTime() - Date.now()) / 1000),
+  );
 }
 
 /** « 23 min », « 4 min 05 s », « 45 s » — la précision suit l'urgence. */
@@ -53,6 +57,7 @@ export function Countdown({
   onElapsed?: () => void;
   className?: string;
 }) {
+  const t = useTranslations("reservation");
   // L'état initial se calcule dans l'initialiseur, pas dans un effet : le
   // poser depuis un effet provoquerait un second rendu immédiat, et le
   // compteur s'afficherait une fraction de seconde à sa valeur de départ.
@@ -110,7 +115,8 @@ export function Countdown({
     >
       <SalonIcon name="clock" className="size-4 shrink-0" />
       <span>
-        Créneau gardé encore <strong className="tabular">{human(left)}</strong>
+        {t("creneauGardeEncore")}{" "}
+        <strong className="tabular">{human(left)}</strong>
       </span>
     </p>
   );

@@ -55,11 +55,14 @@
  * mosaïque, pleine sur les fiches, où rien ne viendrait la révéler.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { Lien } from "@/features/ui/Lien";
 import { useState } from "react";
 
 import type { PublicStaffMember } from "@/lib/types";
 import { SalonIcon } from "./icons";
+import { photo, TAILLES } from "./images";
 
 /**
  * Largeur relative de chaque colonne.
@@ -205,7 +208,7 @@ export function TeamShowcase({
  */
 function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
   return (
-    <Link
+    <Lien
       href="/reserver"
       className="group relative block overflow-hidden rounded-xl outline-offset-2"
     >
@@ -213,7 +216,7 @@ function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
         {member.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={member.photo.url}
+            {...photo(member.photo, TAILLES.grille)}
             alt={member.photo.alt_text || member.name}
             loading="lazy"
             className="size-full object-cover transition-transform duration-500 group-active:scale-[1.03]"
@@ -255,7 +258,7 @@ function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
           </p>
         )}
       </div>
-    </Link>
+    </Lien>
   );
 }
 
@@ -299,7 +302,7 @@ function Tuile({
       {member.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={member.photo.url}
+          {...photo(member.photo, TAILLES.cartes)}
           alt={member.photo.alt_text || member.name}
           loading="lazy"
           className="size-full object-cover transition-[filter,transform] duration-500"
@@ -339,11 +342,12 @@ function Ligne({
   onActif: (id: string | null) => void;
   detailed: boolean;
 }) {
+  const c = useTranslations("commun");
   const estActif = actif === member.id;
   const eteint = actif !== null && !estActif;
 
   return (
-    <Link
+    <Lien
       href="/reserver"
       onMouseEnter={() => onActif(member.id)}
       onMouseLeave={() => onActif(null)}
@@ -386,7 +390,7 @@ function Ligne({
               : "-translate-x-1.5 opacity-0"
           }`}
         >
-          Réserver
+          {c("reserver")}
           <SalonIcon name="arrow" className="size-3" />
         </span>
       </span>
@@ -406,6 +410,6 @@ function Ligne({
           {member.bio}
         </span>
       )}
-    </Link>
+    </Lien>
   );
 }

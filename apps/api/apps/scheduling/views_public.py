@@ -8,6 +8,7 @@ et validation stricte des identifiants recus.
 import logging
 
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -77,36 +78,57 @@ def _eligible_staff(service, staff_member_id=None):
     return list(queryset.order_by("position", "name"))
 
 
+def creneaux_disponibles(request, *, prestation_active_seulement: bool = True):
+    """Les creneaux reservables, pour la requete en cours.
+
+    Partagee par deux vues qui ne different que par leur porte d'entree :
+    celle des clientes, ou le salon vient du nom d'hote, et celle de
+    l'equipe, ou il vient du membership. Le calcul, lui, est le meme - et
+    il doit le rester : deux moteurs de creneaux finiraient par proposer
+    des horaires differents pour le meme agenda.
+
+    `prestation_active_seulement` est la seule vraie difference. Une cliente
+    ne peut reserver qu'une prestation au catalogue ; le salon, lui, doit
+    pouvoir deplacer un rendez-vous dont la prestation a ete retiree depuis.
+    Le refuser bloquerait un rendez-vous deja pris pour une raison qui ne
+    regarde que le catalogue.
+    """
+    query = AvailabilityQuerySerializer(data=request.query_params)
+    query.is_valid(raise_exception=True)
+    data = query.validated_data
+
+    tenant = get_object_or_404(Tenant, pk=request.tenant_id)
+    filtres = {}
+    if prestation_active_seulement:
+        filtres["active"] = True
+    service = get_object_or_404(Service, pk=data["service"], **filtres)
+    staff_members = _eligible_staff(service, data.get("staff_member"))
+
+    # Le queryset est borne au tenant courant et a cette prestation :
+    # une option devinee, ou empruntee a une autre prestation, ne peut pas
+    # rallonger un creneau qu'elle n'accompagne pas.
+    extra_minutes = _options_duration(service, data.get("options") or [])
+
+    if not staff_members:
+        return Response({"slots": []})
+
+    slots = available_slots(
+        tenant=tenant,
+        service=service,
+        staff_members=staff_members,
+        date_from=data["date_from"],
+        date_to=data["date_to"],
+        extra_minutes=extra_minutes,
+    )
+    return Response({"slots": SlotSerializer(slots, many=True).data})
+
+
 class PublicAvailabilityView(APIView):
     permission_classes = [AllowAny, IsTenantResolved]
     throttle_scope = "public_read"
 
     def get(self, request):
-        query = AvailabilityQuerySerializer(data=request.query_params)
-        query.is_valid(raise_exception=True)
-        data = query.validated_data
-
-        tenant = get_object_or_404(Tenant, pk=request.tenant_id)
-        service = get_object_or_404(Service, pk=data["service"], active=True)
-        staff_members = _eligible_staff(service, data.get("staff_member"))
-
-        # Le queryset est borne au tenant courant et a cette prestation :
-        # une option devinee, ou empruntee a une autre prestation, ne peut pas
-        # rallonger un creneau qu'elle n'accompagne pas.
-        extra_minutes = _options_duration(service, data.get("options") or [])
-
-        if not staff_members:
-            return Response({"slots": []})
-
-        slots = available_slots(
-            tenant=tenant,
-            service=service,
-            staff_members=staff_members,
-            date_from=data["date_from"],
-            date_to=data["date_to"],
-            extra_minutes=extra_minutes,
-        )
-        return Response({"slots": SlotSerializer(slots, many=True).data})
+        return creneaux_disponibles(request)
 
 
 class PublicBookingCreateView(APIView):
@@ -213,6 +235,8 @@ class PublicBookingCreateView(APIView):
             marketing_consent=data.get("marketing_consent", False),
         )
 
+        from apps.clients.services import attach, compte_de_l_adresse, est_cliente
+
         try:
             booking = create_booking(
                 tenant=tenant,
@@ -226,6 +250,9 @@ class PublicBookingCreateView(APIView):
                 travel_zone=zone,
                 address=data.get("address", "").strip(),
                 idempotency_key=idempotency_key,
+                language=data.get("language", "fr"),
+                compte=request.user if est_cliente(request.user) else None,
+                code_parrainage_client=data.get("code_parrainage_client", ""),
             )
         except BookingRefused as exc:
             return Response(
@@ -233,18 +260,30 @@ class PublicBookingCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        from apps.notifications import evenements
         from apps.notifications.tasks import send_booking_notifications
 
         send_booking_notifications.delay(str(booking.id), str(tenant.id))
+        # L'e-mail part vers la boite du salon ; la notification, elle,
+        # arrive sur l'ecran verrouille. Les deux, parce qu'une gerante
+        # ne lit pas ses mails entre deux clientes.
+        evenements.nouvelle_reservation(booking)
 
-        # Si la cliente est connectee a son espace, le rendez-vous
-        # rejoint son historique. Sans ce rattachement il existerait bel et
-        # bien, mais resterait invisible dans son compte - et elle croirait
-        # que sa reservation n'a pas pris.
-        if request.user.is_authenticated and hasattr(request.user, "client_profile"):
-            from apps.clients.services import attach
-
+        # Le salon rejoint la liste des salons du compte : connecte, ou sans
+        # session avec l'adresse d'un compte cliente verifie. Rien n'est dit
+        # a la personne qui reserve — la reponse ne revele pas qu'un compte
+        # existe pour cette adresse.
+        #
+        # Ce rattachement n'est qu'un index des salons. Ce que le compte voit
+        # se decide rendez-vous par rendez-vous (`clients.services.bookings_for`) :
+        # jamais toute la fiche, retrouvee par un telephone que n'importe qui
+        # peut saisir.
+        if est_cliente(request.user):
             attach(request.user, request.tenant_id, booking.customer_id)
+        else:
+            titulaire = compte_de_l_adresse(details.email)
+            if titulaire is not None:
+                attach(titulaire, request.tenant_id, booking.customer_id)
 
         return Response(
             PublicBookingConfirmationSerializer(booking).data,
@@ -326,10 +365,18 @@ class PublicWaitlistView(APIView):
     throttle_scope = "waitlist_create"
 
     def post(self, request):
+        from zoneinfo import ZoneInfo
+
+        from apps.customers.coordonnees import memes_chiffres
+
         from .models import WaitlistEntry
         from .serializers import PublicWaitlistSerializer
 
-        payload = PublicWaitlistSerializer(data=request.data)
+        tenant = Tenant.objects.get(pk=request.tenant_id)
+        aujourd_hui = timezone.now().astimezone(ZoneInfo(tenant.timezone)).date()
+        payload = PublicWaitlistSerializer(
+            data=request.data, context={"aujourd_hui": aujourd_hui}
+        )
         payload.is_valid(raise_exception=True)
         data = payload.validated_data
 
@@ -337,17 +384,44 @@ class PublicWaitlistView(APIView):
         # courant : le manager tenant s'en charge, on ajoute `active`.
         service = get_object_or_404(Service, pk=data["service"].id, active=True)
 
-        entry = WaitlistEntry.objects.create(
-            tenant_id=request.tenant_id,
-            service=service,
-            staff_member=data.get("staff_member"),
-            full_name=data["full_name"].strip(),
-            phone=data["phone"].strip(),
-            email=data.get("email", "").strip(),
-            preferred_from=data["preferred_from"],
-            preferred_to=data["preferred_to"],
-            note=data.get("note", "").strip(),
+        champs = {
+            "staff_member": data.get("staff_member"),
+            "full_name": data["full_name"].strip(),
+            "phone": data["phone"].strip(),
+            "email": data.get("email", "").strip(),
+            "preferred_from": data["preferred_from"],
+            "preferred_to": data["preferred_to"],
+            "note": data.get("note", "").strip(),
+        }
+
+        # Elle revient et se reinscrit pour la meme prestation : sa demande
+        # encore ouverte est mise a jour, plutot qu'une deuxieme ligne — et
+        # une deuxieme alerte — que le salon devrait recouper a la main. Le
+        # meme numero s'ecrit de plusieurs facons : on compare les chiffres.
+        ouverte = (
+            memes_chiffres(
+                WaitlistEntry.objects.filter(
+                    service=service,
+                    status__in=(WaitlistEntry.Status.WAITING, WaitlistEntry.Status.CONTACTED),
+                ),
+                champs["phone"],
+            )
+            .order_by("-created_at")
+            .first()
         )
+        if ouverte is not None:
+            for nom, valeur in champs.items():
+                setattr(ouverte, nom, valeur)
+            ouverte.save(update_fields=[*champs, "updated_at"])
+            entry = ouverte
+        else:
+            entry = WaitlistEntry.objects.create(
+                tenant_id=request.tenant_id, service=service, **champs
+            )
+
+            from apps.notifications import evenements
+
+            evenements.liste_attente(entry)
 
         return Response(
             {

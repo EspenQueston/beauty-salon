@@ -1,0 +1,117 @@
+{% extends "admin/change_form.html" %}
+{% comment %}
+  Le detail d'un paiement d'abonnement, avec la decision au-dessus.
+
+  Hors du formulaire de l'admin, et non dedans : un formulaire imbrique dans
+  un autre n'est pas du HTML valide, et les navigateurs en envoient le
+  mauvais. Chaque decision a donc son propre formulaire, en POST, protege
+  par le jeton CSRF de Django.
+{% endcomment %}
+{% load l10n %}
+
+{% block content %}
+{% if original %}
+<section class="paiement-decision" aria-labelledby="paiement-decision-titre">
+  <h2 id="paiement-decision-titre">
+    {{ original.tenant }} — {{ original.plan.name }}
+    {% if original.status == "pending" %}<span class="pill pill--warning">{{ original.get_status_display }}</span>
+    {% elif original.status == "approved" %}<span class="pill pill--ok">{{ original.get_status_display }}</span>
+    {% else %}<span class="pill pill--danger">{{ original.get_status_display }}</span>{% endif %}
+  </h2>
+  <p class="paiement-decision__aide">
+    {% if original.method_kind == "kkiapay" %}
+    La confirmation KKIAPAY est automatique, après vérification du montant, de la devise et de la transaction côté serveur. Le compte marchand de la plateforme encaisse l’abonnement.
+    {% else %}
+    Vérifiez sur le compte crédité qu'un versement de ce montant, avec cette référence, a bien été reçu.
+    Une capture d'écran se fabrique : la référence et le relevé du compte font foi.
+    {% endif %}
+  </p>
+
+  <div class="paiement-decision__resume">
+    <div class="paiement-decision__fait"><span>Montant</span><strong>{{ original.amount|unlocalize }} {{ original.currency }}</strong></div>
+    {% if original.remise_montant %}
+    {# Parrainage : le salon verse le tarif moins ses remises. C'est le montant ci-dessus qu'il faut retrouver. #}
+    <div class="paiement-decision__fait"><span>Remise de parrainage</span><strong>−{{ original.remise_pourcentage|floatformat:"-2" }} % ({{ original.remise_montant|unlocalize }} {{ original.currency }}) sur {{ original.montant_catalogue|unlocalize }}</strong></div>
+    {% endif %}
+    <div class="paiement-decision__fait"><span>Offre</span><strong>{{ original.plan.name }} · {{ original.billing_months }} mois</strong></div>
+    <div class="paiement-decision__fait"><span>Moyen</span><strong>{{ original.method_label }}</strong></div>
+    {% if original.method_account_number %}
+    <div class="paiement-decision__fait"><span>Compte crédité</span><strong>{{ original.method_account_number }}{% if original.method_account_holder %} · {{ original.method_account_holder }}{% endif %}</strong></div>
+    {% endif %}
+    <div class="paiement-decision__fait"><span>Référence</span><strong>{{ original.reference }}</strong></div>
+    <div class="paiement-decision__fait"><span>Déclaré le</span><strong>{{ original.created_at|date:"d/m/Y H:i" }}</strong></div>
+  </div>
+
+  {% if original.status == "pending" %}
+    {% if original.method_kind == "kkiapay" %}
+      <p class="paiement-decision__aide">En attente de confirmation du fournisseur. Aucun abonnement ni récompense n’est ouvert sur la seule base du widget. Consultez les <a href="{% url 'admin:billing_kkiapayintent_changelist' %}">intentions KKIAPAY</a> pour le suivi.</p>
+    {% elif peut_verifier %}
+      {% if apercu_periode %}
+      <p class="paiement-decision__aide">
+        Si vous approuvez, le salon sera couvert du <strong>{{ apercu_periode.debut|date:"d/m/Y" }}</strong>
+        au <strong>{{ apercu_periode.fin|date:"d/m/Y" }}</strong>.
+      </p>
+      {% endif %}
+      <div class="paiement-decision__choix">
+        <form method="post" action="{% url 'admin:billing_subscriptionpaymentrequest_approuver' original.pk %}"
+              class="paiement-decision__approuver"
+              data-confirmer="Le salon sera couvert dès maintenant. Vérifiez que ce versement figure bien sur le compte crédité, avec cette référence."
+              data-confirmer-titre="Approuver ce paiement ?"
+              data-confirmer-bouton="Approuver le paiement"
+              data-confirmer-ton="ok"
+              data-confirmer-details='[["Salon", "{{ original.tenant.name|escapejs }}"], ["Montant", "{{ original.amount|unlocalize }} {{ original.currency }}"], ["Offre", "{{ original.plan.name|escapejs }}"], ["Référence", "{{ original.reference|escapejs }}"]{% if apercu_periode %}, ["Période", "{{ apercu_periode.debut|date:"d/m/Y" }} → {{ apercu_periode.fin|date:"d/m/Y" }}"]{% endif %}]'>
+          {% csrf_token %}
+          <label for="note-approbation">Note interne (facultative)</label>
+          <textarea id="note-approbation" name="note" rows="2" placeholder="Ex. : vérifié sur le relevé MTN du 25/09"></textarea>
+          <button type="submit" class="button approuver">Approuver le paiement</button>
+        </form>
+
+        <form method="post" action="{% url 'admin:billing_subscriptionpaymentrequest_refuser' original.pk %}"
+              class="paiement-decision__refuser"
+              data-confirmer="Le salon verra le motif et pourra déclarer un nouveau paiement. Ses remises de parrainage réservées lui sont rendues."
+              data-confirmer-titre="Refuser ce paiement ?"
+              data-confirmer-bouton="Refuser le paiement"
+              data-confirmer-ton="danger"
+              data-confirmer-details='[["Salon", "{{ original.tenant.name|escapejs }}"], ["Montant", "{{ original.amount|unlocalize }} {{ original.currency }}"]]'>
+          {% csrf_token %}
+          <label for="motif-refus">Motif du refus (montré au salon)</label>
+          <input type="text" id="motif-refus" name="motif" maxlength="255" required
+                 placeholder="Ex. : aucun versement reçu avec cette référence">
+          <label for="note-refus">Note interne (facultative)</label>
+          <textarea id="note-refus" name="note" rows="2"></textarea>
+          <button type="submit" class="button refuser">Refuser le paiement</button>
+        </form>
+      </div>
+    {% else %}
+      <p class="paiement-decision__aide">Vous pouvez consulter ce paiement, mais pas le valider ni le refuser.</p>
+    {% endif %}
+  {% elif original.status == "approved" %}
+    <p class="paiement-decision__aide">
+      Approuvé par {{ original.reviewed_by|default:"—" }} le {{ original.reviewed_at|date:"d/m/Y H:i" }} :
+      période du {{ original.period_start|date:"d/m/Y" }} au {{ original.period_end|date:"d/m/Y" }}{% if original.invoice %}, facture {{ original.invoice.number }}{% endif %}.
+    </p>
+    {% if peut_verifier %}
+    <form method="post" action="{% url 'admin:billing_subscriptionpaymentrequest_encaissement' original.pk %}" class="paiement-decision__refuser"
+          data-confirmer="Ce constat met à jour le suivi des récompenses. Il ne lance pas de remboursement et ne modifie pas la facture payée."
+          data-confirmer-titre="Enregistrer ce constat ?" data-confirmer-bouton="Confirmer">
+      {% csrf_token %}
+      <label for="etat-encaissement">État actuel : {{ original.get_etat_encaissement_display }}</label>
+      <select id="etat-encaissement" name="etat" required>
+        <option value="confirme" {% if original.etat_encaissement == "confirme" %}selected{% endif %}>Confirmé / contestation résolue</option>
+        <option value="annule" {% if original.etat_encaissement == "annule" %}selected{% endif %}>Annulé</option><option value="rembourse" {% if original.etat_encaissement == "rembourse" %}selected{% endif %}>Remboursé</option><option value="conteste" {% if original.etat_encaissement == "conteste" %}selected{% endif %}>Contesté</option>
+      </select>
+      <label for="motif-encaissement">Motif et référence du justificatif</label>
+      <textarea id="motif-encaissement" name="motif" rows="2" minlength="10" required></textarea>
+      <button type="submit" class="button">Enregistrer le constat</button>
+    </form>
+    {% endif %}
+  {% else %}
+    <p class="paiement-decision__aide">
+      Refusé par {{ original.reviewed_by|default:"—" }} le {{ original.reviewed_at|date:"d/m/Y H:i" }} :
+      « {{ original.rejection_reason }} »
+    </p>
+  {% endif %}
+</section>
+{% endif %}
+{{ block.super }}
+{% endblock %}

@@ -1,0 +1,304 @@
+/*
+ * La cloche de l'administration.
+ *
+ * ===========================================================================
+ * Aucune couleur écrite en dur
+ * ===========================================================================
+ *
+ * Tout passe par les variables de l'administration Django — `--body-bg`,
+ * `--hairline-color`, `--primary`… L'administration a son propre sélecteur
+ * clair/sombre, et une couleur fixée ici aurait donné un panneau blanc
+ * éclatant au milieu d'une page sombre, à trois heures du matin, pour la
+ * personne qui surveille une facturation.
+ *
+ * Ces variables suivent le thème sans que ce fichier en sache quoi que ce
+ * soit.
+ */
+
+#cloche-plateforme {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 12px;
+  vertical-align: middle;
+}
+
+.cloche-bouton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  /* La barre d'en-tete a sa propre encre, distincte de celle du corps :
+     elle est claire sur le bandeau sombre, dans les deux themes. */
+  color: var(--bs-shell-ink, var(--header-link-color, var(--body-fg)));
+  cursor: pointer;
+  line-height: 1;
+}
+
+.cloche-bouton:hover,
+.cloche-bouton[aria-expanded="true"] {
+  background: rgb(255 255 255 / 0.14);
+}
+
+.cloche-pastille {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -2px;
+  min-width: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  /*
+    Un rouge fixe, et non `--error-fg`.
+
+    En thème sombre, Django éclaircit `--error-fg` jusqu'à #e35f5f — ce qui
+    est juste pour du texte rouge sur fond sombre, et faux ici : le chiffre
+    est blanc et **sur** cette couleur, où il tombait à 3,46:1.
+
+    Cette pastille n'est pas un élément du thème, c'est un signal. Elle porte
+    donc sa propre couleur, la même dans les deux thèmes — celle que Django
+    utilise pour ses erreurs en thème clair, pour rester chez elle. Le blanc y
+    est à 6,31:1.
+  */
+  background: #ba2121;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Le panneau.
+ *
+ * Ancré sous la cloche sur grand écran ; sur téléphone, il s'étale sur toute
+ * la largeur avec une marge de 8 px. Un panneau de 24 rem accroché au bord
+ * droit d'un écran de 360 px sortirait de l'écran, et l'administration se
+ * consulte aussi depuis un téléphone quand quelque chose ne va pas.
+ */
+.cloche-panneau {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: 24rem;
+  max-width: calc(100vw - 16px);
+  max-height: min(70vh, 34rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--hairline-color, #e8e8e8);
+  border-radius: 12px;
+  /*
+    `--bs-surface` d'abord : platform.css remappe `--body-bg` sur le
+    fond de page, et un panneau flottant de la couleur du fond de page
+    se lit comme un trou plutot que comme une carte. Les replis gardent
+    le fichier valable sur une administration Django non habillee.
+  */
+  background: var(--bs-surface, var(--body-bg, #fff));
+  color: var(--body-fg, #333);
+  box-shadow: 0 16px 40px -12px rgb(0 0 0 / 0.45);
+  font-size: 13px;
+  text-align: start;
+}
+
+/*
+ * Sur téléphone : une feuille ancrée en bas, pas un menu sous la cloche.
+ *
+ * Deux raisons, et la première est un défaut qu'on a vu à l'écran. En
+ * `position: fixed`, un `top: calc(100% + 8px)` se calcule sur la hauteur de
+ * la **fenêtre** et non sur celle du parent : le panneau partait sous l'écran,
+ * et rien ne s'affichait. Un `top` en pixels l'aurait corrigé, mais il aurait
+ * fallu deviner la hauteur de l'en-tête de l'administration — qui passe du
+ * simple au triple selon que les liens de compte tiennent sur une ligne.
+ *
+ * La seconde raison vaut mieux que la première : en bas, la liste est à
+ * portée du pouce. Un panneau collé sous un en-tête oblige à tenir le
+ * téléphone à deux mains pour atteindre la première ligne.
+ */
+@media (max-width: 767px) {
+  .cloche-panneau {
+    position: fixed;
+    top: auto;
+    inset-inline: 8px;
+    bottom: 8px;
+    width: auto;
+    max-width: none;
+    max-height: min(75vh, 32rem);
+    /* Sous la barre système des téléphones à encoche. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+.cloche-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hairline-color, #e8e8e8);
+}
+
+.cloche-tout {
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--link-fg, var(--primary));
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cloche-tout:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cloche-tout:not(:disabled):hover {
+  background: var(--darkened-bg, #f8f8f8);
+}
+
+.cloche-liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.cloche-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hairline-color, #f0f0f0);
+  cursor: pointer;
+}
+
+.cloche-item:last-child {
+  border-bottom: 0;
+}
+
+.cloche-item:hover {
+  background: var(--darkened-bg, #f8f8f8);
+}
+
+/*
+ * Non lue : un fond très léger, pas une couleur franche.
+ *
+ * Six lignes en couleur vive donneraient une liste d'alertes là où il n'y a
+ * qu'un fil. Mais la teinte de sélection de l'administration, prise telle
+ * quelle, coûtait 0,8 point de contraste au texte secondaire posé dessus :
+ * 4,48:1, soit juste sous le seuil. On la dilue de moitié dans la couleur des
+ * cartes — la ligne se distingue toujours, et le texte repasse au-dessus.
+ */
+.cloche-item--neuve {
+  background: color-mix(
+    in srgb,
+    var(--selected-row, rgb(121 174 200 / 0.12)) 55%,
+    var(--bs-surface, var(--body-bg, #fff))
+  );
+}
+
+.cloche-glyphe {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--darkened-bg, #f0f0f0);
+  /*
+    `--link-fg` et non `--primary`.
+
+    Dans le thème sombre de l'administration, `--primary` vaut #264b5d : un
+    bleu foncé destiné aux **fonds** d'en-tête, pas à de l'encre. Posé ici, le
+    glyphe tombait à 1,72:1 sur son fond gris — un carré vide. `--link-fg` est
+    la couleur que Django destine au texte accentué, et elle suit le thème
+    dans les deux sens (9,76:1 en sombre).
+  */
+  color: var(--link-fg, #417690);
+  font-size: 13px;
+}
+
+.cloche-corps {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cloche-titre {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cloche-salon {
+  font-size: 11px;
+  /* Même raison que le glyphe : `--primary` est un fond. Mesuré à 1,41:1
+     avant correction, c'est-à-dire illisible. */
+  color: var(--link-fg, #417690);
+}
+
+.cloche-detail {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--body-quiet-color, #666);
+  /* Deux lignes au plus : au-delà, c'est l'écran qu'il faut ouvrir. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cloche-quand {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  color: var(--body-quiet-color, #888);
+  white-space: nowrap;
+}
+
+.cloche-vide {
+  margin: 0;
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--body-quiet-color, #888);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.cloche-push {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--hairline-color, #e8e8e8);
+  background: var(--darkened-bg, #f8f8f8);
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--body-quiet-color, #666);
+}
+
+.cloche-push-action {
+  flex: 0 0 auto;
+  border: 1px solid var(--hairline-color, #ddd);
+  border-radius: 6px;
+  padding: 4px 9px;
+  background: var(--bs-surface, var(--body-bg, #fff));
+  color: var(--body-fg, #333);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cloche-push-action:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

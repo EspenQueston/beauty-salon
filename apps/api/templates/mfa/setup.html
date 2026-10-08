@@ -1,30 +1,43 @@
 {% extends "mfa/base.html" %}
 {% block title %}Activer la double authentification{% endblock %}
 
+{% comment %}
+Plus large : le QR code et la clé à recopier ne tiennent pas dans la
+largeur d'un simple champ de code.
+{% endcomment %}
+{% block largeur %}28rem{% endblock %}
+
+{% comment %}
+Cet écran garde son explication, contrairement à celui de vérification.
+
+Il n'est vu qu'une fois, et il demande un effort — sortir son téléphone,
+installer une application. Une phrase qui dit pourquoi est ce qui fait la
+différence entre « on m'impose une corvée » et « je comprends ». Les deux
+paragraphes n'en font plus qu'un, et le libellé du champ est devenu son
+texte d'invite, comme sur l'écran de vérification.
+{% endcomment %}
+
 {% block contenu %}
   <h1>Activez la double authentification</h1>
   <p>
-    Un compte d'administration donne accès aux données de <strong>tous</strong>
-    les salons. Un mot de passe seul n'y suffit pas.
+    Un compte d&apos;administration donne accès aux données de
+    <strong>tous</strong> les salons. Scannez ce code avec Google
+    Authenticator, Authy, ou l&apos;application de votre choix.
   </p>
 
-  <p class="discret">
-    Scannez ce code avec Google Authenticator, Authy, ou l'application
-    d'authentification de votre choix.
-  </p>
+  <div class="mfa-qr">{{ qr_svg|safe }}</div>
 
-  <div class="qr">{{ qr_svg|safe }}</div>
-
-  <p class="discret">
-    Impossible de scanner ? Saisissez cette clé à la main :<br>
-    <code>{{ secret }}</code>
+  <p class="mfa-discret">
+    Impossible de scanner ? Saisissez cette clé :<br>
+    <code class="mfa-cle">{{ secret }}</code>
   </p>
 
   <form method="post">
     {% csrf_token %}
-    <label for="token"><strong>Code à 6 chiffres</strong></label>
+    <label class="mfa-cache" for="token">Code à 6 chiffres</label>
     <input type="text" id="token" name="token" inputmode="numeric"
+           placeholder="Code à 6 chiffres"
            autocomplete="one-time-code" pattern="[0-9 ]*" required autofocus>
-    <button type="submit">Activer</button>
+    <button type="submit" class="mfa-valider">Activer</button>
   </form>
 {% endblock %}

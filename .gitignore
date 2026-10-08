@@ -53,3 +53,6 @@ test-results/
 Thumbs.db
 .idea/
 .vscode/
+
+# Apercus engendres par `manage.py apercu_emails` : un rendu, pas une source.
+apps/api/vues/

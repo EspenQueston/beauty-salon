@@ -311,8 +311,8 @@ export function CurrencySwitch({
             <Icon name="receipt" className="mt-0.5 size-3.5 shrink-0" />
             <span>
               Vos rendez-vous passés et vos écritures comptables gardent leur
-              devise d&apos;origine : ce qui a été encaissé en {court(apercu.de)}{" "}
-              reste en {court(apercu.de)}.
+              devise d&apos;origine : ce qui a été encaissé en{" "}
+              {court(apercu.de)} reste en {court(apercu.de)}.
             </span>
           </p>
 

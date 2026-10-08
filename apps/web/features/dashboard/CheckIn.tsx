@@ -374,7 +374,9 @@ export function CheckInPanel({
                   nom, on scanne à l'aveugle et le refus « ce code est celui de
                   quelqu'un d'autre » arrive sans qu'on sache qui était
                   attendu. */}
-              {target ? `Arrivée de ${target.customer_name}` : "Enregistrer une arrivée"}
+              {target
+                ? `Arrivée de ${target.customer_name}`
+                : "Enregistrer une arrivée"}
             </h2>
             <p className="mt-0.5 truncate text-xs text-muted">
               {target
@@ -647,9 +649,13 @@ function Scanner({
 
         {/* La mire : quatre coins, pas un cadre plein. Un cadre continu se
             confond avec le bord du QR et on vise à côté. */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        >
           <div className="relative size-[58%] max-w-[15rem]">
-            {["left-0 top-0 border-l-2 border-t-2 rounded-tl-lg",
+            {[
+              "left-0 top-0 border-l-2 border-t-2 rounded-tl-lg",
               "right-0 top-0 border-r-2 border-t-2 rounded-tr-lg",
               "left-0 bottom-0 border-b-2 border-l-2 rounded-bl-lg",
               "right-0 bottom-0 border-b-2 border-r-2 rounded-br-lg",
@@ -908,7 +914,9 @@ function CodeForm({
         </span>
         <input
           autoFocus
-          value={kept.length > 3 ? `${kept.slice(0, 3)} ${kept.slice(3)}` : kept}
+          value={
+            kept.length > 3 ? `${kept.slice(0, 3)} ${kept.slice(3)}` : kept
+          }
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && complete && !pending) onSubmit(kept);

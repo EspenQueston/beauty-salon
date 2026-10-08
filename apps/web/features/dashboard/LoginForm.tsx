@@ -3,14 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { DashboardError, login } from "@/lib/dashboard";
+import {
+  DashboardError,
+  login,
+  verifierCodeConnexion,
+  type SessionUser,
+} from "@/lib/dashboard";
 import { platformUrl } from "@/lib/site";
 import { Button } from "@/features/ui";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
+import { BeautySalonBrand } from "@/features/ui/BeautySalonBrand";
 import {
-  AuthAsideTitle,
-  AuthPoint,
-  AuthPoints,
   AuthShell,
   authCard,
   authInput,
@@ -18,7 +21,8 @@ import {
   authLink,
   authTitle,
 } from "@/features/ui/AuthShell";
-import { AgendaPreview } from "@/features/ui/AgendaPreview";
+import { FilmAcces } from "@/features/account/FilmAcces";
+import { adresseDeConnexion } from "./connexion";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { useToast } from "@/features/ui/Toast";
 
@@ -66,12 +70,27 @@ function remember(email: string) {
   }
 }
 
-export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+export function LoginForm({
+  onSuccess,
+  currentAccount,
+}: {
+  onSuccess: () => void;
+  currentAccount?: Pick<SessionUser, "email" | "is_platform_admin">;
+}) {
   const toast = useToast();
   const [prefilled] = useState(emailFromUrl);
+  const [savedEmail] = useState(rememberedEmail);
+  const [unattachedAccount, setUnattachedAccount] = useState<
+    Pick<SessionUser, "email" | "is_platform_admin"> | undefined
+  >();
+  const accountWithoutSalon = unattachedAccount ?? currentAccount;
   // L'adresse de l'URL prime : elle vient de l'inscription qu'on vient de
   // terminer, donc d'une intention plus recente que le souvenir.
-  const [email, setEmail] = useState(() => prefilled || rememberedEmail());
+  // Si une autre session est deja ouverte, ne pas reproposer son adresse :
+  // la ressaisir ramenerait exactement au meme ecran sans salon.
+  const [email, setEmail] = useState(() =>
+    adresseDeConnexion(prefilled, savedEmail, currentAccount?.email),
+  );
   const [password, setPassword] = useState("");
   /*
    * Le curseur va la ou il reste quelque chose a saisir.
@@ -80,19 +99,61 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
    * focus sauterait pendant la frappe, des le premier caractere tape dans
    * une adresse vide.
    */
-  const [emailWasFilled] = useState(() => Boolean(prefilled || rememberedEmail()));
+  const [emailWasFilled] = useState(() => Boolean(email));
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // Deuxième étape, quand la double authentification est active : le mot de
+  // passe est accepté, la session attend le code de l'application.
+  const [etapeCode, setEtapeCode] = useState(false);
+  const [code, setCode] = useState("");
+
+  function entrer(user: SessionUser) {
+    if (user.memberships.length === 0) {
+      setUnattachedAccount(user);
+      setEmail("");
+      setPassword("");
+      setEtapeCode(false);
+      return;
+    }
+    remember(email);
+    toast.success(`Bienvenue, ${user.display_name || user.email}.`);
+    if (typeof user.codes_de_secours_restants === "number") {
+      toast.info(
+        `Code de secours utilisé : il vous en reste ${user.codes_de_secours_restants}. Régénérez-les depuis l'écran Sécurité.`,
+      );
+    }
+    onSuccess();
+  }
+
+  async function submitCode(event: React.FormEvent) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    try {
+      entrer(await verifierCodeConnexion(code));
+    } catch (caught) {
+      if (caught instanceof DashboardError && caught.code === "mfa_expired") {
+        setEtapeCode(false);
+        setCode("");
+      }
+      setError(caught instanceof DashboardError ? caught.message : "Vérification impossible. Réessayez.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setPending(true);
     setError(null);
     try {
-      const user = await login(email, password);
-      remember(email);
-      toast.success(`Bienvenue, ${user.display_name || user.email}.`);
-      onSuccess();
+      const resultat = await login(email, password);
+      if ("mfa_required" in resultat) {
+        setPassword("");
+        setEtapeCode(true);
+        return;
+      }
+      entrer(resultat);
     } catch (caught) {
       // L'erreur reste sous le formulaire : c'est là que le regard revient
       // après un échec, pas dans un coin de l'écran.
@@ -110,49 +171,72 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     <AuthShell
       homeHref={platformUrl}
       action={<ThemeToggle />}
-      brand={
-        <>
-          <span className="inline-flex size-8 items-center justify-center rounded-xl bg-salon text-sm font-semibold text-white">
-            BS
-          </span>
-          <span className="font-semibold tracking-tight text-ink">
-            Beauty Salon
-          </span>
-        </>
-      }
-      aside={
-        /*
-          La colonne de réassurance.
+      brand={<BeautySalonBrand />}
+      /*
+        La colonne de droite : le film, et rien d'autre.
 
-          Elle ne vend rien : elle répond aux trois choses qui retiennent
-          quelqu'un devant un champ de mot de passe — ce qu'il y a derrière,
-          ce que ça coûte, et à qui appartiennent les données. La dernière
-          est celle qu'on nous pose le plus souvent.
+        Elle portait une légende, un titre et trois arguments — ce qu'il y a
+        derrière, ce que ça coûte, à qui appartiennent les données. C'était
+        juste, et c'était deux discours pour un seul geste : le film montre
+        déjà l'agenda qui se remplit et le mini-site qui se partage, pendant
+        que les lignes sous lui demandaient de lire ce qu'on regardait.
 
-          Les phrases ont été raccourcies d'un tiers. Trois paragraphes à
-          côté d'un formulaire ne se lisent pas : ils se contournent. Une
-          ligne chacun, et l'aperçu d'agenda montre en une seconde ce que
-          les trois racontaient.
-        */
-        <div>
-          <AgendaPreview />
+        Il reste seul, comme sur l'écran d'inscription. C'est la seule chose
+        de ces deux pages qui ne se lit pas.
 
-          <AuthAsideTitle>Votre salon, en ligne et à jour.</AuthAsideTitle>
-          <AuthPoints>
-            <AuthPoint title="Les rendez-vous se prennent tout seuls">
-              Votre mini-site réserve la nuit et le dimanche.
-            </AuthPoint>
-            <AuthPoint title="Rien à installer">
-              Tout se gère depuis ce navigateur, ordinateur ou téléphone.
-            </AuthPoint>
-            <AuthPoint title="Vos données restent les vôtres">
-              Votre fichier clientes s&apos;exporte quand vous voulez.
-            </AuthPoint>
-          </AuthPoints>
-        </div>
-      }
+        Le film remplace aussi l'aperçu d'agenda animé qui occupait cette
+        place : celui-ci montrait une chose, le film en montre trois, et en
+        mouvement réel plutôt qu'en maquette.
+      */
+      aside={<FilmAcces />}
     >
       <div className="rise w-full">
+        {etapeCode ? (
+          <form onSubmit={submitCode} className={authCard}>
+            <h1 className={authTitle}>Double authentification</h1>
+            <p className={authLead}>
+              Saisissez le code à six chiffres affiché par votre application
+              d&apos;authentification, ou l&apos;un de vos codes de secours.
+            </p>
+            <div className="mt-6">
+              <label htmlFor="login-code" className="mb-1.5 block text-sm font-medium text-ink">
+                Code
+              </label>
+              <input
+                id="login-code"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                required
+                maxLength={20}
+                placeholder="123 456"
+                className={`${authInput} text-center font-mono text-lg tracking-[0.3em]`}
+              />
+            </div>
+            {error && (
+              <p role="alert" className="mt-4 rounded-xl bg-danger-bg p-3 text-sm font-medium text-danger">
+                {error}
+              </p>
+            )}
+            <Button type="submit" pending={pending} className="mt-5 w-full py-3">
+              Vérifier
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setEtapeCode(false);
+                setCode("");
+                setError(null);
+              }}
+              className={`${authLink} mt-4 block w-full text-center text-sm`}
+            >
+              Revenir au mot de passe
+            </button>
+          </form>
+        ) : (
+        <>
         {/*
           Le titre est passé *dans* la carte.
 
@@ -163,12 +247,31 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           d'autre à regarder.
         */}
         <form onSubmit={submit} className={authCard}>
-          <h1 className={authTitle}>Connexion à votre espace professionnel</h1>
+          <h1 className={authTitle}>
+            {accountWithoutSalon
+              ? "Connectez-vous avec un compte salon"
+              : "Connexion à votre espace professionnel"}
+          </h1>
           <p className={authLead}>
-            {prefilled
+            {accountWithoutSalon
+              ? "Le compte actuellement connecté ne donne accès à aucun salon."
+              : prefilled
               ? "Votre salon est créé. Connectez-vous pour y entrer."
               : "Gérez vos rendez-vous, votre équipe et vos clients."}
           </p>
+
+          {accountWithoutSalon && (
+            <p
+              role="status"
+              className="mt-4 rounded-xl border border-line bg-surface p-3 text-sm leading-relaxed text-muted"
+            >
+              Session actuelle :{" "}
+              <span className="font-medium text-ink">{accountWithoutSalon.email}</span>.
+              {accountWithoutSalon.is_platform_admin
+                ? " L'administration de la plateforme utilise son espace dédié."
+                : " Saisissez l'adresse et le mot de passe d'un compte rattaché à votre salon. Si ce compte doit y accéder, demandez au propriétaire de vous inviter."}
+            </p>
+          )}
 
           <div className="mt-6 space-y-4">
             {/* Une colonne, toujours. Deux champs d'identification côte à
@@ -203,7 +306,10 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               autoFocus={emailWasFilled}
               inputClassName={authInput}
               action={
-                <Link href="/mot-de-passe-oublie" className={`${authLink} text-sm`}>
+                <Link
+                  href="/mot-de-passe-oublie"
+                  className={`${authLink} text-sm`}
+                >
                   Mot de passe oublié ?
                 </Link>
               }
@@ -234,14 +340,20 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             bancaire. Sans cela, « Creer le mien » demande un engagement dont
             on ignore le prix. */}
         <p className="mt-5 text-center text-sm text-ink/75">
-          Pas encore de salon ?{" "}
+          {accountWithoutSalon
+            ? "Pas encore de compte salon ? "
+            : "Pas encore de salon ? "}
           <Link href="/inscription" className={authLink}>
-            Créer le mien
+            {accountWithoutSalon ? "Créer un salon" : "Créer le mien"}
           </Link>
           <span className="mt-1 block text-xs text-muted">
-            30 jours gratuits, sans carte bancaire.
+            {accountWithoutSalon
+              ? "L'inscription nécessite une autre adresse e-mail."
+              : "14 jours gratuits, sans carte bancaire."}
           </span>
         </p>
+        </>
+        )}
       </div>
     </AuthShell>
   );

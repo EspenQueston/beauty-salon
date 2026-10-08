@@ -15,54 +15,79 @@ from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.accounts.models import User
-from apps.billing.models import Plan
+from apps.billing.models import Plan, PlanPrice
 
-# Offres du document de cadrage. Le tarif indicatif reprend la borne basse de
-# chaque fourchette ; le prix reellement facture vit sur l'abonnement, ce qui
-# permet d'accompagner un salon pilote a un tarif negocie.
+# L'essai, et les deux offres payantes : la meme plateforme, reglee au mois
+# ou a l'annee. Leur prix de reference est en yuans ; les autres devises se
+# saisissent dans l'administration (« Tarifs d'abonnement »), jamais ici.
 OFFRES = [
     {
         "code": Plan.Code.TRIAL,
         "name": "Essai",
-        "description": "30 jours pour essayer, sans engagement ni carte bancaire.",
+        "description": "Deux semaines pour essayer, sans engagement.",
+        "billing_months": 0,
         "reference_price": Decimal("0"),
         "max_staff": None,
         "allows_custom_domain": False,
     },
     {
-        "code": Plan.Code.SOLO,
-        "name": "Solo",
-        "description": (
-            "Mini-site, galerie, catalogue, agenda et réservation en ligne. "
-            "Pour une personne qui travaille seule."
-        ),
-        "reference_price": Decimal("4000"),
-        "max_staff": 1,
+        "code": Plan.Code.MONTHLY,
+        "name": "Mensuel",
+        "description": "Toute la plateforme, réglée chaque mois.",
+        "billing_months": 1,
+        "reference_price": Decimal("0"),
+        "max_staff": None,
         "allows_custom_domain": False,
     },
     {
-        "code": Plan.Code.SALON,
-        "name": "Salon",
-        "description": (
-            "Solo, plus la gestion d'équipe, les agendas multiples, "
-            "les acomptes et les statistiques."
-        ),
-        "reference_price": Decimal("12000"),
-        "max_staff": 8,
+        "code": Plan.Code.YEARLY,
+        "name": "Annuel",
+        "description": "Toute la plateforme, réglée pour douze mois.",
+        "billing_months": 12,
+        "reference_price": Decimal("0"),
+        "max_staff": None,
         "allows_custom_domain": False,
     },
     {
-        "code": Plan.Code.PRO,
-        "name": "Pro",
+        "code": Plan.Code.PRO_MONTHLY,
+        "group": Plan.Groupe.PRO,
+        "name": "Pro mensuel",
         "description": (
-            "Salon, plus le domaine personnalisé, les automatisations "
-            "et le support prioritaire."
+            "Tout Standard, plus domaine personnalisé, personnalisation avancée "
+            "et assistants IA."
         ),
-        "reference_price": Decimal("35000"),
+        "billing_months": 1,
+        "reference_price": Decimal("0"),
+        "max_staff": None,
+        "allows_custom_domain": True,
+    },
+    {
+        "code": Plan.Code.PRO_YEARLY,
+        "group": Plan.Groupe.PRO,
+        "name": "Pro annuel",
+        "description": (
+            "Tout Standard, plus domaine personnalisé, personnalisation avancée "
+            "et assistants IA — pour douze mois."
+        ),
+        "billing_months": 12,
+        "reference_price": Decimal("0"),
         "max_staff": None,
         "allows_custom_domain": True,
     },
 ]
+
+# Prix de reference, poses seulement s'ils manquent : un tarif modifie depuis
+# l'administration n'est jamais ecrase par une remise en route.
+PRIX_CNY = {
+    Plan.Code.MONTHLY: Decimal("99"),
+    Plan.Code.YEARLY: Decimal("999"),
+    Plan.Code.PRO_MONTHLY: Decimal("399"),
+    Plan.Code.PRO_YEARLY: Decimal("4000"),
+}
+
+# Les offres des debuts : jamais reproposees. Solo et Salon ont ete retirees
+# (billing 0011) ; celles qu'un historique garde encore restent desactivees.
+ANCIENNES = ("solo", "salon", Plan.Code.PRO)
 
 
 class Command(BaseCommand):
@@ -100,10 +125,23 @@ class Command(BaseCommand):
 
     def _sync_plans(self) -> None:
         for position, offre in enumerate(OFFRES):
-            Plan.objects.update_or_create(
+            plan, _ = Plan.objects.update_or_create(
                 code=offre["code"],
                 defaults={**offre, "position": position, "active": True},
             )
+            if plan.code in PRIX_CNY:
+                PlanPrice.objects.get_or_create(
+                    plan=plan,
+                    currency="CNY",
+                    defaults={"amount": PRIX_CNY[plan.code], "active": True},
+                )
+        Plan.objects.filter(code__in=ANCIENNES).update(active=False)
+        # Les fonctions Pro existent toutes ; leur etat (active ou coupee) se
+        # regle dans l'administration et n'est jamais ecrase ici.
+        from apps.billing.models import ProCapability
+
+        for position, (code, _libelle) in enumerate(ProCapability.Code.choices):
+            ProCapability.objects.get_or_create(code=code, defaults={"position": position})
         self.stdout.write(self.style.SUCCESS(f"{len(OFFRES)} offres en place."))
 
     def _create_admin(self, email: str, password: str | None) -> None:

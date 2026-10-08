@@ -9,10 +9,11 @@ chemin qu'on n'avait pas prevu.
 
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.contrib.postgres.fields import DateTimeRangeField, RangeBoundary, RangeOperators
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Func, Q
 from django.utils.translation import gettext_lazy as _
 
@@ -171,6 +172,41 @@ class Booking(TenantOwnedModel):
         max_length=20, choices=BookingSource.choices, default=BookingSource.WEB
     )
 
+    # La langue dans laquelle la cliente lisait le mini-site en reservant.
+    #
+    # Figee ici pour la meme raison que la devise juste en dessous : elle
+    # decrit un fait passe. Une cliente qui a reserve en anglais doit recevoir
+    # sa confirmation, son rappel de la veille et sa demande d avis en
+    # anglais - meme si elle revient plus tard en francais, et meme si le
+    # salon change de langue par defaut.
+    #
+    # Le francais par defaut : une reservation prise au telephone par le salon
+    # n en porte aucune, et c est la langue du salon qui vaut alors.
+    language = models.CharField(_("langue de la cliente"), max_length=5, default="fr")
+
+    # A qui appartient ce rendez-vous, cote espace cliente.
+    #
+    # La fiche cliente d'un salon se retrouve par le **telephone** : un
+    # numero saisi par n'importe qui. Elle ne peut donc pas dire a quel
+    # compte un rendez-vous appartient — sinon il suffirait de reserver avec
+    # le numero d'une autre pour lire son historique. Ce qui le dit :
+    #
+    #   - l'adresse donnee pour CE rendez-vous (en minuscules), montree
+    #     seulement au compte qui a prouve la posseder ;
+    #   - le compte cliente connecte au moment de la reservation.
+    #
+    # L'adresse sert aussi aux e-mails du rendez-vous : ils partent a qui l'a
+    # pris, et non a l'adresse que la fiche portait avant.
+    contact_email = models.EmailField(_("e-mail du rendez-vous"), blank=True, db_index=True)
+    compte = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name=_("compte cliente"),
+    )
+
     # Instantanes : le catalogue evolue, une reservation passee doit rester
     # lisible telle qu'elle a ete vendue.
     service_name = models.CharField(max_length=150)
@@ -186,6 +222,9 @@ class Booking(TenantOwnedModel):
     # mentirait, ce qui est la pire des deux erreurs.
     currency = models.CharField(_("devise"), max_length=3, blank=True)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
+    prix_initial = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    promotion_montant = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    reduction_parrainage = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     deposit_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0"))
     deposit_paid = models.BooleanField(_("acompte encaissé"), default=False)
     deposit_paid_at = models.DateTimeField(null=True, blank=True)
@@ -318,6 +357,7 @@ class Booking(TenantOwnedModel):
             ),
         ]
 
+    @transaction.atomic
     def save(self, *args, **kwargs):
         """Fige la devise a la creation, si personne ne l'a posee.
 

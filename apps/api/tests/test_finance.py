@@ -66,8 +66,9 @@ def test_an_owner_records_an_expense(api_client, salon_a):
 
     response = api_client.post("/api/v1/transactions/", entry(salon_a), format="json")
 
-    assert response.status_code == 201, response.data
-    assert response.data["category_label"] == "Fournitures et produits"
+    assert response.status_code == 405, response.data
+    with as_tenant(salon_a.tenant):
+        assert not Transaction.objects.exists()
 
 
 @pytest.mark.django_db
@@ -81,8 +82,8 @@ def test_a_category_from_the_wrong_side_is_refused(api_client, salon_a):
         format="json",
     )
 
-    assert response.status_code == 400
-    assert "category" in str(response.data)
+    assert response.status_code == 405
+
 
 
 @pytest.mark.django_db
@@ -98,7 +99,7 @@ def test_a_negative_amount_is_refused(api_client, salon_a):
         "/api/v1/transactions/", entry(salon_a, amount="-500.00"), format="json"
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 405
 
 
 @pytest.mark.django_db
@@ -115,8 +116,8 @@ def test_a_future_date_is_refused(api_client, salon_a):
         format="json",
     )
 
-    assert response.status_code == 400
-    assert "occurred_on" in str(response.data)
+    assert response.status_code == 405
+
 
 
 # ---------------------------------------------------------------------------
@@ -515,4 +516,4 @@ def test_an_entry_dated_today_is_accepted_even_when_utc_lags(api_client, salon_a
             headers={"X-Tenant-Id": str(salon_a.tenant.id)},
         )
 
-    assert response.status_code == 201, response.data
+    assert response.status_code == 405, response.data

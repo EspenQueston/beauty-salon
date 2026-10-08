@@ -96,7 +96,20 @@ export function ReschedulePanel({
   const [pending, setPending] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
+  /*
+    Trois états, et non deux.
+
+    L'échec posait `slots: []`, ce qui faisait dire à l'écran deux choses
+    contraires en même temps : « Aucun créneau libre ce jour-là » et
+    « Impossible de lire les disponibilités ». On ne savait plus s'il
+    fallait essayer un autre jour ou réessayer tout court.
+
+    `null` = on charge, `[]` = la journée est vraiment pleine, `echec` = on
+    n'a pas pu savoir.
+  */
+  const [echec, setEchec] = useState<string | null>(null);
   const slots = charge?.jour === jour ? charge.slots : null;
+  const illisible = echec === jour;
 
   /** L'adresse des disponibilités d'une journée, pour cette prestation. */
   const adresse = useCallback(
@@ -109,8 +122,19 @@ export function ReschedulePanel({
       // Le même prestataire, sauf si le rendez-vous n'en désignait aucun.
       // Déplacer ne doit pas changer la personne qui reçoit : c'est chez
       // quelqu'un qu'on a pris rendez-vous.
-      if (booking.staff_member) params.set("staff_member", booking.staff_member);
-      return `/api/v1/public/availability?${params}`;
+      if (booking.staff_member)
+        params.set("staff_member", booking.staff_member);
+      /*
+        La route de l'équipe, pas celle des mini-sites.
+
+        `public/availability` déduit le salon du **nom d'hôte** : c'est ce
+        qui permet à un mini-site de servir ses créneaux sans compte. Mais
+        le tableau de bord vit sur `app.<domaine>` et interroge l'API sur
+        son propre hôte — aucun des deux n'est le sous-domaine d'un salon.
+        Le serveur répondait donc « Salon introuvable » à chaque ouverture
+        du panneau, et il n'y avait jamais eu un seul créneau affiché ici.
+      */
+      return `/api/v1/availability?${params}`;
     },
     [booking.service, booking.staff_member],
   );
@@ -131,12 +155,15 @@ export function ReschedulePanel({
 
     dashboardFetch<{ slots: Slot[] }>(adresse(jour), {}, tenantId)
       .then((data) => {
-        if (!perime) setCharge({ jour, slots: data.slots });
+        if (perime) return;
+        setCharge({ jour, slots: data.slots });
+        setEchec(null);
       })
       .catch(() => {
         if (perime) return;
-        setCharge({ jour, slots: [] });
-        setErreur("Impossible de lire les disponibilités.");
+        // Ni créneaux ni « journée vide » : on dit qu'on ne sait pas, et
+        // on propose de recommencer.
+        setEchec(jour);
       });
 
     return () => {
@@ -167,8 +194,7 @@ export function ReschedulePanel({
         recharge la journée, le créneau disparaît de lui-même, et la gérante
         voit ce qui reste sans avoir à rouvrir le panneau.
       */
-      const conflit =
-        caught instanceof DashboardError && caught.status === 409;
+      const conflit = caught instanceof DashboardError && caught.status === 409;
       setErreur(
         conflit
           ? "Ce créneau vient d'être pris. Voici ce qui reste sur la journée."
@@ -231,7 +257,7 @@ export function ReschedulePanel({
           geste — glisser du pouce — est celui qu'on fait déjà partout.
         */}
         <div className="border-b border-line px-4 py-2.5 sm:px-5">
-          <ul className="-mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-1">
+          <ul className="barre-discrete -mx-1 flex snap-x gap-1.5 overflow-x-auto px-1 pb-1.5">
             {jours.map((date) => {
               const actif = date === jour;
               return (
@@ -264,16 +290,37 @@ export function ReschedulePanel({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-          {slots === null && (
-            <p className="py-8 text-center text-sm text-muted">
-              Lecture des disponibilités…
-            </p>
-          )}
+          {illisible ? (
+            <div className="py-8 text-center">
+              <p className="text-sm font-medium text-ink">
+                Disponibilités illisibles
+              </p>
+              <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted">
+                La connexion a échoué. Rien n’a été modifié.
+              </p>
+              <button
+                type="button"
+                onClick={() => setRelecture((valeur) => valeur + 1)}
+                className="mt-3 rounded-xl border border-line bg-surface px-4 py-2 text-sm font-medium text-ink transition hover:border-salon hover:bg-surface-hover"
+              >
+                Réessayer
+              </button>
+            </div>
+          ) : (
+            <>
+              {slots === null && (
+                <p className="py-8 text-center text-sm text-muted">
+                  Lecture des disponibilités…
+                </p>
+              )}
 
-          {slots !== null && slots.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted">
-              Aucun créneau libre ce jour-là. Essayez un autre jour du ruban.
-            </p>
+              {slots !== null && slots.length === 0 && (
+                <p className="py-8 text-center text-sm text-muted">
+                  Aucun créneau libre ce jour-là. Essayez un autre jour du
+                  ruban.
+                </p>
+              )}
+            </>
           )}
 
           {/*

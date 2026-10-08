@@ -29,6 +29,7 @@ def signup_payload(salon, **overrides):
         "service": str(salon.service.id),
         "full_name": "Awa Diallo",
         "phone": "+242066112233",
+        "email": "awa@example.com",
         "preferred_from": today.isoformat(),
         "preferred_to": (today + timedelta(days=14)).isoformat(),
     }
@@ -116,7 +117,7 @@ def test_the_salon_sees_only_what_is_left_to_handle(api_client, salon_a):
     )
     api_client.post(
         "/api/v1/public/waitlist",
-        signup_payload(salon_a, full_name="Deja classee"),
+        signup_payload(salon_a, full_name="Deja classee", phone="+242066998877"),
         format="json",
         headers=HOST,
     )

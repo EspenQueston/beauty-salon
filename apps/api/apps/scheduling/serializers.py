@@ -44,14 +44,33 @@ class AvailabilityQuerySerializer(serializers.Serializer):
         return attrs
 
 
+# Les coordonnees demandees sur le mini-site : reservation et liste d'attente.
+MESSAGES_EMAIL = {
+    "required": "Indiquez votre adresse e-mail.",
+    "blank": "Indiquez votre adresse e-mail.",
+    "invalid": ("Adresse e-mail invalide : il faut un « @ » et un domaine (ex. nom@exemple.com)."),
+}
+
+
+def _telephone_valide(value: str) -> str:
+    from apps.customers.coordonnees import TelephoneInvalide, normaliser_telephone
+
+    try:
+        return normaliser_telephone(value)
+    except TelephoneInvalide as erreur:
+        raise serializers.ValidationError(str(erreur)) from erreur
+
+
 class PublicBookingCreateSerializer(serializers.Serializer):
+    code_parrainage_client = serializers.CharField(required=False, allow_blank=True, max_length=16)
     service = serializers.UUIDField()
     staff_member = serializers.UUIDField(required=False, allow_null=True)
     starts_at = serializers.DateTimeField()
 
     full_name = serializers.CharField(max_length=150)
-    phone = serializers.CharField(max_length=32)
-    email = serializers.EmailField(required=False, allow_blank=True)
+    # Tous deux obligatoires sur le mini-site (voir customers/coordonnees.py).
+    phone = serializers.CharField(max_length=40)
+    email = serializers.EmailField(max_length=254, error_messages=MESSAGES_EMAIL)
     contact_preference = serializers.ChoiceField(
         choices=Customer.ContactPreference.choices,
         default=Customer.ContactPreference.WHATSAPP,
@@ -88,14 +107,22 @@ class PublicBookingCreateSerializer(serializers.Serializer):
     # d'annulation en cas de litige.
     accepts_policy = serializers.BooleanField()
 
+    # La langue de lecture du mini-site, transmise par le serveur Next.
+    #
+    # Un choix ferme et non un champ libre : cette valeur finit dans le nom
+    # d un gabarit d e-mail, et une chaine arbitraire y chercherait un fichier
+    # que personne n a ecrit.
+    language = serializers.ChoiceField(choices=[("fr", "fr"), ("en", "en")], default="fr")
+
     # Champ piege : invisible pour une humaine, rempli par les robots.
     website = serializers.CharField(required=False, allow_blank=True)
 
+    def validate_phone(self, value):
+        return _telephone_valide(value)
+
     def validate_accepts_policy(self, value):
         if not value:
-            raise serializers.ValidationError(
-                "La politique d'annulation doit être acceptée."
-            )
+            raise serializers.ValidationError("La politique d'annulation doit être acceptée.")
         return value
 
     def validate_starts_at(self, value):
@@ -107,8 +134,29 @@ class PublicBookingCreateSerializer(serializers.Serializer):
 class BookingSerializer(serializers.ModelSerializer):
     deposit_proof = serializers.SerializerMethodField()
 
+    def validate(self, attrs):
+        b = self.instance
+        if b and b.reduction_parrainage > 0:
+            if b.status == Booking.Status.CANCELLED and attrs.get("status", b.status) != b.status:
+                raise serializers.ValidationError(
+                    "Créez un nouveau rendez-vous pour réutiliser une réduction restituée."
+                )
+            for champ in ("total_amount", "deposit_amount", "service", "customer"):
+                if champ in attrs and attrs[champ] != getattr(b, champ):
+                    raise serializers.ValidationError(
+                        "Le prix et le bénéficiaire de cette réduction sont figés "
+                        "sur le rendez-vous."
+                    )
+        return attrs
+
     customer_name = serializers.CharField(source="customer.full_name", read_only=True)
     customer_phone = serializers.CharField(source="customer.phone", read_only=True)
+    # L'adresse, pour ecrire depuis l'agenda. Elle peut etre vide : une
+    # cliente peut reserver par telephone sans en donner, et ce n'est pas
+    # une anomalie - l'ecran doit simplement ne rien afficher.
+    # Celle donnee pour ce rendez-vous d'abord : c'est la personne qui l'a
+    # pris, meme si la fiche (retrouvee par le telephone) en porte une autre.
+    customer_email = serializers.SerializerMethodField()
     staff_member_name = serializers.CharField(source="staff_member.name", read_only=True)
 
     class Meta:
@@ -126,7 +174,11 @@ class BookingSerializer(serializers.ModelSerializer):
             "customer",
             "customer_name",
             "customer_phone",
+            "customer_email",
             "total_amount",
+            "prix_initial",
+            "promotion_montant",
+            "reduction_parrainage",
             "deposit_amount",
             "deposit_paid",
             "deposit_paid_at",
@@ -146,6 +198,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = (
+            "prix_initial",
+            "promotion_montant",
+            "reduction_parrainage",
             "service_name",
             "options_snapshot",
             "options_amount",
@@ -158,6 +213,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "deposit_method",
             "deposit_received",
         )
+
+    def get_customer_email(self, booking) -> str:
+        return booking.contact_email or booking.customer.email
 
     def get_deposit_proof(self, booking) -> dict | None:
         """Ce que la cliente a envoye pour dire qu'elle a paye.
@@ -212,6 +270,9 @@ class PublicBookingConfirmationSerializer(serializers.ModelSerializer):
             "service_name",
             "staff_member_name",
             "total_amount",
+            "prix_initial",
+            "promotion_montant",
+            "reduction_parrainage",
             "deposit_amount",
             "options_snapshot",
             "options_amount",
@@ -229,6 +290,13 @@ class PublicBookingConfirmationSerializer(serializers.ModelSerializer):
         from apps.payments.tokens import payment_token
 
         return payment_token(booking)
+
+    def to_representation(self, instance):
+        from apps.translations.booking import public_booking_labels
+
+        data = super().to_representation(instance)
+        data.update(public_booking_labels(instance, instance.language))
+        return data
 
 
 class BusinessHoursSerializer(serializers.ModelSerializer):
@@ -318,7 +386,69 @@ class PublicWaitlistSerializer(WaitlistEntrySerializer):
 
     Le statut n'est pas dans les champs modifiables : une inscription arrive
     toujours « en attente », et seul le salon la fait avancer.
+
+    Les coordonnees suivent la regle de la reservation (voir
+    customers/coordonnees.py) : telephone en chiffres, e-mail obligatoire.
+    Le salon, lui, garde la saisie libre depuis son espace.
     """
+
+    phone = serializers.CharField(max_length=40)
+    email = serializers.EmailField(max_length=254, error_messages=MESSAGES_EMAIL)
+
+    # Au-dela d'un an, une demande de rappel ne veut plus rien dire : le
+    # salon ne saurait pas quand rappeler, et la cliente aura oublie.
+    HORIZON_JOURS = 365
+
+    def validate_phone(self, value):
+        return _telephone_valide(value)
+
+    def validate(self, attrs):
+        """La periode, vue depuis la date du jour **du salon**.
+
+        - deja passee : refusee, elle ne menerait a aucun rappel ;
+        - commencee avant aujourd'hui : elle commence aujourd'hui. Un
+          telephone peut proposer « hier » (sa date est calculee en UTC, a
+          huit heures de Pekin) ; on ne refuse pas une cliente pour ca ;
+        - au-dela d'un an, ou plus longue qu'un an : refusee.
+
+        Le prestataire, s'il est choisi, doit faire cette prestation et
+        travailler encore : sinon le salon rappellerait pour un rendez-vous
+        impossible.
+        """
+        from datetime import timedelta
+
+        attrs = super().validate(attrs)
+        aujourd_hui = self.context.get("aujourd_hui")
+        debut, fin = attrs.get("preferred_from"), attrs.get("preferred_to")
+        if aujourd_hui and debut and fin:
+            if fin < aujourd_hui:
+                raise serializers.ValidationError(
+                    {
+                        "preferred_to": "Cette période est déjà passée : "
+                        "choisissez des dates à venir."
+                    }
+                )
+            if debut < aujourd_hui:
+                attrs["preferred_from"] = debut = aujourd_hui
+            limite = aujourd_hui + timedelta(days=self.HORIZON_JOURS)
+            if fin > limite or (fin - debut).days > self.HORIZON_JOURS:
+                raise serializers.ValidationError(
+                    {"preferred_to": "Choisissez une période dans l'année qui vient."}
+                )
+
+        membre = attrs.get("staff_member")
+        service = attrs.get("service")
+        if membre is not None and service is not None:
+            from apps.staff.models import StaffService
+
+            fait_la_prestation = StaffService.objects.filter(
+                staff_member=membre, service=service
+            ).exists()
+            if not membre.active or not fait_la_prestation:
+                raise serializers.ValidationError(
+                    {"staff_member": "Ce prestataire ne réalise pas cette prestation."}
+                )
+        return attrs
 
     class Meta(WaitlistEntrySerializer.Meta):
         fields = (

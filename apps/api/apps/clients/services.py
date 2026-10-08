@@ -10,6 +10,8 @@ prestation, le montant, la note interne - est lu derriere la politique RLS
 du salon concerne.
 """
 
+from django.db.models import Q
+
 from apps.common.db import tenant_context
 from apps.reviews.models import Review
 
@@ -19,12 +21,93 @@ from .models import ClientSalonLink, HiddenBooking
 MAX_BOOKINGS_PER_SALON = 40
 
 
+def est_cliente(user) -> bool:
+    """Un compte cliente, et seulement cliente.
+
+    Un compte professionnel (proprietaire, gerante, equipe d'un salon) n'est
+    jamais aussi une cliente : ses rendez-vous, ses avis et ses parrainages
+    se melangeraient a l'activite qu'il gere, et un salon pourrait se noter
+    ou se parrainer lui-meme. Les deux natures restent donc separees — une
+    personne qui veut les deux utilise deux adresses e-mail.
+    """
+    from apps.accounts.models import Membership
+
+    if not getattr(user, "is_authenticated", False) or not hasattr(user, "client_profile"):
+        return False
+    return not Membership.objects.filter(user=user, status=Membership.Status.ACTIVE).exists()
+
+
+def retrouver_historique(user) -> int:
+    """Rattache au compte les rendez-vous pris avec son adresse, sans compte.
+
+    -----------------------------------------------------------------------
+    La continuite
+    -----------------------------------------------------------------------
+
+    On reserve sans compte, en laissant son e-mail. Le jour ou l'on cree un
+    compte avec la meme adresse, l'historique doit suivre : chaque salon ou
+    un rendez-vous a ete pris avec cette adresse rejoint la liste des salons
+    du compte, et ces rendez-vous-la apparaissent dans l'espace (voir
+    `bookings_for`) — pas les autres rendez-vous de la fiche.
+
+    -----------------------------------------------------------------------
+    Seulement une adresse verifiee
+    -----------------------------------------------------------------------
+
+    Sans la verification, il suffirait de s'inscrire avec l'adresse d'une
+    autre pour lire ses rendez-vous. Tant que le lien recu par e-mail n'a
+    pas ete ouvert, rien n'est rattache.
+
+    Un salon a la fois, chacun dans son contexte : la recherche ne traverse
+    jamais les salons, elle n'en ressort que des identifiants.
+    """
+    from apps.scheduling.models import Booking
+    from apps.tenants.models import Tenant
+
+    if not user.email_verified_at or not est_cliente(user):
+        return 0
+    email = user.email.strip().lower()
+    deja = set(ClientSalonLink.objects.filter(user=user).values_list("tenant_id", flat=True))
+
+    ajoutes = 0
+    with tenant_context(None):
+        for tenant_id in Tenant.objects.exclude(id__in=deja).values_list("id", flat=True):
+            # Les rendez-vous pris avec cette adresse, et non les fiches qui
+            # la portent : l'adresse d'une fiche n'est pas une preuve.
+            with tenant_context(tenant_id):
+                fiche = (
+                    Booking.objects.filter(contact_email=email)
+                    .order_by("-created_at")
+                    .values_list("customer_id", flat=True)
+                    .first()
+                )
+            if fiche is not None:
+                _, cree = ClientSalonLink.objects.get_or_create(
+                    user=user, tenant_id=tenant_id, defaults={"customer_id": fiche}
+                )
+                ajoutes += int(cree)
+    return ajoutes
+
+
+def compte_de_l_adresse(email: str):
+    """Le compte cliente verifie qui porte cette adresse, s'il y en a un."""
+    from apps.accounts.models import User
+
+    email = (email or "").strip().lower()
+    if not email:
+        return None
+    user = (
+        User.objects.filter(email=email, is_active=True, email_verified_at__isnull=False)
+        .select_related("client_profile")
+        .first()
+    )
+    return user if user is not None and est_cliente(user) else None
+
+
 def linked_salons(user):
     """Salons auxquels ce compte est rattache, du plus recent au plus ancien."""
     return list(
-        ClientSalonLink.objects.filter(user=user)
-        .select_related("tenant")
-        .order_by("-created_at")
+        ClientSalonLink.objects.filter(user=user).select_related("tenant").order_by("-created_at")
     )
 
 
@@ -48,14 +131,24 @@ def bookings_for(user) -> list[dict]:
 
     # Visites que la cliente a retirees de sa vue. Chargees une fois : un
     # test par ligne ferait autant de requetes que de rendez-vous.
-    hidden = set(
-        HiddenBooking.objects.filter(user=user).values_list("booking_id", flat=True)
-    )
+    hidden = set(HiddenBooking.objects.filter(user=user).values_list("booking_id", flat=True))
 
     rows: list[dict] = []
     links = linked_salons(user)
     if not links:
         return []
+
+    # Ce que ce compte voit, rendez-vous par rendez-vous — jamais toute une
+    # fiche cliente.
+    #
+    # La fiche d'un salon se retrouve par le telephone, que n'importe qui
+    # peut saisir : la montrer en entier laisserait lire l'historique d'une
+    # autre en reservant une fois avec son numero. Sont a elle :
+    #
+    #   - les rendez-vous pris connectee a ce compte ;
+    #   - ceux pris avec son adresse, une fois l'adresse verifiee (avant, il
+    #     suffirait de s'inscrire avec l'adresse d'une autre).
+    email = user.email.strip().lower() if user.email_verified_at else ""
 
     # On sort d'abord du contexte pose par le middleware.
     #
@@ -74,8 +167,11 @@ def bookings_for(user) -> list[dict]:
             # Un contexte par salon. C'est ce qui garantit qu'aucune ligne
             # d'un salon ne peut apparaitre dans la lecture d'un autre.
             with tenant_context(link.tenant_id):
+                siens = Q(compte=user)
+                if email:
+                    siens |= Q(contact_email=email)
                 bookings = (
-                    Booking.objects.filter(customer_id=link.customer_id)
+                    Booking.objects.filter(siens)
                     .select_related("staff_member")
                     .order_by("-starts_at")[:MAX_BOOKINGS_PER_SALON]
                 )
@@ -228,9 +324,7 @@ def _review_state(booking) -> dict:
         "reviewed": reviewed,
         "can_review": can_review,
         "review_token": make_token(booking.id) if can_review else "",
-        "review_until": (
-            (booking.starts_at + TOKEN_MAX_AGE).isoformat() if can_review else ""
-        ),
+        "review_until": ((booking.starts_at + TOKEN_MAX_AGE).isoformat() if can_review else ""),
     }
 
 
@@ -244,3 +338,69 @@ def attach(user, tenant_id, customer_id) -> None:
     ClientSalonLink.objects.get_or_create(
         user=user, tenant_id=tenant_id, defaults={"customer_id": customer_id}
     )
+
+
+# ---------------------------------------------------------------------------
+# Mot de passe oublie
+# ---------------------------------------------------------------------------
+
+
+def demander_nouveau_mot_de_passe(email: str, tenant, langue: str = "fr") -> None:
+    """Envoie a une cliente le lien pour choisir un nouveau mot de passe.
+
+    Le lien ramene sur le mini-site d'ou vient la demande, aux couleurs du
+    salon et dans la langue ou elle lisait. Un compte d'equipe (sans profil
+    cliente) recoit le lien de l'espace professionnel, le seul ou son mot de
+    passe lui sert.
+
+    Rien ne distingue la reponse selon que le compte existe ou non : ce
+    formulaire ne doit pas devenir un annuaire des adresses inscrites.
+    """
+    import logging
+
+    from django.conf import settings
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
+
+    from apps.accounts.models import User
+    from apps.accounts.services import request_password_reset
+    from apps.notifications.email import send_email
+    from apps.notifications.tasks import _brand_colour, _salon_base_url
+    from apps.notifications.textes import textes
+    from apps.salons.models import SalonProfile
+
+    logger = logging.getLogger(__name__)
+    user = User.objects.filter(email=email.strip().lower(), is_active=True).first()
+    if user is None:
+        logger.info("Mot de passe oublie : adresse inconnue.")
+        return
+    if not hasattr(user, "client_profile"):
+        request_password_reset(user.email)
+        return
+
+    langue = langue if langue in ("fr", "en") else "fr"
+    t = textes(langue)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    jeton = default_token_generator.make_token(user)
+    heures = settings.PASSWORD_RESET_TIMEOUT // 3600
+    lien = f"{_salon_base_url(tenant)}/{langue}/compte/mot-de-passe?uid={uid}&token={jeton}"
+
+    with tenant_context(tenant.id):
+        profil = SalonProfile.objects.filter(tenant_id=tenant.id).first()
+        send_email(
+            subject=t.dire("mdp_objet", salon=tenant.name),
+            template="client_password_reset",
+            context={
+                "t": t,
+                "langue": langue,
+                "salon": tenant,
+                "brand": _brand_colour(profil),
+                "intro": t.dire("mdp_intro", salon=tenant.name),
+                "validite": t.dire("mdp_validite", heures=heures),
+                "reset_url": lien,
+                "pied": t["mdp_pied"],
+            },
+            to=[user.email],
+            salon=tenant,
+        )

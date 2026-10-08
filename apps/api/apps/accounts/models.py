@@ -43,6 +43,8 @@ class UserManager(BaseUserManager):
         extra.setdefault("is_staff", True)
         extra.setdefault("is_superuser", True)
         extra.setdefault("is_platform_admin", True)
+        # Cree en ligne de commande par l'equipe : son adresse est connue.
+        extra.setdefault("email_verified_at", timezone.now())
         if not extra["is_staff"] or not extra["is_superuser"]:
             raise ValueError("Un superutilisateur doit avoir is_staff et is_superuser.")
         return self._create_user(email, password, **extra)
@@ -61,6 +63,11 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+    # Preuve que la personne lit cette boite : posee au clic sur le lien
+    # recu par e-mail (voir `verification.py`), jamais sur la seule forme
+    # de l'adresse. Remise a vide quand l'adresse change.
+    email_verified_at = models.DateTimeField(_("e-mail vérifié le"), null=True, blank=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -72,6 +79,10 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
 
     def __str__(self) -> str:
         return self.display_name or self.email
+
+    @property
+    def email_verified(self) -> bool:
+        return self.email_verified_at is not None
 
 
 class Membership(UUIDModel, TimeStampedModel):

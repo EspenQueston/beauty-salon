@@ -38,12 +38,7 @@ import type { ReactNode } from "react";
 import { HeroCarousel, type HeroSlide } from "./HeroCarousel";
 import { SalonIcon, type SalonIconName } from "./icons";
 
-export type HeroTone =
-  | "catalogue"
-  | "galerie"
-  | "equipe"
-  | "infos"
-  | "apropos";
+export type HeroTone = "catalogue" | "galerie" | "equipe" | "infos" | "apropos";
 
 const TONES: Record<HeroTone, string> = {
   apropos:

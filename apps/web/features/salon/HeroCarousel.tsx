@@ -73,6 +73,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export interface HeroSlide {
   key: string;
   url: string;
+  /** Copies réduites de la même image : voir `images.ts`. */
+  srcSet?: string;
   /** Nom de la prestation, affiché sous le défilé. */
   label: string;
   /** Tarif formaté, ou chaîne vide. */
@@ -174,6 +176,8 @@ export function HeroCarousel({
           <img
             key={slide.key}
             src={slide.url}
+            srcSet={slide.srcSet}
+            sizes={slide.srcSet ? "100vw" : undefined}
             alt=""
             aria-hidden
             fetchPriority={position === 0 ? "high" : "low"}

@@ -47,6 +47,7 @@ class SalonProfileSerializer(serializers.ModelSerializer):
             "longitude",
             "phone",
             "whatsapp_number",
+            "contact_email",
             "social_links",
             "wechat_id",
             "wechat_qr",
@@ -69,7 +70,6 @@ class SalonProfileSerializer(serializers.ModelSerializer):
             "max_advance_days",
         )
 
-
     def validate(self, attrs):
         """Empeche les reglages qui ne proposeraient plus aucun creneau.
 
@@ -85,9 +85,7 @@ class SalonProfileSerializer(serializers.ModelSerializer):
             "min_lead_time_minutes",
             getattr(self.instance, "min_lead_time_minutes", 0),
         )
-        horizon = attrs.get(
-            "max_advance_days", getattr(self.instance, "max_advance_days", 30)
-        )
+        horizon = attrs.get("max_advance_days", getattr(self.instance, "max_advance_days", 30))
 
         if lead >= horizon * 24 * 60:
             raise serializers.ValidationError(
@@ -175,9 +173,9 @@ def _aligner_les_prestations(profile, lieu_avant: str) -> int:
     if profile.service_mode == ServiceMode.SALON:
         return 0
 
-    return Service.objects.filter(
-        tenant_id=profile.tenant_id, location_mode=lieu_avant
-    ).update(location_mode=profile.service_mode)
+    return Service.objects.filter(tenant_id=profile.tenant_id, location_mode=lieu_avant).update(
+        location_mode=profile.service_mode
+    )
 
 
 class TravelZoneSerializer(serializers.ModelSerializer):
@@ -202,3 +200,75 @@ class TravelZoneViewSet(TenantModelViewSet):
     required_roles = MANAGERS
     safe_roles = EVERYONE
     pagination_class = None  # une grille de quartiers tient en une reponse
+
+
+class SitePersonnaliseView(APIView):
+    """Personnalisation avancee du mini-site (offre Pro).
+
+    GET : la configuration (completee des valeurs par defaut), les options
+    proposees, et si la fonction est ouverte — un salon redescendu a Standard
+    retrouve ses reglages, en pause. PUT : enregistrer, offre Pro exigee.
+    """
+
+    required_roles = (Membership.Role.OWNER, Membership.Role.MANAGER)
+    safe_roles = (Membership.Role.OWNER, Membership.Role.MANAGER)
+    fonction_pro = "customization"
+
+    def get_permissions(self):
+        from apps.billing.droits import ExigeFonctionPro
+
+        permissions = [IsTenantMember(), HasTenantRole()]
+        if self.request.method not in ("GET", "HEAD", "OPTIONS"):
+            permissions.append(ExigeFonctionPro())
+        return permissions
+
+    def _profil(self, request):
+        return SalonProfile.objects.get(tenant_id=request.tenant_id)
+
+    def get(self, request):
+        from apps.billing.droits import a_la_fonction
+
+        from . import personnalisation
+
+        return Response(
+            {
+                "config": personnalisation.complete(self._profil(request).site_config),
+                "options": personnalisation.options(),
+                "active": a_la_fonction(request.tenant_id, self.fonction_pro),
+            }
+        )
+
+    def put(self, request):
+        from apps.audit.models import AuditLog
+
+        from . import personnalisation
+
+        config = personnalisation.valider(request.data)
+        # L'image d'une page : un media public de ce salon (le contexte RLS
+        # ecarte ceux des autres), jamais une preuve de versement.
+        images = set(personnalisation.images_des_pages(config))
+        if images:
+            from apps.media.models import MediaAsset
+
+            valides = (
+                MediaAsset.objects.filter(id__in=images, visibility=MediaAsset.Visibility.PUBLIC)
+                .exclude(kind=MediaAsset.Kind.PROOF)
+                .count()
+            )
+            if valides != len(images):
+                return Response(
+                    {"detail": "Image introuvable dans vos médias.", "code": "image_invalide"},
+                    status=400,
+                )
+        profil = self._profil(request)
+        profil.site_config = config
+        profil.save(update_fields=["site_config", "updated_at"])
+        AuditLog.objects.create(
+            tenant_id=request.tenant_id,
+            actor_user=request.user,
+            action=AuditLog.Action.SITE_CUSTOMIZED,
+            resource_type="salon_profile",
+            resource_id=str(profil.pk),
+            metadata={"polices": [config["police_titres"], config["police_texte"]]},
+        )
+        return Response({"config": config, "options": personnalisation.options(), "active": True})

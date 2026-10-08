@@ -391,7 +391,9 @@ export function GradientLine({
   const y = (value: number) =>
     PAD.top + PLOT_H - ((value - min) / span) * PLOT_H;
 
-  const line = values.map((value, index) => `${x(index)},${y(value)}`).join(" ");
+  const line = values
+    .map((value, index) => `${x(index)},${y(value)}`)
+    .join(" ");
 
   return (
     <svg

@@ -17,12 +17,8 @@ from .serializers import MediaAssetSerializer
 
 class RemoteMediaSerializer(serializers.Serializer):
     url = serializers.URLField(max_length=2000)
-    kind = serializers.ChoiceField(
-        choices=MediaAsset.Kind.choices, default=MediaAsset.Kind.GALLERY
-    )
-    alt_text = serializers.CharField(
-        max_length=255, required=False, allow_blank=True, default=""
-    )
+    kind = serializers.ChoiceField(choices=MediaAsset.Kind.choices, default=MediaAsset.Kind.GALLERY)
+    alt_text = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 
 
 MANAGERS = (Membership.Role.OWNER, Membership.Role.MANAGER)
@@ -41,7 +37,12 @@ class MediaAssetViewSet(TenantModelViewSet):
     safe_roles = EVERYONE
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Les preuves de versement n'entrent jamais dans la mediatheque : ni
+        # listees, ni modifiables, ni supprimables par cette route. Elles ont
+        # leurs propres chemins (l'acompte au rendez-vous, l'abonnement a la
+        # page Abonnement), avec leurs propres droits. Supprimer une preuve
+        # ici effacait la piece qu'un administrateur doit verifier.
+        queryset = super().get_queryset().exclude(kind=MediaAsset.Kind.PROOF)
         if kind := self.request.query_params.get("kind"):
             queryset = queryset.filter(kind=kind)
         return queryset
@@ -141,6 +142,18 @@ class PrivateMediaView(APIView):
     def get(self, request, pk):
         asset = get_object_or_404(MediaAsset.objects.all(), pk=pk)
 
+        # Exception : la preuve d'un paiement d'abonnement. Elle montre ce que
+        # le proprietaire a verse a la plateforme, parfois son solde, et la
+        # facturation lui est reservee partout ailleurs. Meme reponse qu'un
+        # media inexistant, pour la raison dite plus haut.
+        if asset.kind == MediaAsset.Kind.PROOF:
+            from apps.billing.models import SubscriptionPaymentRequest
+
+            membership = getattr(request, "membership", None)
+            proprietaire = membership is not None and membership.role == Membership.Role.OWNER
+            if not proprietaire and SubscriptionPaymentRequest.objects.filter(proof=asset).exists():
+                raise Http404
+
         try:
             fichier = asset.file.open("rb")
         except (FileNotFoundError, ValueError, OSError) as exc:
@@ -160,6 +173,11 @@ class PrivateMediaView(APIView):
         # Le navigateur s'en tient au type declare : une image qui
         # contiendrait du HTML ne sera jamais interpretee comme une page.
         reponse["X-Content-Type-Options"] = "nosniff"
+        # Ouvert seul dans un onglet, le fichier est un document sans script,
+        # quoi qu'il contienne : il est servi sur le domaine de la session.
+        reponse["Content-Security-Policy"] = (
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+        )
         # Jamais de cache partage : ce fichier n'appartient qu'a ce salon, et
         # un proxy intermediaire ne doit pas pouvoir le resservir a un autre.
         reponse["Cache-Control"] = "private, max-age=0, no-store"

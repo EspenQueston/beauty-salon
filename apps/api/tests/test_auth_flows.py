@@ -9,7 +9,12 @@ import pytest
 from django.core import mail
 
 from apps.accounts.models import Invitation, Membership, User
-from apps.accounts.services import accept_invitation, invite_member, signup_salon
+from apps.accounts.services import (
+    InvitationError,
+    accept_invitation,
+    invite_member,
+    signup_salon,
+)
 from apps.tenants.models import Tenant
 from conftest import as_tenant
 from tests.factories import UserFactory
@@ -62,8 +67,13 @@ def test_signup_creates_a_pending_salon_with_its_owner(api_client):
     assert membership.role == Membership.Role.OWNER
     assert membership.user.email == "proprietaire@example.com"
 
-    # Un e-mail de bienvenue part.
-    assert len(mail.outbox) == 1
+    # Deux e-mails : la bienvenue, et le lien de confirmation de l'adresse
+    # (qui reste a prouver : voir accounts/verification.py).
+    sujets = sorted(message.subject for message in mail.outbox)
+    assert len(sujets) == 2
+    assert any("Bienvenue" in sujet for sujet in sujets)
+    assert any("Confirmez votre adresse" in sujet for sujet in sujets)
+    assert membership.user.email_verified_at is None
 
     # Mais aucune session n'est ouverte : s'inscrire ne vaut pas se
     # connecter. La reponse rend l'adresse pour pre-remplir l'ecran suivant.
@@ -83,6 +93,35 @@ def test_signing_up_then_logging_in(api_client):
 
     assert response.status_code == 200, response.data
     assert api_client.get("/api/v1/auth/session").status_code == 200
+
+
+def test_client_session_can_switch_to_a_salon_account(api_client, salon_a):
+    """Un compte cliente ne donne pas accès au salon et n'empêche pas de changer de compte."""
+    from apps.clients.models import ClientProfile
+
+    cliente = UserFactory(email="cliente-sans-salon@example.com")
+    ClientProfile.objects.create(user=cliente)
+    assert api_client.login(email=cliente.email, password=PASSWORD)
+
+    session_cliente = api_client.get("/api/v1/auth/session")
+    assert session_cliente.status_code == 200
+    assert session_cliente.data["memberships"] == []
+
+    connexion_salon = api_client.post(
+        "/api/v1/auth/login",
+        {"email": salon_a.owner.email, "password": PASSWORD},
+        format="json",
+    )
+    assert connexion_salon.status_code == 200
+    assert len(connexion_salon.data["memberships"]) == 1
+    assert connexion_salon.data["memberships"][0]["tenant"]["id"] == str(
+        salon_a.tenant.id
+    )
+    assert Membership.objects.filter(user=cliente).count() == 0
+
+    session_salon = api_client.get("/api/v1/auth/session")
+    assert session_salon.status_code == 200
+    assert session_salon.data["email"] == salon_a.owner.email
 
 
 def test_a_pending_salon_is_not_published(api_client):
@@ -302,7 +341,11 @@ def test_owner_invites_a_receptionist_who_creates_her_account(api_client, salon_
 
 
 def test_an_existing_account_joins_without_a_new_password(salon_a, salon_b):
-    """Une personne qui travaille deja dans un salon peut en rejoindre un autre."""
+    """Une personne qui travaille deja dans un salon peut en rejoindre un autre.
+
+    Sans nouveau mot de passe — mais avec le sien : le lien seul n'ouvre plus
+    un compte existant (audit de l'authentification, 2026-10-02).
+    """
     existant = salon_b.owner
 
     with as_tenant(salon_a.tenant):
@@ -311,7 +354,9 @@ def test_an_existing_account_joins_without_a_new_password(salon_a, salon_b):
         )
     token = _extract_invitation_token(mail.outbox[-1].body)
 
-    user, _ = accept_invitation(token=token)
+    with pytest.raises(InvitationError):
+        accept_invitation(token=token)
+    user, _ = accept_invitation(token=token, password="motdepasse-solide")
 
     assert user.pk == existant.pk
     assert Membership.objects.filter(tenant=salon_a.tenant, user=existant).exists()

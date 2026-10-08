@@ -49,7 +49,8 @@ function subscribe(listener: () => void) {
 function snapshot(): ThemeChoice {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark" || stored === "system") return stored;
+    if (stored === "light" || stored === "dark" || stored === "system")
+      return stored;
   } catch {
     // Navigation privée, stockage refusé : on retombe sur le système.
   }
@@ -102,7 +103,13 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-label={`${label} — changer`}
       className={`inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink ${className}`}
     >
-      {choice === "light" ? <SunIcon /> : choice === "dark" ? <MoonIcon /> : <SystemIcon />}
+      {choice === "light" ? (
+        <SunIcon />
+      ) : choice === "dark" ? (
+        <MoonIcon />
+      ) : (
+        <SystemIcon />
+      )}
     </button>
   );
 }
@@ -136,7 +143,10 @@ function MoonIcon() {
       aria-hidden
       className="size-[1.15rem]"
     >
-      <path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" strokeLinejoin="round" />
+      <path
+        d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

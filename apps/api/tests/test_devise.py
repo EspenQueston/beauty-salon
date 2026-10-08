@@ -434,3 +434,82 @@ def test_an_unavailable_rate_leaves_the_page_in_the_salon_currency(
 
     assert reponse.status_code == 503
     assert reponse.data["code"] == "taux_indisponible"
+
+
+# ---------------------------------------------------------------------------
+# Les fournisseurs de taux
+# ---------------------------------------------------------------------------
+
+
+def _currencyapi_ok(adresse):
+    assert "currencyapi" in adresse
+    return {"data": {"XAF": {"value": 85.2}, "EUR": {"value": 0.13}, "USD": {"value": 0.14}}}
+
+
+def test_one_call_serves_every_currency(settings):
+    from apps.tenants.services import devises
+
+    settings.CURRENCY_API_KEY = "cle-de-test"
+    with patch.object(devises, "_lire", side_effect=_currencyapi_ok) as appel:
+        assert devises.taux("CNY", "XAF") == Decimal("85.2")
+        assert devises.taux("CNY", "EUR") == Decimal("0.13")
+        assert devises.taux("cny", "usd") == Decimal("0.14")
+
+    assert appel.call_count == 1
+
+
+def test_the_free_provider_takes_over_when_currencyapi_fails(settings):
+    from apps.tenants.services import devises
+
+    settings.CURRENCY_API_KEY = "cle-de-test"
+
+    def lire(adresse):
+        if "currencyapi" in adresse:
+            raise devises._Echec("HTTPError 429")
+        return {"result": "success", "rates": {"XAF": 84.9, "CDF": 399.5}}
+
+    with patch.object(devises, "_lire", side_effect=lire):
+        assert devises.taux("CNY", "XAF") == Decimal("84.9")
+
+
+def test_without_a_key_the_free_provider_answers(settings):
+    from apps.tenants.services import devises
+
+    settings.CURRENCY_API_KEY = ""
+    with patch.object(
+        devises, "_lire", return_value={"result": "success", "rates": {"EUR": 0.0015}}
+    ):
+        assert devises.taux("XAF", "EUR") == Decimal("0.0015")
+
+
+def test_a_stale_rate_helps_reading_but_never_converts_a_catalogue(settings):
+    from django.core.cache import cache
+
+    from apps.tenants.services import devises
+
+    settings.CURRENCY_API_KEY = ""
+    with patch.object(
+        devises, "_lire", return_value={"result": "success", "rates": {"XAF": 85}}
+    ):
+        devises.taux("CNY", "XAF")
+    cache.delete("fx:CNY")  # douze heures plus tard
+
+    with patch.object(devises, "_lire", side_effect=devises._Echec("hors ligne")):
+        assert devises.taux("CNY", "XAF", perime_accepte=True) == Decimal("85")
+        with pytest.raises(TauxIndisponible):
+            devises.taux("CNY", "XAF")
+
+
+def test_nonsense_rates_are_ignored(settings):
+    from apps.tenants.services import devises
+
+    settings.CURRENCY_API_KEY = ""
+    with (
+        patch.object(
+            devises,
+            "_lire",
+            return_value={"result": "success", "rates": {"XAF": 0, "EUR": "abc"}},
+        ),
+        pytest.raises(TauxIndisponible),
+    ):
+        devises.taux("CNY", "XAF")

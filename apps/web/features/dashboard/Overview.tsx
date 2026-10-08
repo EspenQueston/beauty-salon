@@ -39,6 +39,7 @@
  * l'usage : on ouvre cette page pour un coup d'œil, pas pour une lecture.
  */
 
+import { useState } from "react";
 import Link from "next/link";
 
 import { Card, ErrorState, Skeleton } from "@/features/ui";
@@ -102,6 +103,65 @@ const TASKS: {
   },
 ];
 
+const CONSEIL_2FA = "beauty-salon.conseil-2fa-masque";
+
+/**
+ * Pour la propriétaire : la double authentification, recommandée tant
+ * qu'elle n'est pas active. Le compte propriétaire ouvre la facturation, la
+ * suppression du salon et les données de toutes les clientes.
+ * « Plus tard » le masque sur cet appareil ; l'écran Sécurité reste là.
+ */
+function ConseilDoubleAuthentification() {
+  const { user, membership } = useDashboard();
+  const [masque, setMasque] = useState(() => {
+    try {
+      return localStorage.getItem(CONSEIL_2FA) === "1";
+    } catch {
+      return false;
+    }
+  });
+  if (membership.role !== "owner" || user.mfa_enabled !== false || masque) return null;
+
+  return (
+    <Card className="border-l-4 border-l-salon">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-salon-soft text-salon">
+          <Icon name="lock" className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">Protégez votre salon en deux minutes</p>
+          <p className="text-[13px] leading-relaxed text-muted">
+            Activez la double authentification : un mot de passe volé ne suffira plus à ouvrir
+            votre compte.
+          </p>
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Link
+            href="/securite"
+            className="flex-1 rounded-lg bg-salon px-3 py-2 text-center text-sm font-medium text-white transition hover:brightness-110 sm:flex-none"
+          >
+            Activer
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setMasque(true);
+              try {
+                localStorage.setItem(CONSEIL_2FA, "1");
+              } catch {
+                /* rien a garder */
+              }
+            }}
+            className="flex-1 rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink transition hover:bg-surface-hover sm:flex-none"
+          >
+            Plus tard
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function Overview() {
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
@@ -119,12 +179,13 @@ export function Overview() {
   return (
     <div className="space-y-5">
       <SetupChecklist />
+      <ConseilDoubleAuthentification />
 
       {/* ----- 1. Ce qui attend ---------------------------------------- */}
       {pending.length > 0 && (
         <Card className="border-l-4 border-l-warning">
           <p className="text-sm font-semibold text-ink">À traiter</p>
-          <ul className="mt-2.5 grid gap-2 sm:grid-cols-3">
+          <ul className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {pending.map((task) => (
               <li key={task.key}>
                 <Link
@@ -145,7 +206,7 @@ export function Overview() {
       )}
 
       {/* ----- 2. Aujourd'hui, et le mois ------------------------------ */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         <Highlight
           label="Aujourd'hui"
           value={String(today.count)}
@@ -228,12 +289,15 @@ export function Overview() {
       </div>
 
       {/* ----- 4. Le détail -------------------------------------------- */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* `grid-cols-1` et non la colonne implicite : celle-ci s'élargit à la
+          ligne la plus longue d'un enfant (un avis tronqué sur une ligne), et
+          la carte débordait de l'écran sur téléphone. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <TopServices rows={data.top_services} currency={currency} />
         <Ratings rows={data.ratings} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Occupancy value={data.occupancy} />
         <Feed entries={data.feed} />
       </div>
@@ -266,7 +330,7 @@ function Highlight({
 }) {
   return (
     <div
-      className={`rounded-2xl p-5 shadow-card ${
+      className={`min-w-0 rounded-2xl p-3 shadow-card sm:p-4 ${
         filled
           ? "salon-gradient text-white"
           : "border border-line bg-surface text-ink"
@@ -274,7 +338,7 @@ function Highlight({
     >
       <div className="flex items-start justify-between gap-3">
         <p
-          className={`text-sm font-medium ${
+          className={`text-xs font-medium sm:text-sm ${
             filled ? "text-white/85" : "text-muted"
           }`}
         >
@@ -282,17 +346,17 @@ function Highlight({
         </p>
         <Icon
           name={icon}
-          className={`size-5 shrink-0 ${
+          className={`size-4 shrink-0 sm:size-5 ${
             filled ? "text-white/70" : "text-subtle"
           }`}
         />
       </div>
 
-      <p className="tabular mt-2 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+      <p className="tabular mt-2 min-w-0 text-lg font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-xl lg:text-2xl">
         {value}
         {unit && (
           <span
-            className={`text-sm font-normal ${
+            className={`ml-1 text-xs font-normal sm:text-sm ${
               filled ? "text-white/80" : "text-muted"
             }`}
           >
@@ -301,9 +365,7 @@ function Highlight({
         )}
       </p>
 
-      <p
-        className={`mt-2 text-sm ${filled ? "text-white/85" : "text-muted"}`}
-      >
+      <p className={`mt-2 text-xs leading-snug sm:text-sm ${filled ? "text-white/85" : "text-muted"}`}>
         {footer}
       </p>
     </div>
@@ -326,17 +388,21 @@ function Tile({
     // colonnes sur un écran de 375 px, une tuile fait 160 px de large, et une
     // icône en tête y ampute le libellé de trois mots — « Panier moyen »
     // devenait « Panier mo… ». À droite, elle ne vole rien à personne.
-    <Card className="min-w-0">
+    <Card className="min-w-0" padded={false}>
+      <div className="p-3 sm:p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-sm leading-snug text-muted">{label}</p>
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-salon-soft">
-          <Icon name={icon} className="size-4 text-salon" />
+        <p className="min-w-0 text-xs leading-snug text-muted sm:text-sm">{label}</p>
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-salon-soft sm:size-8">
+          <Icon name={icon} className="size-3.5 text-salon sm:size-4" />
         </span>
       </div>
-      <p className="tabular mt-1.5 text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+      <p className="tabular mt-1.5 min-w-0 text-base font-semibold tracking-tight text-ink [overflow-wrap:anywhere] sm:text-lg lg:text-xl">
         {value}
       </p>
-      {hint && <p className="mt-0.5 text-xs leading-snug text-subtle">{hint}</p>}
+      {hint && (
+        <p className="mt-0.5 text-xs leading-snug text-subtle">{hint}</p>
+      )}
+      </div>
     </Card>
   );
 }
