@@ -13,6 +13,7 @@
  * clignote en blanc avant de passer au sombre.
  */
 
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 
 export type ThemeChoice = "system" | "light" | "dark";
@@ -21,11 +22,6 @@ export const THEME_KEY = "beauty-salon-theme";
 
 const ORDER: ThemeChoice[] = ["system", "light", "dark"];
 
-const LABELS: Record<ThemeChoice, string> = {
-  system: "Thème du système",
-  light: "Thème clair",
-  dark: "Thème sombre",
-};
 
 // ---------------------------------------------------------------------------
 // Le thème est un état externe à React : il vit dans localStorage et sur
@@ -92,15 +88,16 @@ function choose(value: ThemeChoice) {
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
+  const t = useTranslations("theme");
   const choice = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
-  const label = LABELS[choice];
+  const label = t(choice);
 
   return (
     <button
       type="button"
       onClick={() => choose(ORDER[(ORDER.indexOf(choice) + 1) % ORDER.length])}
       title={label}
-      aria-label={`${label} — changer`}
+      aria-label={t("changer", { theme: label })}
       className={`inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink ${className}`}
     >
       {choice === "light" ? (

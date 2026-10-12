@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
+import { useTranslations } from "next-intl";
 
 import {
   DashboardError,
@@ -77,6 +80,7 @@ export function LoginForm({
   onSuccess: () => void;
   currentAccount?: Pick<SessionUser, "email" | "is_platform_admin">;
 }) {
+  const t = useTranslations("pro.connexion");
   const toast = useToast();
   const [prefilled] = useState(emailFromUrl);
   const [savedEmail] = useState(rememberedEmail);
@@ -116,11 +120,9 @@ export function LoginForm({
       return;
     }
     remember(email);
-    toast.success(`Bienvenue, ${user.display_name || user.email}.`);
+    toast.success(t("bienvenue", { nom: user.display_name || user.email }));
     if (typeof user.codes_de_secours_restants === "number") {
-      toast.info(
-        `Code de secours utilisé : il vous en reste ${user.codes_de_secours_restants}. Régénérez-les depuis l'écran Sécurité.`,
-      );
+      toast.info(t("codeSecours", { n: user.codes_de_secours_restants }));
     }
     onSuccess();
   }
@@ -136,7 +138,7 @@ export function LoginForm({
         setEtapeCode(false);
         setCode("");
       }
-      setError(caught instanceof DashboardError ? caught.message : "Vérification impossible. Réessayez.");
+      setError(caught instanceof DashboardError ? caught.message : t("verificationEchec"));
     } finally {
       setPending(false);
     }
@@ -160,7 +162,7 @@ export function LoginForm({
       setError(
         caught instanceof DashboardError
           ? caught.message
-          : "Connexion impossible. Réessayez.",
+          : t("echec"),
       );
     } finally {
       setPending(false);
@@ -193,14 +195,11 @@ export function LoginForm({
       <div className="rise w-full">
         {etapeCode ? (
           <form onSubmit={submitCode} className={authCard}>
-            <h1 className={authTitle}>Double authentification</h1>
-            <p className={authLead}>
-              Saisissez le code à six chiffres affiché par votre application
-              d&apos;authentification, ou l&apos;un de vos codes de secours.
-            </p>
+            <h1 className={authTitle}>{t("deuxFacteurs")}</h1>
+            <p className={authLead}>{t("deuxFacteursAide")}</p>
             <div className="mt-6">
               <label htmlFor="login-code" className="mb-1.5 block text-sm font-medium text-ink">
-                Code
+                {t("code")}
               </label>
               <input
                 id="login-code"
@@ -221,7 +220,7 @@ export function LoginForm({
               </p>
             )}
             <Button type="submit" pending={pending} className="mt-5 w-full py-3">
-              Vérifier
+              {t("verifier")}
             </Button>
             <button
               type="button"
@@ -232,7 +231,7 @@ export function LoginForm({
               }}
               className={`${authLink} mt-4 block w-full text-center text-sm`}
             >
-              Revenir au mot de passe
+              {t("retourMotDePasse")}
             </button>
           </form>
         ) : (
@@ -248,16 +247,10 @@ export function LoginForm({
         */}
         <form onSubmit={submit} className={authCard}>
           <h1 className={authTitle}>
-            {accountWithoutSalon
-              ? "Connectez-vous avec un compte salon"
-              : "Connexion à votre espace professionnel"}
+            {accountWithoutSalon ? t("titreSansSalon") : t("titre")}
           </h1>
           <p className={authLead}>
-            {accountWithoutSalon
-              ? "Le compte actuellement connecté ne donne accès à aucun salon."
-              : prefilled
-              ? "Votre salon est créé. Connectez-vous pour y entrer."
-              : "Gérez vos rendez-vous, votre équipe et vos clients."}
+            {accountWithoutSalon ? t("aideSansSalon") : prefilled ? t("aideCree") : t("aide")}
           </p>
 
           {accountWithoutSalon && (
@@ -265,11 +258,9 @@ export function LoginForm({
               role="status"
               className="mt-4 rounded-xl border border-line bg-surface p-3 text-sm leading-relaxed text-muted"
             >
-              Session actuelle :{" "}
-              <span className="font-medium text-ink">{accountWithoutSalon.email}</span>.
-              {accountWithoutSalon.is_platform_admin
-                ? " L'administration de la plateforme utilise son espace dédié."
-                : " Saisissez l'adresse et le mot de passe d'un compte rattaché à votre salon. Si ce compte doit y accéder, demandez au propriétaire de vous inviter."}
+              {t("sessionActuelle")}{" "}
+              <span className="font-medium text-ink">{accountWithoutSalon.email}</span>.{" "}
+              {accountWithoutSalon.is_platform_admin ? t("sessionAdmin") : t("sessionAutre")}
             </p>
           )}
 
@@ -282,7 +273,7 @@ export function LoginForm({
                 htmlFor="login-email"
                 className="mb-1.5 block text-sm font-medium text-ink"
               >
-                E-mail
+                {t("email")}
               </label>
               <input
                 id="login-email"
@@ -299,7 +290,7 @@ export function LoginForm({
             </div>
 
             <PasswordField
-              label="Mot de passe"
+              label={t("motDePasse")}
               value={password}
               onChange={setPassword}
               autoComplete="current-password"
@@ -310,7 +301,7 @@ export function LoginForm({
                   href="/mot-de-passe-oublie"
                   className={`${authLink} text-sm`}
                 >
-                  Mot de passe oublié ?
+                  {t("oublie")}
                 </Link>
               }
             />
@@ -331,7 +322,7 @@ export function LoginForm({
           )}
 
           <Button type="submit" pending={pending} className="mt-5 w-full py-3">
-            Se connecter
+            {t("seConnecter")}
           </Button>
         </form>
 
@@ -340,16 +331,12 @@ export function LoginForm({
             bancaire. Sans cela, « Creer le mien » demande un engagement dont
             on ignore le prix. */}
         <p className="mt-5 text-center text-sm text-ink/75">
-          {accountWithoutSalon
-            ? "Pas encore de compte salon ? "
-            : "Pas encore de salon ? "}
+          {accountWithoutSalon ? t("pasDeCompteSalon") : t("pasDeSalon")}{" "}
           <Link href="/inscription" className={authLink}>
-            {accountWithoutSalon ? "Créer un salon" : "Créer le mien"}
+            {accountWithoutSalon ? t("creerSalon") : t("creerLeMien")}
           </Link>
           <span className="mt-1 block text-xs text-muted">
-            {accountWithoutSalon
-              ? "L'inscription nécessite une autre adresse e-mail."
-              : "14 jours gratuits, sans carte bancaire."}
+            {accountWithoutSalon ? t("autreAdresse") : t("essai")}
           </span>
         </p>
         </>

@@ -54,10 +54,13 @@
  *      pas réveiller un téléphone toute la journée.
  */
 
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
+import { useLocale, useTranslations } from "next-intl";
 import { useNow } from "@/lib/useNow";
 
 import { Icon, type IconName } from "./icons";
@@ -116,26 +119,29 @@ const TONS = {
   neutre: "bg-surface-muted text-muted",
 } as const;
 
-/** « il y a 5 min », « hier », « le 12/09 ». */
-function depuis(iso: string, maintenant: number): string {
+type T = ReturnType<typeof useTranslations<"pro.notifications">>;
+
+/** « il y a 5 min », « hier », « le 12/09 » — dans la langue de l'espace. */
+function depuis(iso: string, maintenant: number, t: T, langue: string): string {
   const quand = new Date(iso).getTime();
   if (!maintenant || Number.isNaN(quand)) return "";
 
   const minutes = Math.max(0, Math.round((maintenant - quand) / 60_000));
-  if (minutes < 1) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 1) return t("instant");
+  if (minutes < 60) return t("minutes", { n: minutes });
 
   const heures = Math.round(minutes / 60);
-  if (heures < 24) return `il y a ${heures} h`;
-  if (heures < 48) return "hier";
+  if (heures < 24) return t("heures", { n: heures });
+  if (heures < 48) return t("hier");
 
-  return new Date(iso).toLocaleDateString("fr-FR", {
+  return new Date(iso).toLocaleDateString(langue === "en" ? "en-GB" : "fr-FR", {
     day: "2-digit",
     month: "2-digit",
   });
 }
 
 export function Notifications({ tenantId }: { tenantId: string }) {
+  const t = useTranslations("pro.notifications");
   const [ouvert, setOuvert] = useState(false);
   const [boite, setBoite] = useState<Boite | null>(null);
   const [attention, setAttention] = useState<Attention | null>(null);
@@ -313,17 +319,14 @@ export function Notifications({ tenantId }: { tenantId: string }) {
         reponse.envoyes > 0
           ? {
               etat: "fait",
-              texte:
-                reponse.envoyes > 1
-                  ? `Envoyée sur ${reponse.envoyes} appareils. Elle arrive dans quelques secondes.`
-                  : "Envoyée. Elle arrive dans quelques secondes.",
+              texte: t("essaiEnvoye", { n: reponse.envoyes }),
             }
-          : { etat: "echec", texte: "Aucun appareil n'a accepté la notification." },
+          : { etat: "echec", texte: t("essaiAucun") },
       );
     } catch (erreur) {
       setEssai({
         etat: "echec",
-        texte: erreur instanceof Error ? erreur.message : "Envoi impossible.",
+        texte: erreur instanceof Error ? erreur.message : t("essaiEchec"),
       });
     }
   }
@@ -355,11 +358,7 @@ export function Notifications({ tenantId }: { tenantId: string }) {
         onClick={() => setOuvert((valeur) => !valeur)}
         aria-expanded={ouvert}
         aria-haspopup="dialog"
-        aria-label={
-          pastille > 0
-            ? `Notifications, ${pastille} en attente`
-            : "Notifications"
-        }
+        aria-label={pastille > 0 ? t("clocheEnAttente", { n: pastille }) : t("titre")}
         className="relative rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-ink aria-expanded:bg-surface-hover aria-expanded:text-ink"
       >
         <Icon name="bell" className="size-5" />
@@ -401,7 +400,7 @@ export function Notifications({ tenantId }: { tenantId: string }) {
           <div
             ref={panneau}
             role="dialog"
-            aria-label="Notifications"
+            aria-label={t("titre")}
             /*
               Téléphone : une feuille ancrée en bas. Grand écran : un panneau
               accroché à la cloche.
@@ -420,7 +419,7 @@ export function Notifications({ tenantId }: { tenantId: string }) {
             className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 flex max-h-[min(75svh,34rem)] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-float sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-[calc(100%+0.5rem)] sm:w-[23rem]"
           >
             <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-              <h2 className="text-sm font-semibold text-ink">Notifications</h2>
+              <h2 className="text-sm font-semibold text-ink">{t("titre")}</h2>
               {/*
                 Affiché seulement quand il y a quelque chose à marquer.
 
@@ -436,7 +435,7 @@ export function Notifications({ tenantId }: { tenantId: string }) {
                   onClick={marquerTout}
                   className="rounded-lg px-2 py-1 text-xs font-medium text-muted transition hover:bg-surface-hover hover:text-ink"
                 >
-                  Tout marquer lu
+                  {t("toutLu")}
                 </button>
               )}
             </div>
@@ -487,6 +486,7 @@ function ATraiter({
   attention: Attention | null;
   onNaviguer: () => void;
 }) {
+  const t = useTranslations("pro.notifications");
   if (!attention) return null;
 
   /*
@@ -501,17 +501,17 @@ function ATraiter({
   const cases = [
     {
       cle: "acomptes",
-      libelle: "Acomptes",
+      libelle: t("acomptes"),
       valeur: attention.deposits,
     },
     {
       cle: "demandes",
-      libelle: "Demandes",
+      libelle: t("demandes"),
       valeur: attention.requests,
     },
     {
       cle: "a-noter",
-      libelle: "À noter",
+      libelle: t("aNoter"),
       valeur: attention.overdue,
     },
   ].filter((c) => c.valeur > 0);
@@ -521,13 +521,13 @@ function ATraiter({
   return (
     <div className="border-b border-line bg-surface-muted/50 px-3 py-3">
       <p className="mb-0.5 px-1 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted">
-        À traiter
+        {t("aTraiter")}
       </p>
       {/* La phrase répond à la question qu'on se pose en voyant que
           « Tout marquer lu » ne fait pas tomber ce compte : ce ne sont pas
           des messages, ce sont des tâches. */}
       <p className="mb-2 px-1 text-[0.68rem] leading-snug text-muted">
-        Ces éléments restent tant qu’ils ne sont pas réglés.
+        {t("aTraiterAide")}
       </p>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {cases.map((c) => (
@@ -559,14 +559,13 @@ function Fil({
   maintenant: number;
   onOuvrir: (ligne: Ligne) => void;
 }) {
+  const t = useTranslations("pro.notifications");
+  const langue = useLocale();
   if (!lignes.length) {
     return (
       <div className="px-5 py-9 text-center">
-        <p className="text-sm font-medium text-ink">Rien de neuf</p>
-        <p className="mt-1 text-[0.78rem] leading-relaxed text-muted">
-          Les réservations, acomptes et annulations qui arriveront à partir de
-          maintenant s’afficheront ici.
-        </p>
+        <p className="text-sm font-medium text-ink">{t("vide")}</p>
+        <p className="mt-1 text-[0.78rem] leading-relaxed text-muted">{t("videAide")}</p>
       </div>
     );
   }
@@ -605,7 +604,7 @@ function Fil({
                     {ligne.titre}
                   </span>
                   <span className="shrink-0 text-[0.65rem] text-muted">
-                    {depuis(ligne.created_at, maintenant)}
+                    {depuis(ligne.created_at, maintenant, t, langue)}
                   </span>
                 </span>
                 {ligne.corps && (
@@ -655,28 +654,15 @@ function ReglagePush({
   essai: Essai | null;
   onEssayer: () => void;
 }) {
+  const t = useTranslations("pro.notifications.push");
   if (!actifCoteServeur || etat === null || etat === "desactive") return null;
 
   const messages: Record<EtatPush, { texte: string; action?: string }> = {
-    pret: {
-      texte: "Notifications activées sur cet appareil.",
-      action: "Désactiver",
-    },
-    possible: {
-      texte: "Être prévenue sur cet appareil, même hors du tableau de bord.",
-      action: "Activer",
-    },
-    refuse: {
-      texte:
-        "Les notifications sont bloquées pour ce site. Rouvrez-les dans les réglages de votre navigateur.",
-    },
-    "non-installe": {
-      texte:
-        "Sur iPhone : touchez Partager, puis « Sur l'écran d'accueil ». Les notifications deviendront disponibles.",
-    },
-    incompatible: {
-      texte: "Ce navigateur ne gère pas les notifications.",
-    },
+    pret: { texte: t("pret"), action: t("desactiver") },
+    possible: { texte: t("possible"), action: t("activer") },
+    refuse: { texte: t("refuse") },
+    "non-installe": { texte: t("nonInstalle") },
+    incompatible: { texte: t("incompatible") },
     desactive: { texte: "" },
   };
 
@@ -705,7 +691,7 @@ function ReglagePush({
             disabled={envoi || occupe}
             className="shrink-0 rounded-lg bg-ink px-2.5 py-1 text-[0.7rem] font-semibold text-surface transition hover:opacity-90 disabled:opacity-50"
           >
-            {envoi ? "Envoi…" : "Essayer"}
+            {envoi ? t("envoi") : t("essayer")}
           </button>
         )}
         {action && (

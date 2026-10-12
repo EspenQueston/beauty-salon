@@ -44,7 +44,9 @@ import {
   type ReactNode,
 } from "react";
 
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
 
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
 import {

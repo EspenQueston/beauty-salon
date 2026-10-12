@@ -1091,5 +1091,302 @@
     "seeFilm": "Watch the film",
     "filmEyebrow": "Mini Salon, in 29 seconds",
     "headlineKeyword": "bookings"
+  },
+  "pro": {
+    "navigation": {
+      "groupes": {
+        "quotidien": "Day to day",
+        "salon": "My salon",
+        "compte": "Account",
+        "pro": "Pro plan"
+      },
+      "tableauDeBord": "Dashboard",
+      "agenda": "Calendar",
+      "clientes": "Clients",
+      "listeAttente": "Waiting list",
+      "avis": "Reviews",
+      "prestations": "Services",
+      "boutique": "Shop",
+      "prestataires": "Staff",
+      "horaires": "Opening hours",
+      "galerie": "Gallery",
+      "equipe": "Team",
+      "profil": "Profile",
+      "identite": "Identity",
+      "comptes": "Finances",
+      "abonnement": "Subscription",
+      "parrainage": "Referrals",
+      "securite": "Security",
+      "assistants": "AI assistants",
+      "apparence": "Advanced appearance",
+      "domaine": "Custom domain"
+    },
+    "roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "receptionist": "Front desk",
+      "staff": "Staff member"
+    },
+    "coquille": {
+      "chargement": "Loading…",
+      "deconnectee": "You are signed out.",
+      "fermerMenu": "Close the menu",
+      "ouvrirMenu": "Open the menu",
+      "afficherNavigation": "Show navigation",
+      "deplierNavigation": "Expand navigation",
+      "replierNavigation": "Collapse navigation",
+      "seDeconnecter": "Sign out",
+      "voirMiniSite": "View my mini-site",
+      "salonActif": "Active salon",
+      "modifierSalon": "Edit the name and contact details of {salon}",
+      "offrePro": "Pro plan",
+      "validation": "Your salon is being reviewed. Your mini-site will go public once this step is complete — you can already set everything up."
+    },
+    "verification": {
+      "rappel": "Confirm your address <adresse>{email}</adresse>: click the link we emailed you. Your mini-site and payments open afterwards.",
+      "envoye": "Link sent ✓",
+      "envoi": "Sending…",
+      "renvoyer": "Resend the link",
+      "echec": "Could not send right now."
+    },
+    "reglages": {
+      "titre": "Display settings",
+      "fermerReglages": "Close settings",
+      "fermer": "Close",
+      "portee": "They apply to this device, not to your salon.",
+      "langue": "Language",
+      "langueAide": "The language of your professional space.",
+      "couleur": "Workspace colour",
+      "couleurAide": "Sidebar, buttons and active states, together.",
+      "accents": {
+        "salon": "Salon colour",
+        "graphite": "Graphite",
+        "azur": "Azure",
+        "emeraude": "Emerald",
+        "ambre": "Amber",
+        "grenat": "Garnet"
+      },
+      "fond": "Sidebar background",
+      "fonds": {
+        "dark": {
+          "nom": "Dark",
+          "aide": "same background whatever the theme"
+        },
+        "transparent": {
+          "nom": "Transparent",
+          "aide": "the page shows through"
+        },
+        "light": {
+          "nom": "Light",
+          "aide": "follows the light or dark theme"
+        }
+      },
+      "barreFixe": "Fixed top bar",
+      "barreFixeOui": "It stays in place when the page scrolls.",
+      "barreFixeNon": "It scrolls away with the page and frees up height.",
+      "sombre": "Dark theme",
+      "sombreAide": "The top bar button also offers “follow the system”.",
+      "colonne": "Show the navigation sidebar",
+      "colonneMasquee": "Hidden: the button at the top left brings it back.",
+      "colonneVisible": "Visible. The same button collapses it to icons only.",
+      "origine": "Restore the original appearance"
+    },
+    "notifications": {
+      "titre": "Notifications",
+      "clocheEnAttente": "Notifications, {n} pending",
+      "toutLu": "Mark all as read",
+      "instant": "just now",
+      "minutes": "{n} min ago",
+      "heures": "{n} h ago",
+      "hier": "yesterday",
+      "acomptes": "Deposits",
+      "demandes": "Requests",
+      "aNoter": "To review",
+      "aTraiter": "To handle",
+      "aTraiterAide": "These items stay until they are dealt with.",
+      "vide": "Nothing new",
+      "videAide": "Bookings, deposits and cancellations from now on will show up here.",
+      "essaiEnvoye": "{n, plural, one {Sent. It will arrive in a few seconds.} other {Sent to # devices. It will arrive in a few seconds.}}",
+      "essaiAucun": "No device accepted the notification.",
+      "essaiEchec": "Could not send.",
+      "push": {
+        "pret": "Notifications are on for this device.",
+        "desactiver": "Turn off",
+        "possible": "Get notified on this device, even outside the dashboard.",
+        "activer": "Turn on",
+        "refuse": "Notifications are blocked for this site. Allow them again in your browser settings.",
+        "nonInstalle": "On iPhone: tap Share, then “Add to Home Screen”. Notifications will then become available.",
+        "incompatible": "This browser does not support notifications.",
+        "envoi": "Sending…",
+        "essayer": "Try it"
+      }
+    },
+    "acces": {
+      "bouton": {
+        "verification": "Payment being checked",
+        "reactiver": "Reactivate my salon",
+        "regler": "Pay my subscription",
+        "choisir": "Choose a plan",
+        "dernierJour": "last day",
+        "jours": "{n} d",
+        "annuel": "Switch to yearly",
+        "pro": "Upgrade to Pro"
+      },
+      "prevenir": "Let the salon owner know.",
+      "suspendu": "Subscription suspended: online booking is closed and the dashboard is read-only. Contact the Beauty Salon team.",
+      "resilie": "Subscription cancelled: the dashboard is read-only.",
+      "verificationExpire": "Payment received and being checked. Everything reopens once it is approved.",
+      "verification": "Payment received and being checked.",
+      "expire": "Subscription expired: online booking is closed and the dashboard is read-only. Your data is safe.",
+      "grace": "Your period ended on {fin}. Pay before {limite} to keep bookings open.",
+      "essaiFin": "Your free trial ends on {fin}.",
+      "essaiDans": "Your free trial ends in {jours} days, on {fin}.",
+      "periodeFin": "Your subscription ends on {fin}.",
+      "voir": "View",
+      "suivre": "Track",
+      "reactiver": "Reactivate",
+      "regler": "Pay",
+      "choisir": "Choose a plan",
+      "prolonger": "Renew"
+    },
+    "rappelPush": {
+      "titre": "Never miss an appointment",
+      "aide": "Get notified instantly on this device, even with the app closed.",
+      "iosAide": "On iPhone, notifications work once the dashboard is added to your Home Screen.",
+      "ios1": "Tap <b>Share</b> (the square with an arrow) in Safari.",
+      "ios2": "Choose <b>“Add to Home Screen”</b>.",
+      "ios3": "Open the dashboard from the new icon: this prompt will offer to turn notifications on.",
+      "points": {
+        "reservations": "New bookings",
+        "annulations": "Cancellations",
+        "acomptes": "Deposits to check"
+      },
+      "plusTard": "Later",
+      "jaiCompris": "Got it",
+      "activer": "Turn on",
+      "compris": "Got it",
+      "activees": "Notifications on",
+      "activeesAide": "This device will be notified of every new request.",
+      "bloquees": "Notifications blocked",
+      "bloqueesAide": "This device won't notify you of new bookings. To allow them: tap the padlock left of the address, then “Notifications” → “Allow”, and reload the page."
+    },
+    "miseEnRoute": {
+      "titre": "Getting started",
+      "progression": "{fait, plural, one {# step} other {# steps}} of {total}",
+      "aSuivre": "next: {etape}",
+      "continuer": "Continue",
+      "compte": {
+        "titre": "Salon created",
+        "aide": "Your web address is reserved."
+      },
+      "horaires": {
+        "titre": "Opening hours set",
+        "aide": "A starting schedule is already in place — adjust it."
+      },
+      "prestations": {
+        "titre": "First service",
+        "aide": "Without a catalogue, nobody can book."
+      },
+      "prestataires": {
+        "titre": "First staff profile",
+        "aide": "Even on your own, create your profile: it holds your appointments."
+      },
+      "photos": {
+        "titre": "First photos",
+        "aide": "Three sharp examples of your work are enough to trigger a booking."
+      },
+      "validation": {
+        "titre": "Mini-site online",
+        "aide": "Our team reviews your salon before it goes public."
+      }
+    },
+    "accueil": {
+      "deuxFacteurs": {
+        "titre": "Protect your salon in two minutes",
+        "aide": "Turn on two-factor authentication: a stolen password will no longer be enough to open your account.",
+        "activer": "Turn on",
+        "plusTard": "Later"
+      },
+      "aTraiter": "To handle",
+      "taches": {
+        "deposits": "{n, plural, one {deposit to check} other {deposits to check}}",
+        "requests": "{n, plural, one {request to accept} other {requests to accept}}",
+        "overdue": "{n, plural, one {past slot to settle} other {past slots to settle}}"
+      },
+      "aujourdhui": "Today",
+      "rendezVous": "{n, plural, one {appointment} other {appointments}}",
+      "prochain": "Next: <b>{service}</b> — {cliente} at {heure}",
+      "journeePassee": "All of today's appointments are over.",
+      "aucunAujourdhui": "No appointments today.",
+      "recettes": "Revenue this month",
+      "moisPrecedent": "Previous month: {montant}",
+      "evolution": "{signe}{n}% vs previous month",
+      "clientes": "Clients",
+      "rdv30": "Bookings (30 days)",
+      "panier": "Average spend",
+      "note": "Average rating",
+      "nbAvis": "{n, plural, one {# review} other {# reviews}}",
+      "aucunAvis": "No published reviews",
+      "prestationsMois": "Services this month",
+      "prestationsVide": "No completed appointments in the last 30 days.",
+      "prestationsTop": "Most booked services",
+      "trenteJours": "Over the last 30 days",
+      "avisTitre": "Client reviews",
+      "avisVide": "No published reviews yet. They come on their own: every client is invited to leave one after her visit.",
+      "avisPublies": "{n, plural, one {# published review} other {# published reviews}}",
+      "remplissage": {
+        "titre": "Occupancy",
+        "septJours": "Over the last 7 days",
+        "sansHoraires": "Set your opening hours to see how much of your time is actually booked.",
+        "poserHoraires": "Set my opening hours",
+        "occupees": "{n}% of opening hours booked",
+        "plein": "Your days are full. Time to open more slots, or adjust your prices.",
+        "confortable": "A comfortable pace: there is still room for new clients.",
+        "libre": "Many open hours are still free. A promotion or a reminder to your regulars would fill them."
+      },
+      "activite": "Activity",
+      "activiteVide": "Nothing happened in the last 30 days.",
+      "depuis": {
+        "instant": "just now",
+        "minutes": "{n} min ago",
+        "heures": "{n} h ago",
+        "jours": "{n} d ago"
+      }
+    },
+    "connexion": {
+      "bienvenue": "Welcome, {nom}.",
+      "codeSecours": "Backup code used: you have {n} left. Generate new ones from the Security screen.",
+      "verificationEchec": "Verification failed. Please try again.",
+      "echec": "Could not sign in. Please try again.",
+      "deuxFacteurs": "Two-factor authentication",
+      "deuxFacteursAide": "Enter the six-digit code shown in your authenticator app, or one of your backup codes.",
+      "code": "Code",
+      "verifier": "Verify",
+      "retourMotDePasse": "Back to password",
+      "titre": "Sign in to your professional space",
+      "titreSansSalon": "Sign in with a salon account",
+      "aide": "Manage your appointments, your team and your clients.",
+      "aideCree": "Your salon has been created. Sign in to enter it.",
+      "aideSansSalon": "The account currently signed in does not give access to any salon.",
+      "sessionActuelle": "Current session:",
+      "sessionAdmin": "Platform administration has its own dedicated space.",
+      "sessionAutre": "Enter the email and password of an account linked to your salon. If this account needs access, ask the owner to invite you.",
+      "email": "Email",
+      "motDePasse": "Password",
+      "oublie": "Forgot your password?",
+      "seConnecter": "Sign in",
+      "pasDeSalon": "No salon yet?",
+      "pasDeCompteSalon": "No salon account yet?",
+      "creerLeMien": "Create mine",
+      "creerSalon": "Create a salon",
+      "essai": "14 days free, no credit card.",
+      "autreAdresse": "Signing up requires a different email address."
+    }
+  },
+  "theme": {
+    "system": "System theme",
+    "light": "Light theme",
+    "dark": "Dark theme",
+    "changer": "{theme} — change"
   }
 }

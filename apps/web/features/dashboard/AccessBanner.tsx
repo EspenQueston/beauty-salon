@@ -35,16 +35,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
 
 import { dashboardFetch } from "@/lib/dashboard";
 import {
   ABONNEMENT_CHANGE,
-  dateLongue,
   joursAvant,
   type AccesSalon,
 } from "./abonnement";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
+import { useTranslations } from "next-intl";
 
 const RELECTURE_MS = 5 * 60_000;
 const HORLOGE_MS = 60_000;
@@ -128,6 +131,7 @@ export function AccesProvider({
  * l'annuel d'abord — l'économie est immédiate ; à l'annuel Standard, Pro.
  */
 export function UpgradeButton() {
+  const t = useTranslations("pro.acces");
   const { acces, maintenant } = useAcces();
   if (!acces || !acces.peut_payer) return null;
 
@@ -137,19 +141,19 @@ export function UpgradeButton() {
   let ton: "marque" | "alerte" | "neutre" = "marque";
 
   if (acces.paiement_en_attente) {
-    libelle = "Paiement en vérification";
+    libelle = t("bouton.verification");
     ton = "neutre";
   } else if (acces.raison === "expire" || acces.raison === "grace") {
-    libelle = acces.raison === "expire" ? "Réactiver mon salon" : "Régler l'abonnement";
+    libelle = acces.raison === "expire" ? t("bouton.reactiver") : t("bouton.regler");
     ton = "alerte";
   } else if (acces.raison === "essai") {
-    libelle = "Choisir une offre";
-    pastille = jours <= 1 ? "dernier jour" : `${jours} j`;
+    libelle = t("bouton.choisir");
+    pastille = jours <= 1 ? t("bouton.dernierJour") : t("bouton.jours", { n: jours });
   } else if (acces.raison === "periode" && acces.montee_en_gamme) {
-    libelle = "Passer à l'annuel";
+    libelle = t("bouton.annuel");
     pastille = `−${acces.montee_en_gamme.economie.pourcentage} %`;
   } else if (acces.raison === "periode" && acces.pro_disponible) {
-    libelle = "Passer à Pro";
+    libelle = t("bouton.pro");
     pastille = "Pro";
   } else {
     return null;
@@ -199,12 +203,14 @@ const TONS: Record<Ton, string> = {
 };
 
 export function AccessBanner({ pathname }: { pathname: string }) {
+  const t = useTranslations("pro.acces");
+  const formats = useFormats();
   const { acces, maintenant } = useAcces();
 
   // La page Abonnement dit tout cela en plus grand.
   if (!acces || pathname.endsWith("/abonnement")) return null;
 
-  const message = messageDe(acces, maintenant);
+  const message = messageDe(acces, maintenant, t, formats.dateLongue);
   if (!message) return null;
 
   return (
@@ -226,7 +232,7 @@ export function AccessBanner({ pathname }: { pathname: string }) {
           </Link>
         ) : (
           <span className="hidden shrink-0 text-xs opacity-90 sm:inline">
-            Prévenez le propriétaire du salon.
+            {t("prevenir")}
           </span>
         )}
       </div>
@@ -237,6 +243,8 @@ export function AccessBanner({ pathname }: { pathname: string }) {
 function messageDe(
   acces: AccesSalon,
   maintenant: number,
+  t: ReturnType<typeof useTranslations<"pro.acces">>,
+  dateLongue: Intl.DateTimeFormat,
 ): { ton: Ton; texte: string; action: string } | null {
   const fin = acces.fin_periode ? dateLongue.format(new Date(acces.fin_periode)) : "";
   const limite = acces.jusqu_au ? dateLongue.format(new Date(acces.jusqu_au)) : "";
@@ -245,59 +253,51 @@ function messageDe(
   if (acces.raison === "suspendu") {
     return {
       ton: "danger",
-      texte:
-        "Abonnement suspendu : réservations en ligne fermées, tableau de bord en lecture seule. Contactez l'équipe Beauty Salon.",
-      action: "Voir",
+      texte: t("suspendu"),
+      action: t("voir"),
     };
   }
   if (acces.raison === "resilie") {
     return {
       ton: "danger",
-      texte: "Abonnement résilié : le tableau de bord est en lecture seule.",
-      action: "Voir",
+      texte: t("resilie"),
+      action: t("voir"),
     };
   }
   if (acces.paiement_en_attente && (acces.raison === "expire" || acces.raison === "grace")) {
     return {
       ton: "info",
-      texte:
-        acces.raison === "expire"
-          ? "Paiement reçu, en cours de vérification. Tout se rouvre dès sa validation."
-          : "Paiement reçu, en cours de vérification.",
-      action: "Suivre",
+      texte: acces.raison === "expire" ? t("verificationExpire") : t("verification"),
+      action: t("suivre"),
     };
   }
   if (acces.raison === "expire") {
     return {
       ton: "danger",
-      texte:
-        "Abonnement expiré : réservations en ligne fermées, tableau de bord en lecture seule. Vos données sont intactes.",
-      action: "Réactiver",
+      texte: t("expire"),
+      action: t("reactiver"),
     };
   }
   if (acces.raison === "grace") {
     return {
       ton: "warning",
-      texte: `Votre période s'est terminée le ${fin}. Réglez avant le ${limite} pour garder les réservations ouvertes.`,
-      action: "Régler",
+      texte: t("grace", { fin, limite }),
+      action: t("regler"),
     };
   }
   if (acces.paiement_en_attente) return null;
   if (acces.raison === "essai" && jours <= ALERTE_JOURS) {
     return {
       ton: "info",
-      texte:
-        jours <= 1
-          ? `Votre essai gratuit se termine le ${fin}.`
-          : `Votre essai gratuit se termine dans ${jours} jours, le ${fin}.`,
-      action: "Choisir une offre",
+      texte: jours <= 1 ? t("essaiFin", { fin }) : t("essaiDans", { jours, fin }),
+      action: t("choisir"),
     };
   }
   if (acces.raison === "periode" && jours <= ALERTE_JOURS) {
     return {
       ton: "warning",
-      texte: `Votre abonnement se termine le ${fin}.`,
-      action: "Prolonger",
+      texte: t("periodeFin", { fin }),
+      action: t("prolonger"),
     };
   }
   return null;

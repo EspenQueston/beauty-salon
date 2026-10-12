@@ -1091,5 +1091,302 @@
     "seeFilm": "Voir le film",
     "filmEyebrow": "Mini Salon, en 29 secondes",
     "headlineKeyword": "rendez-vous"
+  },
+  "pro": {
+    "navigation": {
+      "groupes": {
+        "quotidien": "Au quotidien",
+        "salon": "Mon salon",
+        "compte": "Compte",
+        "pro": "Offre Pro"
+      },
+      "tableauDeBord": "Tableau de bord",
+      "agenda": "Agenda",
+      "clientes": "Clientes",
+      "listeAttente": "Liste d'attente",
+      "avis": "Avis",
+      "prestations": "Prestations",
+      "boutique": "Boutique",
+      "prestataires": "Prestataires",
+      "horaires": "Horaires",
+      "galerie": "Galerie",
+      "equipe": "Équipe",
+      "profil": "Profil",
+      "identite": "Identité",
+      "comptes": "Finances",
+      "abonnement": "Abonnement",
+      "parrainage": "Parrainage",
+      "securite": "Sécurité",
+      "assistants": "Assistants IA",
+      "apparence": "Apparence avancée",
+      "domaine": "Domaine perso"
+    },
+    "roles": {
+      "owner": "Propriétaire",
+      "manager": "Gérante",
+      "receptionist": "Réception",
+      "staff": "Prestataire"
+    },
+    "coquille": {
+      "chargement": "Chargement…",
+      "deconnectee": "Vous êtes déconnectée.",
+      "fermerMenu": "Fermer le menu",
+      "ouvrirMenu": "Ouvrir le menu",
+      "afficherNavigation": "Afficher la navigation",
+      "deplierNavigation": "Déplier la navigation",
+      "replierNavigation": "Replier la navigation",
+      "seDeconnecter": "Se déconnecter",
+      "voirMiniSite": "Voir mon mini-site",
+      "salonActif": "Salon actif",
+      "modifierSalon": "Modifier le nom et les coordonnées de {salon}",
+      "offrePro": "Offre Pro",
+      "validation": "Votre salon est en cours de validation. Votre mini-site sera public une fois cette étape terminée — vous pouvez déjà tout préparer."
+    },
+    "verification": {
+      "rappel": "Confirmez votre adresse <adresse>{email}</adresse> : cliquez sur le lien reçu par e-mail. Votre mini-site et vos paiements s'ouvrent ensuite.",
+      "envoye": "Lien envoyé ✓",
+      "envoi": "Envoi…",
+      "renvoyer": "Renvoyer le lien",
+      "echec": "Envoi impossible pour le moment."
+    },
+    "reglages": {
+      "titre": "Réglages d'affichage",
+      "fermerReglages": "Fermer les réglages",
+      "fermer": "Fermer",
+      "portee": "Ils valent pour cet appareil, pas pour votre salon.",
+      "langue": "Langue",
+      "langueAide": "La langue de votre espace professionnel.",
+      "couleur": "Couleur de l'espace",
+      "couleurAide": "Colonne, boutons et états actifs, ensemble.",
+      "accents": {
+        "salon": "Couleur du salon",
+        "graphite": "Graphite",
+        "azur": "Azur",
+        "emeraude": "Émeraude",
+        "ambre": "Ambre",
+        "grenat": "Grenat"
+      },
+      "fond": "Fond de la colonne",
+      "fonds": {
+        "dark": {
+          "nom": "Sombre",
+          "aide": "fond constant, quel que soit le thème"
+        },
+        "transparent": {
+          "nom": "Transparente",
+          "aide": "la page passe dessous"
+        },
+        "light": {
+          "nom": "Claire",
+          "aide": "suit le thème clair ou sombre"
+        }
+      },
+      "barreFixe": "Barre du haut fixe",
+      "barreFixeOui": "Elle reste en place quand la page défile.",
+      "barreFixeNon": "Elle remonte avec la page et libère de la hauteur.",
+      "sombre": "Thème sombre",
+      "sombreAide": "Le bouton de la barre du haut propose en plus « suivre le système ».",
+      "colonne": "Afficher la colonne de navigation",
+      "colonneMasquee": "Masquée : le bouton en haut à gauche la fait revenir.",
+      "colonneVisible": "Visible. Le même bouton la replie aux icônes seules.",
+      "origine": "Revenir à l'apparence d'origine"
+    },
+    "notifications": {
+      "titre": "Notifications",
+      "clocheEnAttente": "Notifications, {n} en attente",
+      "toutLu": "Tout marquer lu",
+      "instant": "à l'instant",
+      "minutes": "il y a {n} min",
+      "heures": "il y a {n} h",
+      "hier": "hier",
+      "acomptes": "Acomptes",
+      "demandes": "Demandes",
+      "aNoter": "À noter",
+      "aTraiter": "À traiter",
+      "aTraiterAide": "Ces éléments restent tant qu'ils ne sont pas réglés.",
+      "vide": "Rien de neuf",
+      "videAide": "Les réservations, acomptes et annulations qui arriveront à partir de maintenant s'afficheront ici.",
+      "essaiEnvoye": "{n, plural, one {Envoyée. Elle arrive dans quelques secondes.} other {Envoyée sur # appareils. Elle arrive dans quelques secondes.}}",
+      "essaiAucun": "Aucun appareil n'a accepté la notification.",
+      "essaiEchec": "Envoi impossible.",
+      "push": {
+        "pret": "Notifications activées sur cet appareil.",
+        "desactiver": "Désactiver",
+        "possible": "Être prévenue sur cet appareil, même hors du tableau de bord.",
+        "activer": "Activer",
+        "refuse": "Les notifications sont bloquées pour ce site. Rouvrez-les dans les réglages de votre navigateur.",
+        "nonInstalle": "Sur iPhone : touchez Partager, puis « Sur l'écran d'accueil ». Les notifications deviendront disponibles.",
+        "incompatible": "Ce navigateur ne gère pas les notifications.",
+        "envoi": "Envoi…",
+        "essayer": "Essayer"
+      }
+    },
+    "acces": {
+      "bouton": {
+        "verification": "Paiement en vérification",
+        "reactiver": "Réactiver mon salon",
+        "regler": "Régler l'abonnement",
+        "choisir": "Choisir une offre",
+        "dernierJour": "dernier jour",
+        "jours": "{n} j",
+        "annuel": "Passer à l'annuel",
+        "pro": "Passer à Pro"
+      },
+      "prevenir": "Prévenez le propriétaire du salon.",
+      "suspendu": "Abonnement suspendu : réservations en ligne fermées, tableau de bord en lecture seule. Contactez l'équipe Beauty Salon.",
+      "resilie": "Abonnement résilié : le tableau de bord est en lecture seule.",
+      "verificationExpire": "Paiement reçu, en cours de vérification. Tout se rouvre dès sa validation.",
+      "verification": "Paiement reçu, en cours de vérification.",
+      "expire": "Abonnement expiré : réservations en ligne fermées, tableau de bord en lecture seule. Vos données sont intactes.",
+      "grace": "Votre période s'est terminée le {fin}. Réglez avant le {limite} pour garder les réservations ouvertes.",
+      "essaiFin": "Votre essai gratuit se termine le {fin}.",
+      "essaiDans": "Votre essai gratuit se termine dans {jours} jours, le {fin}.",
+      "periodeFin": "Votre abonnement se termine le {fin}.",
+      "voir": "Voir",
+      "suivre": "Suivre",
+      "reactiver": "Réactiver",
+      "regler": "Régler",
+      "choisir": "Choisir une offre",
+      "prolonger": "Prolonger"
+    },
+    "rappelPush": {
+      "titre": "Ne ratez plus aucun rendez-vous",
+      "aide": "Soyez prévenue à l'instant sur cet appareil, même l'application fermée.",
+      "iosAide": "Sur iPhone, les notifications arrivent une fois le tableau de bord ajouté à l'écran d'accueil.",
+      "ios1": "Touchez <b>Partager</b> (le carré avec une flèche) dans Safari.",
+      "ios2": "Choisissez <b>« Sur l'écran d'accueil »</b>.",
+      "ios3": "Ouvrez le tableau de bord depuis la nouvelle icône : cette invitation vous proposera d'activer.",
+      "points": {
+        "reservations": "Nouvelles réservations",
+        "annulations": "Annulations",
+        "acomptes": "Acomptes à vérifier"
+      },
+      "plusTard": "Plus tard",
+      "jaiCompris": "J'ai compris",
+      "activer": "Activer",
+      "compris": "Compris",
+      "activees": "Notifications activées",
+      "activeesAide": "Cet appareil sera prévenu à chaque nouvelle demande.",
+      "bloquees": "Notifications bloquées",
+      "bloqueesAide": "Cet appareil ne vous préviendra pas des nouvelles réservations. Pour les rouvrir : touchez le cadenas à gauche de l'adresse, puis « Notifications » → « Autoriser », et rechargez la page."
+    },
+    "miseEnRoute": {
+      "titre": "Mise en route",
+      "progression": "{fait, plural, one {# étape} other {# étapes}} sur {total}",
+      "aSuivre": "à suivre : {etape}",
+      "continuer": "Continuer",
+      "compte": {
+        "titre": "Salon créé",
+        "aide": "Votre adresse est réservée."
+      },
+      "horaires": {
+        "titre": "Horaires posés",
+        "aide": "Une grille de départ est déjà en place — ajustez-la."
+      },
+      "prestations": {
+        "titre": "Première prestation",
+        "aide": "Sans catalogue, personne ne peut réserver."
+      },
+      "prestataires": {
+        "titre": "Première fiche prestataire",
+        "aide": "Même seule, créez votre fiche : elle porte vos rendez-vous."
+      },
+      "photos": {
+        "titre": "Premières photos",
+        "aide": "Trois réalisations nettes suffisent à déclencher une réservation."
+      },
+      "validation": {
+        "titre": "Mini-site en ligne",
+        "aide": "Notre équipe vérifie votre salon avant publication."
+      }
+    },
+    "accueil": {
+      "deuxFacteurs": {
+        "titre": "Protégez votre salon en deux minutes",
+        "aide": "Activez la double authentification : un mot de passe volé ne suffira plus à ouvrir votre compte.",
+        "activer": "Activer",
+        "plusTard": "Plus tard"
+      },
+      "aTraiter": "À traiter",
+      "taches": {
+        "deposits": "{n, plural, one {acompte à vérifier} other {acomptes à vérifier}}",
+        "requests": "{n, plural, one {demande à accepter} other {demandes à accepter}}",
+        "overdue": "{n, plural, one {créneau passé à trancher} other {créneaux passés à trancher}}"
+      },
+      "aujourdhui": "Aujourd'hui",
+      "rendezVous": "{n, plural, one {rendez-vous} other {rendez-vous}}",
+      "prochain": "Prochain : <b>{service}</b> — {cliente} à {heure}",
+      "journeePassee": "Tous les rendez-vous du jour sont passés.",
+      "aucunAujourdhui": "Aucun rendez-vous aujourd'hui.",
+      "recettes": "Recettes du mois",
+      "moisPrecedent": "Mois précédent : {montant}",
+      "evolution": "{signe}{n} % par rapport au mois précédent",
+      "clientes": "Clientes",
+      "rdv30": "RDV sur 30 j",
+      "panier": "Panier moyen",
+      "note": "Note moyenne",
+      "nbAvis": "{n} avis",
+      "aucunAvis": "Aucun avis publié",
+      "prestationsMois": "Prestations du mois",
+      "prestationsVide": "Aucun rendez-vous honoré sur les 30 derniers jours.",
+      "prestationsTop": "Prestations les plus réservées",
+      "trenteJours": "Sur les 30 derniers jours",
+      "avisTitre": "Avis des clientes",
+      "avisVide": "Aucun avis publié pour l'instant. Ils arrivent tout seuls : chaque cliente en reçoit la proposition après sa visite.",
+      "avisPublies": "{n, plural, one {# avis publié} other {# avis publiés}}",
+      "remplissage": {
+        "titre": "Remplissage",
+        "septJours": "Sur les 7 derniers jours",
+        "sansHoraires": "Déclarez vos horaires d'ouverture pour connaître la part de vos heures réellement occupées.",
+        "poserHoraires": "Poser mes horaires",
+        "occupees": "{n} % des heures d'ouverture occupées",
+        "plein": "Vos journées sont pleines. C'est le moment d'ouvrir des créneaux, ou d'ajuster vos tarifs.",
+        "confortable": "Un rythme confortable : il reste de la place pour de nouvelles clientes.",
+        "libre": "Beaucoup d'heures ouvertes restent libres. Une promotion ou un rappel à vos habituées les remplirait."
+      },
+      "activite": "Activité",
+      "activiteVide": "Rien ne s'est passé sur les 30 derniers jours.",
+      "depuis": {
+        "instant": "à l'instant",
+        "minutes": "il y a {n} min",
+        "heures": "il y a {n} h",
+        "jours": "il y a {n} j"
+      }
+    },
+    "connexion": {
+      "bienvenue": "Bienvenue, {nom}.",
+      "codeSecours": "Code de secours utilisé : il vous en reste {n}. Régénérez-les depuis l'écran Sécurité.",
+      "verificationEchec": "Vérification impossible. Réessayez.",
+      "echec": "Connexion impossible. Réessayez.",
+      "deuxFacteurs": "Double authentification",
+      "deuxFacteursAide": "Saisissez le code à six chiffres affiché par votre application d'authentification, ou l'un de vos codes de secours.",
+      "code": "Code",
+      "verifier": "Vérifier",
+      "retourMotDePasse": "Revenir au mot de passe",
+      "titre": "Connexion à votre espace professionnel",
+      "titreSansSalon": "Connectez-vous avec un compte salon",
+      "aide": "Gérez vos rendez-vous, votre équipe et vos clients.",
+      "aideCree": "Votre salon est créé. Connectez-vous pour y entrer.",
+      "aideSansSalon": "Le compte actuellement connecté ne donne accès à aucun salon.",
+      "sessionActuelle": "Session actuelle :",
+      "sessionAdmin": "L'administration de la plateforme utilise son espace dédié.",
+      "sessionAutre": "Saisissez l'adresse et le mot de passe d'un compte rattaché à votre salon. Si ce compte doit y accéder, demandez au propriétaire de vous inviter.",
+      "email": "E-mail",
+      "motDePasse": "Mot de passe",
+      "oublie": "Mot de passe oublié ?",
+      "seConnecter": "Se connecter",
+      "pasDeSalon": "Pas encore de salon ?",
+      "pasDeCompteSalon": "Pas encore de compte salon ?",
+      "creerLeMien": "Créer le mien",
+      "creerSalon": "Créer un salon",
+      "essai": "14 jours gratuits, sans carte bancaire.",
+      "autreAdresse": "L'inscription nécessite une autre adresse e-mail."
+    }
+  },
+  "theme": {
+    "system": "Thème du système",
+    "light": "Thème clair",
+    "dark": "Thème sombre",
+    "changer": "{theme} — changer"
   }
 }

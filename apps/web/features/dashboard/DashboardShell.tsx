@@ -21,7 +21,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
+import { decouper } from "@/i18n/langues";
+import { salonUrl } from "@/lib/site";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
 import {
@@ -71,6 +76,7 @@ export function useDashboard(): DashboardContextValue {
 
 interface NavItem {
   href: string;
+  /** Clé du libellé dans `pro.navigation` (fr/en). */
   label: string;
   icon: IconName;
   /** Fonction Pro : un cadenas quand le salon ne l'a pas (l'écran reste
@@ -82,60 +88,60 @@ interface NavItem {
 
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
-    title: "Au quotidien",
+    title: "quotidien",
     items: [
       // Le proxy réécrit `app.localhost/` en `/dashboard` : c'est donc `/`
       // que renvoie `usePathname`, et `/` que doit viser le lien.
-      { href: "/", label: "Tableau de bord", icon: "grid" },
-      { href: "/agenda", label: "Agenda", icon: "calendar" },
-      { href: "/clientes", label: "Clientes", icon: "users" },
-      { href: "/liste-attente", label: "Liste d'attente", icon: "clock" },
-      { href: "/avis", label: "Avis", icon: "star" },
+      { href: "/", label: "tableauDeBord", icon: "grid" },
+      { href: "/agenda", label: "agenda", icon: "calendar" },
+      { href: "/clientes", label: "clientes", icon: "users" },
+      { href: "/liste-attente", label: "listeAttente", icon: "clock" },
+      { href: "/avis", label: "avis", icon: "star" },
     ],
   },
   {
-    title: "Mon salon",
+    title: "salon",
     items: [
-      { href: "/prestations", label: "Prestations", icon: "sparkles" },
+      { href: "/prestations", label: "prestations", icon: "sparkles" },
       // La boutique suit les prestations : ce qu'elle vend sert a les
       // realiser, elle n'a pas de sens toute seule.
-      { href: "/boutique", label: "Boutique", icon: "bag" },
-      { href: "/prestataires", label: "Prestataires", icon: "scissors" },
-      { href: "/horaires", label: "Horaires", icon: "clock" },
-      { href: "/galerie", label: "Galerie", icon: "image" },
-      { href: "/equipe", label: "Équipe", icon: "team" },
-      { href: "/profil", label: "Profil", icon: "store" },
+      { href: "/boutique", label: "boutique", icon: "bag" },
+      { href: "/prestataires", label: "prestataires", icon: "scissors" },
+      { href: "/horaires", label: "horaires", icon: "clock" },
+      { href: "/galerie", label: "galerie", icon: "image" },
+      { href: "/equipe", label: "equipe", icon: "team" },
+      { href: "/profil", label: "profil", icon: "store" },
     ],
   },
   {
-    title: "Compte",
+    title: "compte",
     items: [
-      { href: "/identite", label: "Identité", icon: "edit" },
-      { href: "/comptes", label: "Finances", icon: "receipt" },
-      { href: "/abonnement", label: "Abonnement", icon: "receipt" },
-      { href: "/parrainage", label: "Parrainage", icon: "gift", roles: ["owner"] },
-      { href: "/securite", label: "Sécurité", icon: "lock" },
+      { href: "/identite", label: "identite", icon: "edit" },
+      { href: "/comptes", label: "comptes", icon: "receipt" },
+      { href: "/abonnement", label: "abonnement", icon: "receipt" },
+      { href: "/parrainage", label: "parrainage", icon: "gift", roles: ["owner"] },
+      { href: "/securite", label: "securite", icon: "lock" },
     ],
   },
   {
-    title: "Offre Pro",
+    title: "pro",
     items: [
       {
         href: "/assistants",
-        label: "Assistants IA",
+        label: "assistants",
         icon: "chat",
         fonction: "platform_assistant",
       },
       {
         href: "/apparence",
-        label: "Apparence avancée",
+        label: "apparence",
         icon: "palette",
         fonction: "customization",
         roles: ["owner", "manager"],
       },
       {
         href: "/domaine",
-        label: "Domaine perso",
+        label: "domaine",
         icon: "globe",
         fonction: "custom_domain",
         roles: ["owner"],
@@ -144,12 +150,13 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   },
 ];
 
-const ROLES: Record<string, string> = {
-  owner: "Propriétaire",
-  manager: "Gérante",
-  receptionist: "Réception",
-  staff: "Prestataire",
-};
+/** Les rôles connus, traduits dans `pro.roles`. Un rôle inconnu s'affiche tel quel. */
+const ROLES = new Set(["owner", "manager", "receptionist", "staff"]);
+
+function useRole() {
+  const t = useTranslations("pro.roles");
+  return (role: string) => (ROLES.has(role) ? t(role) : role);
+}
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   return (
@@ -160,6 +167,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 }
 
 function ShellContent({ children }: { children: ReactNode }) {
+  const t = useTranslations("pro.coquille");
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [tenantId, setTenantId] = useState<string | null>(null);
@@ -179,7 +187,9 @@ function ShellContent({ children }: { children: ReactNode }) {
    * du moment et de la tâche en cours, pas d'une préférence durable.
    */
   const [collapsed, setCollapsed] = useState(false);
-  const pathname = usePathname();
+  // Le chemin sans sa langue : sur `/en/agenda`, la rubrique active reste
+  // « /agenda » — sinon aucune ne s'allumait en anglais.
+  const pathname = decouper(usePathname() ?? "/").reste;
   const toast = useToast();
 
   /*
@@ -257,7 +267,7 @@ function ShellContent({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="flex min-h-full items-center justify-center">
-        <span className="text-sm text-muted">Chargement…</span>
+        <span className="text-sm text-muted">{t("chargement")}</span>
       </div>
     );
   }
@@ -299,7 +309,7 @@ function ShellContent({ children }: { children: ReactNode }) {
       onMenu={() => setMenuOpen(true)}
       onLogout={async () => {
         await logout();
-        toast.info("Vous êtes déconnectée.");
+        toast.info(t("deconnectee"));
         setUser(null);
       }}
     />
@@ -463,8 +473,7 @@ function Sidebar({
   skin: NavSkin;
   onClose: () => void;
 }) {
-  const domain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
-  const port = process.env.NEXT_PUBLIC_WEB_PORT ?? "3100";
+  const t = useTranslations("pro");
   const { acces } = useAcces();
 
   // Le repli ne concerne que la colonne fixe. Sur téléphone, la même barre
@@ -477,7 +486,7 @@ function Sidebar({
       {open && (
         <button
           type="button"
-          aria-label="Fermer le menu"
+          aria-label={t("coquille.fermerMenu")}
           onClick={onClose}
           className="fixed inset-0 z-30 bg-black/50 lg:hidden"
         />
@@ -517,7 +526,7 @@ function Sidebar({
                 />
               ) : (
                 <p className="px-4 pb-2 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-salon">
-                  {group.title}
+                  {t(`navigation.groupes.${group.title}`)}
                 </p>
               )}
               <ul className="space-y-0.5">
@@ -541,7 +550,7 @@ function Sidebar({
                         // Ce n'est pas l'accessibilité — assurée par le texte
                         // lu par les lecteurs d'écran — mais le confort de
                         // qui hésite sur une icône.
-                        title={tight ? item.label : undefined}
+                        title={tight ? t(`navigation.${item.label}`) : undefined}
                         // La rubrique ouverte porte l'accent en pastille
                         // pleine : c'est le seul endroit de la colonne où la
                         // couleur veut dire quelque chose, et le blanc sur
@@ -564,11 +573,11 @@ function Sidebar({
                         <span
                           className={tight ? "sr-only" : "whitespace-nowrap"}
                         >
-                          {item.label}
+                          {t(`navigation.${item.label}`)}
                         </span>
                         {verrouille && !tight && (
                           <span
-                            title="Offre Pro"
+                            title={t("coquille.offrePro")}
                             className="ml-auto inline-flex items-center gap-0.5 rounded-full border border-current/25 px-1.5 py-px text-[0.6rem] font-bold uppercase tracking-wide opacity-70"
                           >
                             <Icon name="lock" className="size-2.5" />
@@ -605,13 +614,15 @@ function Sidebar({
                 skin={skin}
               />
               <a
-                href={`http://${membership.tenant.slug}.${domain}:${port}`}
+                // `salonUrl` et non `http://slug.domaine:port` : en production
+                // le port vaut 443, et le lien ouvrait du HTTP sur le port HTTPS.
+                href={salonUrl(membership.tenant.slug)}
                 target="_blank"
                 rel="noreferrer"
                 className={`mt-3 flex items-center gap-2 rounded-lg px-1 py-1 text-sm transition ${skin.link}`}
               >
                 <Icon name="external" className="size-4" />
-                Voir mon mini-site
+                {t("coquille.voirMiniSite")}
               </a>
             </>
           )}
@@ -659,6 +670,8 @@ function SalonSwitcher({
   onNavigate: () => void;
   skin: NavSkin;
 }) {
+  const t = useTranslations("pro.coquille");
+  const role = useRole();
   const initials = membership.tenant.name
     .split(/\s+/)
     .slice(0, 2)
@@ -672,7 +685,7 @@ function SalonSwitcher({
         <select
           value={membership.tenant.id}
           onChange={(event) => onSelect(event.target.value)}
-          aria-label="Salon actif"
+          aria-label={t("salonActif")}
           // `text-black` sur les options : sous Windows, la liste déroulante
           // est peinte par le système sur fond clair, et un texte blanc y
           // devient invisible.
@@ -693,7 +706,7 @@ function SalonSwitcher({
       <Link
         href="/identite"
         onClick={onNavigate}
-        title={`Modifier le nom et les coordonnées de ${membership.tenant.name}`}
+        title={t("modifierSalon", { salon: membership.tenant.name })}
         className={`group flex w-full items-center gap-3 rounded-xl px-1.5 py-1.5 transition ${skin.hover}`}
       >
         <span
@@ -709,7 +722,7 @@ function SalonSwitcher({
             {membership.tenant.name}
           </span>
           <span className={`block truncate text-xs ${skin.faint}`}>
-            {ROLES[membership.role] ?? membership.role}
+            {role(membership.role)}
           </span>
         </span>
 
@@ -752,8 +765,15 @@ function TopBar({
   onMenu: () => void;
   onLogout: () => void;
 }) {
+  const t = useTranslations("pro.coquille");
+  const role = useRole();
   const name = user.display_name || user.email.split("@")[0];
   const initial = (name[0] ?? "?").toUpperCase();
+  const libelleColonne = sidebarHidden
+    ? t("afficherNavigation")
+    : collapsed
+      ? t("deplierNavigation")
+      : t("replierNavigation");
 
   return (
     // Ni `sticky` ni `fixed`, dans les deux cas : c'est la **place** de cette
@@ -767,7 +787,7 @@ function TopBar({
         <button
           type="button"
           onClick={onMenu}
-          aria-label="Ouvrir le menu"
+          aria-label={t("ouvrirMenu")}
           className="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-ink lg:hidden"
         >
           <Icon name="menu" className="size-5" />
@@ -785,20 +805,8 @@ function TopBar({
           type="button"
           onClick={onToggleSidebar}
           aria-pressed={collapsed && !sidebarHidden}
-          aria-label={
-            sidebarHidden
-              ? "Afficher la navigation"
-              : collapsed
-                ? "Déplier la navigation"
-                : "Replier la navigation"
-          }
-          title={
-            sidebarHidden
-              ? "Afficher la navigation"
-              : collapsed
-                ? "Déplier la navigation"
-                : "Replier la navigation"
-          }
+          aria-label={libelleColonne}
+          title={libelleColonne}
           className="hidden rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-ink lg:inline-flex"
         >
           {/* Masquée, l'icône change : un œil dit « la revoir », un panneau
@@ -840,7 +848,7 @@ function TopBar({
                 {name}
               </span>
               <span className="block truncate text-xs text-subtle">
-                {ROLES[membership.role] ?? membership.role}
+                {role(membership.role)}
               </span>
             </span>
           </div>
@@ -848,8 +856,8 @@ function TopBar({
           <button
             type="button"
             onClick={onLogout}
-            aria-label="Se déconnecter"
-            title="Se déconnecter"
+            aria-label={t("seDeconnecter")}
+            title={t("seDeconnecter")}
             className="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-ink"
           >
             <Icon name="logout" className="size-5" />
@@ -872,6 +880,7 @@ function TopBar({
  * confirmation. Le bandeau le dit, et renvoie le lien sur demande.
  */
 function BandeauVerification({ email }: { email: string }) {
+  const t = useTranslations("pro.verification");
   const [etat, setEtat] = useState<"repos" | "envoi" | "envoye">("repos");
   const [erreur, setErreur] = useState("");
 
@@ -883,7 +892,7 @@ function BandeauVerification({ email }: { email: string }) {
       setEtat("envoye");
     } catch (caught) {
       setEtat("repos");
-      setErreur(caught instanceof DashboardError ? caught.message : "Envoi impossible pour le moment.");
+      setErreur(caught instanceof DashboardError ? caught.message : t("echec"));
     }
   }
 
@@ -892,12 +901,14 @@ function BandeauVerification({ email }: { email: string }) {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-info sm:text-sm">
         <Icon name="mail" className="size-4 shrink-0" />
         <p className="min-w-0 flex-1">
-          Confirmez votre adresse <strong className="break-all">{email}</strong> : cliquez sur le
-          lien reçu par e-mail. Votre mini-site et vos paiements s&apos;ouvrent ensuite.
+          {t.rich("rappel", {
+            email,
+            adresse: (morceau) => <strong className="break-all">{morceau}</strong>,
+          })}
           {erreur && <span className="block font-medium text-danger">{erreur}</span>}
         </p>
         {etat === "envoye" ? (
-          <span className="shrink-0 font-medium">Lien envoyé ✓</span>
+          <span className="shrink-0 font-medium">{t("envoye")}</span>
         ) : (
           <button
             type="button"
@@ -905,7 +916,7 @@ function BandeauVerification({ email }: { email: string }) {
             disabled={etat === "envoi"}
             className="shrink-0 rounded-lg border border-current px-3 py-1 text-xs font-semibold transition hover:bg-white/40 disabled:opacity-60 sm:text-[13px]"
           >
-            {etat === "envoi" ? "Envoi…" : "Renvoyer le lien"}
+            {etat === "envoi" ? t("envoi") : t("renvoyer")}
           </button>
         )}
       </div>
@@ -914,12 +925,12 @@ function BandeauVerification({ email }: { email: string }) {
 }
 
 function PendingBanner() {
+  const t = useTranslations("pro.coquille");
   return (
     <div className="border-b border-line bg-warning-bg px-4 py-2.5 sm:px-6 lg:px-8">
       <p className="mx-auto flex max-w-6xl items-center gap-2 text-sm text-warning">
         <Icon name="clock" className="size-4 shrink-0" />
-        Votre salon est en cours de validation. Votre mini-site sera public une
-        fois cette étape terminée — vous pouvez déjà tout préparer.
+        {t("validation")}
       </p>
     </div>
   );

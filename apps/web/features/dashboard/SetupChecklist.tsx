@@ -20,10 +20,13 @@
  * vérifiable, jamais sur une visite d'écran.
  */
 
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
 import { useMemo } from "react";
 
 import { Card, SectionTitle } from "@/features/ui";
+import { useTranslations } from "next-intl";
 import { Icon, type IconName } from "./icons";
 import { useDashboard } from "./DashboardShell";
 import { rows, useResource, type Page } from "./useResource";
@@ -44,6 +47,7 @@ interface Step {
 }
 
 export function SetupChecklist() {
+  const t = useTranslations("pro.miseEnRoute");
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const canEdit = ["owner", "manager"].includes(membership.role);
@@ -75,50 +79,50 @@ export function SetupChecklist() {
     return [
       {
         key: "compte",
-        label: "Salon créé",
+        label: t("compte.titre"),
         done: true,
         href: "/profil",
-        hint: "Votre adresse est réservée.",
+        hint: t("compte.aide"),
         icon: "store",
       },
       {
         key: "horaires",
-        label: "Horaires posés",
+        label: t("horaires.titre"),
         done: count(hours.data) > 0,
         href: "/horaires",
-        hint: "Une grille de départ est déjà en place — ajustez-la.",
+        hint: t("horaires.aide"),
         icon: "clock",
       },
       {
         key: "prestations",
-        label: "Première prestation",
+        label: t("prestations.titre"),
         done: count(services.data) > 0,
         href: "/prestations",
-        hint: "Sans catalogue, personne ne peut réserver.",
+        hint: t("prestations.aide"),
         icon: "sparkles",
       },
       {
         key: "prestataires",
-        label: "Première fiche prestataire",
+        label: t("prestataires.titre"),
         done: count(staff.data) > 0,
         href: "/prestataires",
-        hint: "Même seule, créez votre fiche : elle porte vos rendez-vous.",
+        hint: t("prestataires.aide"),
         icon: "scissors",
       },
       {
         key: "photos",
-        label: "Premières photos",
+        label: t("photos.titre"),
         done: count(media.data) > 0,
         href: "/galerie",
-        hint: "Trois réalisations nettes suffisent à déclencher une réservation.",
+        hint: t("photos.aide"),
         icon: "image",
       },
       {
         key: "validation",
-        label: "Mini-site en ligne",
+        label: t("validation.titre"),
         done: membership.tenant.status === "active",
         href: "/profil",
-        hint: "Notre équipe vérifie votre salon avant publication.",
+        hint: t("validation.aide"),
         icon: "external",
         waiting: true,
       },
@@ -129,6 +133,7 @@ export function SetupChecklist() {
     media.data,
     hours.data,
     membership.tenant.status,
+    t,
   ]);
 
   const done = steps.filter((step) => step.done).length;
@@ -141,7 +146,7 @@ export function SetupChecklist() {
 
   return (
     <Card className="mb-6">
-      <SectionTitle>Mise en route</SectionTitle>
+      <SectionTitle>{t("titre")}</SectionTitle>
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-baseline gap-2">
@@ -159,8 +164,8 @@ export function SetupChecklist() {
             />
           </div>
           <p className="mt-1.5 text-sm text-muted">
-            {done} étape{done > 1 ? "s" : ""} sur {steps.length}
-            {next && ` · à suivre : ${next.label.toLowerCase()}`}
+            {t("progression", { fait: done, total: steps.length })}
+            {next && ` · ${t("aSuivre", { etape: next.label.toLowerCase() })}`}
           </p>
         </div>
 
@@ -169,7 +174,7 @@ export function SetupChecklist() {
             href={next.href}
             className="inline-flex items-center gap-2 rounded-lg bg-salon px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
           >
-            Continuer
+            {t("continuer")}
             <Icon name="check" className="size-4" />
           </Link>
         )}

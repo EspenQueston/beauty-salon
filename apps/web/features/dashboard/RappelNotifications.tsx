@@ -16,10 +16,13 @@ import { useRappelPush } from "@/features/ui/useRappelPush";
 
 import { Icon } from "./icons";
 import { activerPush, etatPush } from "./push";
+import { useTranslations } from "next-intl";
 
-const POINTS = ["Nouvelles réservations", "Annulations", "Acomptes à vérifier"];
+/** Les clés des trois promesses (dans `pro.rappelPush.points`). */
+const POINTS = ["reservations", "annulations", "acomptes"] as const;
 
 export function RappelNotifications({ tenantId }: { tenantId: string }) {
+  const t = useTranslations("pro.rappelPush");
   const lireEtat = useCallback(() => etatPush(tenantId), [tenantId]);
   const activer = useCallback(() => activerPush("salon", tenantId), [tenantId]);
   const { etape, plusTard, accepter, fermer } = useRappelPush({
@@ -47,7 +50,7 @@ export function RappelNotifications({ tenantId }: { tenantId: string }) {
         <button
           type="button"
           onClick={plusTard}
-          aria-label="Plus tard"
+          aria-label={t("plusTard")}
           className="absolute right-3 top-3 rounded-lg p-1.5 text-muted transition hover:bg-surface-hover hover:text-ink"
         >
           <Icon name="close" className="size-4" />
@@ -64,11 +67,9 @@ export function RappelNotifications({ tenantId }: { tenantId: string }) {
               id="rappel-push-titre"
               className="text-sm font-semibold text-ink"
             >
-              Notifications activées
+              {t("activees")}
             </p>
-            <p className="text-xs text-muted">
-              Cet appareil sera prévenu à chaque nouvelle demande.
-            </p>
+            <p className="text-xs text-muted">{t("activeesAide")}</p>
           </div>
         </div>
       ) : etape === "refuse" ? (
@@ -82,18 +83,13 @@ export function RappelNotifications({ tenantId }: { tenantId: string }) {
                 id="rappel-push-titre"
                 className="text-sm font-semibold text-ink"
               >
-                Notifications bloquées
+                {t("bloquees")}
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-muted">
-                Cet appareil ne vous préviendra pas des nouvelles réservations.
-                Pour les rouvrir : touchez le cadenas à gauche de
-                l&apos;adresse, puis « Notifications » → « Autoriser », et
-                rechargez la page.
-              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted">{t("bloqueesAide")}</p>
             </div>
           </div>
           <GhostButton type="button" onClick={fermer} className="mt-4 w-full">
-            Compris
+            {t("compris")}
           </GhostButton>
         </div>
       ) : (
@@ -107,32 +103,19 @@ export function RappelNotifications({ tenantId }: { tenantId: string }) {
                 id="rappel-push-titre"
                 className="text-[0.95rem] font-semibold leading-snug text-ink"
               >
-                Ne ratez plus aucun rendez-vous
+                {t("titre")}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-muted">
-                {etape === "ios"
-                  ? "Sur iPhone, les notifications arrivent une fois le tableau de bord ajouté à l'écran d'accueil."
-                  : "Soyez prévenue à l'instant sur cet appareil, même l'application fermée."}
+                {etape === "ios" ? t("iosAide") : t("aide")}
               </p>
             </div>
           </div>
 
           {etape === "ios" ? (
             <ol className="mt-4 space-y-2 text-xs text-ink">
-              {[
-                <>
-                  Touchez <strong>Partager</strong> (le carré avec une flèche)
-                  dans Safari.
-                </>,
-                <>
-                  Choisissez{" "}
-                  <strong>« Sur l&apos;écran d&apos;accueil »</strong>.
-                </>,
-                <>
-                  Ouvrez le tableau de bord depuis la nouvelle icône : cette
-                  invitation vous proposera d&apos;activer.
-                </>,
-              ].map((texte, index) => (
+              {(["ios1", "ios2", "ios3"] as const).map((cle) =>
+                t.rich(cle, { b: (morceau) => <strong>{morceau}</strong> }),
+              ).map((texte, index) => (
                 <li key={index} className="flex gap-2.5">
                   <span className="tabular flex size-5 shrink-0 items-center justify-center rounded-full bg-surface-muted text-[0.68rem] font-semibold text-muted">
                     {index + 1}
@@ -149,7 +132,7 @@ export function RappelNotifications({ tenantId }: { tenantId: string }) {
                   className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2.5 py-1 text-[0.7rem] font-medium text-ink"
                 >
                   <Icon name="check" className="size-3 text-success" />
-                  {point}
+                  {t(`points.${point}`)}
                 </li>
               ))}
             </ul>
@@ -159,7 +142,7 @@ export function RappelNotifications({ tenantId }: { tenantId: string }) {
             className={`mt-4 grid gap-2 ${etape === "ios" ? "grid-cols-1" : "grid-cols-2"}`}
           >
             <GhostButton type="button" onClick={plusTard}>
-              {etape === "ios" ? "J'ai compris" : "Plus tard"}
+              {etape === "ios" ? t("jaiCompris") : t("plusTard")}
             </GhostButton>
             {etape !== "ios" && (
               <Button
@@ -168,7 +151,7 @@ export function RappelNotifications({ tenantId }: { tenantId: string }) {
                 pending={etape === "occupe"}
                 icon={<Icon name="bell" className="size-4" />}
               >
-                Activer
+                {t("activer")}
               </Button>
             )}
           </div>

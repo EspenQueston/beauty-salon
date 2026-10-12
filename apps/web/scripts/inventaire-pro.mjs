@@ -50,8 +50,12 @@ const lettres = /\p{L}/u;
 const accent = /[àâäçéèêëîïôöùûüÿœæ]/i;
 const classes = /^[a-z0-9\-:[\]/.\s_#%()=,>!&*+'@~|]*$/;
 
+// Des jetons techniques, jamais lus : méthodes HTTP, noms de touches.
+const JETONS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "Escape", "Enter", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Backspace"]);
+
 function texteHumain(valeur) {
   const v = valeur.trim();
+  if (JETONS.has(v)) return false;
   if (v.length < 2 || !lettres.test(v)) return false;
   if (accent.test(v)) return true;
   if (classes.test(v)) return false; // classes Tailwind, chemins, clés
@@ -101,14 +105,14 @@ function inventaire(fichier) {
   const visiter = (noeud) => {
     if (ts.isJsxText(noeud)) {
       const v = noeud.getText().replace(/\s+/g, " ").trim();
-      if (v && lettres.test(v)) trouves.push(v);
+      if (v && lettres.test(v) && !JETONS.has(v)) trouves.push(v);
     } else if (ts.isStringLiteral(noeud) || ts.isNoSubstitutionTemplateLiteral(noeud)) {
       if (!dansImportOuType(noeud) && !dansAppelDeTraduction(noeud)) {
         const attribut = attributDe(noeud);
         const v = noeud.text;
         if (attribut && TECHNIQUES.has(attribut)) {
           // jamais lu
-        } else if ((attribut && LUS.has(attribut) && lettres.test(v)) || texteHumain(v)) {
+        } else if ((attribut && LUS.has(attribut) && lettres.test(v) && !JETONS.has(v)) || texteHumain(v)) {
           trouves.push(v.replace(/\s+/g, " ").trim());
         }
       }

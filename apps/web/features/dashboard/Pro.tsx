@@ -9,7 +9,9 @@
  * façon, en 403 « offre_pro_requise », ce que le salon n'a pas.
  */
 
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
 import type { ReactNode } from "react";
 
 import { useAcces } from "./AccessBanner";

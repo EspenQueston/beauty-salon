@@ -13,7 +13,9 @@
  */
 
 import { useEffect, useState, type ReactNode } from "react";
-import Link from "next/link";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
 
 import { Badge, Card, EmptyState, ErrorState, GhostButton, PageHeader, Skeleton } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
