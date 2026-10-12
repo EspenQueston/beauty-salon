@@ -56,3 +56,62 @@ def champs_de(objet) -> tuple[str, ...]:
 def etiquette(objet) -> str:
     """« catalog.service » — ce qui est stocke dans `Translation.model`."""
     return objet._meta.label_lower
+
+
+# ---------------------------------------------------------------------------
+# Les textes de la personnalisation Pro
+# ---------------------------------------------------------------------------
+#
+# Un salon Pro ecrit aussi dans `SalonProfile.site_config` : une accroche, le
+# libelle du bouton « Reserver », et jusqu'a trois pages a lui, dont le titre
+# devient une entree du menu. Ce ne sont pas des colonnes, et leur nombre
+# change avec chaque page ajoutee : une liste fixe comme celle du haut ne
+# pouvait pas les suivre.
+#
+# Ils recoivent donc des **champs virtuels**, derives du contenu au moment de
+# la lecture : `site_config.accroche`, `page.<id>.titre`... L'identifiant de
+# page est stable (huit caracteres hexadecimaux, poses a la creation) : renommer
+# une page retraduit son titre, sans la confondre avec une autre.
+
+#: Les textes de la configuration, au premier niveau.
+CONFIG_TRADUITE = ("accroche", "bouton_reserver")
+#: Les textes de chaque page.
+PAGE_TRADUITE = ("titre", "accroche", "contenu")
+#: Le prefixe des champs virtuels de page : sert aussi a reconnaitre ceux d'une
+#: page retiree, dont la traduction n'a plus lieu d'etre.
+PREFIXE_PAGE = "page."
+
+
+def champ_config(cle: str) -> str:
+    return f"site_config.{cle}"
+
+
+def champ_page(identifiant: str, cle: str) -> str:
+    return f"{PREFIXE_PAGE}{identifiant}.{cle}"
+
+
+def textes_de_config(config) -> dict[str, str]:
+    """Les textes rediges dans une configuration Pro, par champ virtuel."""
+    if not isinstance(config, dict):
+        return {}
+    textes: dict[str, str] = {}
+    for cle in CONFIG_TRADUITE:
+        valeur = config.get(cle)
+        if isinstance(valeur, str):
+            textes[champ_config(cle)] = valeur
+    for page in config.get("pages") or ():
+        if not isinstance(page, dict) or not isinstance(page.get("id"), str):
+            continue
+        for cle in PAGE_TRADUITE:
+            valeur = page.get(cle)
+            if isinstance(valeur, str):
+                textes[champ_page(page["id"], cle)] = valeur
+    return textes
+
+
+def textes_de(objet) -> dict[str, str]:
+    """Tous les textes traduisibles d'une instance, par champ — reels et virtuels."""
+    textes = {champ: getattr(objet, champ, "") or "" for champ in champs_de(objet)}
+    if objet._meta.label_lower == "salons.salonprofile":
+        textes.update(textes_de_config(getattr(objet, "site_config", None)))
+    return textes

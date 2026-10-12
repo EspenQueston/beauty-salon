@@ -30,10 +30,12 @@
  * et elle se lit très bien en petit.
  */
 
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { formatTime } from "@/lib/format";
 import { Icon } from "./icons";
+import { useFormats } from "./formats";
 
 export type AgendaView = "day" | "week" | "month";
 
@@ -50,7 +52,18 @@ export interface CalendarBooking {
 /** Statuts qui occupent réellement le fauteuil. */
 const ACTIVE = new Set(["requested", "confirmed", "checked_in", "completed"]);
 
-const DAY_NAMES = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"];
+/**
+ * « lun », « mar »… / « Mon », « Tue »…, du lundi au dimanche.
+ *
+ * Tirés d'Intl plutôt qu'écrits : le 5 janvier 2026 est un lundi, et les six
+ * jours suivants donnent la semaine dans la langue de l'espace.
+ */
+function nomsDesJours(region: string): string[] {
+  const format = new Intl.DateTimeFormat(region, { weekday: "short", timeZone: "UTC" });
+  return Array.from({ length: 7 }, (_, i) =>
+    format.format(new Date(Date.UTC(2026, 0, 5 + i))).replace(/\.$/, ""),
+  );
+}
 
 const TONES: Record<string, string> = {
   requested: "border-l-amber-500 bg-amber-500/10",
@@ -165,6 +178,8 @@ export function AgendaToolbar({
   onSearch: (value: string) => void;
   onStatus: (value: string) => void;
 }) {
+  const t = useTranslations("pro.agenda.barre");
+  const { region } = useFormats();
   const step = view === "day" ? 1 : view === "week" ? 7 : 0;
 
   function shift(direction: -1 | 1) {
@@ -195,14 +210,14 @@ export function AgendaToolbar({
           fois. */}
       <div
         role="tablist"
-        aria-label="Affichage de l'agenda"
+        aria-label={t("affichage")}
         className="flex rounded-lg border border-line bg-surface p-0.5"
       >
         {(
           [
-            ["day", "Jour"],
-            ["week", "Semaine"],
-            ["month", "Mois"],
+            ["day", t("jour")],
+            ["week", t("semaine")],
+            ["month", t("mois")],
           ] as [AgendaView, string][]
         ).map(([key, label]) => (
           <button
@@ -226,7 +241,7 @@ export function AgendaToolbar({
         <button
           type="button"
           onClick={() => shift(-1)}
-          aria-label="Période précédente"
+          aria-label={t("precedente")}
           className="rounded-lg border border-line bg-surface p-2 text-muted transition hover:text-ink"
         >
           <Icon name="chevron-left" className="size-4" />
@@ -237,12 +252,12 @@ export function AgendaToolbar({
           disabled={isToday}
           className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-muted transition hover:text-ink disabled:opacity-50"
         >
-          Aujourd&apos;hui
+          {t("aujourdhui")}
         </button>
         <button
           type="button"
           onClick={() => shift(1)}
-          aria-label="Période suivante"
+          aria-label={t("suivante")}
           className="rounded-lg border border-line bg-surface p-2 text-muted transition hover:text-ink"
         >
           <Icon name="chevron-right" className="size-4" />
@@ -252,7 +267,7 @@ export function AgendaToolbar({
           aria-live="polite"
           className="min-w-0 flex-1 truncate pl-1.5 text-sm font-medium text-ink first-letter:uppercase"
         >
-          {periodLabel(view, anchor, timeZone)}
+          {periodLabel(view, anchor, timeZone, region)}
         </p>
       </div>
 
@@ -274,9 +289,7 @@ export function AgendaToolbar({
       */}
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:justify-end">
         <label className="relative min-w-0 flex-1 sm:max-w-56">
-          <span className="sr-only">
-            Rechercher une cliente ou une prestation
-          </span>
+          <span className="sr-only">{t("rechercher")}</span>
           <Icon
             name="search"
             className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-subtle"
@@ -285,7 +298,7 @@ export function AgendaToolbar({
             type="search"
             value={search}
             onChange={(event) => onSearch(event.target.value)}
-            placeholder="Nom, téléphone, prestation"
+            placeholder={t("rechercheExemple")}
             className="w-full rounded-lg border border-line bg-surface py-2 pl-8 pr-3 text-sm text-ink placeholder:text-subtle"
           />
         </label>
@@ -293,13 +306,13 @@ export function AgendaToolbar({
         <select
           value={statusFilter}
           onChange={(event) => onStatus(event.target.value)}
-          aria-label="Filtrer par statut"
+          aria-label={t("filtreStatut")}
           className="min-w-0 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
         >
-          <option value="">Tous les statuts</option>
+          <option value="">{t("tousStatuts")}</option>
           {STATUS_FILTERS.map((entry) => (
             <option key={entry.value} value={entry.value}>
-              {entry.label}
+              {t(`statuts.${entry.cle}`)}
             </option>
           ))}
         </select>
@@ -310,10 +323,10 @@ export function AgendaToolbar({
           <select
             value={staffId ?? ""}
             onChange={(event) => onStaff(event.target.value || null)}
-            aria-label="Filtrer par prestataire"
+            aria-label={t("filtrePrestataire")}
             className="min-w-0 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
           >
-            <option value="">Toute l&apos;équipe</option>
+            <option value="">{t("touteEquipe")}</option>
             {staff.map((member) => (
               <option key={member.id} value={member.id}>
                 {member.name}
@@ -335,17 +348,22 @@ export function AgendaToolbar({
  * connaître la machine à états.
  */
 const STATUS_FILTERS = [
-  { value: "pending_payment,requested", label: "À traiter" },
-  { value: "confirmed", label: "Confirmées" },
-  { value: "checked_in", label: "Clientes arrivées" },
-  { value: "completed", label: "Terminées" },
-  { value: "cancelled", label: "Annulées" },
-  { value: "no_show", label: "Absentes" },
+  { value: "pending_payment,requested", cle: "aTraiter" },
+  { value: "confirmed", cle: "confirmed" },
+  { value: "checked_in", cle: "checked_in" },
+  { value: "completed", cle: "completed" },
+  { value: "cancelled", cle: "cancelled" },
+  { value: "no_show", cle: "no_show" },
 ];
 
-function periodLabel(view: AgendaView, anchor: Date, timeZone: string): string {
+function periodLabel(
+  view: AgendaView,
+  anchor: Date,
+  timeZone: string,
+  region: string,
+): string {
   if (view === "day") {
-    return new Intl.DateTimeFormat("fr-FR", {
+    return new Intl.DateTimeFormat(region, {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -355,13 +373,13 @@ function periodLabel(view: AgendaView, anchor: Date, timeZone: string): string {
   if (view === "week") {
     const from = startOfWeek(anchor);
     const to = addDays(from, 6);
-    const short = new Intl.DateTimeFormat("fr-FR", {
+    const short = new Intl.DateTimeFormat(region, {
       day: "numeric",
       month: "short",
     });
     return `${short.format(from)} – ${short.format(to)}`;
   }
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat(region, {
     month: "long",
     year: "numeric",
   }).format(anchor);
@@ -382,6 +400,9 @@ export function WeekView({
   timeZone: string;
   onPickDay: (date: Date) => void;
 }) {
+  const t = useTranslations("pro.agenda.barre");
+  const { region } = useFormats();
+  const jours = useMemo(() => nomsDesJours(region), [region]);
   const first = startOfWeek(anchor);
   const byDay = useMemo(() => groupByDay(bookings), [bookings]);
   const todayKey = dayKey(startOfDay(new Date()));
@@ -409,7 +430,7 @@ export function WeekView({
               className="mb-1.5 flex w-full items-baseline justify-between gap-1 text-left"
             >
               <span className="text-xs font-medium text-muted">
-                {DAY_NAMES[offset]}
+                {jours[offset]}
               </span>
               <span
                 className={`tabular text-sm font-semibold ${
@@ -440,7 +461,7 @@ export function WeekView({
                 ))}
                 {active.length > 4 && (
                   <li className="px-1.5 text-[0.7rem] text-subtle">
-                    +{active.length - 4} autre{active.length - 4 > 1 ? "s" : ""}
+                    {t("autres", { n: active.length - 4 })}
                   </li>
                 )}
               </ul>
@@ -465,6 +486,9 @@ export function MonthView({
   bookings: CalendarBooking[];
   onPickDay: (date: Date) => void;
 }) {
+  const t = useTranslations("pro.agenda.barre");
+  const { region } = useFormats();
+  const jours = useMemo(() => nomsDesJours(region), [region]);
   const first = startOfWeek(startOfMonth(anchor));
   const month = anchor.getMonth();
   const byDay = useMemo(() => groupByDay(bookings), [bookings]);
@@ -487,7 +511,7 @@ export function MonthView({
   return (
     <div>
       <div className="mb-1 grid grid-cols-7 gap-1">
-        {DAY_NAMES.map((name) => (
+        {jours.map((name) => (
           <span
             key={name}
             className="py-1 text-center text-[0.7rem] font-medium uppercase tracking-wide text-subtle"
@@ -510,7 +534,7 @@ export function MonthView({
               key={key}
               type="button"
               onClick={() => onPickDay(day)}
-              aria-label={`${day.getDate()} — ${count} rendez-vous`}
+              aria-label={t("jourCompte", { jour: day.getDate(), n: count })}
               className={`relative flex aspect-square flex-col items-center justify-center rounded-lg border text-sm transition sm:aspect-[4/3] ${
                 key === todayKey
                   ? "border-salon"
@@ -538,7 +562,7 @@ export function MonthView({
               </span>
               {count > 0 && (
                 <span className="tabular text-[0.65rem] text-muted">
-                  {count} RDV
+                  {t("rdvCourt", { n: count })}
                 </span>
               )}
             </button>

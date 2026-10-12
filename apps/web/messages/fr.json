@@ -1381,6 +1381,222 @@
       "creerSalon": "Créer un salon",
       "essai": "14 jours gratuits, sans carte bancaire.",
       "autreAdresse": "L'inscription nécessite une autre adresse e-mail."
+    },
+    "agenda": {
+      "titre": "Agenda",
+      "description": "Vos rendez-vous à venir, et ce qui demande une action.",
+      "erreurChargement": "Impossible de charger l’agenda.",
+      "confirme": "Rendez-vous de {nom} confirmé.",
+      "annule": "Rendez-vous de {nom} annulé.",
+      "refusEnvoye": "La cliente est prévenue et peut renvoyer une preuve.",
+      "chargement": "Chargement…",
+      "recherche": "Recherche…",
+      "resultats": "{n, plural, one {# résultat} other {# résultats}} pour « {terme} », sur tout l'agenda.",
+      "retour": "Revenir à l’agenda",
+      "avec": "avec {nom}",
+      "deplacer": {
+        "titre": "Déplacer le rendez-vous",
+        "titreDe": "Déplacer le rendez-vous de {nom}",
+        "succes": "Rendez-vous de {nom} déplacé. La cliente est prévenue.",
+        "conflit": "Ce créneau vient d'être pris. Voici ce qui reste sur la journée.",
+        "echec": "Déplacement impossible.",
+        "actuellement": "Actuellement le {jour} à {heure}",
+        "fermer": "Fermer",
+        "illisible": "Disponibilités illisibles",
+        "connexion": "La connexion a échoué. Rien n’a été modifié.",
+        "reessayer": "Réessayer",
+        "lecture": "Lecture des disponibilités…",
+        "aucun": "Aucun créneau libre ce jour-là. Essayez un autre jour du ruban.",
+        "deplacerA": "Déplacer à {heure}",
+        "choisir": "Choisissez un créneau",
+        "annuler": "Annuler"
+      },
+      "annuler": "Annuler",
+      "vide": {
+        "titre": "Aucun rendez-vous sur cette période",
+        "corps": "Partagez le lien de votre mini-site pour que vos clientes réservent elles-mêmes, à toute heure."
+      },
+      "stats": {
+        "aujourdhui": "Aujourd’hui",
+        "rendezVous": "rendez-vous",
+        "septJours": "7 prochains jours",
+        "actifs": "rendez-vous actifs",
+        "absences": "Absences",
+        "annulations": "Annulations",
+        "trenteJours": "sur 30 jours"
+      },
+      "cible": {
+        "rdv": "Le rendez-vous signalé par votre notification.",
+        "rdvDisparu": "Ce rendez-vous n’existe plus.",
+        "rienATraiter": "Plus rien à traiter ici — c’est déjà fait.",
+        "acomptes": "{n, plural, one {# acompte à vérifier} other {# acomptes à vérifier}}.",
+        "demandes": "{n, plural, one {# demande à accepter} other {# demandes à accepter}}.",
+        "a-noter": "{n} rendez-vous à noter.",
+        "elements": "{n, plural, one {# élément} other {# éléments}}."
+      },
+      "statut": {
+        "pending_payment": "En attente de paiement",
+        "requested": "Demandée",
+        "confirmed": "Confirmée",
+        "checked_in": "Cliente arrivée",
+        "completed": "Terminée",
+        "cancelled": "Annulée",
+        "no_show": "Absente"
+      },
+      "action": {
+        "confirmed": "Confirmer",
+        "checked_in": "Cliente arrivée",
+        "no_show": "Absente",
+        "completed": "Terminée"
+      },
+      "acompte": {
+        "encaisse": "{montant} encaissé",
+        "reste": "reste {montant}",
+        "attendu": "Acompte de {montant} attendu"
+      },
+      "retard": {
+        "passe": "Créneau passé · à clôturer",
+        "enRetard": "En retard de {delai}",
+        "clientes": "{n, plural, one {# cliente en retard} other {# clientes en retard}}",
+        "creneaux": "{n, plural, one {# créneau passé à clôturer} other {# créneaux passés à clôturer}}",
+        "tolerance": "Votre tolérance est de {n} min.",
+        "aucuneTolerance": "Vous ne tolérez aucun retard."
+      },
+      "domicile": {
+        "zone": "À domicile · {zone}",
+        "frais": "{montant} de déplacement, inclus"
+      },
+      "preuve": {
+        "nonTranche": "Ce rendez-vous a été confirmé sans que le versement soit tranché : l’acompte n’est entré dans aucun compte. Enregistrez-le depuis l’onglet Finances.",
+        "retrouve": "Versement retrouvé et confirmé.",
+        "nonRetrouve": "Versement non retrouvé. La cliente peut renvoyer une preuve.",
+        "nonRetrouveMotif": "Versement non retrouvé — {motif}. La cliente peut renvoyer une preuve.",
+        "aVerifier": "Acompte à vérifier — {montant}",
+        "ditAvoirPaye": "{nom} dit avoir payé.",
+        "ditAvoirPayePar": "{nom} dit avoir payé par {moyen}.",
+        "retrouvez": "Retrouvez le versement dans votre application avant d'accepter.",
+        "capture": "Capture du versement",
+        "sansCapture": "Aucune capture — la cliente n'a pas pu en joindre.",
+        "reference": "Référence",
+        "message": "Message",
+        "montantRecu": "Montant reçu",
+        "montantReel": "Montant réellement reçu",
+        "motif": "Motif du refus",
+        "motifExemple": "Aucun versement à ce montant…",
+        "confirmerRefus": "Confirmer le refus",
+        "annuler": "Annuler",
+        "accepter": "J'ai reçu l'acompte — accepter",
+        "introuvable": "Versement introuvable"
+      },
+      "barre": {
+        "affichage": "Affichage de l'agenda",
+        "jour": "Jour",
+        "semaine": "Semaine",
+        "mois": "Mois",
+        "precedente": "Période précédente",
+        "suivante": "Période suivante",
+        "aujourdhui": "Aujourd'hui",
+        "rechercher": "Rechercher une cliente ou une prestation",
+        "rechercheExemple": "Nom, téléphone, prestation",
+        "filtreStatut": "Filtrer par statut",
+        "tousStatuts": "Tous les statuts",
+        "filtrePrestataire": "Filtrer par prestataire",
+        "touteEquipe": "Toute l'équipe",
+        "statuts": {
+          "aTraiter": "À traiter",
+          "confirmed": "Confirmées",
+          "checked_in": "Clientes arrivées",
+          "completed": "Terminées",
+          "cancelled": "Annulées",
+          "no_show": "Absentes"
+        },
+        "autres": "+{n, plural, one {# autre} other {# autres}}",
+        "jourCompte": "{jour} — {n} rendez-vous",
+        "rdvCourt": "{n} RDV"
+      },
+      "progression": {
+        "titre": "Progression du rendez-vous",
+        "etape": {
+          "pending_payment": "Acompte",
+          "requested": "À valider",
+          "confirmed": "Confirmé",
+          "checked_in": "Arrivée",
+          "completed": "Terminé"
+        },
+        "sortie": {
+          "cancelled": "Annulée — le rendez-vous n'ira pas plus loin.",
+          "no_show": "Absente — le rendez-vous n'ira pas plus loin."
+        }
+      }
+    },
+    "arrivee": {
+      "bouton": "Arrivée",
+      "titre": "Enregistrer une arrivée",
+      "arriveeDe": "Arrivée de {nom}",
+      "aide": "Scannez le QR de la cliente, ou saisissez son code.",
+      "fermer": "Fermer",
+      "deja": "Déjà notée arrivée",
+      "enregistree": "Arrivée enregistrée",
+      "echec": "Impossible d'enregistrer",
+      "modes": {
+        "camera": "Caméra",
+        "image": "Image",
+        "code": "Code"
+      },
+      "sansCode": "{nom} n'a pas son code — noter l'arrivée quand même",
+      "camera": {
+        "absente": "Cet appareil ne propose pas de caméra au navigateur.",
+        "https": "La caméra n'est accessible qu'en HTTPS. Sur une adresse en http://, le navigateur la refuse.",
+        "refusee": "L'accès à la caméra a été refusé. Autorisez-le dans les réglages du navigateur, ou saisissez le code.",
+        "aucune": "Aucune caméra disponible sur cet appareil.",
+        "ouverture": "Ouverture de la caméra…",
+        "viser": "Pointez l'appareil vers le QR de la cliente. L'arrivée s'enregistre dès que le code est lu."
+      },
+      "image": {
+        "pasUneImage": "Ce fichier n'est pas une image.",
+        "aucunQr": "Aucun QR n'a été trouvé dans cette image. Essayez une capture plus nette, ou saisissez le code à six caractères.",
+        "format": "Ce format d'image n'a pas pu être ouvert. Essayez une capture d'écran au format JPEG ou PNG.",
+        "lecture": "Lecture de l'image…",
+        "deposer": "Déposez la capture du QR",
+        "ordinateur": "Glissez-la ici, collez-la avec Ctrl+V, ou choisissez un fichier.",
+        "telephone": "Prenez une photo, ou choisissez un fichier.",
+        "choisir": "Choisir une image",
+        "saisir": "Saisir le code à la place"
+      },
+      "code": {
+        "libelle": "Code d'arrivée",
+        "aide": "Six caractères, sous le QR de la cliente.",
+        "exclus": "Nos codes ne contiennent jamais {caracteres} — relisez : c'est sans doute {suggestion}.",
+        "jamais": "Ni O ni 0, ni I ni 1, ni S ni 5 : ces caractères n'y figurent pas.",
+        "enregistrer": "Enregistrer",
+        "suggestion": {
+          "cO": "un D ou un Q mal lu",
+          "cQ": "un D",
+          "c0": "un D",
+          "cI": "un J",
+          "c1": "un 7",
+          "cL": "un J",
+          "cS": "un 5 qui n'existe pas non plus — regardez à nouveau",
+          "c5": "un F",
+          "cB": "un E",
+          "c8": "un E",
+          "cZ": "un 7",
+          "c2": "un 7",
+          "cG": "un 6 ou un C",
+          "c6": "un C",
+          "cU": "un V",
+          "c9": "un 4",
+          "autre": "un autre caractère"
+        }
+      },
+      "verdict": {
+        "cliente": "Cliente",
+        "prestation": "Prestation",
+        "heure": "Heure",
+        "avec": "Avec",
+        "suivante": "Suivante",
+        "fermer": "Fermer"
+      }
     }
   },
   "theme": {

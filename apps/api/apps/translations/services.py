@@ -19,7 +19,7 @@ import logging
 from apps.common.db import tenant_context
 
 from .models import Origin, Translation, empreinte
-from .registry import champs_de, etiquette
+from .registry import PREFIXE_PAGE, champ_config, champ_page, etiquette, textes_de
 from .traducteur import Demande, Traducteur
 
 logger = logging.getLogger(__name__)
@@ -46,8 +46,8 @@ def a_traduire(objet, langue: str) -> dict[str, str]:
     Une traduction corrigee par le salon n'y figure jamais : elle est a lui,
     et la machine ne repasse pas dessus.
     """
-    champs = champs_de(objet)
-    if not champs:
+    textes = textes_de(objet)
+    if not textes:
         return {}
 
     existantes = {
@@ -58,8 +58,8 @@ def a_traduire(objet, langue: str) -> dict[str, str]:
     }
 
     manquants: dict[str, str] = {}
-    for champ in champs:
-        source = (getattr(objet, champ, "") or "").strip()
+    for champ, brut in textes.items():
+        source = (brut or "").strip()
         if not source:
             continue
         deja = existantes.get(champ)
@@ -71,8 +71,30 @@ def a_traduire(objet, langue: str) -> dict[str, str]:
     return manquants
 
 
+def _oublier_les_pages_retirees(objet, langue: str) -> None:
+    """Efface la traduction des pages qu'un salon Pro a supprimees.
+
+    Inoffensive a l'affichage — plus rien ne la lit —, elle encombrerait la
+    table indefiniment : un salon qui essaie dix titres de page en laisserait
+    dix.
+    """
+    actuels = [champ for champ in textes_de(objet) if champ.startswith(PREFIXE_PAGE)]
+    (
+        Translation.objects.filter(
+            model=etiquette(objet),
+            object_id=objet.pk,
+            language=langue,
+            field__startswith=PREFIXE_PAGE,
+        )
+        .exclude(field__in=actuels)
+        .delete()
+    )
+
+
 def traduire(objet, langue: str) -> int:
     """Traduit ce qui manque sur cet objet. Rend le nombre de champs ecrits."""
+    if etiquette(objet) == "salons.salonprofile":
+        _oublier_les_pages_retirees(objet, langue)
     manquants = a_traduire(objet, langue)
     if not manquants:
         return 0
@@ -153,7 +175,7 @@ def texte(objet, champ: str, langue: str) -> str:
     Le repli est le texte source, jamais une chaine vide : mieux vaut la regle
     dans la mauvaise langue que pas de regle.
     """
-    source = (getattr(objet, champ, "") or "").strip()
+    source = (textes_de(objet).get(champ) or "").strip()
     if not source or langue == "fr":
         return source
 
@@ -172,3 +194,32 @@ def texte(objet, champ: str, langue: str) -> str:
     if traduction.source_digest != empreinte(source):
         return source
     return traduction.text
+
+
+def config_traduite(config: dict | None, profil, table: dict) -> dict | None:
+    """La configuration Pro publiee, ses textes dans la langue du mini-site.
+
+    Meme regle que pour le reste : le francais en repli, jamais un blanc. Une
+    page creee il y a trente secondes s'affiche en francais, et passe en
+    anglais des que la traduction est rangee — sans que personne ait rien a
+    declarer, quel que soit le nombre de pages.
+
+    `table` est celle de `table_du_salon` : aucune requete ici.
+    """
+    if not config or not table:
+        return config
+    cle = (etiquette(profil), str(profil.pk))
+
+    def traduit(champ: str, source: str) -> str:
+        if not (source or "").strip():
+            return source
+        return table.get((*cle, champ)) or source
+
+    for nom in ("accroche", "bouton_reserver"):
+        if isinstance(config.get(nom), str):
+            config[nom] = traduit(champ_config(nom), config[nom])
+    for page in config.get("pages") or ():
+        for nom in ("titre", "accroche", "contenu"):
+            if isinstance(page.get(nom), str):
+                page[nom] = traduit(champ_page(page["id"], nom), page[nom])
+    return config

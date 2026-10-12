@@ -46,10 +46,12 @@
  * payer 40 ko pour un lecteur qu'elles n'ouvriront jamais.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
 import { Button, GhostButton, inputClass } from "@/features/ui";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 
 /* --------------------------------------------------------------------------
@@ -216,6 +218,7 @@ export function CheckInButton({
    *  yeux, sinon on scanne une seconde fois pour vérifier. */
   onCheckedIn: () => void;
 }) {
+  const t = useTranslations("pro.arrivee");
   const [open, setOpen] = useState(false);
 
   return (
@@ -225,7 +228,7 @@ export function CheckInButton({
         onClick={() => setOpen(true)}
         icon={<Icon name="scan" className="size-4" />}
       >
-        Arrivée
+        {t("bouton")}
       </Button>
 
       {open && (
@@ -265,6 +268,8 @@ export function CheckInPanel({
   onSkip?: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("pro.arrivee");
+  const { region } = useFormats();
   const [mode, setMode] = useState<"scan" | "image" | "code">("scan");
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [sending, setSending] = useState(false);
@@ -313,7 +318,7 @@ export function CheckInPanel({
         const already = data.code === "already_checked_in";
         setOutcome({
           tone: already ? "warning" : "success",
-          title: already ? "Déjà notée arrivée" : "Arrivée enregistrée",
+          title: already ? t("deja") : t("enregistree"),
           detail: data.detail,
           booking: data.booking,
         });
@@ -327,9 +332,7 @@ export function CheckInPanel({
         setOutcome({
           tone: "error",
           title:
-            failure.code === "already_checked_in"
-              ? "Déjà notée arrivée"
-              : "Impossible d'enregistrer",
+            failure.code === "already_checked_in" ? t("deja") : t("echec"),
           detail: failure.message,
           booking: body?.booking,
         });
@@ -337,7 +340,7 @@ export function CheckInPanel({
         setSending(false);
       }
     },
-    [tenantId, onCheckedIn, targetId],
+    [tenantId, onCheckedIn, targetId, t],
   );
 
   /** La caméra a renoncé : on bascule sur la saisie, en disant pourquoi. */
@@ -350,12 +353,12 @@ export function CheckInPanel({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Enregistrer une arrivée"
+      aria-label={t("titre")}
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6"
     >
       <button
         type="button"
-        aria-label="Fermer"
+        aria-label={t("fermer")}
         onClick={onClose}
         className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
       />
@@ -374,23 +377,21 @@ export function CheckInPanel({
                   nom, on scanne à l'aveugle et le refus « ce code est celui de
                   quelqu'un d'autre » arrive sans qu'on sache qui était
                   attendu. */}
-              {target
-                ? `Arrivée de ${target.customer_name}`
-                : "Enregistrer une arrivée"}
+              {target ? t("arriveeDe", { nom: target.customer_name }) : t("titre")}
             </h2>
             <p className="mt-0.5 truncate text-xs text-muted">
               {target
-                ? `${target.service_name} · ${new Intl.DateTimeFormat("fr-FR", {
+                ? `${target.service_name} · ${new Intl.DateTimeFormat(region, {
                     hour: "2-digit",
                     minute: "2-digit",
                   }).format(new Date(target.starts_at))}`
-                : "Scannez le QR de la cliente, ou saisissez son code."}
+                : t("aide")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t("fermer")}
             className="-mr-1.5 shrink-0 rounded-lg p-1.5 text-muted transition hover:bg-surface-hover hover:text-ink"
           >
             <Icon name="close" className="size-5" />
@@ -422,9 +423,9 @@ export function CheckInPanel({
               <div className="mb-4 flex rounded-xl border border-line bg-surface-muted p-1">
                 {(
                   [
-                    ["scan", "Caméra", "scan"],
-                    ["image", "Image", "image"],
-                    ["code", "Code", "edit"],
+                    ["scan", t("modes.camera"), "scan"],
+                    ["image", t("modes.image"), "image"],
+                    ["code", t("modes.code"), "edit"],
                   ] as const
                 ).map(([value, label, icon]) => (
                   <button
@@ -485,8 +486,7 @@ export function CheckInPanel({
                     onClick={onSkip}
                     className="text-xs text-muted underline underline-offset-2 transition hover:text-ink"
                   >
-                    {target.customer_name} n&apos;a pas son code — noter
-                    l&apos;arrivée quand même
+                    {t("sansCode", { nom: target.customer_name })}
                   </button>
                 </div>
               )}
@@ -511,6 +511,13 @@ function Scanner({
   onFound: (token: string) => void;
   onFailure: (reason: string) => void;
 }) {
+  const t = useTranslations("pro.arrivee.camera");
+  // Les messages passent par une référence, comme les rappels : l'effet qui
+  // ouvre la caméra ne doit pas redémarrer quand la langue change.
+  const messages = useRef(t);
+  useEffect(() => {
+    messages.current = t;
+  });
   const video = useRef<HTMLVideoElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
@@ -554,8 +561,8 @@ function Scanner({
       if (!navigator.mediaDevices?.getUserMedia) {
         handlers.current.onFailure(
           window.isSecureContext
-            ? "Cet appareil ne propose pas de caméra au navigateur."
-            : "La caméra n'est accessible qu'en HTTPS. Sur une adresse en http://, le navigateur la refuse.",
+            ? messages.current("absente")
+            : messages.current("https"),
         );
         return;
       }
@@ -574,8 +581,8 @@ function Scanner({
           (error.name === "NotAllowedError" || error.name === "SecurityError");
         handlers.current.onFailure(
           denied
-            ? "L'accès à la caméra a été refusé. Autorisez-le dans les réglages du navigateur, ou saisissez le code."
-            : "Aucune caméra disponible sur cet appareil.",
+            ? messages.current("refusee")
+            : messages.current("aucune"),
         );
         return;
       }
@@ -670,14 +677,13 @@ function Scanner({
 
         {!ready && (
           <p className="absolute inset-x-0 bottom-3 text-center text-xs text-white/80">
-            Ouverture de la caméra…
+            {t("ouverture")}
           </p>
         )}
       </div>
 
       <p className="mt-3 text-center text-sm text-muted">
-        Pointez l&apos;appareil vers le QR de la cliente. L&apos;arrivée
-        s&apos;enregistre dès que le code est lu.
+        {t("viser")}
       </p>
     </div>
   );
@@ -723,6 +729,7 @@ function ImagePicker({
   onFound: (token: string) => void;
   onTypeInstead: () => void;
 }) {
+  const t = useTranslations("pro.arrivee.image");
   const input = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
@@ -733,7 +740,7 @@ function ImagePicker({
       if (!file) return;
 
       if (!file.type.startsWith("image/")) {
-        setProblem("Ce fichier n'est pas une image.");
+        setProblem(t("pasUneImage"));
         return;
       }
 
@@ -743,21 +750,17 @@ function ImagePicker({
         const value = await decodeImageFile(file);
         if (value) onFound(value);
         else
-          setProblem(
-            "Aucun QR n'a été trouvé dans cette image. Essayez une capture plus nette, ou saisissez le code à six caractères.",
-          );
+          setProblem(t("aucunQr"));
       } catch {
         // Un HEIC d'iPhone, un fichier tronqué : le navigateur ne sait pas
         // le peindre, et il n'y a rien à décoder. Le dire vaut mieux que de
         // laisser tourner un sablier.
-        setProblem(
-          "Ce format d'image n'a pas pu être ouvert. Essayez une capture d'écran au format JPEG ou PNG.",
-        );
+        setProblem(t("format"));
       } finally {
         setReading(false);
       }
     },
-    [onFound],
+    [onFound, t],
   );
 
   /*
@@ -810,17 +813,14 @@ function ImagePicker({
         </span>
 
         <p className="mt-3 text-sm font-medium text-ink">
-          {busy ? "Lecture de l'image…" : "Déposez la capture du QR"}
+          {busy ? t("lecture") : t("deposer")}
         </p>
         <p className="mt-1 text-xs text-muted">
           {/* Le collage n'est mentionné qu'au-delà du téléphone : il n'y a
               pas de Ctrl+V sur un écran tactile, et promettre un geste
               impossible use la confiance dans tout le reste. */}
-          <span className="hidden sm:inline">
-            Glissez-la ici, collez-la avec Ctrl+V, ou{" "}
-          </span>
-          <span className="sm:hidden">Prenez une photo, ou </span>
-          choisissez un fichier.
+          <span className="hidden sm:inline">{t("ordinateur")}</span>
+          <span className="sm:hidden">{t("telephone")}</span>
         </p>
 
         <input
@@ -843,7 +843,7 @@ function ImagePicker({
           onClick={() => input.current?.click()}
           className="mt-4"
         >
-          Choisir une image
+          {t("choisir")}
         </GhostButton>
       </div>
 
@@ -858,7 +858,7 @@ function ImagePicker({
             onClick={onTypeInstead}
             className="mt-1.5 pl-6 text-xs font-medium text-warning underline underline-offset-2"
           >
-            Saisir le code à la place
+            {t("saisir")}
           </button>
         </div>
       )}
@@ -879,6 +879,7 @@ function CodeForm({
   cameraError: string | null;
   onSubmit: (code: string) => void;
 }) {
+  const t = useTranslations("pro.arrivee.code");
   const [value, setValue] = useState("");
 
   /*
@@ -910,7 +911,7 @@ function CodeForm({
 
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-ink">
-          Code d&apos;arrivée
+          {t("libelle")}
         </span>
         <input
           autoFocus
@@ -932,17 +933,16 @@ function CodeForm({
       </label>
 
       <p id="checkin-code-help" className="mt-2 text-xs text-muted">
-        Six caractères, sous le QR de la cliente.{" "}
+        {t("aide")}{" "}
         {rejected.length > 0 ? (
           <span className="text-warning">
-            Nos codes ne contiennent jamais {rejected.slice(0, 3).join(", ")} —
-            relisez : c&apos;est sans doute {suggestion(rejected[0])}.
+            {t("exclus", {
+              caracteres: rejected.slice(0, 3).join(", "),
+              suggestion: t(`suggestion.${cleSuggestion(rejected[0])}`),
+            })}
           </span>
         ) : (
-          <span className="text-subtle">
-            Ni O ni 0, ni I ni 1, ni S ni 5 : ces caractères n&apos;y figurent
-            pas.
-          </span>
+          <span className="text-subtle">{t("jamais")}</span>
         )}
       </p>
 
@@ -966,7 +966,7 @@ function CodeForm({
           disabled={!complete}
           onClick={() => onSubmit(kept)}
         >
-          Enregistrer
+          {t("enregistrer")}
         </Button>
       </div>
     </div>
@@ -980,26 +980,11 @@ function CodeForm({
  * substitution appliquée au code. La différence est tout l'intérêt : c'est
  * elle qui regarde l'écran de la cliente et tranche, pas nous.
  */
-function suggestion(char: string): string {
-  const pairs: Record<string, string> = {
-    O: "un D ou un Q mal lu",
-    Q: "un D",
-    "0": "un D",
-    I: "un J",
-    "1": "un 7",
-    L: "un J",
-    S: "un 5 qui n'existe pas non plus — regardez à nouveau",
-    "5": "un F",
-    B: "un E",
-    "8": "un E",
-    Z: "un 7",
-    "2": "un 7",
-    G: "un 6 ou un C",
-    "6": "un C",
-    U: "un V",
-    "9": "un 4",
-  };
-  return pairs[char] ?? "un autre caractère";
+const SUGGERES = "OQ0I1LS5B8Z2G6U9";
+
+/** La clé de catalogue (`pro.arrivee.code.suggestion`) d'un caractère exclu. */
+function cleSuggestion(char: string): string {
+  return SUGGERES.includes(char) ? `c${char}` : "autre";
 }
 
 /* --------------------------------------------------------------------------
@@ -1024,6 +1009,8 @@ function Result({
   onAgain: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("pro.arrivee.verdict");
+  const { region } = useFormats();
   const tone = TONES[outcome.tone];
   const booking = outcome.booking;
 
@@ -1055,11 +1042,11 @@ function Result({
           secondes.
         */
         <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 rounded-2xl border border-line bg-surface-muted p-3.5">
-          <Line label="Cliente" value={booking.customer_name} />
-          <Line label="Prestation" value={booking.service_name} />
+          <Line label={t("cliente")} value={booking.customer_name} />
+          <Line label={t("prestation")} value={booking.service_name} />
           <Line
-            label="Heure"
-            value={new Intl.DateTimeFormat("fr-FR", {
+            label={t("heure")}
+            value={new Intl.DateTimeFormat(region, {
               weekday: "short",
               day: "numeric",
               month: "short",
@@ -1067,7 +1054,7 @@ function Result({
               minute: "2-digit",
             }).format(new Date(booking.starts_at))}
           />
-          <Line label="Avec" value={booking.staff_member_name} />
+          <Line label={t("avec")} value={booking.staff_member_name} />
         </dl>
       )}
 
@@ -1077,10 +1064,10 @@ function Result({
           onClick={onAgain}
           icon={<Icon name="scan" className="size-4" />}
         >
-          Suivante
+          {t("suivante")}
         </Button>
         <GhostButton type="button" onClick={onClose}>
-          Fermer
+          {t("fermer")}
         </GhostButton>
       </div>
     </div>

@@ -1381,6 +1381,222 @@
       "creerSalon": "Create a salon",
       "essai": "14 days free, no credit card.",
       "autreAdresse": "Signing up requires a different email address."
+    },
+    "agenda": {
+      "titre": "Calendar",
+      "description": "Your upcoming appointments, and what needs your attention.",
+      "erreurChargement": "Could not load the calendar.",
+      "confirme": "{nom}'s appointment confirmed.",
+      "annule": "{nom}'s appointment cancelled.",
+      "refusEnvoye": "The client has been notified and can send new proof.",
+      "chargement": "Loading…",
+      "recherche": "Searching…",
+      "resultats": "{n, plural, one {# result} other {# results}} for “{terme}”, across the whole calendar.",
+      "retour": "Back to the calendar",
+      "avec": "with {nom}",
+      "deplacer": {
+        "titre": "Reschedule the appointment",
+        "titreDe": "Reschedule {nom}'s appointment",
+        "succes": "{nom}'s appointment has been moved. The client has been notified.",
+        "conflit": "This slot has just been taken. Here is what is left that day.",
+        "echec": "Could not reschedule.",
+        "actuellement": "Currently on {jour} at {heure}",
+        "fermer": "Close",
+        "illisible": "Could not read availability",
+        "connexion": "The connection failed. Nothing was changed.",
+        "reessayer": "Try again",
+        "lecture": "Reading availability…",
+        "aucun": "No free slot that day. Try another day in the strip.",
+        "deplacerA": "Move to {heure}",
+        "choisir": "Choose a slot",
+        "annuler": "Cancel"
+      },
+      "annuler": "Cancel",
+      "vide": {
+        "titre": "No appointments in this period",
+        "corps": "Share your mini-site link so your clients can book on their own, at any time."
+      },
+      "stats": {
+        "aujourdhui": "Today",
+        "rendezVous": "appointments",
+        "septJours": "Next 7 days",
+        "actifs": "active appointments",
+        "absences": "No-shows",
+        "annulations": "Cancellations",
+        "trenteJours": "over 30 days"
+      },
+      "cible": {
+        "rdv": "The appointment from your notification.",
+        "rdvDisparu": "This appointment no longer exists.",
+        "rienATraiter": "Nothing left to handle here — it's already done.",
+        "acomptes": "{n, plural, one {# deposit to check} other {# deposits to check}}.",
+        "demandes": "{n, plural, one {# request to accept} other {# requests to accept}}.",
+        "a-noter": "{n, plural, one {# appointment to close} other {# appointments to close}}.",
+        "elements": "{n, plural, one {# item} other {# items}}."
+      },
+      "statut": {
+        "pending_payment": "Awaiting payment",
+        "requested": "Requested",
+        "confirmed": "Confirmed",
+        "checked_in": "Client arrived",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No-show"
+      },
+      "action": {
+        "confirmed": "Confirm",
+        "checked_in": "Client arrived",
+        "no_show": "No-show",
+        "completed": "Completed"
+      },
+      "acompte": {
+        "encaisse": "{montant} received",
+        "reste": "{montant} left",
+        "attendu": "{montant} deposit expected"
+      },
+      "retard": {
+        "passe": "Slot over · to close",
+        "enRetard": "{delai} late",
+        "clientes": "{n, plural, one {# client running late} other {# clients running late}}",
+        "creneaux": "{n, plural, one {# past slot to close} other {# past slots to close}}",
+        "tolerance": "Your grace period is {n} min.",
+        "aucuneTolerance": "You allow no grace period."
+      },
+      "domicile": {
+        "zone": "At home · {zone}",
+        "frais": "{montant} travel fee, included"
+      },
+      "preuve": {
+        "nonTranche": "This appointment was confirmed without a decision on the payment: the deposit was not recorded anywhere. Record it from the Finances tab.",
+        "retrouve": "Payment found and confirmed.",
+        "nonRetrouve": "Payment not found. The client can send new proof.",
+        "nonRetrouveMotif": "Payment not found — {motif}. The client can send new proof.",
+        "aVerifier": "Deposit to check — {montant}",
+        "ditAvoirPaye": "{nom} says they have paid.",
+        "ditAvoirPayePar": "{nom} says they have paid with {moyen}.",
+        "retrouvez": "Find the payment in your app before accepting.",
+        "capture": "Payment screenshot",
+        "sansCapture": "No screenshot — the client could not attach one.",
+        "reference": "Reference",
+        "message": "Message",
+        "montantRecu": "Amount received",
+        "montantReel": "Amount actually received",
+        "motif": "Reason for rejecting",
+        "motifExemple": "No payment for this amount…",
+        "confirmerRefus": "Confirm rejection",
+        "annuler": "Cancel",
+        "accepter": "I received the deposit — accept",
+        "introuvable": "Payment not found"
+      },
+      "barre": {
+        "affichage": "Calendar view",
+        "jour": "Day",
+        "semaine": "Week",
+        "mois": "Month",
+        "precedente": "Previous period",
+        "suivante": "Next period",
+        "aujourdhui": "Today",
+        "rechercher": "Search for a client or a service",
+        "rechercheExemple": "Name, phone, service",
+        "filtreStatut": "Filter by status",
+        "tousStatuts": "All statuses",
+        "filtrePrestataire": "Filter by staff member",
+        "touteEquipe": "Whole team",
+        "statuts": {
+          "aTraiter": "To handle",
+          "confirmed": "Confirmed",
+          "checked_in": "Clients arrived",
+          "completed": "Completed",
+          "cancelled": "Cancelled",
+          "no_show": "No-shows"
+        },
+        "autres": "+{n} more",
+        "jourCompte": "{jour} — {n, plural, one {# appointment} other {# appointments}}",
+        "rdvCourt": "{n, plural, one {# appt} other {# appts}}"
+      },
+      "progression": {
+        "titre": "Appointment progress",
+        "etape": {
+          "pending_payment": "Deposit",
+          "requested": "To approve",
+          "confirmed": "Confirmed",
+          "checked_in": "Arrived",
+          "completed": "Done"
+        },
+        "sortie": {
+          "cancelled": "Cancelled — this appointment will go no further.",
+          "no_show": "No-show — this appointment will go no further."
+        }
+      }
+    },
+    "arrivee": {
+      "bouton": "Check-in",
+      "titre": "Record an arrival",
+      "arriveeDe": "{nom}'s arrival",
+      "aide": "Scan the client's QR code, or enter their code.",
+      "fermer": "Close",
+      "deja": "Already checked in",
+      "enregistree": "Arrival recorded",
+      "echec": "Could not record",
+      "modes": {
+        "camera": "Camera",
+        "image": "Image",
+        "code": "Code"
+      },
+      "sansCode": "{nom} doesn't have their code — record the arrival anyway",
+      "camera": {
+        "absente": "This device does not offer a camera to the browser.",
+        "https": "The camera is only available over HTTPS. On an http:// address, the browser blocks it.",
+        "refusee": "Camera access was denied. Allow it in your browser settings, or enter the code.",
+        "aucune": "No camera available on this device.",
+        "ouverture": "Opening the camera…",
+        "viser": "Point the device at the client's QR code. The arrival is recorded as soon as the code is read."
+      },
+      "image": {
+        "pasUneImage": "This file is not an image.",
+        "aucunQr": "No QR code was found in this image. Try a sharper screenshot, or enter the six-character code.",
+        "format": "This image format could not be opened. Try a JPEG or PNG screenshot.",
+        "lecture": "Reading the image…",
+        "deposer": "Drop the QR screenshot",
+        "ordinateur": "Drag it here, paste it with Ctrl+V, or choose a file.",
+        "telephone": "Take a photo, or choose a file.",
+        "choisir": "Choose an image",
+        "saisir": "Enter the code instead"
+      },
+      "code": {
+        "libelle": "Check-in code",
+        "aide": "Six characters, below the client's QR code.",
+        "exclus": "Our codes never contain {caracteres} — check again: it is probably {suggestion}.",
+        "jamais": "No O or 0, no I or 1, no S or 5: these characters are never used.",
+        "enregistrer": "Save",
+        "suggestion": {
+          "cO": "a misread D or Q",
+          "cQ": "a D",
+          "c0": "a D",
+          "cI": "a J",
+          "c1": "a 7",
+          "cL": "a J",
+          "cS": "a 5, which isn't used either — look again",
+          "c5": "an F",
+          "cB": "an E",
+          "c8": "an E",
+          "cZ": "a 7",
+          "c2": "a 7",
+          "cG": "a 6 or a C",
+          "c6": "a C",
+          "cU": "a V",
+          "c9": "a 4",
+          "autre": "another character"
+        }
+      },
+      "verdict": {
+        "cliente": "Client",
+        "prestation": "Service",
+        "heure": "Time",
+        "avec": "With",
+        "suivante": "Next",
+        "fermer": "Close"
+      }
     }
   },
   "theme": {

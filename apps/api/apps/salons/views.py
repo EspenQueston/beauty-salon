@@ -220,7 +220,12 @@ class PublicSalonView(APIView):
                     if asset
                     else None
                 )
-        donnees["site_config"] = config
+        # Les textes que le salon Pro a ecrits lui-meme - accroche, bouton,
+        # pages et leurs titres de menu - suivent la langue du mini-site comme
+        # le reste du contenu, quel que soit le nombre de pages ajoutees.
+        from apps.translations.services import config_traduite
+
+        donnees["site_config"] = config_traduite(config, profile, traductions)
         # La bulle ne s'affiche que si le salon y a droit *et* l'a laissee
         # allumee : coupee, elle ne repondrait que « pas active ».
         from apps.assistants.models import AssistantReglages

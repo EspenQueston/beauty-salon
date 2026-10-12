@@ -26,12 +26,14 @@
  * a rien à deviner.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { dashboardFetch, DashboardError } from "@/lib/dashboard";
 import { formatTime, isoDateIn } from "@/lib/format";
 import { Button, GhostButton } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 
 export interface ReschedulableBooking {
@@ -66,6 +68,8 @@ export function ReschedulePanel({
   onClose: () => void;
   onDone: () => void;
 }) {
+  const t = useTranslations("pro.agenda.deplacer");
+  const { region } = useFormats();
   const toast = useToast();
 
   /*
@@ -182,9 +186,7 @@ export function ReschedulePanel({
         { method: "POST", body: JSON.stringify({ starts_at: choisi }) },
         tenantId,
       );
-      toast.success(
-        `Rendez-vous de ${booking.customer_name} déplacé. La cliente est prévenue.`,
-      );
+      toast.success(t("succes", { nom: booking.customer_name }));
       onDone();
     } catch (caught) {
       /*
@@ -197,10 +199,10 @@ export function ReschedulePanel({
       const conflit = caught instanceof DashboardError && caught.status === 409;
       setErreur(
         conflit
-          ? "Ce créneau vient d'être pris. Voici ce qui reste sur la journée."
+          ? t("conflit")
           : caught instanceof Error
             ? caught.message
-            : "Déplacement impossible.",
+            : t("echec"),
       );
       setChoisi(null);
       // On relit la journée : le créneau disparaît de lui-même et la
@@ -215,7 +217,7 @@ export function ReschedulePanel({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Déplacer le rendez-vous de ${booking.customer_name}`}
+      aria-label={t("titreDe", { nom: booking.customer_name })}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
     >
       {/*
@@ -229,20 +231,22 @@ export function ReschedulePanel({
         <header className="flex items-start justify-between gap-3 border-b border-line px-4 py-3.5 sm:px-5">
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-ink sm:text-lg">
-              Déplacer le rendez-vous
+              {t("titre")}
             </h2>
             <p className="mt-0.5 truncate text-xs text-muted sm:text-sm">
               {booking.customer_name} · {booking.service_name}
             </p>
             <p className="tabular mt-0.5 text-xs text-subtle">
-              Actuellement le {formatJour(booking.starts_at, timeZone)} à{" "}
-              {formatTime(booking.starts_at, timeZone)}
+              {t("actuellement", {
+                jour: formatJour(booking.starts_at, timeZone, region),
+                heure: formatTime(booking.starts_at, timeZone),
+              })}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t("fermer")}
             className="-mr-1 shrink-0 rounded-lg p-1.5 text-muted transition hover:bg-surface-hover hover:text-ink"
           >
             <Icon name="close" className="size-5" />
@@ -277,7 +281,7 @@ export function ReschedulePanel({
                     }`}
                   >
                     <span className="text-[0.62rem] uppercase tracking-wide opacity-80">
-                      {jourCourt(date, timeZone)}
+                      {jourCourt(date, timeZone, region)}
                     </span>
                     <span className="tabular text-base font-semibold leading-tight">
                       {date.slice(8, 10)}
@@ -293,31 +297,30 @@ export function ReschedulePanel({
           {illisible ? (
             <div className="py-8 text-center">
               <p className="text-sm font-medium text-ink">
-                Disponibilités illisibles
+                {t("illisible")}
               </p>
               <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted">
-                La connexion a échoué. Rien n’a été modifié.
+                {t("connexion")}
               </p>
               <button
                 type="button"
                 onClick={() => setRelecture((valeur) => valeur + 1)}
                 className="mt-3 rounded-xl border border-line bg-surface px-4 py-2 text-sm font-medium text-ink transition hover:border-salon hover:bg-surface-hover"
               >
-                Réessayer
+                {t("reessayer")}
               </button>
             </div>
           ) : (
             <>
               {slots === null && (
                 <p className="py-8 text-center text-sm text-muted">
-                  Lecture des disponibilités…
+                  {t("lecture")}
                 </p>
               )}
 
               {slots !== null && slots.length === 0 && (
                 <p className="py-8 text-center text-sm text-muted">
-                  Aucun créneau libre ce jour-là. Essayez un autre jour du
-                  ruban.
+                  {t("aucun")}
                 </p>
               )}
             </>
@@ -372,11 +375,11 @@ export function ReschedulePanel({
             className="flex-1"
           >
             {choisi
-              ? `Déplacer à ${formatTime(choisi, timeZone)}`
-              : "Choisissez un créneau"}
+              ? t("deplacerA", { heure: formatTime(choisi, timeZone) })
+              : t("choisir")}
           </Button>
           <GhostButton type="button" onClick={onClose}>
-            Annuler
+            {t("annuler")}
           </GhostButton>
         </footer>
       </div>
@@ -385,15 +388,15 @@ export function ReschedulePanel({
 }
 
 /** « lun. » — l'initiale du jour, dans le fuseau du salon. */
-function jourCourt(isoDate: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+function jourCourt(isoDate: string, timeZone: string, region: string): string {
+  return new Intl.DateTimeFormat(region, {
     weekday: "short",
     timeZone,
   }).format(new Date(`${isoDate}T12:00:00Z`));
 }
 
-function formatJour(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
+function formatJour(iso: string, timeZone: string, region: string): string {
+  return new Intl.DateTimeFormat(region, {
     weekday: "long",
     day: "numeric",
     month: "long",
