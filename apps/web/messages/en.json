@@ -42,26 +42,36 @@
     "utilisePar": "Used by salons in",
     "atouts": {
       "titre": "What you get",
-      "sous": "Three things, and they hold together: a page you can share, a diary that never slips, a client list that stays yours.",
+      "sous": "A mini-site to share, organised bookings and your information in one place.",
       "vitrine": {
         "titre": "Your own page",
         "corps": "A page in your name, with your photos, your prices and your opening hours. One link to share on WhatsApp, Instagram or TikTok.",
         "corpsCourt": "A page in your name, with your photos and prices. One link to share on WhatsApp or Instagram.",
-        "etiquette": "Shopfront"
+        "etiquette": "Shopfront",
+        "corpsMobile": "Your services and photos, in one link."
       },
       "agenda": {
         "titre": "Online booking",
         "corps": "Your clients book at any hour, on a slot that is genuinely free. Two people can never take the same place.",
         "corpsCourt": "Your clients book at any hour, on a slot that is genuinely free. Never the same place twice.",
-        "etiquette": "Diary"
+        "etiquette": "Diary",
+        "corpsMobile": "Clients book your available times."
       },
       "gestion": {
         "titre": "Diary and clients",
         "corps": "Your appointments, your team and your client list in one place. Your data stays yours, exportable at any time.",
         "corpsCourt": "Your appointments, your team and your clients in one place. Your data stays yours.",
-        "etiquette": "Admin"
+        "etiquette": "Admin",
+        "corpsMobile": "Your appointments and team together."
       },
-      "allerA": "Go to “{titre}”"
+      "allerA": "Go to “{titre}”",
+      "export": {
+        "titre": "Export your data",
+        "corpsCourt": "Find your information and export your data from your dashboard.",
+        "corps": "Find your information and export your data from your dashboard.",
+        "etiquette": "Your data",
+        "corpsMobile": "Your information, ready to export."
+      }
     },
     "film": {
       "surtitre": "Twenty-nine seconds",
@@ -75,26 +85,29 @@
     },
     "etapes": {
       "titre": "How it works",
-      "sous": "Three steps. The longest one takes three minutes.",
+      "sous": "Create your space, prepare your services, then share your link after approval.",
       "creer": {
         "titre": "Create your salon",
-        "corps": "Name, web address, country. Three minutes, no card details."
+        "corps": "Choose your salon name, address and country. Create your account and confirm your email.",
+        "resume": "Choose your name and create your workspace."
       },
       "remplir": {
         "titre": "Fill your shopfront",
-        "corps": "Services, prices, opening hours, photos. Three services are enough to start."
+        "corps": "Services, prices, opening hours, photos. Three services are enough to start.",
+        "resume": "Add your services, prices and opening hours."
       },
       "partager": {
         "titre": "Share your link",
-        "corps": "On WhatsApp, in a story, or as a QR code on the salon wall. Bookings land in your diary."
+        "corps": "On WhatsApp, in a story, or as a QR code on the salon wall. Bookings land in your diary.",
+        "resume": "Once approved, share your link and receive bookings."
       }
     },
     "questions": {
       "titre": "Common questions",
-      "sous": "Five answers, and nothing that commits you.",
+      "sous": "Your trial, publication and data: answers before you start.",
       "prix": {
         "q": "Do I have to pay to start?",
-        "a": "No. Signing up is free and asks for no card details. You get a full trial period, and no invoice is issued before it ends."
+        "a": "No. You get a 14-day Standard trial, or 30 days with a valid referral code, without a bank card. You then choose a paid plan to continue taking bookings. Signing up does not authorise an automatic charge."
       },
       "miseEnLigne": {
         "q": "Is my page online straight away?",
@@ -106,7 +119,7 @@
       },
       "paiement": {
         "q": "How do my clients pay me?",
-        "a": "The way they do today: cash, Mobile Money or bank transfer. The platform tracks the deposits you ask for, and you mark a payment received in one click."
+        "a": "Clients pay you using the methods you offer at your salon. The platform tracks deposits and their supporting documents. Your subscription payment is a separate process; KKIAPAY may be offered depending on your country and the active configuration."
       },
       "donnees": {
         "q": "Can I get my data back?",
@@ -115,7 +128,7 @@
     },
     "appel": {
       "titre": "Ready to open your diary?",
-      "sous": "Create your salon today, share your link tomorrow."
+      "sous": "Start your trial, prepare your mini-site and calendar, then share your link after approval."
     },
     "introCourte": "Your own page, a diary that never slips, no double bookings."
   },
@@ -140,10 +153,12 @@
       "film": "The film",
       "apercu": "Preview",
       "etapes": "How it works",
-      "questions": "Questions"
+      "questions": "Questions",
+      "tarifs": "Pricing",
+      "demo": "Demonstration"
     },
     "pied": {
-      "promesse": "The booking platform for beauty professionals in Congo-Brazzaville, the DRC and the diaspora.",
+      "promesse": "Mini-sites and calendars for beauty professionals, in the countries supported by the platform.",
       "donnees": "Your clients, your photos, your appointments: this data belongs to you and stays exportable.",
       "produit": "The product",
       "monSalon": "My salon",
@@ -158,8 +173,10 @@
       "reserver": "Claim this address",
       "verification": "Checking…",
       "tropCourt": "Three characters minimum.",
-      "libre": "{adresse} is available. It is yours in three minutes.",
-      "prise": "{adresse} is already taken. Try a variant."
+      "libre": "{adresse} is available. It will be reserved when you complete sign-up.",
+      "prise": "{adresse} is already taken. Try a variant.",
+      "erreur": "Address availability could not be checked.",
+      "reessayer": "Try again"
     },
     "apercu": {
       "salonParDefaut": "Your salon",
@@ -177,7 +194,11 @@
         "promesse": "Get booked. Do the work. Get paid.",
         "outils": "The three tools",
         "double": "No double bookings"
-      }
+      },
+      "originalSound": "original music",
+      "previous": "Previous chapter",
+      "next": "Next chapter",
+      "timeline": "Film playback position"
     },
     "territoiresLus": "Used by salons in {lieux}.",
     "territoiresPause": "Pause the country ticker",
@@ -186,7 +207,7 @@
       "nomChamp": "Your salon's name",
       "direct": "Live preview",
       "reserverAdresse": "Claim {adresse}",
-      "suivi": "Your choices follow you: the form arrives already filled in.",
+      "suivi": "Your name, address and colours carry through to the form. No address is reserved until sign-up is complete.",
       "hoteExemple": "your-salon.beautysalon",
       "reserver": "Book an appointment",
       "prestations": {
@@ -939,5 +960,134 @@
       "refuseTitre": "Notifications blocked",
       "refuseCorps": "This phone will not remind you of your appointments. To allow them: tap the padlock left of the address, then “Notifications” → “Allow”, and reload the page."
     }
+  },
+  "conversion": {
+    "create": "Create my salon for free",
+    "complete": "Finish setting up my salon",
+    "dashboard": "Go to my dashboard",
+    "audience": "Hair · Nails · Makeup · Barber",
+    "headlineFirst": "Your salon online.",
+    "headlineSecond": "Your bookings in one place.",
+    "intro": "Show your services, let clients book available times and manage your calendar from your phone.",
+    "seeDemo": "Try the demonstration",
+    "trial": "{days}-day trial · No bank card required",
+    "referralTrial": "30-day trial with a valid referral code.",
+    "previewTitle": "See your salon take shape.",
+    "previewSubtitle": "Choose a name, check your address and try your colours. Your choices carry through to sign-up.",
+    "previewEyebrow": "Your first step, without an account",
+    "demoTitle": "From your mini-site to your calendar.",
+    "demoSubtitle": "Try the three stages of a booking in this interactive demonstration. No real appointment is created.",
+    "demoEyebrow": "Try the booking journey",
+    "demoSteps": {
+      "chooseTitle": "Your client chooses a service",
+      "choose": "Your mini-site displays your services, durations and prices.",
+      "reserveTitle": "They choose an available time",
+      "reserve": "Availability takes your hours, team and existing appointments into account.",
+      "manageTitle": "You find the appointment",
+      "manage": "View your calendar and follow the appointment from your professional dashboard."
+    },
+    "snapshot": {
+      "badge": "Example interface",
+      "salon": "Example salon",
+      "service": "Cut & styling",
+      "duration": "45 minutes",
+      "reserve": "Book",
+      "agenda": "Your calendar",
+      "exampleDay": "Example day",
+      "client": "Example client",
+      "received": "Booking received",
+      "notice": "Demonstration data",
+      "try": "Try it"
+    },
+    "demo": {
+      "badge": "Interactive demonstration",
+      "step": "Step {step} / 3",
+      "service": "Service",
+      "slot": "Time",
+      "agenda": "Calendar",
+      "chooseService": "Choose a service",
+      "chooseSlot": "Choose a time",
+      "confirm": "Review your selection",
+      "received": "The booking appears in the calendar",
+      "cut": "Cut & styling",
+      "care": "Hair treatment",
+      "cutDuration": "45 minutes",
+      "careDuration": "60 minutes",
+      "exampleDay": "Example times for trying the journey.",
+      "exampleClient": "Example client · Example salon",
+      "inAgenda": "Visible in your professional dashboard",
+      "restart": "Restart the demonstration",
+      "simulate": "Simulate the booking",
+      "next": "Continue",
+      "notice": "Simulation only. No real account, payment or appointment is created.",
+      "liveExample": "Visit {name}’s mini-site"
+    },
+    "pricing": {
+      "title": "A subscription for your salon.",
+      "subtitle": "See the published prices for your country and currency, then choose your payment period.",
+      "country": "Your country",
+      "currency": "Currency",
+      "period": "Payment period",
+      "monthly": "Monthly",
+      "yearly": "Annual",
+      "standardIntro": "The essentials for your mini-site and bookings.",
+      "proIntro": "Your Standard tools, with the extras below.",
+      "loading": "Loading…",
+      "unavailable": "Price not published",
+      "perMonth": "For one month",
+      "perYear": "Total for twelve months",
+      "saving": "Save {percent}%",
+      "teamLimit": "Up to {count} team members",
+      "trialEnd": "The trial includes Standard. At the end, choose a paid plan to continue taking bookings. Signing up does not authorise an automatic charge.",
+      "noCountryPrice": "No payable price is currently published for this country. You can create your salon and check available plans in your dashboard.",
+      "error": "Prices could not be loaded.",
+      "retry": "Try again",
+      "kkiapay": "KKIAPAY is offered here to pay the salon subscription. It does not handle clients’ payments to the salon.",
+      "disclaimer": "Prices come from the current catalogue, before any referral discount. The final amount and payment method are confirmed in your dashboard before payment. Annual savings compare the annual price with twelve monthly payments.",
+      "availableIn": "Available countries:",
+      "countries": {
+        "CG": "Congo-Brazzaville",
+        "CD": "DR Congo",
+        "CN": "China",
+        "BJ": "Benin",
+        "BF": "Burkina Faso",
+        "CI": "Côte d’Ivoire",
+        "TG": "Togo",
+        "SN": "Senegal",
+        "NE": "Niger"
+      },
+      "features": {
+        "site": "Mini-site with your name",
+        "booking": "Booking and calendar",
+        "clients": "Team and client records",
+        "export": "Exportable data",
+        "includes": "All Standard features",
+        "custom_domain": "Custom domain",
+        "customization": "Advanced customisation",
+        "whatsapp_assistant": "WhatsApp AI assistant and n8n",
+        "platform_assistant": "Professional space assistant",
+        "customer_assistant": "Client assistant"
+      },
+      "details": "View features"
+    },
+    "trust": {
+      "title": "Their experience, in their words.",
+      "subtitle": "Verified testimonials published with their authors’ permission.",
+      "mobileTitle": "From your phone",
+      "mobile": "View your mini-site and manage bookings in a mobile browser.",
+      "dataTitle": "Your data stays with you",
+      "data": "Export your salon data from your professional dashboard.",
+      "publicationTitle": "Guided publication",
+      "publication": "Prepare your services and hours. Your mini-site becomes public after approval by the team.",
+      "supportTitle": "A question before starting?",
+      "support": "Find practical answers to prepare your salon and start your trial.",
+      "email": "Email support",
+      "faq": "Read the answers",
+      "details": "Learn more"
+    },
+    "mobileIntro": "Your website, bookings and calendar together.",
+    "seeFilm": "Watch the film",
+    "filmEyebrow": "Mini Salon, in 29 seconds",
+    "headlineKeyword": "bookings"
   }
 }

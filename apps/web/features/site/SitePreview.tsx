@@ -26,15 +26,17 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { checkSlug } from "@/lib/dashboard";
-import { appUrl } from "@/lib/site";
 import { SLUG_MIN, toSlug } from "@/lib/slug";
 import { PALETTES } from "./palettes";
+import { CreateSalonLink, useHome } from "./HomeContext";
+import { Reveal } from "@/features/ui/Reveal";
 
-type SlugState = "idle" | "checking" | "free" | "taken";
+type SlugState = "idle" | "checking" | "free" | "taken" | "error";
 
 export function SitePreview() {
   const t = useTranslations("site");
-  const c = useTranslations("commun");
+  const {action,referral,track} = useHome();
+  const [retry,setRetry]=useState(0);
   const [name, setName] = useState("");
   const [palette, setPalette] = useState<(typeof PALETTES)[number]>(PALETTES[0]);
   /** Dernière réponse du serveur, avec l'adresse à laquelle elle répond. */
@@ -42,6 +44,7 @@ export function SitePreview() {
     slug: string;
     available: boolean;
     hostname: string;
+    error?: boolean;
   } | null>(null);
 
   const slug = toSlug(name);
@@ -60,7 +63,7 @@ export function SitePreview() {
     slug.length < SLUG_MIN
       ? "idle"
       : checked?.slug === slug
-        ? checked.available
+        ? checked.error ? "error" : checked.available
           ? "free"
           : "taken"
         : "checking";
@@ -84,8 +87,7 @@ export function SitePreview() {
           });
         })
         .catch(() => {
-          // Le serveur n'a pas répondu : on reste en « vérification »
-          // plutôt que d'annoncer une disponibilité qu'on ignore.
+          if(!cancelled) setChecked({slug,available:false,hostname:"",error:true});
         });
     }, 400);
 
@@ -93,11 +95,12 @@ export function SitePreview() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [slug]);
+  }, [slug,retry]);
 
   // Ce qui a été composé accompagne l'inscription : le formulaire arrive
   // pré-rempli plutôt que vide.
-  const signupHref = `${appUrl}/inscription?${new URLSearchParams({
+  const signupHref = `${action.href.split("?")[0]}?${new URLSearchParams({
+    ...(referral ? {parrain:referral} : {}),
     ...(name.trim() ? { nom: name.trim() } : {}),
     ...(slug.length >= SLUG_MIN ? { slug } : {}),
     // Les trois couleurs voyagent, pas le nom de la palette : le serveur
@@ -109,9 +112,9 @@ export function SitePreview() {
   })}`;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[1fr_1.1fr] lg:items-center">
       {/* ------------------------------------------------------ commandes */}
-      <div>
+      <Reveal variant="cinema" className="min-w-0">
         <label
           htmlFor="apercu-nom"
           className="mb-1.5 block text-sm font-medium text-ink"
@@ -121,13 +124,14 @@ export function SitePreview() {
         <input
           id="apercu-nom"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => {setName(event.target.value);track("preview_used")}}
+          autoComplete="organization"
           placeholder={t("apercu.exemple")}
           maxLength={60}
           className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-ink transition focus:border-salon"
         />
 
-        <p className="mt-2 min-h-5 text-sm" aria-live="polite">
+        <p className="mt-2 min-h-5 text-sm [overflow-wrap:anywhere]" aria-live="polite">
           {slug.length >= SLUG_MIN && slugState === "checking" && (
             <span className="text-subtle">{t("adresse.verification")}</span>
           )}
@@ -141,6 +145,8 @@ export function SitePreview() {
               {t("adresse.prise", { adresse: hostname })}
             </span>
           )}
+          {slugState === "error" && <span className="text-muted">{t("adresse.erreur")} <button type="button" className="min-h-11 font-semibold text-salon-ink underline" onClick={()=>{setChecked(null);setRetry(value=>value+1)}}>{t("adresse.reessayer")}</button></span>}
+          {name && slug.length<SLUG_MIN && <span className="text-muted">{t("adresse.tropCourt")}</span>}
         </p>
 
         <p className="mb-2 mt-5 text-sm font-medium text-ink">
@@ -153,10 +159,11 @@ export function SitePreview() {
               <button
                 key={entry.cle}
                 type="button"
-                onClick={() => setPalette(entry)}
+                onClick={() => {setPalette(entry);track("preview_used")}}
                 aria-pressed={active}
+                aria-label={t(`palettes.${entry.cle}`)}
                 title={t(`palettes.${entry.cle}`)}
-                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs transition ${
+                className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs transition ${
                   active
                     ? "border-salon bg-salon-soft text-ink"
                     : "border-line bg-surface text-muted hover:bg-surface-hover"
@@ -180,24 +187,20 @@ export function SitePreview() {
           })}
         </div>
 
-        <a
+        <CreateSalonLink
           href={signupHref}
-          className="mt-6 inline-flex items-center justify-center rounded-xl bg-salon px-6 py-3.5 font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:brightness-110"
-        >
-          {slugState === "free"
-            ? t("apercuVitrine.reserverAdresse", { adresse: hostname })
-            : c("creerSalon")}
-        </a>
+          className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-salon px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:brightness-110 sm:w-auto"
+        />
 
-        <p className="mt-2 text-xs text-subtle">{t("apercuVitrine.suivi")}</p>
-      </div>
+        <p className="mt-2 text-xs text-muted">{t("apercuVitrine.suivi")}</p>
+      </Reveal>
 
       {/* -------------------------------------------------------- aperçu */}
-      <div
+      <Reveal variant="cinema" order={1} className="min-w-0"><div
         className="rounded-3xl border border-line p-4 shadow-card transition-colors duration-500 sm:p-6"
         style={{ background: palette.surface }}
       >
-        <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.12em] text-black/40">
+        <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.12em] text-black/65">
           {t("apercuVitrine.direct")}
         </p>
 
@@ -219,12 +222,12 @@ export function SitePreview() {
 
           <div className="p-4 sm:p-5">
             <p
-              className="text-lg font-semibold transition-colors duration-500"
+              className="break-words text-lg font-semibold transition-colors duration-500"
               style={{ color: palette.primary }}
             >
               {displayName}
             </p>
-            <p className="mt-0.5 text-sm text-black/50">
+            <p className="mt-0.5 break-all text-sm text-black/65">
               {hostname || t("apercuVitrine.hoteExemple")}
             </p>
 
@@ -260,10 +263,10 @@ export function SitePreview() {
           </div>
         </div>
 
-        <p className="mt-3 text-center text-xs text-black/40">
+        <p className="mt-3 text-center text-xs text-black/65">
           {t("apercuVitrine.noteExemple")}
         </p>
-      </div>
+      </div></Reveal>
     </div>
   );
 }

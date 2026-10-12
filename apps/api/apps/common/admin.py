@@ -8,6 +8,8 @@ contournement de l'isolation est intentionnel et assume.
 
 from django.contrib import admin
 
+from . import home_admin  # noqa: F401
+
 ADMIN_DB = "admin"
 
 

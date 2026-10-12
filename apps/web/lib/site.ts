@@ -24,6 +24,13 @@ export const platformUrl = origin(PLATFORM_DOMAIN);
 /** Espace professionnel des salons. */
 export const appUrl = origin(`app.${PLATFORM_DOMAIN}`);
 
+/** Professional links use the same app host as the existing public site. */
+export function professionalUrl(locale: string = "fr", path: string = ""): string {
+  const language = locale === "en" ? "/en" : "";
+  const route = path === "/" ? "" : path;
+  return `${appUrl}${language}${route}`;
+}
+
 /** Mini-site d'un salon. */
 export function salonUrl(slug: string): string {
   return origin(`${slug}.${PLATFORM_DOMAIN}`);

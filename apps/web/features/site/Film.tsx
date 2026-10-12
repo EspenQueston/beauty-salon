@@ -93,6 +93,10 @@ export function Film() {
 
   const [demarre, setDemarre] = useState(false);
   const [muet, setMuet] = useState(true);
+  const [position, setPosition] = useState(0);
+  const [duree, setDuree] = useState(29);
+  const pauseTechnique = useRef(false);
+  const chapitre = Math.max(0, MOMENTS.findLastIndex(moment => Number(moment.t.slice(3)) <= position));
 
   /*
    * Deux `ref` que l'observateur lit sans être reconstruit.
@@ -173,14 +177,14 @@ export function Film() {
     const noeud = video.current;
     if (!bloc || !noeud) return;
     if (typeof IntersectionObserver === "undefined") return;
-    if (!departAutomatiquePermis()) return;
+    const automatique = departAutomatiquePermis();
 
     // Premier observateur : mise en mémoire tampon un peu avant que la
     // section n'arrive, pour que l'image parte sans temps mort. Il se retire
     // dès qu'il a servi.
     const prechargement = new IntersectionObserver(
       (entrees) => {
-        if (!entrees.some((e) => e.isIntersecting)) return;
+        if (!automatique || !entrees.some((e) => e.isIntersecting)) return;
         // `load()` réinitialise l'élément : sur une vidéo déjà partie il la
         // coupe et la ramène à zéro. Le cas arrive quand on entre par
         // l'ancre, où la lecture précède ce déclenchement.
@@ -200,7 +204,7 @@ export function Film() {
       (entrees) => {
         for (const entree of entrees) {
           if (entree.isIntersecting) {
-            if (noeud.paused && !noeud.ended && !pauseVoulue.current) {
+            if (automatique && noeud.paused && !noeud.ended && !pauseVoulue.current && !document.hidden) {
               noeud.muted = muetRef.current;
               void noeud.play().then(
                 () => setDemarre(true),
@@ -210,6 +214,7 @@ export function Film() {
           } else if (!noeud.paused) {
             // Sortie du champ : pause technique. On ne touche pas à
             // `pauseVoulue`, qui n'enregistre que les pauses de la personne.
+            pauseTechnique.current = true;
             noeud.pause();
           }
         }
@@ -220,9 +225,18 @@ export function Film() {
     );
     lecture.observe(bloc);
 
+    const masquer = () => {
+      if (document.hidden && !noeud.paused) {
+        pauseTechnique.current = true;
+        noeud.pause();
+      }
+    };
+    document.addEventListener("visibilitychange", masquer);
+
     return () => {
       prechargement.disconnect();
       lecture.disconnect();
+      document.removeEventListener("visibilitychange", masquer);
     };
   }, []);
 
@@ -238,6 +252,10 @@ export function Film() {
     const bloc = cadre.current;
     if (!noeud || !bloc) return;
     if (noeud.ended) return; // Une pause à la fin du film n'est pas une pause.
+    if (pauseTechnique.current) {
+      pauseTechnique.current = false;
+      return;
+    }
 
     const r = bloc.getBoundingClientRect();
     const visible =
@@ -275,7 +293,13 @@ export function Film() {
           poster="/film/affiche.jpg"
           preload="none"
           playsInline
+          muted={muet}
           controls={demarre}
+          onTimeUpdate={event => setPosition(event.currentTarget.currentTime)}
+          onLoadedMetadata={event => {
+            const length = event.currentTarget.duration;
+            if (Number.isFinite(length) && length > 0) setDuree(length);
+          }}
           onPlay={() => setDemarre(true)}
           onPause={surPause}
           onEnded={() => {
@@ -321,7 +345,7 @@ export function Film() {
                 aria-hidden
                 className="size-1.5 rounded-full bg-[#d9628a]"
               />
-              29 s · son original
+              29 s · {t("film.originalSound")}
             </span>
           </button>
         )}
@@ -358,7 +382,7 @@ export function Film() {
                 <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
               </svg>
             </span>
-            Activer le son
+            {t("film.activer")}
           </button>
         )}
 
@@ -393,18 +417,38 @@ export function Film() {
         repères en pile feraient défiler pour une information qui tient en
         un coup d'œil.
       */}
-      <ol className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        {MOMENTS.map((moment) => (
+      <div className="mt-3 flex min-w-0 items-center gap-3 px-1">
+        <button type="button" aria-label={t("film.previous")} disabled={chapitre===0} onClick={() => {
+          const node=video.current;
+          if (node) { node.currentTime=Number(MOMENTS[chapitre-1].t.slice(3)); lancer(!muetRef.current); }
+        }} className="grid size-11 shrink-0 place-items-center rounded-full border border-line text-ink transition hover:bg-salon-soft disabled:opacity-40">←</button>
+        <input type="range" min={0} max={duree} step={0.1} value={Math.min(position,duree)} aria-label={t("film.timeline")} onChange={event => {
+          const time=Number(event.target.value);
+          setPosition(time);
+          if (video.current) video.current.currentTime=time;
+        }} className="h-11 min-w-0 flex-1 cursor-pointer accent-[var(--salon-primary)]" />
+        <button type="button" aria-label={t("film.next")} disabled={chapitre===MOMENTS.length-1} onClick={() => {
+          const node=video.current;
+          if (node) { node.currentTime=Number(MOMENTS[chapitre+1].t.slice(3)); lancer(!muetRef.current); }
+        }} className="grid size-11 shrink-0 place-items-center rounded-full border border-line text-ink transition hover:bg-salon-soft disabled:opacity-40">→</button>
+      </div>
+      <ol className="mt-2 grid grid-cols-2 gap-2 sm:gap-3">
+        {MOMENTS.map((moment,index) => (
           <li
             key={moment.t}
-            className="verre rounded-xl px-3 py-2.5 sm:px-4 sm:py-3"
+            className="min-w-0"
           >
+            <button type="button" aria-pressed={chapitre===index} onClick={() => {
+              if (video.current) video.current.currentTime=Number(moment.t.slice(3));
+              lancer(!muetRef.current);
+            }} className={`film-chapter min-h-11 w-full rounded-xl border px-3 py-2 text-left transition duration-300 ${chapitre===index?"border-salon/60 bg-salon-soft shadow-sm":"border-line bg-surface/60 hover:bg-salon-soft"}`}>
             <span className="tabular block text-[0.68rem] font-semibold text-salon-ink sm:text-xs">
               {moment.t}
             </span>
             <span className="mt-0.5 block text-[0.72rem] leading-snug text-muted sm:text-[0.8rem]">
               {t(`film.chapitres.${moment.cle}`)}
             </span>
+            </button>
           </li>
         ))}
       </ol>

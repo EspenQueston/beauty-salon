@@ -28,24 +28,27 @@
 
 import { useEffect, useState } from "react";
 
-import { appUrl } from "@/lib/site";
-import { useTranslations } from "next-intl";
+import { professionalUrl } from "@/lib/site";
+import { useLocale, useTranslations } from "next-intl";
 
 import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { BeautySalonBrand } from "@/features/ui/BeautySalonBrand";
+import { CreateSalonLink } from "./HomeContext";
 
 const LINKS = [
   /* Les libellés viennent du catalogue : seule l'ancre est écrite ici,
      parce qu'elle désigne un `id` du document et ne se traduit pas. */
   { href: "#fonctionnalites", cle: "fonctionnalites" },
   { href: "#film", cle: "film" },
+  { href: "#tarifs", cle: "tarifs" },
   { href: "#apercu", cle: "apercu" },
   { href: "#etapes", cle: "etapes" },
   { href: "#questions", cle: "questions" },
 ];
 
 export function SiteHeader() {
+  const appUrl = professionalUrl(useLocale());
   const t = useTranslations("site");
   const c = useTranslations("commun");
   const [open, setOpen] = useState(false);
@@ -72,7 +75,7 @@ export function SiteHeader() {
 
           <nav
             aria-label={t("nav.principale")}
-            className="ml-auto hidden min-w-0 xl:block"
+            className="ml-auto hidden min-w-0 2xl:block"
           >
             <ul className="flex items-center gap-1">
               {LINKS.map((link) => (
@@ -88,7 +91,7 @@ export function SiteHeader() {
             </ul>
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
+          <div className="ml-auto flex shrink-0 items-center gap-2 2xl:ml-0">
             {/* Sous 640 px la barre garde le logo, le thème, l'appel à
                 l'action et le menu : la langue rejoint le menu. */}
             {/*
@@ -112,17 +115,14 @@ export function SiteHeader() {
 
             <a
               href={appUrl}
-              className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink 2xl:inline-flex"
+              className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink md:inline-flex"
             >
               {c("seConnecter")}
             </a>
 
-            <a
-              href={`${appUrl}/inscription`}
+            <CreateSalonLink
               className="salon-gradient hidden whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex"
-            >
-              {c("creerSalon")}
-            </a>
+            />
 
             <button
               type="button"
@@ -130,7 +130,7 @@ export function SiteHeader() {
               aria-expanded={open}
               aria-controls="menu-mobile"
               aria-label={open ? c("fermerMenu") : c("ouvrirMenu")}
-              className="inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink xl:hidden"
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink 2xl:hidden"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -155,7 +155,7 @@ export function SiteHeader() {
         <div
           id="menu-mobile"
           hidden={!open}
-          className="border-t border-line px-3 py-3 xl:hidden"
+          className="border-t border-line px-3 py-3 2xl:hidden"
         >
           <ul className="grid grid-cols-2 gap-1">
             {LINKS.map((link) => (
@@ -172,12 +172,9 @@ export function SiteHeader() {
           </ul>
 
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3">
-            <a
-              href={`${appUrl}/inscription`}
+            <CreateSalonLink
               className="salon-gradient rounded-xl px-4 py-2.5 text-center text-sm font-semibold text-white"
-            >
-              {c("creerSalon")}
-            </a>
+            />
             <a
               href={appUrl}
               className="rounded-xl border border-line px-4 py-2.5 text-center text-sm font-medium text-ink"

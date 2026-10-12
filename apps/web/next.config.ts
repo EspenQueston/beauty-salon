@@ -117,6 +117,8 @@ const HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  // Une compilation de contrôle peut rester indépendante du serveur local.
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   /*
     La pastille de developpement de Next, retiree.
 

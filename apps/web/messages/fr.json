@@ -42,26 +42,36 @@
     "utilisePar": "Utilisé par des salons au",
     "atouts": {
       "titre": "Ce que ça vous apporte",
-      "sous": "Trois choses, et elles tiennent ensemble : une vitrine qui se partage, un agenda qui ne se trompe pas, un fichier clientes qui vous appartient.",
+      "sous": "Une vitrine à partager, des réservations organisées et vos informations au même endroit.",
       "vitrine": {
         "titre": "Votre mini-site",
         "corps": "Une page à votre nom, avec vos photos, vos prix et vos horaires. Un seul lien à partager sur WhatsApp, Instagram ou TikTok.",
         "corpsCourt": "Une page à votre nom, avec vos photos et vos prix. Un seul lien à partager sur WhatsApp ou Instagram.",
-        "etiquette": "Vitrine"
+        "etiquette": "Vitrine",
+        "corpsMobile": "Vos prestations et photos, dans un seul lien."
       },
       "agenda": {
         "titre": "Réservation en ligne",
         "corps": "Vos clientes réservent à toute heure, sur un créneau réellement libre. Deux personnes ne peuvent pas prendre la même place.",
         "corpsCourt": "Vos clientes réservent à toute heure, sur un créneau réellement libre. Jamais deux fois la même place.",
-        "etiquette": "Agenda"
+        "etiquette": "Agenda",
+        "corpsMobile": "Vos clients réservent les créneaux disponibles."
       },
       "gestion": {
         "titre": "Agenda et clientes",
         "corps": "Vos rendez-vous, votre équipe et votre fichier clientes au même endroit. Vos données restent les vôtres, exportables à tout moment.",
         "corpsCourt": "Vos rendez-vous, votre équipe et vos clientes au même endroit. Vos données restent les vôtres.",
-        "etiquette": "Gestion"
+        "etiquette": "Gestion",
+        "corpsMobile": "Vos rendez-vous et votre équipe réunis."
       },
-      "allerA": "Aller à « {titre} »"
+      "allerA": "Aller à « {titre} »",
+      "export": {
+        "titre": "Vos données exportables",
+        "corpsCourt": "Retrouvez vos informations et exportez vos données depuis votre espace.",
+        "corps": "Retrouvez vos informations et exportez vos données depuis votre espace.",
+        "etiquette": "Vos données",
+        "corpsMobile": "Vos informations, exportables à tout moment."
+      }
     },
     "film": {
       "surtitre": "Vingt-neuf secondes",
@@ -75,26 +85,29 @@
     },
     "etapes": {
       "titre": "Comment ça marche",
-      "sous": "Trois étapes. La plus longue dure trois minutes.",
+      "sous": "Créez votre espace, préparez vos prestations, puis partagez votre lien après validation.",
       "creer": {
         "titre": "Créez votre salon",
-        "corps": "Nom, adresse de votre mini-site, pays. Trois minutes, sans carte bancaire."
+        "corps": "Choisissez le nom de votre salon, son adresse et son pays. Créez votre compte et confirmez votre e-mail.",
+        "resume": "Choisissez votre nom et créez votre espace."
       },
       "remplir": {
         "titre": "Remplissez votre vitrine",
-        "corps": "Prestations, tarifs, horaires, photos. Vous pouvez commencer avec trois prestations."
+        "corps": "Prestations, tarifs, horaires, photos. Vous pouvez commencer avec trois prestations.",
+        "resume": "Ajoutez vos prestations, tarifs et horaires."
       },
       "partager": {
         "titre": "Partagez votre lien",
-        "corps": "Sur WhatsApp, en story, ou en QR code affiché au salon. Les réservations arrivent dans votre agenda."
+        "corps": "Sur WhatsApp, en story, ou en QR code affiché au salon. Les réservations arrivent dans votre agenda.",
+        "resume": "Après validation, partagez votre lien et recevez des réservations."
       }
     },
     "questions": {
       "titre": "Questions fréquentes",
-      "sous": "Cinq réponses, et rien qui vous engage.",
+      "sous": "L’essai, la publication et vos données : les réponses avant de commencer.",
       "prix": {
         "q": "Faut-il payer pour commencer ?",
-        "a": "Non. L'inscription est gratuite et sans carte bancaire. Vous disposez d'une période d'essai complète, et aucune facture n'est émise avant sa fin."
+        "a": "Non. Vous disposez de 14 jours d’essai Standard, ou de 30 jours avec un code de parrainage valide, sans carte bancaire. Vous choisissez ensuite une offre pour continuer les réservations. Aucun prélèvement automatique ne découle de l’inscription."
       },
       "miseEnLigne": {
         "q": "Mon mini-site est-il en ligne tout de suite ?",
@@ -106,7 +119,7 @@
       },
       "paiement": {
         "q": "Comment mes clientes me paient-elles ?",
-        "a": "Comme aujourd'hui : espèces, Mobile Money ou virement. La plateforme suit les acomptes demandés et vous notez l'encaissement en un clic."
+        "a": "Vos clients vous règlent par les moyens que vous proposez au salon. La plateforme permet de suivre les acomptes et leurs justificatifs. Le paiement de votre abonnement est un parcours distinct ; KKIAPAY peut y être proposé selon votre pays et la configuration active."
       },
       "donnees": {
         "q": "Puis-je récupérer mes données ?",
@@ -115,7 +128,7 @@
     },
     "appel": {
       "titre": "Prête à ouvrir votre agenda ?",
-      "sous": "Créez votre salon aujourd'hui, partagez votre lien demain."
+      "sous": "Commencez votre essai, préparez votre mini-site et votre agenda, puis partagez votre lien après validation."
     },
     "introCourte": "Un mini-site à votre nom, un agenda qui ne se trompe pas, zéro double réservation."
   },
@@ -140,10 +153,12 @@
       "film": "Le film",
       "apercu": "Aperçu",
       "etapes": "Comment ça marche",
-      "questions": "Questions"
+      "questions": "Questions",
+      "tarifs": "Tarifs",
+      "demo": "Démonstration"
     },
     "pied": {
-      "promesse": "La plateforme de réservation des professionnels de la beauté au Congo-Brazzaville, en RDC et dans la diaspora.",
+      "promesse": "Le mini-site et l’agenda des professionnels de la beauté, dans les pays proposés par la plateforme.",
       "donnees": "Vos clientes, vos photos, vos rendez-vous : ces données vous appartiennent et restent exportables.",
       "produit": "Le produit",
       "monSalon": "Mon salon",
@@ -158,8 +173,10 @@
       "reserver": "Réserver cette adresse",
       "verification": "Vérification…",
       "tropCourt": "Trois caractères au minimum.",
-      "libre": "{adresse} est disponible. Elle est à vous en trois minutes.",
-      "prise": "{adresse} est déjà pris. Essayez une variante."
+      "libre": "{adresse} est disponible. Elle sera réservée à la fin de l’inscription.",
+      "prise": "{adresse} est déjà pris. Essayez une variante.",
+      "erreur": "La disponibilité n’a pas pu être vérifiée.",
+      "reessayer": "Réessayer"
     },
     "apercu": {
       "salonParDefaut": "Votre salon",
@@ -177,7 +194,11 @@
         "promesse": "Réservez. Coiffez. Encaissez.",
         "outils": "Les trois outils",
         "double": "Zéro double réservation"
-      }
+      },
+      "originalSound": "musique originale",
+      "previous": "Chapitre précédent",
+      "next": "Chapitre suivant",
+      "timeline": "Position dans le film"
     },
     "territoiresLus": "Utilisé par des salons au {lieux}.",
     "territoiresPause": "Mettre le bandeau des pays en pause",
@@ -186,7 +207,7 @@
       "nomChamp": "Le nom de votre salon",
       "direct": "Aperçu en direct",
       "reserverAdresse": "Réserver {adresse}",
-      "suivi": "Vos choix vous suivent : le formulaire arrive déjà rempli.",
+      "suivi": "Le nom, l’adresse et les couleurs sont conservés dans le formulaire. Aucune adresse n’est réservée avant la fin de l’inscription.",
       "hoteExemple": "votre-salon.beautysalon",
       "reserver": "Réserver un rendez-vous",
       "prestations": {
@@ -939,5 +960,134 @@
       "refuseTitre": "Notifications bloquées",
       "refuseCorps": "Ce téléphone ne vous rappellera pas vos rendez-vous. Pour les rouvrir : touchez le cadenas à gauche de l'adresse, puis « Notifications » → « Autoriser », et rechargez la page."
     }
+  },
+  "conversion": {
+    "create": "Créer mon salon gratuitement",
+    "complete": "Terminer mon salon",
+    "dashboard": "Accéder à mon tableau de bord",
+    "audience": "Coiffure · Ongles · Maquillage · Barbier",
+    "headlineFirst": "Votre salon en ligne.",
+    "headlineSecond": "Vos rendez-vous au même endroit.",
+    "intro": "Présentez vos prestations, laissez vos clients réserver sur vos créneaux disponibles et gérez votre agenda depuis votre téléphone.",
+    "seeDemo": "Voir la démonstration",
+    "trial": "{days} jours d’essai · Aucune carte bancaire demandée",
+    "referralTrial": "30 jours d’essai avec un code de parrainage valide.",
+    "previewTitle": "Voyez votre salon prendre forme.",
+    "previewSubtitle": "Choisissez votre nom, vérifiez votre adresse et essayez vos couleurs. Vos choix suivent jusqu’à l’inscription.",
+    "previewEyebrow": "Votre première étape, sans compte",
+    "demoTitle": "Du mini-site à votre agenda.",
+    "demoSubtitle": "Essayez les trois étapes d’une réservation dans cette démonstration interactive. Aucun rendez-vous réel n’est créé.",
+    "demoEyebrow": "Essayez le parcours",
+    "demoSteps": {
+      "chooseTitle": "Votre client choisit sa prestation",
+      "choose": "Vos prestations, leurs durées et vos tarifs sont présentés sur votre mini-site.",
+      "reserveTitle": "Il réserve un créneau disponible",
+      "reserve": "Les disponibilités tiennent compte de vos horaires, de votre équipe et des rendez-vous déjà pris.",
+      "manageTitle": "Vous retrouvez le rendez-vous",
+      "manage": "Consultez votre agenda et suivez le rendez-vous depuis votre espace professionnel."
+    },
+    "snapshot": {
+      "badge": "Exemple d’interface",
+      "salon": "Salon exemple",
+      "service": "Coupe & coiffage",
+      "duration": "45 minutes",
+      "reserve": "Réserver",
+      "agenda": "Votre agenda",
+      "exampleDay": "Journée d’exemple",
+      "client": "Client exemple",
+      "received": "Rendez-vous reçu",
+      "notice": "Données de démonstration",
+      "try": "Essayer"
+    },
+    "demo": {
+      "badge": "Démonstration interactive",
+      "step": "Étape {step} / 3",
+      "service": "Prestation",
+      "slot": "Créneau",
+      "agenda": "Agenda",
+      "chooseService": "Choisissez une prestation",
+      "chooseSlot": "Choisissez un créneau",
+      "confirm": "Vérifiez votre sélection",
+      "received": "Le rendez-vous rejoint l’agenda",
+      "cut": "Coupe & coiffage",
+      "care": "Soin capillaire",
+      "cutDuration": "45 minutes",
+      "careDuration": "60 minutes",
+      "exampleDay": "Créneaux fictifs, pour essayer le parcours.",
+      "exampleClient": "Client exemple · Salon exemple",
+      "inAgenda": "Visible dans votre espace professionnel",
+      "restart": "Recommencer la démonstration",
+      "simulate": "Simuler la réservation",
+      "next": "Continuer",
+      "notice": "Simulation uniquement. Aucun compte, paiement ou rendez-vous réel n’est créé.",
+      "liveExample": "Visiter le mini-site de {name}"
+    },
+    "pricing": {
+      "title": "Un abonnement adapté à votre salon.",
+      "subtitle": "Consultez les tarifs publiés pour votre pays et votre devise, puis choisissez votre rythme de paiement.",
+      "country": "Votre pays",
+      "currency": "Devise",
+      "period": "Période de paiement",
+      "monthly": "Mensuel",
+      "yearly": "Annuel",
+      "standardIntro": "L’essentiel pour votre mini-site et vos réservations.",
+      "proIntro": "Vos outils Standard, avec les options ci-dessous.",
+      "loading": "Chargement…",
+      "unavailable": "Tarif non publié",
+      "perMonth": "Pour un mois",
+      "perYear": "Total pour douze mois",
+      "saving": "Économisez {percent} %",
+      "teamLimit": "Jusqu’à {count} membres d’équipe",
+      "trialEnd": "L’essai donne accès à Standard. À sa fin, choisissez une offre payante pour continuer les réservations. Aucun prélèvement automatique ne découle de l’inscription.",
+      "noCountryPrice": "Aucun tarif payable n’est actuellement publié pour ce pays. Vous pouvez créer votre salon et consulter les offres disponibles depuis votre espace.",
+      "error": "Les tarifs n’ont pas pu être chargés.",
+      "retry": "Réessayer",
+      "kkiapay": "KKIAPAY est proposé ici pour payer l’abonnement du salon. Il ne concerne pas les paiements des clients au salon.",
+      "disclaimer": "Les montants affichés correspondent au catalogue actuel, avant une éventuelle remise de parrainage. Le montant et le moyen de paiement sont confirmés dans votre espace avant tout règlement. L’économie annuelle compare le tarif annuel à douze paiements mensuels.",
+      "availableIn": "Pays proposés :",
+      "countries": {
+        "CG": "Congo-Brazzaville",
+        "CD": "RDC",
+        "CN": "Chine",
+        "BJ": "Bénin",
+        "BF": "Burkina Faso",
+        "CI": "Côte d’Ivoire",
+        "TG": "Togo",
+        "SN": "Sénégal",
+        "NE": "Niger"
+      },
+      "features": {
+        "site": "Mini-site à votre nom",
+        "booking": "Réservation et agenda",
+        "clients": "Équipe et fichier clients",
+        "export": "Données exportables",
+        "includes": "Toutes les fonctions Standard",
+        "custom_domain": "Domaine personnalisé",
+        "customization": "Personnalisation avancée",
+        "whatsapp_assistant": "Assistant IA WhatsApp et n8n",
+        "platform_assistant": "Assistant dans l’espace pro",
+        "customer_assistant": "Assistant pour les clients"
+      },
+      "details": "Voir les fonctions"
+    },
+    "trust": {
+      "title": "Ils partagent leur expérience.",
+      "subtitle": "Témoignages vérifiés et publiés avec l’autorisation de leurs auteurs.",
+      "mobileTitle": "Depuis votre téléphone",
+      "mobile": "Consultez votre mini-site et gérez vos rendez-vous depuis un navigateur mobile.",
+      "dataTitle": "Vos données vous suivent",
+      "data": "Vos données de salon restent exportables depuis votre espace professionnel.",
+      "publicationTitle": "Une mise en ligne accompagnée",
+      "publication": "Préparez vos prestations et horaires. Votre mini-site devient public après validation par l’équipe.",
+      "supportTitle": "Une question avant de commencer ?",
+      "support": "Retrouvez les réponses pratiques pour préparer votre salon et commencer votre essai.",
+      "email": "Écrire à l’assistance",
+      "faq": "Consulter les réponses",
+      "details": "En savoir plus"
+    },
+    "mobileIntro": "Votre site, vos réservations et votre agenda réunis.",
+    "seeFilm": "Voir le film",
+    "filmEyebrow": "Mini Salon, en 29 secondes",
+    "headlineKeyword": "rendez-vous"
   }
 }

@@ -506,6 +506,48 @@ def test_kkiapay_isolement_pays_et_sandbox_en_production(
     assert not kkiapay.disponible()
 
 
+def test_kkiapay_parrainage_desactive_ne_bloque_pas_le_paiement(
+    salon_a, kki_config, politique_b
+):
+    i, body = kki_config
+    # L'ancien paiement expiré est clôturé par le service métier ; son
+    # historique reste conservé pendant la nouvelle préparation.
+    KkiapayIntent.objects.filter(pk=i["id"]).update(
+        expire_le=timezone.now() - timedelta(seconds=1)
+    )
+    politique_b.active = False
+    politique_b.validite_jours = None
+    politique_b.save(update_fields=["active", "validite_jours"])
+    with as_tenant(salon_a.tenant):
+        resultat = kkiapay.preparer(salon_a.tenant.pk, salon_a.owner, body)
+        assert resultat["id"] != i["id"]
+        assert resultat["amount"] == 15000
+        nouvelle = KkiapayIntent.objects.get(pk=resultat["id"])
+        demande = SubscriptionPaymentRequest.objects.get(pk=nouvelle.demande_id)
+        assert demande.status == "pending"
+        assert not Invoice.objects.exists()
+
+
+@pytest.mark.parametrize("heures", [None, 0])
+def test_kkiapay_delai_obligatoire_meme_sans_parrainage(
+    salon_a, kki_config, politique_b, heures
+):
+    i, body = kki_config
+    KkiapayIntent.objects.filter(pk=i["id"]).update(
+        expire_le=timezone.now() - timedelta(seconds=1)
+    )
+    politique_b.active = False
+    politique_b.reservation_heures = heures
+    politique_b.save(update_fields=["active", "reservation_heures"])
+    with as_tenant(salon_a.tenant), pytest.raises(billing.PaiementRefuse) as exc:
+        kkiapay.preparer(salon_a.tenant.pk, salon_a.owner, body)
+    assert exc.value.code == "politique_incomplete"
+    assert KkiapayIntent.objects.count() == 1
+    with as_tenant(salon_a.tenant):
+        assert SubscriptionPaymentRequest.objects.count() == 1
+        assert not Invoice.objects.exists()
+
+
 def test_kkiapay_intention_expiree_et_verification_http(kki_config, salon_a, monkeypatch):
     i, _ = kki_config
     calls = []

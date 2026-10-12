@@ -415,6 +415,7 @@ REST_FRAMEWORK = {
         "mfa": "30/hour",
         # Messages envoyes par l'automatisation n8n d'un salon (historique).
         "webhook_n8n": "1200/hour",
+        "home_metric": "30/minute",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.api_exception_handler",
 }

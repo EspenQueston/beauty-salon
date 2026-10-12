@@ -70,7 +70,7 @@ def verifier_transaction(transaction_id, sandbox):
 
 @transaction.atomic
 def preparer(tenant_id, user, donnees):
-    from apps.parrainage.cycles import politique
+    from apps.parrainage.models import PolitiquePlateforme
     from apps.tenants.models import Tenant
 
     from . import services
@@ -107,9 +107,10 @@ def preparer(tenant_id, user, donnees):
     )
     if d.method_kind != "kkiapay" or d.amount != d.amount.to_integral_value():
         raise PaiementRefuse("Configurez un tarif KKIAPAY en XOF entiers.", "tarif_incompatible")
-    p = politique()
-    # Durée explicite plateforme ; pas d'intention non bornée si configuration absente.
-    if not p:
+    # Le délai reste explicite, mais l'ouverture d'un paiement ne dépend pas
+    # de l'activation ni des conditions commerciales du programme de parrainage.
+    p = PolitiquePlateforme.objects.filter(pk=1).first()
+    if not p or not p.reservation_heures:
         raise PaiementRefuse(
             "Configurez le délai d’abandon des paiements dans l’administration.",
             "politique_incomplete",

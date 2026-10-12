@@ -10,8 +10,8 @@
  * On ouvre cet écran pour une seule question : « qu'est-ce qu'il me reste ce
  * mois-ci ». Le résultat est donc le premier chiffre, en grand, avant tout
  * graphique. Les figures viennent ensuite parce qu'elles répondent à la
- * question *suivante* — pourquoi — et la saisie en dernier, parce qu'on la
- * fait le soir, pas en arrivant.
+ * question suivante — pourquoi — puis l'historique des mouvements.
+ * Les écritures sont automatiques ; cet écran ne permet aucune saisie.
  *
  * ---------------------------------------------------------------------------
  * Ce qui se remplit tout seul

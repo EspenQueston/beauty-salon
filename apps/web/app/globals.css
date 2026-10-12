@@ -1,4 +1,131 @@
 @import "tailwindcss";
+@source not "../.next-home-build";
+
+.home-conversion {
+  overflow-x: clip; font-family: var(--font-home), Arial, sans-serif;
+  --home-highlight: #842046; --home-mark: #f7dfec;
+  --home-section-surface: linear-gradient(135deg, #f0f2f8, #f7f8fc);
+  --home-section-alternate: linear-gradient(135deg, #f8e3ed, #f9edf4 60%, #f0eefa);
+  --home-section-border: #e6e3ed;
+  --home-enter-duration: 480ms; --home-section-duration: 420ms; --home-hero-duration: 520ms;
+  --home-enter-distance: 16px; --home-section-distance: 10px; --home-hero-distance: 12px;
+  --home-stagger: 70ms; --home-hero-stagger: 90ms;
+  --home-motion-ease: cubic-bezier(.2,.75,.25,1);
+  --home-section-gap: 8px;
+  --home-country-duration: 20.87s; --home-country-reduced-duration: 41.74s;
+}
+@media (min-width: 640px) { .home-conversion { --home-country-duration: 24.35s; --home-country-reduced-duration: 48.7s; --home-section-gap: 12px; } }
+@media (max-width: 639px) { .home-conversion { --home-enter-distance: 14px; } }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .home-conversion {
+    --home-highlight: #f1bed2; --home-mark: #482136;
+    --home-section-surface: linear-gradient(135deg, #13141c, #161620);
+    --home-section-alternate: linear-gradient(135deg, #251821, #1d1925 60%, #1b1c2b);
+    --home-section-border: #2c2835;
+  }
+}
+:root[data-theme="dark"] .home-conversion {
+  --home-highlight: #f1bed2; --home-mark: #482136;
+  --home-section-surface: linear-gradient(135deg, #13141c, #161620);
+  --home-section-alternate: linear-gradient(135deg, #251821, #1d1925 60%, #1b1c2b);
+  --home-section-border: #2c2835;
+}
+/* Server content stays visible. Reveal opts in after its observer is ready. */
+html[data-js] .home-conversion [data-reveal-ready] {
+  --home-block-distance: var(--home-enter-distance);
+  --home-block-duration: var(--home-enter-duration);
+  filter: none;
+  transition: opacity var(--home-block-duration) var(--home-motion-ease),
+    transform var(--home-block-duration) var(--home-motion-ease),
+    border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+  transition-delay: calc(var(--reveal-order, 0) * var(--home-stagger)),
+    calc(var(--reveal-order, 0) * var(--home-stagger)), 0ms, 0ms, 0ms;
+}
+html[data-js] .home-conversion .reveal-section[data-reveal-ready] {
+  --home-block-distance: var(--home-section-distance);
+  --home-block-duration: var(--home-section-duration);
+}
+html[data-js] .home-conversion [data-reveal-ready]:not([data-visible="true"]) {
+  opacity: 0; transform: translate3d(0, var(--home-block-distance), 0);
+}
+html[data-js] .home-conversion [data-reveal-ready][data-visible="true"] {
+  opacity: 1; transform: none; filter: none;
+}
+/* Equal copies travel leftward. Only duration changes the speed (+15%). */
+.home-conversion .country-flow { container-type: inline-size; }
+.home-conversion .country-flow-copy { min-width: 100vw; min-width: 100cqw; justify-content: center; }
+.home-conversion .country-flow-track { display: flex; width: max-content; animation: country-flow var(--home-country-duration) linear infinite; }
+.home-conversion .country-flow-track[data-arretee] { animation-play-state: paused; }
+@keyframes country-flow { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+/* Full-width sections have their own breathing room and a centered content area. */
+.home-conversion .home-sections { display: flex; flex-direction: column; gap: var(--home-section-gap); padding-block: var(--home-section-gap); }
+/* The section stack already supplies the gap below the final card. */
+.home-conversion .pied { margin-top: 0; }
+.home-conversion .home-section {
+  position: relative; isolation: isolate; width: 100%; min-width: 0;
+  border-block: 1px solid var(--home-section-border); background: var(--home-section-surface);
+}
+.home-conversion .home-section:nth-of-type(even) { background: var(--home-section-alternate); }
+.home-conversion .home-section.home-callout {
+  width: calc(100% - 32px); max-width: 1280px; margin-inline: auto; border-radius: 24px;
+  border-color: transparent; background: var(--salon-primary);
+}
+@media (min-width: 640px) {
+  .home-conversion .home-section.home-callout { width: calc(100% - 48px); border-radius: 32px; }
+}
+.home-conversion .home-callout::before { content: none; }
+.home-conversion .home-section::before {
+  content: ""; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--home-highlight), transparent);
+  opacity: .25; transform: scaleX(1);
+  transition: transform var(--home-enter-duration) var(--home-motion-ease);
+}
+.home-conversion .home-section[data-reveal-ready]:not([data-visible="true"])::before { transform: scaleX(.7); }
+.home-conversion .home-hero-entry { animation: headline-enter var(--home-hero-duration) var(--home-motion-ease) both; }
+.home-headline > .home-hero-entry:nth-child(2) { animation-delay: var(--home-hero-stagger); }
+.home-conversion .hero-intro { animation-delay: calc(2 * var(--home-hero-stagger)); }
+.home-headline .hero-highlight { display: inline-block; position: relative; isolation: isolate; color: var(--home-highlight); }
+.hero-highlight::before { content: ""; position: absolute; z-index: -1; inset: 12% -.04em 1%; border-radius: .14em; background: var(--home-mark); transform: rotate(-1.2deg); }
+@keyframes headline-enter { from { opacity: 0; transform: translate3d(0, var(--home-hero-distance, 12px), 0); } to { opacity: 1; transform: none; } }
+.home-conversion .demo-step { animation: headline-enter var(--home-enter-duration) var(--home-motion-ease) both; }
+.home-conversion .faq-mobile[open] > p { animation: faq-apparition 400ms var(--home-motion-ease) both; }
+@supports (interpolate-size: allow-keywords) and selector(details::details-content) {
+  .home-conversion .faq-mobile::details-content {
+    interpolate-size: allow-keywords; block-size: 0; overflow: clip;
+    transition: block-size 400ms var(--home-motion-ease), content-visibility 400ms;
+    transition-behavior: allow-discrete;
+  }
+  .home-conversion .faq-mobile[open]::details-content { block-size: auto; }
+}
+.journey-shell { background: linear-gradient(135deg, var(--ui-surface), var(--ui-bg)); box-shadow: 0 24px 70px -48px var(--home-highlight); }
+.journey-orb { position: absolute; width: 30rem; height: 30rem; right: -12rem; top: -15rem; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, var(--home-mark), transparent 68%); }
+.journey-card { transition: transform .3s var(--home-motion-ease), border-color .2s, box-shadow .3s; }
+.journey-card-glow { position: absolute; width: 15rem; height: 15rem; top: -11rem; right: -5rem; border-radius: 50%; background: radial-gradient(circle, var(--home-mark), transparent 68%); opacity: .65; transition: opacity .3s, transform .3s; }
+.journey-step-icon { transition: transform .3s var(--home-motion-ease); }
+.journey-card-line { opacity: .35; transform: scaleX(.2); transform-origin: left; transition: transform .3s, opacity .3s; }
+.home-card { transition: border-color .2s, box-shadow .2s, background-color .2s; }
+.home-card:focus-within, .home-card[open] { border-color: var(--salon-primary); box-shadow: 0 12px 35px -24px var(--salon-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .journey-card:hover { transform: translateY(-4px); border-color: var(--salon-primary); box-shadow: 0 18px 40px -28px var(--home-highlight); }
+  .journey-card:hover .journey-step-icon { transform: rotate(-4deg) scale(1.04); }
+  .journey-card:hover .journey-card-glow { opacity: 1; transform: scale(1.1); }
+  .journey-card:hover .journey-card-line { opacity: 1; transform: scaleX(1); }
+  .home-card:hover { border-color: var(--salon-primary); box-shadow: 0 16px 40px -28px var(--salon-primary); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-conversion *, .home-conversion *::before, .home-conversion *::after {
+    animation: none !important; transition: none !important; scroll-behavior: auto !important;
+  }
+  html[data-js] .home-conversion [data-reveal-ready],
+  html[data-js] .home-conversion [data-reveal-ready]:not([data-visible="true"]) { opacity: 1; transform: none; filter: none; }
+  .home-conversion .home-hero-entry { opacity: 1; transform: none; }
+  /* Keep a gentle ticker at half speed; other homepage motion stays disabled. */
+  .home-conversion .country-flow-track { animation: country-flow var(--home-country-reduced-duration) linear infinite !important; }
+  .home-conversion .country-flow-track[data-arretee] { animation-play-state: paused !important; }
+  .home-conversion .home-section::before { transform: none; }
+  .home-conversion .faq-mobile::details-content { transition: none; }
+  .home-conversion .journey-card:hover, .home-conversion .journey-card:hover .journey-step-icon { transform: none; }
+}
 
 /* Keep the supplied pink artwork readable on dark UI surfaces. */
 @media (prefers-color-scheme: dark) {
@@ -624,7 +751,7 @@ body {
  * Sous 640 px il ne reste donc que la montée et le fondu, qui ne coûtent
  * rien : le navigateur les compose sans redessiner.
  */
-html[data-js] .reveal {
+html[data-js] .reveal[data-reveal-ready] {
   opacity: 0;
   transform: translateY(2rem) scale(0.985);
   transition:
@@ -634,12 +761,12 @@ html[data-js] .reveal {
 }
 
 @media (min-width: 640px) {
-  html[data-js] .reveal {
+  html[data-js] .reveal[data-reveal-ready] {
     filter: blur(6px);
   }
 }
 
-html[data-js] .reveal[data-visible="true"] {
+html[data-js] .reveal[data-reveal-ready][data-visible="true"] {
   opacity: 1;
   transform: none;
   filter: none;
@@ -657,7 +784,7 @@ html[data-js] .reveal[data-visible="true"] {
  * dit qu'on les a sorties une à une. C'est ce qui fait la différence entre
  * une grille et un geste.
  */
-html[data-js] .tilt {
+html[data-js] .tilt[data-reveal-ready] {
   opacity: 0;
   transform: rotate(var(--angle, -3deg)) translateY(1.75rem) scale(0.97);
   /* Même durée que `.reveal` : deux vitesses d'apparition sur une même page
@@ -667,13 +794,13 @@ html[data-js] .tilt {
     transform 1.05s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html[data-js] .tilt[data-visible="true"] {
+html[data-js] .tilt[data-reveal-ready][data-visible="true"] {
   opacity: 1;
   transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-js] .tilt {
+  html[data-js] .tilt[data-reveal-ready] {
     opacity: 1;
     transform: none;
   }
@@ -738,12 +865,12 @@ html[data-js] .tilt[data-visible="true"] {
    * et quelqu'un qui demande moins d'effets ne demande pas *un autre* effet.
    * Il ne reste que le fondu.
    */
-  html[data-js] .reveal {
+  html[data-js] .reveal[data-reveal-ready] {
     transform: none;
     filter: none;
   }
 
-  html[data-js] .reveal[data-visible="true"] {
+  html[data-js] .reveal[data-reveal-ready][data-visible="true"] {
     opacity: 1;
   }
 

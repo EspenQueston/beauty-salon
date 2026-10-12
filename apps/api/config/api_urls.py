@@ -36,6 +36,7 @@ from apps.billing.views import (
     SubscriptionView,
 )
 from apps.billing.views_kkiapay import KkiapayView, KkiapayConfirmationView, KkiapayWebhookView
+from apps.common.home import HomeMetricView, HomeSessionView, HomeView
 from apps.catalog.views import (
     ResourceViewSet,
     ServiceCategoryViewSet,
@@ -197,6 +198,9 @@ urlpatterns = [
     # Comptes : ouvert, sans salon resolu (inscription, mot de passe,
     # invitation). Distinct de `public/`, qui est l'API d'un salon.
     path("account/", include((account_urlpatterns, "account"))),
+    path("account/home", HomeView.as_view(), name="platform-home"),
+    path("account/home/metrics", HomeMetricView.as_view(), name="platform-home-metrics"),
+    path("account/home/session", HomeSessionView.as_view(), name="platform-home-session"),
     path("auth/", include("apps.accounts.urls")),
     path("salon-profile", SalonProfileView.as_view(), name="salon-profile"),
     # Identite : le nom du salon et les coordonnees de qui le tient.

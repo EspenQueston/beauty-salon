@@ -54,7 +54,9 @@ import { PasswordField } from "@/features/ui/PasswordField";
 import { guessCountry } from "@/lib/locale";
 import { useToast } from "@/features/ui/Toast";
 import { PALETTES, paletteDepuisCouleurs } from "@/features/site/palettes";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { professionalUrl } from "@/lib/site";
+import { trackSignupStarted } from "@/features/site/metrics";
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
 
@@ -251,6 +253,9 @@ function readPrefill(): {
 }
 
 export function SignupForm() {
+  const loginUrl = professionalUrl(useLocale());
+  const signupTracked=useRef(false);
+  useEffect(()=>{if(!signupTracked.current){signupTracked.current=true;trackSignupStarted()}},[]);
   const toast = useToast();
   const site = useTranslations("site");
   const [prefill] = useState(readPrefill);
@@ -990,7 +995,7 @@ export function SignupForm() {
       <p className="mt-5 text-center text-sm text-muted">
         Vous avez déjà un compte ?{" "}
         <Link
-          href="/"
+          href={loginUrl}
           className="font-medium text-salon-ink underline-offset-2 hover:underline"
         >
           Se connecter
@@ -1065,6 +1070,7 @@ function Bienvenue({
   name: string;
   email: string;
 }) {
+  const loginUrl = professionalUrl(useLocale());
   return (
     <Card>
       <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-success-bg text-success">
@@ -1108,7 +1114,7 @@ function Bienvenue({
       </div>
 
       <Link
-        href={`/?email=${encodeURIComponent(email)}`}
+        href={`${loginUrl}?email=${encodeURIComponent(email)}`}
         className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-salon px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:brightness-110 sm:w-auto sm:py-2.5"
       >
         Me connecter

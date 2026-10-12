@@ -64,6 +64,8 @@ export const ATOUTS: Atout[] = [
   },
 ];
 
+ATOUTS.push({cle:"export",icone:<><path d="M12 3v12m-4-4 4 4 4-4" /><path d="M4 16v5h16v-5" /></>});
+
 /** Les trois étapes, dans l'ordre où on les franchit. */
 export const ETAPES = ["creer", "remplir", "partager"] as const;
 

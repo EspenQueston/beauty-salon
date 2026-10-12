@@ -151,3 +151,30 @@ Après l’autorisation des six pays par défaut : **47 tests ciblés réussis**
 Vérification navigateur : **14 écrans à 375 et 1365 pixels**, administrateur et client FR/EN, sans débordement horizontal de page ni erreur JavaScript. Copie du code, historique en pause et reprise après panne API vérifiés. Captures et résultats : `tmp/programmes-*.png` et `tmp/programmes-visual-results.json`. Les comptes, le salon et les sessions temporaires ont été supprimés.
 
 Les logs de vérification sont conservés dans `tmp/mini-salon-final-*.log`. Ces vérifications ne remplacent pas le paiement sandbox marchand encore requis pour activer KKIAPAY.
+
+## Réaudit de la demande jointe — 9 octobre 2026
+
+Les fonctions A/B, KKIAPAY et Finances étaient déjà présentes. Elles ont été inspectées et réutilisées, avec les décisions validées précédemment ; aucun essai ni aucune facture existante n'a été recalculé.
+
+**Écart corrigé :** préparer un paiement KKIAPAY exigeait une politique de parrainage B active et complète. Désactiver le parrainage bloquait donc un abonnement sans rapport avec une récompense. La préparation vérifie maintenant uniquement le délai d'abandon nécessaire au paiement. Ce délai reste obligatoire et explicite dans les paramètres plateforme, même si le parrainage est désactivé. Les contrôles KKIAPAY de pays, devise, montant, environnement et confirmation serveur sont conservés.
+
+Trois nouveaux cas de test vérifient le paiement avec parrainage désactivé, ainsi que le refus d'une nouvelle intention lorsque le délai est absent ou nul. Les commentaires des écrans et de l'administration financière ont été alignés sur la lecture seule.
+
+| Exigence | Composants et couverture vérifiés |
+| --- | --- |
+| Nouveau client dans le salon, compte préexistant, auto-parrainage, isolation | `parrainage/clients.py`, `test_parrainage_v2.py` |
+| Première confirmation, conditions figées, promotions, plafond, expiration et concurrence | Service de réservation, transitions de statut et tests Cas A |
+| Essai total de 30 jours, attribution unique | Inscription, `start_trial`, contraintes et `test_parrainage.py` |
+| Premier paiement Standard/Pro, mensuel/annuel, cooling et remboursements | `parrainage/cycles.py`, constats d'encaissement et tests Cas B |
+| Réservation, consommation unique, abandon et événements répétés | Services d'abonnement, maintenance et tests A/B |
+| KKIAPAY, confirmation privée, webhook, sandbox, isolation | `billing/kkiapay.py`, `views_kkiapay.py`, tests avec fournisseur simulé |
+| Saisie financière supprimée, conservation des anciennes écritures | API en lecture seule, `test_finance.py`, `test_finance_automatic.py` |
+| Menus et section financière Finances, URLs préservées | Dashboard, métadonnées, agenda ; profil et sécurité inchangés |
+
+Résultats de cette reprise : **1 278 tests backend réussis en 247,50 s**, **21 tests web réussis**, **37 tests ciblés après correctif**, Ruff et vérification Django réussis. `makemigrations --check --dry-run` ne détecte aucune migration manquante ; `migrate --database=admin --plan` ne prévoit aucune opération. Le correctif n'ajoute pas de modèle et ne nécessite pas de nouvelle migration.
+
+Fichiers modifiés pendant cette reprise : `apps/api/apps/billing/kkiapay.py`, `apps/api/tests/test_parrainage_v2.py`, commentaires de `apps/api/apps/finance/admin.py` et `apps/web/features/dashboard/Finances.tsx`, ainsi que ce compte rendu.
+
+État local constaté sans afficher les secrets : `KKIAPAY_ENABLED=False`, environnement sandbox, secrets de webhook TEST et LIVE absents. Les emplacements existent dans les modèles `.env`. Pour terminer la validation marchande, renseigner `KKIAPAY_TEST_WEBHOOK_SECRET`, enregistrer la même valeur dans le tableau de bord fournisseur et une URL HTTPS de test accessible, puis exécuter le parcours sandbox. La production exige séparément le secret LIVE et la validation de ses accès. Aucun paiement marchand réel ni déploiement n'a été effectué pendant cette reprise.
+
+La récompense du client qui parraine un salon reste non définie et non annoncée ; son code, l'essai du salon filleul et les événements sont conservés. Les programmes Cas A incomplets restent inactifs. Le montant promotionnel reste zéro tant qu'aucune promotion réelle n'est fournie par le moteur de réservation ; la formule accepte le cumul selon l'ordre validé.

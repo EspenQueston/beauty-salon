@@ -10,11 +10,10 @@
  * reste dans l'en-tête et où la page se voit d'un coup d'œil.
  */
 
-import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { Fleche } from "@/features/site/contenu";
-import { appUrl } from "@/lib/site";
+import { CreateSalonLink } from "./HomeContext";
 
 /**
  * Le fil de progression.
@@ -95,8 +94,6 @@ export function BarreAction({
    */
   masquePar?: string[];
 }) {
-  const t = useTranslations("site");
-  const c = useTranslations("commun");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -162,17 +159,11 @@ export function BarreAction({
       aria-hidden={!visible}
       inert={!visible}
     >
-      <a
-        href={`${appUrl}/inscription`}
-        tabIndex={visible ? undefined : -1}
-        className="salon-gradient eclat flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-[0.95rem] font-semibold text-white shadow-lg"
+      <CreateSalonLink
+        className="eclat bg-salon flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm"
       >
-        <span className="relative z-10">{c("creerSalon")}</span>
-        <Fleche className="relative z-10 size-4" />
-      </a>
-      <p className="mt-1.5 text-center text-[0.68rem] text-muted">
-        {t("essaiCourt")}
-      </p>
+        <Fleche className="size-4" />
+      </CreateSalonLink>
     </div>
   );
 }

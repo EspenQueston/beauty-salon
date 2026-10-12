@@ -28,24 +28,26 @@
  * `features/site/Horloges.tsx`.
  */
 
-import { Horloges } from "@/features/site/Horloges";
+import { CreateSalonLink } from "./HomeContext";
 import { BeautySalonFooterWordmark } from "@/features/ui/BeautySalonBrand";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { Reveal } from "@/features/ui/Reveal";
 
-import { appUrl } from "@/lib/site";
+import { professionalUrl } from "@/lib/site";
 
 /*
   Les colonnes ne portent que des clés et des adresses.
 
   Les adresses, elles, ne se traduisent pas : `#film` désigne un `id` du
-  document, et `appUrl` un autre hôte — l'espace professionnel, qui choisit
-  sa langue tout seul.
+  document. Les liens professionnels utilisent l'hôte app avec la langue
+  de la page courante.
 */
 const COLONNES = [
   {
     cle: "produit",
     liens: [
       { href: "#fonctionnalites", cle: "nav.fonctionnalites" },
+      { href: "#tarifs", cle: "nav.tarifs" },
       { href: "#film", cle: "nav.film" },
       { href: "#etapes", cle: "nav.etapes" },
       { href: "#questions", cle: "pied.questions" },
@@ -54,14 +56,15 @@ const COLONNES = [
   {
     cle: "monSalon",
     liens: [
-      { href: `${appUrl}/inscription`, cle: "creerSalon" },
-      { href: appUrl, cle: "seConnecter" },
-      { href: `${appUrl}/mot-de-passe-oublie`, cle: "pied.motDePasse" },
+      { href: "/inscription", cle: "creerSalon" },
+      { href: "/", cle: "seConnecter" },
+      { href: "/mot-de-passe-oublie", cle: "pied.motDePasse" },
     ],
   },
 ];
 
 export async function SiteFooter() {
+  const locale = await getLocale();
   /*
     Deux traducteurs, parce que deux clés du pied vivent ailleurs :
     « Créer mon salon » et « Se connecter » sont les mêmes mots que dans
@@ -94,23 +97,20 @@ export async function SiteFooter() {
               {t("pied.promesse")}
             </p>
 
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-[var(--pied-doux)]">
+            <p className="mt-3 hidden max-w-sm text-sm leading-relaxed text-[var(--pied-doux)] sm:block">
               {t("pied.donnees")}
             </p>
 
             {/* `max-w-md` et non `sm` : à 384 px, « Brazzaville » se faisait
                 couper de deux pixels dans sa colonne. */}
-            <div className="mt-6 max-w-md">
-              <Horloges />
-            </div>
           </div>
 
           {/* -------------------------------------------------- les liens */}
           {/* Deux colonnes dès le téléphone : sept liens en pile unique
               rallongent le pied d'un écran entier pour rien. */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {COLONNES.map((colonne) => (
-              <div
+            {COLONNES.map((colonne,index) => (
+              <Reveal variant="cinema" order={index}
                 key={colonne.cle}
                 className="verre lisere halo rounded-2xl p-4 sm:p-5"
               >
@@ -120,8 +120,9 @@ export async function SiteFooter() {
                 <ul className="relative z-10 mt-3 space-y-1">
                   {colonne.liens.map((lien) => (
                     <li key={lien.cle}>
+                      {lien.cle === "creerSalon" ? <CreateSalonLink className="flex min-h-11 items-center py-1.5 text-[0.8rem] text-[var(--pied-encre)] sm:text-sm" /> : (
                       <a
-                        href={lien.href}
+                        href={colonne.cle === "monSalon" ? professionalUrl(locale,lien.href) : lien.href}
                         className="group flex items-center gap-1.5 rounded-lg py-1.5 text-[0.8rem] text-[var(--pied-encre)] transition hover:text-[#f2a6bd] sm:text-sm"
                       >
                         <span
@@ -132,10 +133,11 @@ export async function SiteFooter() {
                           {libelle(lien.cle)}
                         </span>
                       </a>
+                      )}
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
