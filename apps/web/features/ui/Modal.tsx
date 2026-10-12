@@ -21,6 +21,7 @@
  *     à l'intérieur ; l'en-tête et le pied restent en place.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
@@ -57,6 +58,7 @@ export function Modal({
    */
   retour?: HTMLElement | null;
 }) {
+  const t = useTranslations("commun.fenetre");
   const panneau = useRef<HTMLDivElement>(null);
   const corps = useRef<HTMLDivElement>(null);
   const origine = useRef<HTMLElement | null>(null);
@@ -188,7 +190,7 @@ export function Modal({
             type="button"
             onClick={demanderFermeture}
             disabled={occupe}
-            aria-label="Fermer"
+            aria-label={t("fermer")}
             className="-mr-1.5 flex size-9 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-surface-hover hover:text-ink disabled:opacity-40"
           >
             <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
@@ -204,11 +206,11 @@ export function Modal({
         {confirmer ? (
           <div
             role="alertdialog"
-            aria-label="Modifications non enregistrées"
+            aria-label={t("nonEnregistre")}
             className="flex flex-wrap items-center gap-2 border-t border-warning/40 bg-warning-bg px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6"
           >
             <p className="mr-auto min-w-0 text-[13px] font-medium text-warning sm:text-sm">
-              Vos modifications ne sont pas enregistrées.
+              {t("perte")}
             </p>
             <button
               type="button"
@@ -216,14 +218,14 @@ export function Modal({
               onClick={continuer}
               className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink transition hover:bg-surface-hover"
             >
-              Continuer
+              {t("continuer")}
             </button>
             <button
               type="button"
               onClick={onFermer}
               className="rounded-lg bg-danger-bg px-3.5 py-2 text-sm font-medium text-danger transition hover:brightness-95"
             >
-              Abandonner
+              {t("abandonner")}
             </button>
           </div>
         ) : (

@@ -27,6 +27,11 @@ export interface ValeursPrestation {
   image?: string | null;
 }
 
+/**
+ * Une erreur par champ, sous forme de clé de catalogue
+ * (`pro.prestations.erreurs.<clé>`) : la règle ne dépend pas de la langue,
+ * son message si.
+ */
 export type ErreursPrestation = Partial<
   Record<"name" | "category" | "duration_minutes" | "price_amount", string>
 >;
@@ -39,23 +44,23 @@ export const DUREE_MAX = 24 * 60;
 export function validerPrestation(valeurs: ValeursPrestation): ErreursPrestation {
   const erreurs: ErreursPrestation = {};
   const nom = (valeurs.name ?? "").trim();
-  if (!nom) erreurs.name = "Donnez un nom à la prestation.";
-  else if (nom.length > NOM_MAX) erreurs.name = `${NOM_MAX} caractères au plus.`;
+  if (!nom) erreurs.name = "nomVide";
+  else if (nom.length > NOM_MAX) erreurs.name = "nomLong";
 
-  if (!valeurs.category) erreurs.category = "Choisissez une catégorie.";
+  if (!valeurs.category) erreurs.category = "categorie";
 
   const duree = Number(valeurs.duration_minutes);
   if (!Number.isInteger(duree) || duree < DUREE_MIN) {
-    erreurs.duration_minutes = `Au moins ${DUREE_MIN} minutes, en nombre entier.`;
+    erreurs.duration_minutes = "dureeCourte";
   } else if (duree > DUREE_MAX) {
-    erreurs.duration_minutes = "Une prestation dure au plus 24 heures.";
+    erreurs.duration_minutes = "dureeLongue";
   }
 
   if (valeurs.price_kind !== "quote") {
     const brut = String(valeurs.price_amount ?? "").trim();
     const prix = Number(brut);
-    if (brut === "" || !Number.isFinite(prix)) erreurs.price_amount = "Indiquez un prix.";
-    else if (prix < 0) erreurs.price_amount = "Le prix ne peut pas être négatif.";
+    if (brut === "" || !Number.isFinite(prix)) erreurs.price_amount = "prixVide";
+    else if (prix < 0) erreurs.price_amount = "prixNegatif";
   }
   return erreurs;
 }

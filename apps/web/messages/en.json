@@ -14,7 +14,14 @@
     "reserver": "Book",
     "ouvrirMenu": "Open menu",
     "fermerMenu": "Close menu",
-    "prendreRdv": "Book an appointment"
+    "prendreRdv": "Book an appointment",
+    "fenetre": {
+      "fermer": "Close",
+      "nonEnregistre": "Unsaved changes",
+      "perte": "Your changes have not been saved.",
+      "continuer": "Keep editing",
+      "abandonner": "Discard"
+    }
   },
   "accueil": {
     "titreOnglet": "Beauty Salon — online booking for beauty professionals",
@@ -1140,7 +1147,8 @@
       "salonActif": "Active salon",
       "modifierSalon": "Edit the name and contact details of {salon}",
       "offrePro": "Pro plan",
-      "validation": "Your salon is being reviewed. Your mini-site will go public once this step is complete — you can already set everything up."
+      "validation": "Your salon is being reviewed. Your mini-site will go public once this step is complete — you can already set everything up.",
+      "espace": "Professional space"
     },
     "verification": {
       "rappel": "Confirm your address <adresse>{email}</adresse>: click the link we emailed you. Your mini-site and payments open afterwards.",
@@ -1597,6 +1605,221 @@
         "suivante": "Next",
         "fermer": "Close"
       }
+    },
+    "attente": {
+      "titre": "Waiting list",
+      "description": "Clients to call back when a spot opens up. Nothing is booked for them.",
+      "erreur": "Could not load the list.",
+      "vide": {
+        "titre": "Nobody is waiting",
+        "corps": "When your calendar is full, your clients can ask to be called back from your mini-site. They will appear here."
+      },
+      "contactee": "Contacted",
+      "periode": "Would like a slot between {debut} and {fin}",
+      "marqueeContactee": "{nom} marked as contacted.",
+      "rappele": "I called back",
+      "pris": "Appointment booked",
+      "prisClasse": "Appointment booked: request closed.",
+      "classer": "Close",
+      "classee": "Request closed."
+    },
+    "clientes": {
+      "titre": "Clients",
+      "description": "Built automatically with every booking. This data is yours.",
+      "recherche": "Search by name or phone",
+      "rechercheAria": "Search for a client",
+      "filtres": {
+        "toutes": "All",
+        "habituees": "Regulars"
+      },
+      "erreur": "Could not load your clients.",
+      "vide": {
+        "rechercheTitre": "No results",
+        "recherche": "Try another spelling, or part of the number.",
+        "habitueesTitre": "No regulars yet",
+        "habituees": "A client appears here from their second attended appointment.",
+        "titre": "No clients",
+        "corps": "Your client list will fill itself from the first booking."
+      },
+      "habituee": "Regular",
+      "absencesBadge": "{n} no-shows",
+      "dernier": "Last appointment on {date}",
+      "offres": "Accepts offers",
+      "compteurs": {
+        "venues": "{n, plural, one {visit} other {visits}}",
+        "annulations": "{n, plural, one {cancellation} other {cancellations}}",
+        "absences": "{n, plural, one {no-show} other {no-shows}}"
+      },
+      "masquer": "Hide history",
+      "voir": "{n, plural, one {View the appointment} other {View all # appointments}}",
+      "historiqueIndisponible": "History unavailable.",
+      "statut": {
+        "completed": "Completed",
+        "confirmed": "Confirmed",
+        "requested": "Requested",
+        "checked_in": "Arrived",
+        "cancelled": "Cancelled",
+        "no_show": "No-show"
+      }
+    },
+    "prestations": {
+      "titre": "Services",
+      "description": "What your clients see and book on your mini-site.",
+      "nouvelle": "New service",
+      "erreurChargement": "Could not load the catalogue.",
+      "onglets": {
+        "aria": "Page sections",
+        "prestations": "Services",
+        "ressources": "Resources"
+      },
+      "vide": {
+        "categorieTitre": "Start with a category",
+        "categorie": "Hair, nails, make-up, treatments… Categories organise your mini-site and help your clients find their way.",
+        "titre": "No services",
+        "creer": "Create my first service",
+        "corps": "Without services, your clients have nothing to book.",
+        "rechercheTitre": "No results",
+        "recherche": "No service matches this search. Try another spelling, or clear the filters."
+      },
+      "supprimee": "“{nom}” deleted.",
+      "suppressionImpossible": "Cannot delete: this service has appointments. Deactivate it instead.",
+      "retiree": "“{nom}” can no longer be booked.",
+      "remise": "“{nom}” can be booked again.",
+      "inactive": "Inactive",
+      "des": "from {montant}",
+      "modifier": "Edit",
+      "desactiver": "Deactivate",
+      "activer": "Activate",
+      "supprimer": "Delete",
+      "lectureSeule": "Only the owner and the manager can edit the catalogue.",
+      "tarifs": {
+        "fixed": "Fixed price",
+        "from": "Starting from",
+        "quote": "On request"
+      },
+      "lieux": {
+        "salon": "At the salon",
+        "home": "At home",
+        "hybrid": "Both"
+      },
+      "acompte": {
+        "court": "deposit {montant}",
+        "aucun": "No deposit will be requested when booking.",
+        "regle": "The amount comes from your salon's rule.",
+        "rien": "Your rule requests nothing: set a percentage or a minimum in Salon profile → Deposit.",
+        "devis": "Salon rule: {taux}% of the service, minimum {minimum}. The amount will be set with the quote.",
+        "soit": "That is {montant} for this service — {taux}% of the price, minimum {minimum}. Supplies are added on top.",
+        "demande": "requested",
+        "nonRegle": "not set"
+      },
+      "categories": {
+        "titre": "Categories",
+        "ajoutee": "Category “{nom}” added.",
+        "existe": "This category already exists.",
+        "pasVide": "“{nom}” contains {n, plural, one {# service} other {# services}}. Empty it first.",
+        "supprimee": "Category “{nom}” deleted.",
+        "supprimer": "Delete the category {nom}",
+        "ajouter": "Add a category",
+        "exemple": "Hair, nails…",
+        "bouton": "Add"
+      },
+      "form": {
+        "ajoutee": "“{nom}” added to the catalogue.",
+        "enregistree": "“{nom}” saved.",
+        "echec": "Could not save. Check your connection, then try again.",
+        "modifier": "Edit the service",
+        "apparaitra": "It will appear on your mini-site.",
+        "nonEnregistre": "Unsaved changes",
+        "aucuneModif": "No changes",
+        "annuler": "Cancel",
+        "enCours": "Saving…",
+        "creer": "Create the service",
+        "enregistrer": "Save",
+        "photo": "Service photo",
+        "photoAide": "Shown on your mini-site and during booking. Without a photo, a mood image is used.",
+        "nom": "Name",
+        "nomExemple": "Cornrows",
+        "categorie": "Category",
+        "duree": "Duration (min)",
+        "dureeAide": "Blocked in the calendar.",
+        "typeTarif": "Pricing",
+        "prix": "Price ({devise})",
+        "lieu": "Location",
+        "lieuSalon": "Never offered at home.",
+        "lieuDomicile": "The area's travel fee is added.",
+        "acompte": "This service requires a deposit",
+        "description": "Description",
+        "descriptionExemple": "What the service includes, what to bring…",
+        "reservable": "Bookable online",
+        "reservableAide": "Uncheck to remove it from the mini-site without deleting it.",
+        "auFil": "Options and resources are saved as you go, independently of the “Save” button.",
+        "cettePrestation": "this service"
+      },
+      "erreurs": {
+        "nomVide": "Give the service a name.",
+        "nomLong": "{max} characters at most.",
+        "categorie": "Choose a category.",
+        "dureeCourte": "At least {min} minutes, as a whole number.",
+        "dureeLongue": "A service lasts 24 hours at most.",
+        "prixVide": "Enter a price.",
+        "prixNegatif": "The price cannot be negative."
+      },
+      "options": {
+        "titre": "Options",
+        "majOk": "Option updated.",
+        "retiree": "“{nom}” removed.",
+        "ajoutee": "“{nom}” added to {prestation}.",
+        "jusqua": "Up to {duree} if everything is chosen",
+        "erreur": "Could not load the options.",
+        "vide": "No options. Add “XL length”, “extensions provided”, “removal of the old hairstyle”…",
+        "ajouter": "Add an option",
+        "nom": "Option name",
+        "supplement": "Extra cost in {devise}",
+        "temps": "Extra time in minutes",
+        "inclus": "Included",
+        "suspendre": "Pause",
+        "reactiver": "Resume",
+        "supprimer": "Delete",
+        "exemple": "XL length",
+        "bouton": "Add",
+        "annuler": "Cancel"
+      },
+      "compatibilite": {
+        "titre": "What your opening hours don't allow",
+        "intro": "A service is only offered in a time block long enough to hold it entirely.",
+        "jamais": "Never offered",
+        "jamaisAide": "None of your time blocks is long enough. Your clients won't see it anywhere.",
+        "pasProposee": "Not offered {jours}.",
+        "pasProposeePlage": "Not offered {jours} in the {plage} block.",
+        "conseil": "To make them bookable: lengthen a time block, or shorten the stated duration in <ecran>Services</ecran>.",
+        "jours": {
+          "un": "on {jour}",
+          "plage": "from {debut} to {fin}",
+          "liste": "on {liste}"
+        }
+      },
+      "filtre": {
+        "rechercher": "Search for a service",
+        "rechercherExemple": "Search for a service…",
+        "enLigne": "Online only",
+        "toutes": "All",
+        "compte": "<nombre>{n}</nombre> {n, plural, one {service} other {services}} of {total}",
+        "toutAfficher": "Show all"
+      }
+    },
+    "medias": {
+      "tropLourd": "File too large: 15 MB maximum.",
+      "ajoutee": "Photo uploaded and attached.",
+      "envoiImpossible": "Upload failed.",
+      "importee": "Photo imported and attached.",
+      "importImpossible": "Import failed.",
+      "aucune": "— No photo —",
+      "numero": "Photo {n}",
+      "televerser": "Upload",
+      "lien": "Paste a link",
+      "retirer": "Remove",
+      "adresse": "Photo address",
+      "importer": "Import"
     }
   },
   "theme": {

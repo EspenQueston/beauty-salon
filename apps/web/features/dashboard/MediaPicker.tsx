@@ -13,6 +13,7 @@
  * l'attache à cette prestation » — tient en une action.
  */
 
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -64,6 +65,7 @@ export function MediaPicker({
    */
   allowVideo?: boolean;
 }) {
+  const t = useTranslations("pro.medias");
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -93,7 +95,7 @@ export function MediaPicker({
 
   async function upload(file: File) {
     if (file.size > MAX_BYTES) {
-      toast.error("Fichier trop volumineux : 15 Mo maximum.");
+      toast.error(t("tropLourd"));
       return;
     }
 
@@ -112,10 +114,10 @@ export function MediaPicker({
       // Sélectionne aussitôt : c'est ce qu'on vient d'envoyer qu'on veut.
       onChange(created.id);
       onUploaded();
-      toast.success("Photo ajoutée et rattachée.");
+      toast.success(t("ajoutee"));
     } catch (caught) {
       toast.error(
-        caught instanceof Error ? caught.message : "Envoi impossible.",
+        caught instanceof Error ? caught.message : t("envoiImpossible"),
       );
     } finally {
       setBusy(false);
@@ -146,10 +148,10 @@ export function MediaPicker({
       onUploaded();
       setLink("");
       setLinking(false);
-      toast.success("Photo importée et rattachée.");
+      toast.success(t("importee"));
     } catch (caught) {
       toast.error(
-        caught instanceof Error ? caught.message : "Import impossible.",
+        caught instanceof Error ? caught.message : t("importImpossible"),
       );
     } finally {
       setBusy(false);
@@ -194,10 +196,10 @@ export function MediaPicker({
             aria-label={label}
             className="w-full rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink"
           >
-            <option value="">— Aucune photo —</option>
+            <option value="">{t("aucune")}</option>
             {images.map((asset, index) => (
               <option key={asset.id} value={asset.id}>
-                {asset.alt_text || `Photo ${index + 1}`}
+                {asset.alt_text || t("numero", { n: index + 1 })}
               </option>
             ))}
           </select>
@@ -209,19 +211,19 @@ export function MediaPicker({
               onClick={() => inputRef.current?.click()}
               icon={<Icon name="plus" className="size-4" />}
             >
-              Téléverser
+              {t("televerser")}
             </GhostButton>
 
             <GhostButton
               type="button"
               onClick={() => setLinking((open) => !open)}
             >
-              Coller un lien
+              {t("lien")}
             </GhostButton>
 
             {value && (
               <GhostButton type="button" onClick={() => onChange(null)}>
-                Retirer
+                {t("retirer")}
               </GhostButton>
             )}
           </div>
@@ -250,7 +252,7 @@ export function MediaPicker({
                 type="url"
                 inputMode="url"
                 placeholder="https://images.pexels.com/photos/…"
-                aria-label="Adresse de la photo"
+                aria-label={t("adresse")}
                 className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
               />
               <GhostButton
@@ -259,7 +261,7 @@ export function MediaPicker({
                 disabled={!link.trim()}
                 onClick={(event) => void importFromUrl(event)}
               >
-                Importer
+                {t("importer")}
               </GhostButton>
             </div>
           )}

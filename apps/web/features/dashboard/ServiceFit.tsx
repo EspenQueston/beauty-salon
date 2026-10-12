@@ -37,10 +37,12 @@
  *     des tresses de 4 h en fin d'après-midi. Mention discrète, pas d'alerte.
  */
 
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { formatDuration } from "@/lib/format";
 import { Badge, Card, SectionTitle } from "@/features/ui";
+import { useFormats } from "./formats";
 import { rows, useResource, type Page } from "./useResource";
 
 interface Hours {
@@ -58,15 +60,14 @@ interface Service {
   active: boolean;
 }
 
-const DAYS = [
-  "lundi",
-  "mardi",
-  "mercredi",
-  "jeudi",
-  "vendredi",
-  "samedi",
-  "dimanche",
-];
+/** « lundi »… / « Monday »…, du lundi (0) au dimanche (6), tirés d'Intl. */
+function nomsDesJours(region: string): string[] {
+  const format = new Intl.DateTimeFormat(region, { weekday: "long", timeZone: "UTC" });
+  // Le 5 janvier 2026 est un lundi.
+  return Array.from({ length: 7 }, (_, i) => format.format(new Date(Date.UTC(2026, 0, 5 + i))));
+}
+
+type Traduire = ReturnType<typeof useTranslations>;
 
 /** « 09:30:00 » → minutes depuis minuit. */
 function minutes(value: string): number {
@@ -81,24 +82,32 @@ function minutes(value: string): number {
  * « le mardi » ne prennent pas la même, et la coller dans le gabarit
  * produisait « les mardi à samedi ».
  */
-function humanDays(days: number[]): string {
+function humanDays(days: number[], t: Traduire, region: string): string {
+  const DAYS = nomsDesJours(region);
   const sorted = [...new Set(days)].sort((a, b) => a - b);
   if (sorted.length === 0) return "";
-  if (sorted.length === 1) return `le ${DAYS[sorted[0]]}`;
+  if (sorted.length === 1) return t("jours.un", { jour: DAYS[sorted[0]] });
 
   // Suite continue d'au moins trois jours : on la dit comme telle.
   const continuous = sorted.every(
     (day, index) => index === 0 || day === sorted[index - 1] + 1,
   );
   if (continuous && sorted.length > 2) {
-    return `du ${DAYS[sorted[0]]} au ${DAYS[sorted[sorted.length - 1]]}`;
+    return t("jours.plage", {
+      debut: DAYS[sorted[0]],
+      fin: DAYS[sorted[sorted.length - 1]],
+    });
   }
 
-  const names = sorted.map((day) => DAYS[day]);
-  return `les ${names.slice(0, -1).join(", ")} et ${names[names.length - 1]}`;
+  const liste = new Intl.ListFormat(region, { type: "conjunction" }).format(
+    sorted.map((day) => DAYS[day]),
+  );
+  return t("jours.liste", { liste });
 }
 
 export function ServiceFit({ tenantId }: { tenantId: string }) {
+  const t = useTranslations("pro.prestations.compatibilite");
+  const { region } = useFormats();
   const hours = useResource<Page<Hours>>("/api/v1/business-hours/", tenantId);
   const services = useResource<Page<Service>>(
     "/api/v1/services/?page_size=200",
@@ -130,13 +139,13 @@ export function ServiceFit({ tenantId }: { tenantId: string }) {
           // Aucune plage ne l'accueille : la prestation est introuvable à la
           // réservation, quel que soit le jour.
           impossible: service.duration_minutes > longest,
-          refusedDays: humanDays(refused.map((block) => block.weekday)),
+          refusedDays: humanDays(refused.map((block) => block.weekday), t, region),
           sameBlock: new Set(refused.map((block) => block.label)).size === 1,
         };
       })
       .filter((entry) => entry.refused.length > 0)
       .sort((a, b) => Number(b.impossible) - Number(a.impossible));
-  }, [hours.data, services.data]);
+  }, [hours.data, services.data, t, region]);
 
   // Rien à signaler : l'écran reste silencieux plutôt que d'afficher une
   // carte vide qui ne dit que « tout va bien ».
@@ -146,11 +155,8 @@ export function ServiceFit({ tenantId }: { tenantId: string }) {
 
   return (
     <Card className="mt-6">
-      <SectionTitle>Ce que vos horaires ne permettent pas</SectionTitle>
-      <p className="-mt-2 mb-4 text-sm text-muted">
-        Une prestation n&apos;est proposée que dans une plage assez longue pour
-        la contenir entièrement.
-      </p>
+      <SectionTitle>{t("titre")}</SectionTitle>
+      <p className="-mt-2 mb-4 text-sm text-muted">{t("intro")}</p>
 
       {/* Deux colonnes dès le téléphone : ces lignes sont courtes, et une
           seule colonne allongerait la liste sans rien gagner. */}
@@ -173,26 +179,20 @@ export function ServiceFit({ tenantId }: { tenantId: string }) {
 
             {entry.impossible ? (
               <>
-                <Badge tone="warning">Jamais proposée</Badge>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted">
-                  Aucune de vos plages ne dure assez longtemps. Vos clientes ne
-                  la verront nulle part.
-                </p>
+                <Badge tone="warning">{t("jamais")}</Badge>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">{t("jamaisAide")}</p>
               </>
             ) : (
               <p className="mt-1 text-xs leading-relaxed text-muted">
-                Pas proposée {entry.refusedDays}
                 {/* La plage n'est nommée que si elle est la même partout :
                     « 09:30–13:00 et similaires » ne disait rien d'utile
                     quand les plages différaient réellement. */}
-                {entry.sameBlock && (
-                  <>
-                    {" "}
-                    sur la plage{" "}
-                    <span className="tabular">{entry.refused[0].label}</span>
-                  </>
-                )}
-                .
+                {entry.sameBlock
+                  ? t("pasProposeePlage", {
+                      jours: entry.refusedDays,
+                      plage: entry.refused[0].label,
+                    })
+                  : t("pasProposee", { jours: entry.refusedDays })}
               </p>
             )}
           </li>
@@ -201,8 +201,9 @@ export function ServiceFit({ tenantId }: { tenantId: string }) {
 
       {blocking.length > 0 && (
         <p className="mt-3.5 border-t border-line pt-3 text-xs text-muted">
-          Pour les rendre réservables : allongez une plage, ou raccourcissez la
-          durée annoncée dans <span className="text-ink">Prestations</span>.
+          {t.rich("conseil", {
+            ecran: (texte) => <span className="text-ink">{texte}</span>,
+          })}
         </p>
       )}
     </Card>

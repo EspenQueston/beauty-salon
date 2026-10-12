@@ -12,6 +12,8 @@
  * téléphone : « vous étiez la troisième » est une phrase qu'on peut dire.
  */
 
+import { useTranslations } from "next-intl";
+
 import { dashboardFetch } from "@/lib/dashboard";
 import {
   Badge,
@@ -24,6 +26,7 @@ import {
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { rows, useResource, type Page } from "./useResource";
 
 interface Entry {
@@ -42,6 +45,8 @@ interface Entry {
 }
 
 export function Waitlist() {
+  const t = useTranslations("pro.attente");
+  const { region } = useFormats();
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -53,7 +58,7 @@ export function Waitlist() {
   const entries = useResource<Page<Entry>>("/api/v1/waitlist/", tenantId);
   const list = rows(entries.data);
 
-  const dateFormat = new Intl.DateTimeFormat("fr-FR", {
+  const dateFormat = new Intl.DateTimeFormat(region, {
     day: "numeric",
     month: "short",
     timeZone,
@@ -80,20 +85,17 @@ export function Waitlist() {
   return (
     <section>
       <PageHeader
-        title="Liste d'attente"
-        description="Les clientes à rappeler quand une place se libère. Rien n'est réservé pour elles."
+        title={t("titre")}
+        description={t("description")}
       />
 
       {entries.error && (
-        <ErrorState>Impossible de charger la liste.</ErrorState>
+        <ErrorState>{t("erreur")}</ErrorState>
       )}
       {entries.data === null && !entries.error && <Skeleton rows={3} />}
 
       {entries.data !== null && list.length === 0 && (
-        <EmptyState title="Personne n'attend">
-          Quand votre agenda est plein, vos clientes peuvent demander à être
-          rappelées depuis votre mini-site. Elles apparaîtront ici.
-        </EmptyState>
+        <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
       )}
 
       <ol className="space-y-2.5">
@@ -106,7 +108,7 @@ export function Waitlist() {
                     <span className="tabular text-subtle">#{position + 1}</span>
                     {entry.full_name}
                     {entry.status === "contacted" && (
-                      <Badge tone="neutral">Contactée</Badge>
+                      <Badge tone="neutral">{t("contactee")}</Badge>
                     )}
                   </p>
                   <p className="mt-0.5 text-sm text-muted">
@@ -114,9 +116,10 @@ export function Waitlist() {
                     {entry.staff_member_name && ` · ${entry.staff_member_name}`}
                   </p>
                   <p className="mt-0.5 text-sm text-subtle">
-                    Souhaite entre le{" "}
-                    {dateFormat.format(new Date(entry.preferred_from))} et le{" "}
-                    {dateFormat.format(new Date(entry.preferred_to))}
+                    {t("periode", {
+                      debut: dateFormat.format(new Date(entry.preferred_from)),
+                      fin: dateFormat.format(new Date(entry.preferred_to)),
+                    })}
                   </p>
                   {entry.note && (
                     <p className="mt-1 border-l-2 border-line-strong pl-2 text-sm italic text-muted">
@@ -155,11 +158,11 @@ export function Waitlist() {
                           entry,
                           "contacted",
                           {},
-                          `${entry.full_name} marquée comme contactée.`,
+                          t("marqueeContactee", { nom: entry.full_name }),
                         )
                       }
                     >
-                      J&apos;ai rappelé
+                      {t("rappele")}
                     </GhostButton>
                   )}
                   <GhostButton
@@ -169,17 +172,17 @@ export function Waitlist() {
                         entry,
                         "close",
                         { booked: true },
-                        "Rendez-vous pris : demande classée.",
+                        t("prisClasse"),
                       )
                     }
                   >
-                    Rendez-vous pris
+                    {t("pris")}
                   </GhostButton>
                   <GhostButton
                     type="button"
-                    onClick={() => act(entry, "close", {}, "Demande classée.")}
+                    onClick={() => act(entry, "close", {}, t("classee"))}
                   >
-                    Classer
+                    {t("classer")}
                   </GhostButton>
                 </div>
               )}

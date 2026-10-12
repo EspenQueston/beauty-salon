@@ -22,6 +22,7 @@
  * perdues au premier rafraîchissement mal placé.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -36,6 +37,7 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+import { useFormats } from "./formats";
 import { rows, useResource, type Page } from "./useResource";
 
 export interface Option {
@@ -64,6 +66,7 @@ export function ServiceOptions({
   currency: string;
   canEdit: boolean;
 }) {
+  const t = useTranslations("pro.prestations.options");
   const toast = useToast();
   const options = useResource<Page<Option>>(
     `/api/v1/service-options/?service=${serviceId}`,
@@ -88,7 +91,7 @@ export function ServiceOptions({
           { method: "PATCH", body: JSON.stringify(changes) },
           tenantId,
         ),
-      { success: "Option mise à jour." },
+      { success: t("majOk") },
     );
     if (ok) options.reload();
   }
@@ -101,7 +104,7 @@ export function ServiceOptions({
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `« ${option.name} » retirée.` },
+      { success: t("retiree", { nom: option.name }) },
     );
     if (ok) options.reload();
   }
@@ -123,7 +126,7 @@ export function ServiceOptions({
           },
           tenantId,
         ),
-      { success: `« ${name} » ajoutée à ${serviceName}.` },
+      { success: t("ajoutee", { nom: name, prestation: serviceName }) },
     );
     if (ok) {
       options.reload();
@@ -135,23 +138,22 @@ export function ServiceOptions({
   return (
     <div className="rounded-xl border border-line bg-surface-muted/40 p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm font-medium text-ink">Options</p>
+        <p className="text-sm font-medium text-ink">{t("titre")}</p>
         {active.length > 0 && (
           <p className="tabular text-xs text-subtle">
-            Jusqu&apos;à {formatDuration(longest)} si tout est choisi
+            {t("jusqua", { duree: formatDuration(longest) })}
           </p>
         )}
       </div>
 
       {options.error && (
-        <ErrorState>Impossible de charger les options.</ErrorState>
+        <ErrorState>{t("erreur")}</ErrorState>
       )}
       {options.data === null && !options.error && <Skeleton rows={1} />}
 
       {options.data !== null && list.length === 0 && !creating && (
         <p className="text-sm text-muted">
-          Aucune option. Ajoutez « longueur XL », « mèches fournies », « retrait
-          de l&apos;ancienne coiffure »…
+          {t("vide")}
         </p>
       )}
 
@@ -180,7 +182,7 @@ export function ServiceOptions({
             />
           ) : (
             <GhostButton type="button" onClick={() => setCreating(true)}>
-              Ajouter une option
+              {t("ajouter")}
             </GhostButton>
           )}
         </div>
@@ -202,6 +204,8 @@ function OptionRow({
   onPatch: (changes: Partial<Option>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("pro.prestations.options");
+  const { region } = useFormats();
   const [name, setName] = useState(option.name);
   const [price, setPrice] = useState(option.price_delta);
   const [minutes, setMinutes] = useState(String(option.duration_delta_minutes));
@@ -228,12 +232,12 @@ function OptionRow({
             if (trimmed !== option.name) onPatch({ name: trimmed });
           }}
           disabled={!canEdit}
-          aria-label="Nom de l'option"
+          aria-label={t("nom")}
           className={inputClass}
         />
 
         <label className="flex items-center gap-1.5">
-          <span className="sr-only">Supplément en {currency}</span>
+          <span className="sr-only">{t("supplement", { devise: currency })}</span>
           <input
             value={price}
             onChange={(event) => setPrice(event.target.value)}
@@ -251,7 +255,7 @@ function OptionRow({
         {/* Le temps, à côté du prix et pas ailleurs : c'est lui qui décide
             du créneau, et c'est celui qu'on oublie de remplir. */}
         <label className="flex items-center gap-1.5">
-          <span className="sr-only">Temps supplémentaire en minutes</span>
+          <span className="sr-only">{t("temps")}</span>
           <input
             value={minutes}
             onChange={(event) => setMinutes(event.target.value)}
@@ -270,10 +274,10 @@ function OptionRow({
         <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
           <span className="flex items-center gap-1.5 text-xs">
             {free ? (
-              <Badge tone="success">Inclus</Badge>
+              <Badge tone="success">{t("inclus")}</Badge>
             ) : (
               <span className="tabular text-muted">
-                {formatPrice(price, currency)}
+                {formatPrice(price, currency, region)}
               </span>
             )}
             {!instant && (
@@ -289,10 +293,10 @@ function OptionRow({
                 type="button"
                 onClick={() => onPatch({ active: !option.active })}
               >
-                {option.active ? "Suspendre" : "Réactiver"}
+                {option.active ? t("suspendre") : t("reactiver")}
               </GhostButton>
               <DangerButton type="button" onClick={onRemove}>
-                Supprimer
+                {t("supprimer")}
               </DangerButton>
             </span>
           )}
@@ -311,6 +315,7 @@ function NewOption({
   onCancel: () => void;
   onCreate: (name: string, price: string, minutes: string) => Promise<boolean>;
 }) {
+  const t = useTranslations("pro.prestations.options");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [minutes, setMinutes] = useState("");
@@ -348,12 +353,12 @@ function NewOption({
         autoFocus
         value={name}
         onChange={(event) => setName(event.target.value)}
-        placeholder="Longueur XL"
-        aria-label="Nom de l'option"
+        placeholder={t("exemple")}
+        aria-label={t("nom")}
         className={inputClass}
       />
       <label className="flex items-center gap-1.5">
-        <span className="sr-only">Supplément en {currency}</span>
+        <span className="sr-only">{t("supplement", { devise: currency })}</span>
         <input
           value={price}
           onChange={(event) => setPrice(event.target.value)}
@@ -364,7 +369,7 @@ function NewOption({
         <span className="shrink-0 text-xs text-subtle">{currency}</span>
       </label>
       <label className="flex items-center gap-1.5">
-        <span className="sr-only">Temps supplémentaire en minutes</span>
+        <span className="sr-only">{t("temps")}</span>
         <input
           value={minutes}
           onChange={(event) => setMinutes(event.target.value)}
@@ -381,14 +386,14 @@ function NewOption({
           disabled={!name.trim()}
           onClick={(event) => void submit(event)}
         >
-          Ajouter
+          {t("bouton")}
         </Button>
         <button
           type="button"
           onClick={onCancel}
           className="rounded-lg px-2 py-2 text-sm text-muted transition hover:text-ink"
         >
-          Annuler
+          {t("annuler")}
         </button>
       </div>
     </div>

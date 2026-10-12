@@ -8,6 +8,7 @@
  * à un montant exact ferait fuir les prestataires.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -35,6 +36,7 @@ import { MediaPicker, type PickableMedia } from "./MediaPicker";
 import { ServiceOptions } from "./ServiceOptions";
 import { Resources, ServiceResources } from "./Resources";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import {
   DUREE_MIN,
   NOM_MAX,
@@ -70,17 +72,11 @@ interface Service {
   image: string | null;
 }
 
-const PRICE_KINDS = [
-  { value: "fixed", label: "Prix ferme" },
-  { value: "from", label: "À partir de" },
-  { value: "quote", label: "Sur devis" },
-];
+/** Les libellés viennent de `pro.prestations.tarifs` et `.lieux`. */
+const PRICE_KINDS = ["fixed", "from", "quote"] as const;
+const LOCATIONS = ["salon", "home", "hybrid"] as const;
 
-const LOCATIONS = [
-  { value: "salon", label: "Au salon" },
-  { value: "home", label: "À domicile" },
-  { value: "hybrid", label: "Les deux" },
-];
+type Traduire = ReturnType<typeof useTranslations>;
 
 /**
  * La règle d'acompte du salon, telle que la fiche du salon la définit.
@@ -110,31 +106,33 @@ function depositHint(
   values: Partial<Service>,
   rule: DepositRule | null,
   currency: string,
+  t: Traduire,
+  region: string,
 ): string {
-  if (!values.requires_deposit) {
-    return "Aucun acompte ne sera demandé à la réservation.";
-  }
-  if (!rule) return "Le montant vient de la règle de votre salon.";
+  if (!values.requires_deposit) return t("acompte.aucun");
+  if (!rule) return t("acompte.regle");
 
   const rate = rule.deposit_rate || 0;
   const minimum = Number(rule.deposit_minimum) || 0;
 
   if (rate === 0 && minimum === 0) {
-    return "Votre règle ne demande rien : réglez un pourcentage ou un minimum dans Profil du salon → Acompte.";
+    return t("acompte.rien");
   }
 
   const price =
     values.price_kind === "quote" ? 0 : Number(values.price_amount) || 0;
   const due = Math.floor(Math.max(minimum, (price * rate) / 100));
 
+  const plancher = formatPrice(String(minimum), currency, region);
   if (values.price_kind === "quote") {
-    return `Règle du salon : ${rate} % de la prestation, minimum ${formatPrice(
-      String(minimum),
-      currency,
-    )}. Le montant sera fixé au devis.`;
+    return t("acompte.devis", { taux: rate, minimum: plancher });
   }
 
-  return `Soit ${formatPrice(String(due), currency)} pour cette prestation — ${rate} % du prix, minimum ${formatPrice(String(minimum), currency)}. Les fournitures s'ajoutent.`;
+  return t("acompte.soit", {
+    montant: formatPrice(String(due), currency, region),
+    taux: rate,
+    minimum: plancher,
+  });
 }
 
 /** Le même calcul, en une étiquette courte pour la liste. */
@@ -142,17 +140,20 @@ function depositLabel(
   service: Pick<Service, "price_kind" | "price_amount">,
   rule: DepositRule | null,
   currency: string,
+  t: Traduire,
+  region: string,
 ): string {
-  if (!rule) return "demandé";
+  if (!rule) return t("acompte.demande");
   const rate = rule.deposit_rate || 0;
   const minimum = Number(rule.deposit_minimum) || 0;
-  if (rate === 0 && minimum === 0) return "non réglé";
+  if (rate === 0 && minimum === 0) return t("acompte.nonRegle");
   if (service.price_kind === "quote") return `${rate} %`;
 
   const price = Number(service.price_amount) || 0;
   return formatPrice(
     String(Math.floor(Math.max(minimum, (price * rate) / 100))),
     currency,
+    region,
   );
 }
 
@@ -167,6 +168,8 @@ const EMPTY: Partial<Service> = {
 };
 
 export function Services() {
+  const t = useTranslations("pro.prestations");
+  const { region } = useFormats();
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -298,9 +301,8 @@ export function Services() {
           tenantId,
         ),
       {
-        success: `« ${service.name} » supprimée.`,
-        error:
-          "Suppression impossible : cette prestation a des rendez-vous. Désactivez-la plutôt.",
+        success: t("supprimee", { nom: service.name }),
+        error: t("suppressionImpossible"),
       },
     );
     if (ok) reloadAll();
@@ -319,8 +321,8 @@ export function Services() {
         ),
       {
         success: service.active
-          ? `« ${service.name} » n'est plus réservable.`
-          : `« ${service.name} » est de nouveau réservable.`,
+          ? t("retiree", { nom: service.name })
+          : t("remise", { nom: service.name }),
       },
     );
     if (ok) services.reload();
@@ -329,8 +331,8 @@ export function Services() {
   return (
     <section>
       <PageHeader
-        title="Prestations"
-        description="Ce que vos clientes voient et réservent sur votre mini-site."
+        title={t("titre")}
+        description={t("description")}
         action={
           canEdit &&
           tab === "catalogue" &&
@@ -340,25 +342,25 @@ export function Services() {
               icon={<Icon name="plus" className="size-4" />}
               onClick={(event) => ouvrir(nouvelle(), event.currentTarget)}
             >
-              Nouvelle prestation
+              {t("nouvelle")}
             </Button>
           )
         }
       />
 
       {(services.error || categories.error) && (
-        <ErrorState>Impossible de charger le catalogue.</ErrorState>
+        <ErrorState>{t("erreurChargement")}</ErrorState>
       )}
 
       <div
         role="tablist"
-        aria-label="Parties de la page"
+        aria-label={t("onglets.aria")}
         className="mb-5 flex rounded-lg border border-line bg-surface p-0.5"
       >
         {(
           [
-            ["catalogue", "Prestations", serviceRows.length],
-            ["ressources", "Ressources", resourceCount],
+            ["catalogue", t("onglets.prestations"), serviceRows.length],
+            ["ressources", t("onglets.ressources"), resourceCount],
           ] as ["catalogue" | "ressources", string, number][]
         ).map(([key, label, count]) => (
           <button
@@ -423,29 +425,26 @@ export function Services() {
           {services.data === null && !services.error && <Skeleton rows={3} />}
 
           {categoryRows.length === 0 && categories.data !== null && (
-            <EmptyState title="Commencez par une catégorie">
-              Coiffure, ongles, maquillage, soins… Les catégories organisent
-              votre mini-site et aident vos clientes à s&apos;y retrouver.
-            </EmptyState>
+            <EmptyState title={t("vide.categorieTitre")}>{t("vide.categorie")}</EmptyState>
           )}
 
           {categoryRows.length > 0 &&
             serviceRows.length === 0 &&
             services.data !== null && (
               <EmptyState
-                title="Aucune prestation"
+                title={t("vide.titre")}
                 action={
                   canEdit && (
                     <Button
                       type="button"
                       onClick={(event) => ouvrir(nouvelle(), event.currentTarget)}
                     >
-                      Créer ma première prestation
+                      {t("vide.creer")}
                     </Button>
                   )
                 }
               >
-                Sans prestation, vos clientes n&apos;ont rien à réserver.
+                {t("vide.corps")}
               </EmptyState>
             )}
 
@@ -461,10 +460,7 @@ export function Services() {
           )}
 
           {visible.length === 0 && serviceRows.length > 0 && (
-            <EmptyState title="Aucun résultat">
-              Aucune prestation ne correspond à cette recherche. Essayez une
-              autre orthographe, ou retirez les filtres.
-            </EmptyState>
+            <EmptyState title={t("vide.rechercheTitre")}>{t("vide.recherche")}</EmptyState>
           )}
 
           <div className="mt-7 space-y-8">
@@ -489,7 +485,7 @@ export function Services() {
                             <div className="min-w-0">
                               <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
                                 {service.name}
-                                {!service.active && <Badge>Inactive</Badge>}
+                                {!service.active && <Badge>{t("inactive")}</Badge>}
                               </p>
                               <p className="mt-1 text-sm text-muted">
                                 {formatDuration(service.duration_minutes)}
@@ -497,9 +493,11 @@ export function Services() {
                                 salon — et non le montant de la fiche, qui
                                 n'était pas celui qu'on facturait. */}
                                 {service.requires_deposit &&
-                                  ` · acompte ${depositLabel(service, rule.data, currency)}`}
+                                  ` · ${t("acompte.court", {
+                                    montant: depositLabel(service, rule.data, currency, t, region),
+                                  })}`}
                                 {service.location_mode !== "salon" &&
-                                  ` · ${LOCATIONS.find((l) => l.value === service.location_mode)?.label}`}
+                                  ` · ${t(`lieux.${service.location_mode}`)}`}
                               </p>
                               {service.description && (
                                 <p className="mt-1.5 text-sm leading-relaxed text-subtle">
@@ -510,11 +508,12 @@ export function Services() {
 
                             <span className="tabular shrink-0 font-semibold text-salon">
                               {service.price_kind === "quote"
-                                ? "Sur devis"
-                                : `${service.price_kind === "from" ? "dès " : ""}${formatPrice(
-                                    service.price_amount,
-                                    currency,
-                                  )}`}
+                                ? t("tarifs.quote")
+                                : service.price_kind === "from"
+                                  ? t("des", {
+                                      montant: formatPrice(service.price_amount, currency, region),
+                                    })
+                                  : formatPrice(service.price_amount, currency, region)}
                             </span>
                           </div>
 
@@ -524,19 +523,19 @@ export function Services() {
                                 type="button"
                                 onClick={(event) => ouvrir(service, event.currentTarget)}
                               >
-                                Modifier
+                                {t("modifier")}
                               </GhostButton>
                               <GhostButton
                                 type="button"
                                 onClick={() => toggle(service)}
                               >
-                                {service.active ? "Désactiver" : "Activer"}
+                                {service.active ? t("desactiver") : t("activer")}
                               </GhostButton>
                               <DangerButton
                                 type="button"
                                 onClick={() => remove(service)}
                               >
-                                Supprimer
+                                {t("supprimer")}
                               </DangerButton>
                             </div>
                           )}
@@ -553,7 +552,7 @@ export function Services() {
 
       {!canEdit && (
         <p className="mt-6 text-sm text-muted">
-          Seuls le propriétaire et le gérant peuvent modifier le catalogue.
+          {t("lectureSeule")}
         </p>
       )}
     </section>
@@ -569,6 +568,7 @@ function CategoryManager({
   categories: Category[];
   onChange: () => void;
 }) {
+  const t = useTranslations("pro.prestations.categories");
   const toast = useToast();
   const [name, setName] = useState("");
   const [pending, setPending] = useState(false);
@@ -587,8 +587,8 @@ function CategoryManager({
           tenantId,
         ),
       {
-        success: `Catégorie « ${name} » ajoutée.`,
-        error: "Cette catégorie existe déjà.",
+        success: t("ajoutee", { nom: name }),
+        error: t("existe"),
       },
     );
     setPending(false);
@@ -600,9 +600,7 @@ function CategoryManager({
 
   async function remove(category: Category) {
     if (category.service_count > 0) {
-      toast.error(
-        `« ${category.name} » contient ${category.service_count} prestation(s). Videz-la d'abord.`,
-      );
+      toast.error(t("pasVide", { nom: category.name, n: category.service_count }));
       return;
     }
     const ok = await toast.run(
@@ -612,14 +610,14 @@ function CategoryManager({
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `Catégorie « ${category.name} » supprimée.` },
+      { success: t("supprimee", { nom: category.name }) },
     );
     if (ok) onChange();
   }
 
   return (
     <Card className="mb-7">
-      <SectionTitle>Catégories</SectionTitle>
+      <SectionTitle>{t("titre")}</SectionTitle>
 
       {categories.length > 0 && (
         <ul className="mb-4 flex flex-wrap gap-2">
@@ -635,7 +633,7 @@ function CategoryManager({
               <button
                 type="button"
                 onClick={() => remove(category)}
-                aria-label={`Supprimer la catégorie ${category.name}`}
+                aria-label={t("supprimer", { nom: category.name })}
                 className="rounded-full p-1 text-subtle transition hover:bg-danger-bg hover:text-danger"
               >
                 <svg
@@ -657,17 +655,17 @@ function CategoryManager({
       )}
 
       <form onSubmit={add} className="flex flex-wrap items-end gap-2">
-        <Field label="Ajouter une catégorie" className="min-w-[14rem] flex-1">
+        <Field label={t("ajouter")} className="min-w-[14rem] flex-1">
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Coiffure, ongles…"
+            placeholder={t("exemple")}
             required
             className={inputClass}
           />
         </Field>
         <Button type="submit" pending={pending} className="mb-0.5">
-          Ajouter
+          {t("bouton")}
         </Button>
       </form>
     </Card>
@@ -698,6 +696,8 @@ function ServiceForm({
   onSaved: (id: string | undefined) => void;
   retour: HTMLElement | null;
 }) {
+  const t = useTranslations("pro.prestations");
+  const { region } = useFormats();
   const toast = useToast();
   const [values, setValues] = useState<Partial<Service>>(initial);
   const [pending, setPending] = useState(false);
@@ -720,6 +720,11 @@ function ServiceForm({
     boiteErreur.current.focus({ preventScroll: true });
   }, [erreur]);
   const modifie = estModifiee(initial, values);
+
+  /** Le message d'une erreur de `validerPrestation`, qui rend une clé. */
+  function erreur_(cle: string | undefined): string | undefined {
+    return cle ? t(`erreurs.${cle}`, { max: NOM_MAX, min: DUREE_MIN }) : undefined;
+  }
 
   function set<K extends keyof Service>(key: K, value: Service[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -754,8 +759,8 @@ function ServiceForm({
       );
       toast.success(
         isNew
-          ? `« ${values.name?.trim()} » ajoutée au catalogue.`
-          : `« ${values.name?.trim()} » enregistrée.`,
+          ? t("form.ajoutee", { nom: values.name?.trim() ?? "" })
+          : t("form.enregistree", { nom: values.name?.trim() ?? "" }),
       );
       onSaved(enregistree?.id ?? initial.id);
     } catch (caught) {
@@ -764,7 +769,7 @@ function ServiceForm({
       setErreur(
         caught instanceof Error && caught.message
           ? caught.message
-          : "Enregistrement impossible. Vérifiez votre connexion, puis réessayez.",
+          : t("form.echec"),
       );
     } finally {
       envoiEnCours.current = false;
@@ -774,8 +779,8 @@ function ServiceForm({
 
   return (
     <Modal
-      titre={isNew ? "Nouvelle prestation" : "Modifier la prestation"}
-      sousTitre={isNew ? "Elle apparaîtra sur votre mini-site." : initial.name}
+      titre={isNew ? t("nouvelle") : t("form.modifier")}
+      sousTitre={isNew ? t("form.apparaitra") : initial.name}
       onFermer={onClose}
       retour={retour}
       modifie={modifie}
@@ -783,7 +788,7 @@ function ServiceForm({
       pied={
         <>
           <p className="mr-auto hidden text-xs text-muted sm:block">
-            {modifie ? "Modifications non enregistrées" : "Aucune modification"}
+            {modifie ? t("form.nonEnregistre") : t("form.aucuneModif")}
           </p>
           <GhostButton
             type="button"
@@ -791,7 +796,7 @@ function ServiceForm({
             disabled={pending}
             className="flex-1 sm:flex-none"
           >
-            Annuler
+            {t("form.annuler")}
           </GhostButton>
           <Button
             type="submit"
@@ -800,7 +805,7 @@ function ServiceForm({
             disabled={!isNew && !modifie}
             className="flex-1 sm:flex-none"
           >
-            {pending ? "Enregistrement…" : isNew ? "Créer la prestation" : "Enregistrer"}
+            {pending ? t("form.enCours") : isNew ? t("form.creer") : t("form.enregistrer")}
           </Button>
         </>
       }
@@ -829,18 +834,18 @@ function ServiceForm({
               value={values.image ?? null}
               onChange={(id) => set("image", id)}
               onUploaded={onMediaChanged}
-              label="Photo de la prestation"
-              hint="Elle s'affiche sur votre mini-site et pendant la réservation. Sans photo, une image d'ambiance est utilisée."
+              label={t("form.photo")}
+              hint={t("form.photoAide")}
             />
           </div>
 
-          <Field label="Nom" className="col-span-2" error={erreurs.name}>
+          <Field label={t("form.nom")} className="col-span-2" error={erreur_(erreurs.name)}>
             <input
               name="name"
               data-autofocus
               value={values.name ?? ""}
               onChange={(event) => set("name", event.target.value)}
-              placeholder="Tresses collées"
+              placeholder={t("form.nomExemple")}
               maxLength={NOM_MAX}
               aria-invalid={Boolean(erreurs.name)}
               className={inputClass}
@@ -848,9 +853,9 @@ function ServiceForm({
           </Field>
 
           <Field
-            label="Catégorie"
+            label={t("form.categorie")}
             className="col-span-2 sm:col-span-1"
-            error={erreurs.category}
+            error={erreur_(erreurs.category)}
           >
             <select
               name="category"
@@ -867,7 +872,11 @@ function ServiceForm({
             </select>
           </Field>
 
-          <Field label="Durée (min)" hint="Bloquée dans l'agenda." error={erreurs.duration_minutes}>
+          <Field
+            label={t("form.duree")}
+            hint={t("form.dureeAide")}
+            error={erreur_(erreurs.duration_minutes)}
+          >
             <input
               name="duration_minutes"
               type="number"
@@ -883,7 +892,7 @@ function ServiceForm({
             />
           </Field>
 
-          <Field label="Type de tarif">
+          <Field label={t("form.typeTarif")}>
             <select
               name="price_kind"
               value={values.price_kind ?? "fixed"}
@@ -893,15 +902,15 @@ function ServiceForm({
               className={inputClass}
             >
               {PRICE_KINDS.map((kind) => (
-                <option key={kind.value} value={kind.value}>
-                  {kind.label}
+                <option key={kind} value={kind}>
+                  {t(`tarifs.${kind}`)}
                 </option>
               ))}
             </select>
           </Field>
 
           {values.price_kind !== "quote" && (
-            <Field label={`Prix (${currency})`} error={erreurs.price_amount}>
+            <Field label={t("form.prix", { devise: currency })} error={erreur_(erreurs.price_amount)}>
               <input
                 name="price_amount"
                 type="number"
@@ -917,12 +926,12 @@ function ServiceForm({
           )}
 
           <Field
-            label="Lieu"
+            label={t("form.lieu")}
             className={values.price_kind === "quote" ? "col-span-2 sm:col-span-1" : ""}
             hint={
               values.location_mode === "salon"
-                ? "Jamais proposée à domicile."
-                : "Le forfait du quartier s'ajoute."
+                ? t("form.lieuSalon")
+                : t("form.lieuDomicile")
             }
           >
             <select
@@ -934,8 +943,8 @@ function ServiceForm({
               className={inputClass}
             >
               {LOCATIONS.map((location) => (
-                <option key={location.value} value={location.value}>
-                  {location.label}
+                <option key={location} value={location}>
+                  {t(`lieux.${location}`)}
                 </option>
               ))}
             </select>
@@ -953,18 +962,18 @@ function ServiceForm({
             <Toggle
               checked={values.requires_deposit ?? false}
               onChange={(value) => set("requires_deposit", value)}
-              label="Cette prestation demande un acompte"
-              hint={depositHint(values, rule, currency)}
+              label={t("form.acompte")}
+              hint={depositHint(values, rule, currency, t, region)}
             />
           </div>
 
-          <Field label="Description" className="col-span-2">
+          <Field label={t("form.description")} className="col-span-2">
             <textarea
               name="description"
               value={values.description ?? ""}
               onChange={(event) => set("description", event.target.value)}
               rows={3}
-              placeholder="Ce que la prestation comprend, ce qu'il faut prévoir…"
+              placeholder={t("form.descriptionExemple")}
               className={inputClass}
             />
           </Field>
@@ -973,8 +982,8 @@ function ServiceForm({
             <Toggle
               checked={values.active ?? true}
               onChange={(value) => set("active", value)}
-              label="Réservable en ligne"
-              hint="Décochez pour la retirer du mini-site sans la supprimer."
+              label={t("form.reservable")}
+              hint={t("form.reservableAide")}
             />
           </div>
         </fieldset>
@@ -992,13 +1001,12 @@ function ServiceForm({
       {!isNew && values.id && (
         <div className="mt-6 space-y-4 border-t border-line pt-5">
           <p className="text-xs text-muted">
-            Options et ressources s&apos;enregistrent au fur et à mesure, indépendamment du
-            bouton « Enregistrer ».
+            {t("form.auFil")}
           </p>
           <ServiceOptions
             tenantId={tenantId}
             serviceId={values.id}
-            serviceName={values.name ?? "cette prestation"}
+            serviceName={values.name || t("form.cettePrestation")}
             baseMinutes={Number(values.duration_minutes) || 0}
             currency={currency}
             canEdit

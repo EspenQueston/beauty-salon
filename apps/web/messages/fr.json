@@ -14,7 +14,14 @@
     "reserver": "Réserver",
     "ouvrirMenu": "Ouvrir le menu",
     "fermerMenu": "Fermer le menu",
-    "prendreRdv": "Prendre rendez-vous"
+    "prendreRdv": "Prendre rendez-vous",
+    "fenetre": {
+      "fermer": "Fermer",
+      "nonEnregistre": "Modifications non enregistrées",
+      "perte": "Vos modifications ne sont pas enregistrées.",
+      "continuer": "Continuer",
+      "abandonner": "Abandonner"
+    }
   },
   "accueil": {
     "titreOnglet": "Beauty Salon — réservation en ligne pour les professionnels de la beauté",
@@ -1140,7 +1147,8 @@
       "salonActif": "Salon actif",
       "modifierSalon": "Modifier le nom et les coordonnées de {salon}",
       "offrePro": "Offre Pro",
-      "validation": "Votre salon est en cours de validation. Votre mini-site sera public une fois cette étape terminée — vous pouvez déjà tout préparer."
+      "validation": "Votre salon est en cours de validation. Votre mini-site sera public une fois cette étape terminée — vous pouvez déjà tout préparer.",
+      "espace": "Espace professionnel"
     },
     "verification": {
       "rappel": "Confirmez votre adresse <adresse>{email}</adresse> : cliquez sur le lien reçu par e-mail. Votre mini-site et vos paiements s'ouvrent ensuite.",
@@ -1597,6 +1605,221 @@
         "suivante": "Suivante",
         "fermer": "Fermer"
       }
+    },
+    "attente": {
+      "titre": "Liste d'attente",
+      "description": "Les clientes à rappeler quand une place se libère. Rien n'est réservé pour elles.",
+      "erreur": "Impossible de charger la liste.",
+      "vide": {
+        "titre": "Personne n'attend",
+        "corps": "Quand votre agenda est plein, vos clientes peuvent demander à être rappelées depuis votre mini-site. Elles apparaîtront ici."
+      },
+      "contactee": "Contactée",
+      "periode": "Souhaite entre le {debut} et le {fin}",
+      "marqueeContactee": "{nom} marquée comme contactée.",
+      "rappele": "J'ai rappelé",
+      "pris": "Rendez-vous pris",
+      "prisClasse": "Rendez-vous pris : demande classée.",
+      "classer": "Classer",
+      "classee": "Demande classée."
+    },
+    "clientes": {
+      "titre": "Clientes",
+      "description": "Constitué automatiquement à chaque réservation. Ces données sont les vôtres.",
+      "recherche": "Rechercher par nom ou téléphone",
+      "rechercheAria": "Rechercher une cliente",
+      "filtres": {
+        "toutes": "Toutes",
+        "habituees": "Habituées"
+      },
+      "erreur": "Impossible de charger les clientes.",
+      "vide": {
+        "rechercheTitre": "Aucun résultat",
+        "recherche": "Essayez une autre orthographe, ou une partie du numéro.",
+        "habitueesTitre": "Pas encore d’habituées",
+        "habituees": "Une cliente entre ici dès son deuxième rendez-vous honoré.",
+        "titre": "Aucune cliente",
+        "corps": "Votre fichier se remplira tout seul à la première réservation."
+      },
+      "habituee": "Habituée",
+      "absencesBadge": "{n} absences",
+      "dernier": "Dernier rendez-vous le {date}",
+      "offres": "Accepte les offres",
+      "compteurs": {
+        "venues": "{n, plural, one {venue} other {venues}}",
+        "annulations": "{n, plural, =0 {annulation} one {annulation} other {annulations}}",
+        "absences": "{n, plural, =0 {absence} one {absence} other {absences}}"
+      },
+      "masquer": "Masquer l’historique",
+      "voir": "{n, plural, one {Voir le rendez-vous} other {Voir les # rendez-vous}}",
+      "historiqueIndisponible": "Historique indisponible.",
+      "statut": {
+        "completed": "Terminée",
+        "confirmed": "Confirmée",
+        "requested": "Demandée",
+        "checked_in": "Arrivée",
+        "cancelled": "Annulée",
+        "no_show": "Absente"
+      }
+    },
+    "prestations": {
+      "titre": "Prestations",
+      "description": "Ce que vos clientes voient et réservent sur votre mini-site.",
+      "nouvelle": "Nouvelle prestation",
+      "erreurChargement": "Impossible de charger le catalogue.",
+      "onglets": {
+        "aria": "Parties de la page",
+        "prestations": "Prestations",
+        "ressources": "Ressources"
+      },
+      "vide": {
+        "categorieTitre": "Commencez par une catégorie",
+        "categorie": "Coiffure, ongles, maquillage, soins… Les catégories organisent votre mini-site et aident vos clientes à s'y retrouver.",
+        "titre": "Aucune prestation",
+        "creer": "Créer ma première prestation",
+        "corps": "Sans prestation, vos clientes n'ont rien à réserver.",
+        "rechercheTitre": "Aucun résultat",
+        "recherche": "Aucune prestation ne correspond à cette recherche. Essayez une autre orthographe, ou retirez les filtres."
+      },
+      "supprimee": "« {nom} » supprimée.",
+      "suppressionImpossible": "Suppression impossible : cette prestation a des rendez-vous. Désactivez-la plutôt.",
+      "retiree": "« {nom} » n'est plus réservable.",
+      "remise": "« {nom} » est de nouveau réservable.",
+      "inactive": "Inactive",
+      "des": "dès {montant}",
+      "modifier": "Modifier",
+      "desactiver": "Désactiver",
+      "activer": "Activer",
+      "supprimer": "Supprimer",
+      "lectureSeule": "Seuls le propriétaire et le gérant peuvent modifier le catalogue.",
+      "tarifs": {
+        "fixed": "Prix ferme",
+        "from": "À partir de",
+        "quote": "Sur devis"
+      },
+      "lieux": {
+        "salon": "Au salon",
+        "home": "À domicile",
+        "hybrid": "Les deux"
+      },
+      "acompte": {
+        "court": "acompte {montant}",
+        "aucun": "Aucun acompte ne sera demandé à la réservation.",
+        "regle": "Le montant vient de la règle de votre salon.",
+        "rien": "Votre règle ne demande rien : réglez un pourcentage ou un minimum dans Profil du salon → Acompte.",
+        "devis": "Règle du salon : {taux} % de la prestation, minimum {minimum}. Le montant sera fixé au devis.",
+        "soit": "Soit {montant} pour cette prestation — {taux} % du prix, minimum {minimum}. Les fournitures s'ajoutent.",
+        "demande": "demandé",
+        "nonRegle": "non réglé"
+      },
+      "categories": {
+        "titre": "Catégories",
+        "ajoutee": "Catégorie « {nom} » ajoutée.",
+        "existe": "Cette catégorie existe déjà.",
+        "pasVide": "« {nom} » contient {n, plural, one {# prestation} other {# prestations}}. Videz-la d'abord.",
+        "supprimee": "Catégorie « {nom} » supprimée.",
+        "supprimer": "Supprimer la catégorie {nom}",
+        "ajouter": "Ajouter une catégorie",
+        "exemple": "Coiffure, ongles…",
+        "bouton": "Ajouter"
+      },
+      "form": {
+        "ajoutee": "« {nom} » ajoutée au catalogue.",
+        "enregistree": "« {nom} » enregistrée.",
+        "echec": "Enregistrement impossible. Vérifiez votre connexion, puis réessayez.",
+        "modifier": "Modifier la prestation",
+        "apparaitra": "Elle apparaîtra sur votre mini-site.",
+        "nonEnregistre": "Modifications non enregistrées",
+        "aucuneModif": "Aucune modification",
+        "annuler": "Annuler",
+        "enCours": "Enregistrement…",
+        "creer": "Créer la prestation",
+        "enregistrer": "Enregistrer",
+        "photo": "Photo de la prestation",
+        "photoAide": "Elle s'affiche sur votre mini-site et pendant la réservation. Sans photo, une image d'ambiance est utilisée.",
+        "nom": "Nom",
+        "nomExemple": "Tresses collées",
+        "categorie": "Catégorie",
+        "duree": "Durée (min)",
+        "dureeAide": "Bloquée dans l'agenda.",
+        "typeTarif": "Type de tarif",
+        "prix": "Prix ({devise})",
+        "lieu": "Lieu",
+        "lieuSalon": "Jamais proposée à domicile.",
+        "lieuDomicile": "Le forfait du quartier s'ajoute.",
+        "acompte": "Cette prestation demande un acompte",
+        "description": "Description",
+        "descriptionExemple": "Ce que la prestation comprend, ce qu'il faut prévoir…",
+        "reservable": "Réservable en ligne",
+        "reservableAide": "Décochez pour la retirer du mini-site sans la supprimer.",
+        "auFil": "Options et ressources s'enregistrent au fur et à mesure, indépendamment du bouton « Enregistrer ».",
+        "cettePrestation": "cette prestation"
+      },
+      "erreurs": {
+        "nomVide": "Donnez un nom à la prestation.",
+        "nomLong": "{max} caractères au plus.",
+        "categorie": "Choisissez une catégorie.",
+        "dureeCourte": "Au moins {min} minutes, en nombre entier.",
+        "dureeLongue": "Une prestation dure au plus 24 heures.",
+        "prixVide": "Indiquez un prix.",
+        "prixNegatif": "Le prix ne peut pas être négatif."
+      },
+      "options": {
+        "titre": "Options",
+        "majOk": "Option mise à jour.",
+        "retiree": "« {nom} » retirée.",
+        "ajoutee": "« {nom} » ajoutée à {prestation}.",
+        "jusqua": "Jusqu'à {duree} si tout est choisi",
+        "erreur": "Impossible de charger les options.",
+        "vide": "Aucune option. Ajoutez « longueur XL », « mèches fournies », « retrait de l'ancienne coiffure »…",
+        "ajouter": "Ajouter une option",
+        "nom": "Nom de l'option",
+        "supplement": "Supplément en {devise}",
+        "temps": "Temps supplémentaire en minutes",
+        "inclus": "Inclus",
+        "suspendre": "Suspendre",
+        "reactiver": "Réactiver",
+        "supprimer": "Supprimer",
+        "exemple": "Longueur XL",
+        "bouton": "Ajouter",
+        "annuler": "Annuler"
+      },
+      "compatibilite": {
+        "titre": "Ce que vos horaires ne permettent pas",
+        "intro": "Une prestation n'est proposée que dans une plage assez longue pour la contenir entièrement.",
+        "jamais": "Jamais proposée",
+        "jamaisAide": "Aucune de vos plages ne dure assez longtemps. Vos clientes ne la verront nulle part.",
+        "pasProposee": "Pas proposée {jours}.",
+        "pasProposeePlage": "Pas proposée {jours} sur la plage {plage}.",
+        "conseil": "Pour les rendre réservables : allongez une plage, ou raccourcissez la durée annoncée dans <ecran>Prestations</ecran>.",
+        "jours": {
+          "un": "le {jour}",
+          "plage": "du {debut} au {fin}",
+          "liste": "les {liste}"
+        }
+      },
+      "filtre": {
+        "rechercher": "Rechercher une prestation",
+        "rechercherExemple": "Rechercher une prestation…",
+        "enLigne": "En ligne seulement",
+        "toutes": "Toutes",
+        "compte": "<nombre>{n}</nombre> {n, plural, one {prestation} other {prestations}} sur {total}",
+        "toutAfficher": "Tout afficher"
+      }
+    },
+    "medias": {
+      "tropLourd": "Fichier trop volumineux : 15 Mo maximum.",
+      "ajoutee": "Photo ajoutée et rattachée.",
+      "envoiImpossible": "Envoi impossible.",
+      "importee": "Photo importée et rattachée.",
+      "importImpossible": "Import impossible.",
+      "aucune": "— Aucune photo —",
+      "numero": "Photo {n}",
+      "televerser": "Téléverser",
+      "lien": "Coller un lien",
+      "retirer": "Retirer",
+      "adresse": "Adresse de la photo",
+      "importer": "Importer"
     }
   },
   "theme": {

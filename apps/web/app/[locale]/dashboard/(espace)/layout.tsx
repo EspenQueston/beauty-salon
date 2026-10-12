@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { Installer } from "@/features/ui/Installer";
 
-export const metadata = { title: "Espace professionnel" };
+/* Le titre d'onglet suit la langue : « Agenda · Espace professionnel »,
+   « Calendar · Professional space ». Chaque écran fournit la première partie. */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("pro.coquille");
+  return { title: { default: t("espace"), template: `%s · ${t("espace")}` } };
+}
 
 export default function DashboardLayout({
   children,

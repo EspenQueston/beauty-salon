@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { Agenda } from "@/features/dashboard/Agenda";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("pro.navigation");
+  return { title: t("agenda") };
+}
 
 /**
  * L'agenda lit l'URL — d'où la frontière de suspension.
