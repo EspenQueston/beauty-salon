@@ -60,15 +60,15 @@ export function SupportedCountries() {
   const motion=useTranslations("site");
   const [paused,setPaused]=useState(false);
   const countries=(data?.supported_countries??[{code:"CG"},{code:"CD"},{code:"CN"},{code:"BJ"},{code:"BF"},{code:"CI"},{code:"TG"},{code:"SN"},{code:"NE"}]).map(item=>t(`countries.${item.code}`));
-  return <div className="country-flow relative overflow-hidden border-y border-line bg-surface/60 py-3">
+  return <div className="country-flow relative overflow-hidden border-y border-[var(--home-section-border)] bg-[var(--home-ton-nuance)] py-3">
     <p className="sr-only">{t("availableIn")} {countries.join(", ")}</p>
     <div aria-hidden className="country-flow-track items-center" data-arretee={paused?"":undefined}>
       {[0,1].map(copy=><div key={copy} className="country-flow-copy flex shrink-0 items-center gap-6 px-3 sm:gap-10 sm:px-5">
         <span className="text-xs uppercase tracking-wider text-muted">{t("availableIn")}</span>
-        {countries.map(country=><span key={country} className="flex shrink-0 items-center gap-2 text-xs text-muted sm:text-sm"><span className="size-1.5 rounded-full bg-salon" />{country}</span>)}
+        {countries.map(country=><span key={country} className="flex shrink-0 items-center gap-2 text-sm font-semibold text-ink sm:text-base"><span className="size-2 rounded-full bg-salon" />{country}</span>)}
       </div>)}
     </div>
-    <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-surface to-transparent" />
+    <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[var(--home-ton-nuance)] to-transparent" />
     <button type="button" aria-pressed={paused} aria-label={motion(paused?"territoiresReprendre":"territoiresPause")} onClick={()=>setPaused(!paused)} className="absolute right-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface text-ink shadow-sm">
       <span aria-hidden>{paused?"▶":"Ⅱ"}</span>
     </button>

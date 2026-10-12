@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 function SectionTitle({title,subtitle,eyebrow}: {title:string;subtitle:string;eyebrow?:string}) {
-  return <div className="mb-6 max-w-2xl sm:mb-8">
+  return <div className="home-section-titre mb-6 max-w-2xl sm:mb-8">
     {eyebrow && <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-salon-ink">{eyebrow}</p>}
     <h2 className="text-2xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">{title}</h2>
     <p className="mt-3 hidden text-sm leading-relaxed text-muted sm:block sm:text-base">{subtitle}</p>
@@ -73,7 +73,7 @@ export default async function PlatformHome() {
           <SectionTitle title={h("previewTitle")} subtitle={h("previewSubtitle")} eyebrow={h("previewEyebrow")} />
           <div className="verre lisere halo rounded-3xl p-4 sm:p-6"><SitePreview /></div>
         </HomeSection>
-        <HomeSection id="fonctionnalites">
+        <HomeSection id="fonctionnalites" ton="nuance">
           <SectionTitle title={t("atouts.titre")} subtitle={t("atouts.sous")} />
           <div className="grid grid-cols-2 gap-3 sm:gap-5">
             {ATOUTS.map((atout,index)=><Reveal key={atout.cle} variant="cinema" order={index} className="h-full"><Relief reflet={false} className="h-full"><article className="verre lisere halo home-card h-full rounded-2xl p-4 sm:p-6">
@@ -95,16 +95,16 @@ export default async function PlatformHome() {
           </div>
         </HomeSection>
         <References />
-        <HomeSection id="tarifs">
+        <HomeSection id="tarifs" ton="nuance">
           <SectionTitle title={h("pricing.title")} subtitle={h("pricing.subtitle")} />
           <Pricing />
         </HomeSection>
-        <HomeSection id="etapes">
+        <HomeSection id="etapes" ton="vedette">
           <SectionTitle title={t("etapes.titre")} subtitle={t("etapes.sous")} />
           <Journey />
         </HomeSection>
         <Reassurance />
-        <HomeSection id="questions">
+        <HomeSection id="questions" ton="nuance">
           <SectionTitle title={t("questions.titre")} subtitle={t("questions.sous")} />
           <div className="space-y-3">{QUESTIONS.map((key,index)=><Reveal key={key} variant="cinema" order={index}><details className="faq-mobile verre lisere halo home-card group rounded-2xl px-4 sm:px-6">
             <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 py-4 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden sm:text-base"><span className="flex items-center gap-3"><span aria-hidden className="text-xs text-salon-ink/70">0{index+1}</span>{t(`questions.${key}.q`)}</span><span aria-hidden className="text-salon-ink transition-transform duration-300 group-open:rotate-45">+</span></summary>

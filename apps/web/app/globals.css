@@ -4,31 +4,39 @@
 .home-conversion {
   overflow-x: clip; font-family: var(--font-home), Arial, sans-serif;
   --home-highlight: #842046; --home-mark: #f7dfec;
-  --home-section-surface: linear-gradient(135deg, #f0f2f8, #f7f8fc);
-  --home-section-alternate: linear-gradient(135deg, #f8e3ed, #f9edf4 60%, #f0eefa);
-  --home-section-border: #e6e3ed;
+  /* Les tons des sections (voir features/site/HomeSection.tsx). */
+  --home-ton-base: var(--ui-bg);
+  --home-ton-nuance: color-mix(in srgb, var(--salon-primary) 5%, var(--ui-bg));
+  --home-ton-vedette: linear-gradient(160deg, #2c0f1f 0%, #43152d 52%, #200c17 100%);
+  --home-vedette-lueur: color-mix(in srgb, var(--salon-primary) 60%, transparent);
+  --home-nuance-lueur: color-mix(in srgb, var(--salon-primary) 9%, transparent);
+  --home-section-border: color-mix(in srgb, var(--salon-primary) 12%, var(--ui-bg));
   --home-enter-duration: 480ms; --home-section-duration: 420ms; --home-hero-duration: 520ms;
   --home-enter-distance: 16px; --home-section-distance: 10px; --home-hero-distance: 12px;
   --home-stagger: 70ms; --home-hero-stagger: 90ms;
   --home-motion-ease: cubic-bezier(.2,.75,.25,1);
-  --home-section-gap: 8px;
-  --home-country-duration: 20.87s; --home-country-reduced-duration: 41.74s;
+  /* Les sections se touchent : leurs fonds alternés suffisent à les séparer. */
+  --home-section-gap: 0px;
+  /* Un tour de bandeau des pays : deux fois plus vif qu'avant (20,9 s). */
+  --home-country-duration: 10.4s; --home-country-reduced-duration: 20.9s;
 }
-@media (min-width: 640px) { .home-conversion { --home-country-duration: 24.35s; --home-country-reduced-duration: 48.7s; --home-section-gap: 12px; } }
+@media (min-width: 640px) { .home-conversion { --home-country-duration: 12.2s; --home-country-reduced-duration: 24.35s; } }
 @media (max-width: 639px) { .home-conversion { --home-enter-distance: 14px; } }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .home-conversion {
     --home-highlight: #f1bed2; --home-mark: #482136;
-    --home-section-surface: linear-gradient(135deg, #13141c, #161620);
-    --home-section-alternate: linear-gradient(135deg, #251821, #1d1925 60%, #1b1c2b);
-    --home-section-border: #2c2835;
+    --home-ton-nuance: color-mix(in srgb, var(--salon-primary) 8%, var(--ui-bg));
+    --home-ton-vedette: linear-gradient(160deg, #2a0e1d 0%, #1d0a15 55%, #120910 100%);
+    --home-nuance-lueur: color-mix(in srgb, var(--salon-primary) 12%, transparent);
+    --home-section-border: color-mix(in srgb, var(--salon-primary) 18%, var(--ui-bg));
   }
 }
 :root[data-theme="dark"] .home-conversion {
   --home-highlight: #f1bed2; --home-mark: #482136;
-  --home-section-surface: linear-gradient(135deg, #13141c, #161620);
-  --home-section-alternate: linear-gradient(135deg, #251821, #1d1925 60%, #1b1c2b);
-  --home-section-border: #2c2835;
+  --home-ton-nuance: color-mix(in srgb, var(--salon-primary) 8%, var(--ui-bg));
+  --home-ton-vedette: linear-gradient(160deg, #2a0e1d 0%, #1d0a15 55%, #120910 100%);
+  --home-nuance-lueur: color-mix(in srgb, var(--salon-primary) 12%, transparent);
+  --home-section-border: color-mix(in srgb, var(--salon-primary) 18%, var(--ui-bg));
 }
 /* Server content stays visible. Reveal opts in after its observer is ready. */
 html[data-js] .home-conversion [data-reveal-ready] {
@@ -61,19 +69,77 @@ html[data-js] .home-conversion [data-reveal-ready][data-visible="true"] {
 .home-conversion .home-sections { display: flex; flex-direction: column; gap: var(--home-section-gap); padding-block: var(--home-section-gap); }
 /* The section stack already supplies the gap below the final card. */
 .home-conversion .pied { margin-top: 0; }
+/*
+ * Les tons des sections : un seul système, dans la teinte de la marque.
+ *
+ * Les sections se touchent ; c'est le changement de ton qui les sépare, pas
+ * une bordure ni un vide. La base et la nuance alternent ; la vedette (un
+ * seul bandeau prune) donne un temps fort au milieu de la page ; le rose plein
+ * est réservé à l'appel final, pour qu'il reste le seul à attirer l'oeil — un
+ * bouton rose sur un fond rose ne se voit plus.
+ */
 .home-conversion .home-section {
   position: relative; isolation: isolate; width: 100%; min-width: 0;
-  border-block: 1px solid var(--home-section-border); background: var(--home-section-surface);
+  background: var(--home-ton-base);
 }
-.home-conversion .home-section:nth-of-type(even) { background: var(--home-section-alternate); }
+.home-conversion .home-section.home-ton-nuance {
+  /* Une lueur douce dans l'angle : le fond vit sans distraire. */
+  background:
+    radial-gradient(70% 90% at 100% 0%, var(--home-nuance-lueur), transparent 70%),
+    var(--home-ton-nuance);
+}
+/*
+ * La vedette : prune profond, texte blanc.
+ *
+ * Le blanc y tient plus de 12:1, et le rose des boutons ressort au lieu de se
+ * fondre. Une lueur rose dérive lentement derrière le contenu ; elle s'arrête
+ * pour qui a demandé moins d'animations.
+ */
+.home-conversion .home-section.home-ton-vedette {
+  overflow: hidden; background: var(--home-ton-vedette); color: #fff;
+}
+.home-conversion .home-ton-vedette::after {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  width: min(70rem, 140vw); aspect-ratio: 1; right: -30%; top: -60%;
+  border-radius: 50%; opacity: .32;
+  background: radial-gradient(circle, var(--home-vedette-lueur), transparent 62%);
+  animation: vedette-lueur 18s ease-in-out infinite alternate;
+}
+@keyframes vedette-lueur {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-18%, 22%, 0) scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-conversion .home-ton-vedette::after { animation: none; }
+}
+.home-conversion .home-ton-vedette .home-section-titre :is(h2, p) { color: #fff; }
+.home-conversion .home-ton-vedette .home-section-titre p:not(:first-child) { color: rgb(255 255 255 / 0.78); }
+/* Les cartes de la vedette, en thème sombre : du verre clair sur le prune,
+   plutôt qu'une surface presque noire qui s'y confondrait. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .home-conversion .home-ton-vedette .journey-card {
+    background: rgb(255 255 255 / 0.06); border-color: rgb(255 255 255 / 0.12);
+  }
+}
+:root[data-theme="dark"] .home-conversion .home-ton-vedette .journey-card {
+  background: rgb(255 255 255 / 0.06); border-color: rgb(255 255 255 / 0.12);
+}
+/* L'appel final : la seule carte rose plein, posée sur le fond de base. */
 .home-conversion .home-section.home-callout {
-  width: calc(100% - 32px); max-width: 1280px; margin-inline: auto; border-radius: 24px;
-  border-color: transparent; background: var(--salon-primary);
+  width: calc(100% - 32px); max-width: 1280px; margin: 2rem auto; border-radius: 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 120% at 85% 0%, rgb(255 255 255 / 0.18), transparent 60%),
+    linear-gradient(135deg, var(--salon-primary), color-mix(in srgb, var(--salon-primary) 72%, #3b0f24));
+  box-shadow: 0 30px 60px -36px color-mix(in srgb, var(--salon-primary) 70%, transparent);
 }
 @media (min-width: 640px) {
-  .home-conversion .home-section.home-callout { width: calc(100% - 48px); border-radius: 32px; }
+  .home-conversion .home-section.home-callout { width: calc(100% - 48px); margin-block: 3rem; border-radius: 32px; }
 }
 .home-conversion .home-callout::before { content: none; }
+/* Le filet clair en haut de section ne reste que sur la nuance : ailleurs,
+   le changement de ton suffit. */
+.home-conversion .home-section:not(.home-ton-nuance)::before { content: none; }
 .home-conversion .home-section::before {
   content: ""; position: absolute; top: 0; left: 10%; right: 10%; height: 1px; pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--home-highlight), transparent);
