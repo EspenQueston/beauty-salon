@@ -13,6 +13,9 @@ export function BeautySalonSymbol({ className = "size-8" }: { className?: string
         alt=""
         width={1254}
         height={1254}
+        // Affiché à 47 px au plus (size-10 à 118 %). Sans `sizes`, Next servait
+        // l'original, jusqu'à 3 840 px et 47 ko pour une icône.
+        sizes="48px"
         className="platform-logo absolute left-1/2 top-1/2 !size-[118%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
       />
     </span>
@@ -29,6 +32,7 @@ export function BeautySalonBrand({ compact = false }: { compact?: boolean }) {
           alt=""
           width={2172}
           height={724}
+          sizes="170px"
           className={`platform-logo absolute left-1/2 top-1/2 !h-auto max-w-none -translate-x-1/2 -translate-y-1/2 ${compact ? "!w-[150px]" : "!w-[166px]"}`}
         />
       </span>

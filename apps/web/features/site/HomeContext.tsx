@@ -22,10 +22,11 @@ const HomeContext = createContext<{
   referral: string; track: (event: string) => void;
 }>({data:null,failed:false,retry:()=>{},action:{href:professionalUrl("fr","/inscription"),label:"",creating:true},referral:"",track:()=>{}});
 
-export function HomeProvider({children}: {children: ReactNode}) {
+export function HomeProvider({children, initial = null}: {children: ReactNode; initial?: HomeCatalogue | null}) {
   const locale = useLocale();
   const t = useTranslations("conversion");
-  const [data, setData] = useState<HomeCatalogue | null>(null);
+  // Le catalogue lu par le serveur, quand il a pu l'être (voir fetchHomeCatalogue).
+  const [data, setData] = useState<HomeCatalogue | null>(initial);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -41,6 +42,8 @@ export function HomeProvider({children}: {children: ReactNode}) {
   }
 
   useEffect(() => {
+    // Déjà dans le HTML : rien à redemander, sauf si l'on clique « Réessayer ».
+    if (initial && attempt === 0) return;
     const controller = new AbortController();
     const timeout=setTimeout(()=>{setFailed(true);controller.abort()},10000);
     void fetch(`${browserApi()}/api/v1/account/home?lang=${locale}`, {credentials:"omit",signal:controller.signal})
@@ -49,7 +52,7 @@ export function HomeProvider({children}: {children: ReactNode}) {
       .catch(()=>{if(!controller.signal.aborted) setFailed(true)})
       .finally(()=>clearTimeout(timeout));
     return ()=>{clearTimeout(timeout);controller.abort()};
-  },[locale,attempt]);
+  },[locale,attempt,initial]);
 
   useEffect(() => {
     const controller = new AbortController();

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { locale as segment } from "next/root-params";
 import { adresses } from "@/i18n/adresses";
 import { LANGUE_PAR_DEFAUT, estLangue } from "@/i18n/langues";
+import { fetchHomeCatalogue } from "@/lib/api";
 import { PLATFORM_DOMAIN } from "@/lib/site";
 import { BarreAction, Progression } from "@/features/site/BarreAction";
 import { ATOUTS, Fleche, QUESTIONS } from "@/features/site/contenu";
@@ -41,7 +42,9 @@ export default async function PlatformHome() {
   const secondHeading=h("headlineSecond");
   const keyword=h("headlineKeyword");
   const keywordAt=secondHeading.indexOf(keyword);
-  return <HomeProvider><div id="haut" className={`${homeFont.variable} home-conversion min-h-svh min-w-0 bg-bg pb-24 sm:pb-0`}>
+  const langue=await segment();
+  const catalogue=await fetchHomeCatalogue(estLangue(langue)?langue:LANGUE_PAR_DEFAUT);
+  return <HomeProvider initial={catalogue}><div id="haut" className={`${homeFont.variable} home-conversion min-h-svh min-w-0 bg-bg pb-24 sm:pb-0`}>
     <Progression /><SiteHeader />
     <main>
       <section id="accroche" className="relative isolate overflow-hidden px-4 pb-8 pt-28 sm:px-6 sm:pb-12 sm:pt-36">

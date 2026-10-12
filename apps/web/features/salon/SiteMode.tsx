@@ -41,15 +41,10 @@ function read(slug: string): Mode {
     const stored = localStorage.getItem(storageKey(slug));
     if (stored === "light" || stored === "dark") return stored;
   } catch {
-    /* stockage refusé : on retombe sur le réglage système */
+    /* stockage refusé : on retombe sur le défaut */
   }
-  try {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  } catch {
-    return "light";
-  }
+  // Le sombre est le défaut du produit, comme sur la plateforme.
+  return "dark";
 }
 
 function apply(slug: string, mode: Mode) {
@@ -73,9 +68,9 @@ export function SiteModeToggle({
   const mode = useSyncExternalStore(
     subscribe,
     useCallback(() => read(slug), [slug]),
-    // Le serveur ne connaît pas la préférence : il rend le mode clair, que
-    // le script d'amorçage corrige avant le premier pixel.
-    () => "light" as Mode,
+    // Le serveur ne connaît pas la préférence : il rend le défaut (sombre),
+    // que le script d'amorçage corrige avant le premier pixel si besoin.
+    () => "dark" as Mode,
   );
 
   const next: Mode = mode === "dark" ? "light" : "dark";

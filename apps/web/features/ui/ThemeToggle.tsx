@@ -3,9 +3,9 @@
 /**
  * Bascule clair / sombre.
  *
- * Trois états, pas deux : **Système**, **Clair**, **Sombre**. Sans le
- * premier, on force un choix à quelqu'un qui a déjà réglé son téléphone en
- * sombre le soir — et on le lui force pour toujours.
+ * Trois états, pas deux : **Système**, **Clair**, **Sombre**. Le sombre est
+ * le défaut du produit, tant que rien n'a été choisi ; « Système » reste
+ * proposé à qui préfère suivre le réglage de son téléphone.
  *
  * Le choix est écrit dans `localStorage` et posé sur `<html>` en
  * `data-theme` ; c'est ce que lisent les feuilles de style. Le script inline
@@ -52,13 +52,13 @@ function snapshot(): ThemeChoice {
     if (stored === "light" || stored === "dark" || stored === "system")
       return stored;
   } catch {
-    // Navigation privée, stockage refusé : on retombe sur le système.
+    // Navigation privée, stockage refusé : on retombe sur le défaut.
   }
-  return "system";
+  return "dark";
 }
 
-/** Le serveur ne connaît pas le choix : il rend l'état neutre. */
-const serverSnapshot = (): ThemeChoice => "system";
+/** Le serveur ne connaît pas le choix : il rend le défaut, le sombre. */
+const serverSnapshot = (): ThemeChoice => "dark";
 
 /**
  * Le même choix, exposé aux autres surfaces qui le proposent.

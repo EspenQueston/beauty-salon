@@ -11,9 +11,11 @@
   --home-vedette-lueur: color-mix(in srgb, var(--salon-primary) 60%, transparent);
   --home-nuance-lueur: color-mix(in srgb, var(--salon-primary) 9%, transparent);
   --home-section-border: color-mix(in srgb, var(--salon-primary) 12%, var(--ui-bg));
-  --home-enter-duration: 480ms; --home-section-duration: 420ms; --home-hero-duration: 520ms;
-  --home-enter-distance: 16px; --home-section-distance: 10px; --home-hero-distance: 12px;
-  --home-stagger: 70ms; --home-hero-stagger: 90ms;
+  /* Apparition au défilement : assez ample pour se voir, assez courte pour
+     ne jamais faire attendre la lecture. */
+  --home-enter-duration: 700ms; --home-section-duration: 650ms; --home-hero-duration: 520ms;
+  --home-enter-distance: 28px; --home-section-distance: 22px; --home-hero-distance: 12px;
+  --home-stagger: 90ms; --home-hero-stagger: 90ms;
   --home-motion-ease: cubic-bezier(.2,.75,.25,1);
   /* Les sections se touchent : leurs fonds alternés suffisent à les séparer. */
   --home-section-gap: 0px;
@@ -21,7 +23,7 @@
   --home-country-duration: 10.4s; --home-country-reduced-duration: 20.9s;
 }
 @media (min-width: 640px) { .home-conversion { --home-country-duration: 12.2s; --home-country-reduced-duration: 24.35s; } }
-@media (max-width: 639px) { .home-conversion { --home-enter-distance: 14px; } }
+@media (max-width: 639px) { .home-conversion { --home-enter-distance: 20px; --home-section-distance: 16px; } }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .home-conversion {
     --home-highlight: #f1bed2; --home-mark: #482136;
@@ -45,8 +47,10 @@ html[data-js] .home-conversion [data-reveal-ready] {
   filter: none;
   transition: opacity var(--home-block-duration) var(--home-motion-ease),
     transform var(--home-block-duration) var(--home-motion-ease),
+    filter var(--home-block-duration) var(--home-motion-ease),
     border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
   transition-delay: calc(var(--reveal-order, 0) * var(--home-stagger)),
+    calc(var(--reveal-order, 0) * var(--home-stagger)),
     calc(var(--reveal-order, 0) * var(--home-stagger)), 0ms, 0ms, 0ms;
 }
 html[data-js] .home-conversion .reveal-section[data-reveal-ready] {
@@ -55,6 +59,17 @@ html[data-js] .home-conversion .reveal-section[data-reveal-ready] {
 }
 html[data-js] .home-conversion [data-reveal-ready]:not([data-visible="true"]) {
   opacity: 0; transform: translate3d(0, var(--home-block-distance), 0);
+}
+/* Les cartes arrivent d'un peu plus loin, légèrement réduites et floues, et
+   se mettent au point en se posant. Le flou est réservé aux grands écrans :
+   sur un téléphone modeste, il coûterait des images par seconde. */
+html[data-js] .home-conversion .reveal-cinema[data-reveal-ready]:not([data-visible="true"]) {
+  transform: translate3d(0, var(--home-block-distance), 0) scale(.97);
+}
+@media (min-width: 640px) {
+  html[data-js] .home-conversion .reveal-cinema[data-reveal-ready]:not([data-visible="true"]) {
+    filter: blur(6px);
+  }
 }
 html[data-js] .home-conversion [data-reveal-ready][data-visible="true"] {
   opacity: 1; transform: none; filter: none;
@@ -183,7 +198,8 @@ html[data-js] .home-conversion [data-reveal-ready][data-visible="true"] {
     animation: none !important; transition: none !important; scroll-behavior: auto !important;
   }
   html[data-js] .home-conversion [data-reveal-ready],
-  html[data-js] .home-conversion [data-reveal-ready]:not([data-visible="true"]) { opacity: 1; transform: none; filter: none; }
+  html[data-js] .home-conversion [data-reveal-ready]:not([data-visible="true"]),
+  html[data-js] .home-conversion .reveal-cinema[data-reveal-ready]:not([data-visible="true"]) { opacity: 1; transform: none; filter: none; }
   .home-conversion .home-hero-entry { opacity: 1; transform: none; }
   /* Keep a gentle ticker at half speed; other homepage motion stays disabled. */
   .home-conversion .country-flow-track { animation: country-flow var(--home-country-reduced-duration) linear infinite !important; }

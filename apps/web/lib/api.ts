@@ -383,3 +383,37 @@ export async function postForm<T>(
   }
   return body as T;
 }
+
+
+/**
+ * Le catalogue de la page d'accueil, lu par le serveur de rendu.
+ *
+ * Il arrivait par un appel du navigateur, une fois la page affichée et
+ * hydratée, vers un autre domaine (`api.`) : une connexion de plus, à
+ * 700 ms l'aller-retour depuis la Chine — les tarifs et les références
+ * apparaissaient plus de cinq secondes après l'ouverture.
+ *
+ * Lu ici, il part dans le HTML. La page reste statique et se régénère au
+ * plus toutes les 60 s. Trois secondes au plus : si l'API ne répond pas (au
+ * build, par exemple), on renvoie `null` et le navigateur la lit lui-même,
+ * comme avant.
+ */
+export async function fetchHomeCatalogue(
+  langue: string,
+): Promise<import("@/features/site/HomeContext").HomeCatalogue | null> {
+  try {
+    const token = process.env.INTERNAL_API_TOKEN;
+    const response = await fetch(
+      `${SERVER_API}/api/v1/account/home?lang=${langue === "en" ? "en" : "fr"}`,
+      {
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(3000),
+        headers: token ? { "X-Internal-Token": token } : undefined,
+      },
+    );
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}

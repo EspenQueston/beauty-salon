@@ -25,7 +25,20 @@ let sharedObserver: IntersectionObserver | null = null;
 let startupTimeout: ReturnType<typeof setTimeout> | undefined;
 let motionQuery: MediaQueryList | null = null;
 
+/**
+ * Arrivée en bas de page : tout ce qui attend encore apparaît.
+ *
+ * Le déclenchement attend qu'un bloc ait franchi le dernier dixième de
+ * l'écran. Un petit bloc posé tout en bas de la page ne l'atteindrait jamais,
+ * même la page parcourue jusqu'au bout — il resterait invisible.
+ */
+function onScroll() {
+  const bas = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+  if (bas) failOpen();
+}
+
 function releaseObserver() {
+  window.removeEventListener("scroll", onScroll);
   sharedObserver?.disconnect();
   sharedObserver = null;
   clearTimeout(startupTimeout);
@@ -66,9 +79,13 @@ function watch(element: HTMLElement) {
       if (!waiting.size) {
         releaseObserver();
       }
-    }, { rootMargin: "0px 0px -24px 0px", threshold: 0.01 });
+      // Le bloc apparaît quand il a franchi le dernier dixième de l'écran,
+      // et non à son premier pixel : sinon une grande section s'animait tout
+      // en bas, hors du regard, et l'effet passait inaperçu.
+    }, { rootMargin: "0px 0px -10% 0px", threshold: 0.01 });
     motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     motionQuery.addEventListener("change", onMotionChange);
+    window.addEventListener("scroll", onScroll, { passive: true });
     // A broken/polyfilled observer must never leave content hidden.
     startupTimeout = setTimeout(failOpen, 1500);
   }

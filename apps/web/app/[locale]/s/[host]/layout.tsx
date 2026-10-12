@@ -133,7 +133,7 @@ export default async function SiteLayout({ children, params }: Props) {
   const slug = JSON.stringify(salon.slug).replace(/</g, "\\u003c");
   const boot =
     `(function(){try{var k="beauty-salon.mode."+${slug},v=localStorage.getItem(k);` +
-    `if(v!=="light"&&v!=="dark"){v=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}` +
+    `if(v!=="light"&&v!=="dark"){v="dark"}` +
     `document.currentScript.parentElement.dataset.mode=v}catch(e){}})()`;
 
   return (
@@ -145,7 +145,7 @@ export default async function SiteLayout({ children, params }: Props) {
         } as React.CSSProperties
       }
       className={`salon-site flex min-h-svh flex-col ${polices.classes}`}
-      data-mode="light"
+      data-mode="dark"
       suppressHydrationWarning
     >
       <InlineScript html={boot} />

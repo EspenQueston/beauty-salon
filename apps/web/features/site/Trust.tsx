@@ -34,10 +34,13 @@ export function Reassurance() {
   const support=data?.support;
   return <HomeSection id="assistance">
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
-      {["mobile","data","publication"].map((key,index)=><Reveal as="article" key={key} variant="cinema" order={index} className={`verre lisere halo home-card min-w-0 rounded-2xl p-4 sm:p-5 ${key==="publication"?"col-span-2":""}`}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="mb-4 size-6 text-salon-ink">{key==="mobile"?<><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></>:key==="data"?<><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></>:<><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></>}</svg>
-        <h3 className="text-sm font-semibold text-ink">{t(`${key}Title`)}</h3><p className="mt-2 hidden text-xs leading-relaxed text-muted sm:block sm:text-sm">{t(key)}</p>
-        <details className="mt-1 sm:hidden"><summary className="min-h-11 cursor-pointer py-3 text-xs text-salon-ink">{t("details")}</summary><p className="text-xs leading-relaxed text-muted">{t(key)}</p></details>
+      {/* Quatre engagements, quatre colonnes égales (deux par ligne sur
+          téléphone). Le texte est toujours affiché : un « En savoir plus » à
+          déplier cachait justement ce qui rassure. */}
+      {["mobile","data","publication","essai"].map((key,index)=><Reveal as="article" key={key} variant="cinema" order={index} className="verre lisere halo home-card flex min-w-0 flex-col rounded-2xl p-3.5 sm:p-5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="mb-4 size-6 text-salon-ink">{key==="mobile"?<><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 18h4"/></>:key==="data"?<><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></>:key==="essai"?<><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></>:<><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></>}</svg>
+        <h3 className="text-[13px] font-semibold leading-snug text-ink sm:text-sm">{t(`${key}Title`)}</h3>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted sm:mt-2 sm:text-sm">{t(key)}</p>
       </Reveal>)}
       <Reveal as="article" variant="cinema" order={1} className="journey-shell relative col-span-2 overflow-hidden rounded-2xl border border-line p-5 lg:col-span-4 sm:p-7">
         <div aria-hidden className="journey-orb" />

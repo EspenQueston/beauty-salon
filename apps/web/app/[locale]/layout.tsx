@@ -90,10 +90,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f0f13" },
-  ],
+  // Le sombre est le thème par défaut : la barre du navigateur le suit.
+  themeColor: "#0f0f13",
 };
 
 /**
@@ -111,7 +109,9 @@ export const viewport: Viewport = {
  * le serveur avec celui du DOM à l'hydratation, et une classe ajoutée par ce
  * script provoquerait un avertissement de non-correspondance.
  */
-const BOOT = `(function(){try{var r=document.documentElement;r.setAttribute("data-js","");var t=localStorage.getItem("beauty-salon-theme");if(t==="light"||t==="dark")r.setAttribute("data-theme",t)}catch(e){}})()`;
+// Sans choix enregistré, le thème sombre : c'est le défaut du produit. « Système »
+// reste un choix possible, et ne pose alors aucun attribut.
+const BOOT = `(function(){try{var r=document.documentElement;r.setAttribute("data-js","");var t=localStorage.getItem("beauty-salon-theme");if(t!=="light"&&t!=="system")t="dark";if(t!=="system")r.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})()`;
 
 export default async function RootLayout({
   children,
