@@ -35,6 +35,7 @@ import { KkiapayButton } from "./KkiapayButton";
  * sur l'onglet — la validation apparaît d'elle-même.
  */
 
+import { useTranslations } from "next-intl";
 import {
   useCallback,
   useEffect,
@@ -65,10 +66,7 @@ import { useToast } from "@/features/ui/Toast";
 import {
   ABONNEMENT_CHANGE,
   FONCTIONS_PRO,
-  GROUPES,
-  dateLongue,
   joursAvant,
-  montant,
   signalerAbonnement,
   type Acces,
   type FonctionPro,
@@ -77,6 +75,7 @@ import {
   type MonteeEnGamme,
 } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 import { rows, useResource, type Page } from "./useResource";
 
@@ -215,23 +214,36 @@ interface Invoice {
   is_overdue: boolean;
 }
 
-const DEMANDE: Record<PaymentRequest["status"], { label: string; tone: Tone }> = {
-  pending: { label: "En vérification", tone: "warning" },
-  approved: { label: "Validé", tone: "success" },
-  rejected: { label: "Refusé", tone: "danger" },
+/** Le ton de chaque statut ; libellés sous `pro.abonnement.statutDemande` et `.statutFacture`. */
+const DEMANDE: Record<PaymentRequest["status"], Tone> = {
+  pending: "warning",
+  approved: "success",
+  rejected: "danger",
 };
 
-const FACTURE: Record<string, { label: string; tone: Tone }> = {
-  draft: { label: "Brouillon", tone: "neutral" },
-  issued: { label: "À régler", tone: "warning" },
-  paid: { label: "Réglée", tone: "success" },
-  void: { label: "Annulée", tone: "neutral" },
+const FACTURE: Record<string, Tone> = {
+  draft: "neutral",
+  issued: "warning",
+  paid: "success",
+  void: "neutral",
 };
 
 const FORMATS_PREUVE = ["image/jpeg", "image/png", "image/webp"];
 const PREUVE_MAX = 15 * 1024 * 1024;
 const RELECTURE_MS = 20_000;
 const HORLOGE_MS = 60_000;
+
+type Traduire = ReturnType<typeof useTranslations>;
+
+/** Les offres connues (`Plan.Code`) ; le nom vient du catalogue, celui du serveur sinon. */
+const PLANS_CONNUS = ["trial", "monthly", "yearly", "pro_monthly", "pro_yearly"];
+const STATUTS_ABONNEMENT = [
+  "trialing", "active", "expired", "pending_payment", "suspended", "past_due", "cancelled",
+];
+
+function nomPlan(t: Traduire, plan: { code: string; name: string }): string {
+  return PLANS_CONNUS.includes(plan.code) ? t(`plans.${plan.code}`) : plan.name;
+}
 
 /** Descend jusqu'aux offres, en douceur, sous la barre du haut. */
 function allerAuxOffres() {
@@ -243,13 +255,14 @@ function allerAuxOffres() {
 // ---------------------------------------------------------------------------
 
 export function Billing() {
+  const t = useTranslations("pro.abonnement");
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const isOwner = membership.role === "owner";
   const toast = useToast();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<"aucun" | "echec" | null>(null);
   const [token, setToken] = useState(0);
   const [maintenant, setMaintenant] = useState(() => Date.now());
   const [choixPlan, setChoixPlan] = useState<CodeOffre | null>(null);
@@ -290,9 +303,9 @@ export function Billing() {
         attente.current = data.demande_en_attente?.id ?? null;
         if (avant && !data.demande_en_attente) {
           if (data.acces.ouvert && data.status === "active") {
-            toast.success("Paiement validé : votre abonnement est actif.");
+            toast.success(t("paiementValide"));
           } else {
-            toast.info("Votre paiement a été traité. Consultez l'historique.");
+            toast.info(t("paiementTraite"));
           }
           signalerAbonnement();
         }
@@ -301,17 +314,13 @@ export function Billing() {
       })
       .catch((caught) => {
         if (cancelled) return;
-        setError(
-          caught instanceof DashboardError && caught.status === 404
-            ? "Aucun abonnement n'est encore rattaché à ce salon. L'équipe Beauty Salon s'en charge à la validation."
-            : "Chargement impossible.",
-        );
+        setError(caught instanceof DashboardError && caught.status === 404 ? "aucun" : "echec");
       });
 
     return () => {
       cancelled = true;
     };
-  }, [tenantId, isOwner, token, toast]);
+  }, [tenantId, isOwner, token, toast, t]);
 
   // Relecture périodique tant qu'un paiement attend, et au retour sur
   // l'onglet — c'est là qu'on revient après avoir payé sur son téléphone.
@@ -345,11 +354,8 @@ export function Billing() {
   if (!isOwner) {
     return (
       <section>
-        <PageHeader title="Abonnement" />
-        <EmptyState title="Réservé au propriétaire">
-          Le règlement de l&apos;abonnement se fait depuis le compte de la
-          personne qui possède le salon.
-        </EmptyState>
+        <PageHeader title={t("titre")} />
+        <EmptyState title={t("reserve.titre")}>{t("reserve.corps")}</EmptyState>
       </section>
     );
   }
@@ -366,11 +372,11 @@ export function Billing() {
   return (
     <section>
       <PageHeader
-        title="Abonnement"
-        description="Votre accès, votre offre et vos paiements, au même endroit."
+        title={t("titre")}
+        description={t("description")}
       />
 
-      {error && <ErrorState>{error}</ErrorState>}
+      {error && <ErrorState>{error === "aucun" ? t("aucunAbonnement") : t("erreur")}</ErrorState>}
       {subscription === null && !error && <Skeleton rows={3} />}
 
       {subscription && (
@@ -457,12 +463,17 @@ function Etat({
   maintenant: number;
   onAgir?: () => void;
 }) {
+  const t = useTranslations("pro.abonnement");
+  const e = useTranslations("pro.abonnement.etat");
+  const { dateLongue, montant } = useFormats();
   const { acces } = abonnement;
   const fin = acces.fin_periode ? dateLongue.format(new Date(acces.fin_periode)) : "—";
   const limite = acces.jusqu_au ? dateLongue.format(new Date(acces.jusqu_au)) : "";
   const jours = joursAvant(acces.fin_periode, maintenant);
   const joursGrace = joursAvant(acces.jusqu_au, maintenant);
-  const pluriel = (n: number) => (n > 1 ? "s" : "");
+  const unite = (n: number) => e("jours", { n });
+  const gras = (texte: ReactNode) => <strong className="text-ink">{texte}</strong>;
+  const nom = nomPlan(t, abonnement.plan);
 
   const debut = new Date(abonnement.current_period_start).getTime();
   const total = new Date(abonnement.current_period_end).getTime() - debut;
@@ -483,78 +494,54 @@ function Etat({
     }
   > = {
     essai: {
-      titre: "Essai gratuit en cours",
-      detail: (
-        <>
-          Jusqu&apos;au <strong className="text-ink">{fin}</strong>. Choisissez
-          votre offre quand vous voulez : la période payée commence à la fin de
-          l&apos;essai.
-        </>
-      ),
+      titre: e("essai.titre"),
+      detail: e.rich("essai.detail", { date: fin, gras }),
       tone: "info",
-      badge: "Essai",
-      anneau: { valeur: String(jours), unite: `jour${pluriel(jours)}`, part: restant },
-      action: "Choisir mon offre",
+      badge: e("essai.badge"),
+      anneau: { valeur: String(jours), unite: unite(jours), part: restant },
+      action: e("essai.action"),
     },
     periode: {
-      titre: `Offre ${abonnement.plan.name} active`,
-      detail: (
-        <>
-          Votre salon est couvert jusqu&apos;au{" "}
-          <strong className="text-ink">{fin}</strong>. Un paiement anticipé
-          s&apos;ajoute à la suite, sans perdre un jour.
-        </>
-      ),
+      titre: e("periode.titre", { offre: nom }),
+      detail: e.rich("periode.detail", { date: fin, gras }),
       tone: "success",
-      badge: "Actif",
-      anneau: { valeur: String(jours), unite: `jour${pluriel(jours)}`, part: restant },
-      action: "Prolonger",
+      badge: e("periode.badge"),
+      anneau: { valeur: String(jours), unite: unite(jours), part: restant },
+      action: e("periode.action"),
     },
     grace: {
-      titre: "Période terminée — délai de grâce",
-      detail: (
-        <>
-          Réglez avant le <strong className="text-ink">{limite}</strong> :
-          ensuite, les réservations en ligne s&apos;arrêtent et le tableau de
-          bord passe en lecture seule.
-        </>
-      ),
+      titre: e("grace.titre"),
+      detail: e.rich("grace.detail", { date: limite, gras }),
       tone: "warning",
-      badge: "Grâce",
-      anneau: { valeur: String(joursGrace), unite: `jour${pluriel(joursGrace)}`, part: joursGrace / 3 },
-      action: "Régler maintenant",
+      badge: e("grace.badge"),
+      anneau: { valeur: String(joursGrace), unite: unite(joursGrace), part: joursGrace / 3 },
+      action: e("grace.action"),
     },
     expire: {
-      titre: "Abonnement expiré",
-      detail: (
-        <>
-          Réservations en ligne fermées, tableau de bord en lecture seule. Vos
-          données sont intactes : tout se rouvre dès la validation de votre
-          paiement.
-        </>
-      ),
+      titre: e("expire.titre"),
+      detail: e("expire.detail"),
       tone: "danger",
-      badge: "Expiré",
+      badge: e("expire.badge"),
       anneau: null,
-      action: "Réactiver mon salon",
+      action: e("expire.action"),
     },
     suspendu: {
-      titre: "Abonnement suspendu",
-      detail: <>L&apos;équipe Beauty Salon a suspendu ce salon. Contactez-la pour le rouvrir.</>,
+      titre: e("suspendu.titre"),
+      detail: e("suspendu.detail"),
       tone: "danger",
-      badge: "Suspendu",
+      badge: e("suspendu.badge"),
       anneau: null,
     },
     resilie: {
-      titre: "Abonnement résilié",
-      detail: <>Contactez l&apos;équipe Beauty Salon pour reprendre.</>,
+      titre: e("resilie.titre"),
+      detail: e("resilie.detail"),
       tone: "neutral",
-      badge: "Résilié",
+      badge: e("resilie.badge"),
       anneau: null,
     },
     sans_abonnement: {
-      titre: "Abonnement en préparation",
-      detail: <>L&apos;équipe Beauty Salon rattache votre essai sous peu.</>,
+      titre: e("sansAbonnement.titre"),
+      detail: e("sansAbonnement.detail"),
       tone: "neutral",
       badge: "—",
       anneau: null,
@@ -564,18 +551,23 @@ function Etat({
   const action = onAgir && vue.action ? vue.action : null;
 
   const faits: { terme: string; valeur: string }[] = [
-    { terme: "Offre", valeur: abonnement.plan.name },
-    { terme: "Statut", valeur: abonnement.status_label },
+    { terme: e("faits.offre"), valeur: nom },
     {
-      terme: acces.raison === "essai" ? "Fin de l'essai" : "Fin de période",
+      terme: e("faits.statut"),
+      valeur: STATUTS_ABONNEMENT.includes(abonnement.status)
+        ? t(`statutAbonnement.${abonnement.status}`)
+        : abonnement.status_label,
+    },
+    {
+      terme: acces.raison === "essai" ? e("faits.finEssai") : e("faits.finPeriode"),
       valeur: fin,
     },
     {
-      terme: "Tarif",
+      terme: e("faits.tarif"),
       valeur:
         payant && Number(abonnement.price_amount) > 0
-          ? `${montant(abonnement.price_amount, abonnement.currency)} / ${annuel ? "an" : "mois"}`
-          : "Gratuit",
+          ? `${montant(abonnement.price_amount, abonnement.currency)} / ${annuel ? e("faits.an") : e("faits.mois")}`
+          : e("faits.gratuit"),
     },
   ];
 
@@ -688,6 +680,7 @@ function Anneau({
   part: number;
   tone: Tone;
 }) {
+  const e = useTranslations("pro.abonnement.etat");
   const rayon = 42;
   const tour = 2 * Math.PI * rayon;
   const rempli = Math.max(0.04, Math.min(1, part));
@@ -696,7 +689,7 @@ function Anneau({
     <div
       className="relative size-16 shrink-0 sm:size-24"
       role="img"
-      aria-label={`${valeur} ${unite} restant${Number(valeur) > 1 ? "s" : ""}`}
+      aria-label={e("restants", { n: Number(valeur) })}
     >
       <svg viewBox="0 0 100 100" className="size-full -rotate-90" aria-hidden>
         <circle cx="50" cy="50" r={rayon} fill="none" strokeWidth="8" className="stroke-surface-muted" />
@@ -746,6 +739,8 @@ function ListeFonctions({
   fonctions: Offres["fonctions_pro"];
   compacte?: boolean;
 }) {
+  const f = useTranslations("pro.fonctionsPro");
+  const connue = (code: string) => code in FONCTIONS_PRO;
   return (
     <ul className={`grid gap-1.5 ${compacte ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-3"} sm:gap-2`}>
       {fonctions.map((fonction) => (
@@ -753,11 +748,11 @@ function ListeFonctions({
           <Icon name="check" className="mt-0.5 size-3.5 shrink-0 text-salon sm:size-4" />
           <span className="min-w-0">
             <span className="block text-[12px] font-medium leading-snug text-ink sm:text-[13px]">
-              {FONCTIONS_PRO[fonction.code]?.nom ?? fonction.nom}
+              {connue(fonction.code) ? f(`${fonction.code}.nom`) : fonction.nom}
             </span>
             {!compacte && (
               <span className="block text-[11px] leading-snug text-muted sm:text-xs">
-                {FONCTIONS_PRO[fonction.code]?.resume ?? fonction.description}
+                {connue(fonction.code) ? f(`${fonction.code}.resume`) : fonction.description}
               </span>
             )}
           </span>
@@ -774,6 +769,8 @@ function PasserAPro({
   fonctions: Offres["fonctions_pro"];
   onChoisir: () => void;
 }) {
+  const t = useTranslations("pro.abonnement.pro");
+  const f = useTranslations("pro.fonctionsPro");
   return (
     <div className="relative mb-4 overflow-hidden rounded-2xl border border-line bg-ink p-3.5 text-surface sm:mb-6 sm:p-5">
       <div
@@ -785,9 +782,9 @@ function PasserAPro({
           <Icon name="crown" className="size-4.5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold sm:text-base">Passez à Pro</p>
+          <p className="text-sm font-semibold sm:text-base">{t("titre")}</p>
           <p className="mt-0.5 text-[12.5px] leading-relaxed opacity-75 sm:text-sm">
-            Tout Standard, plus :
+            {t("plus")}
           </p>
         </div>
         <div className="hidden shrink-0 sm:block">
@@ -796,7 +793,7 @@ function PasserAPro({
             onClick={onChoisir}
             className="rounded-xl bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:brightness-95"
           >
-            Découvrir Pro
+            {t("decouvrir")}
           </button>
         </div>
       </div>
@@ -805,7 +802,9 @@ function PasserAPro({
           {fonctions.map((fonction) => (
             <li key={fonction.code} className="flex min-w-0 items-center gap-1.5 text-[12px] sm:text-[13px]">
               <Icon name="check" className="size-3.5 shrink-0 opacity-80" />
-              <span className="truncate">{FONCTIONS_PRO[fonction.code]?.nom ?? fonction.nom}</span>
+              <span className="truncate">
+                {fonction.code in FONCTIONS_PRO ? f(`${fonction.code}.nom`) : fonction.nom}
+              </span>
             </li>
           ))}
         </ul>
@@ -815,7 +814,7 @@ function PasserAPro({
         onClick={onChoisir}
         className="relative mt-3 w-full rounded-xl bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-sm sm:hidden"
       >
-        Découvrir Pro
+        {t("decouvrir")}
       </button>
     </div>
   );
@@ -823,18 +822,23 @@ function PasserAPro({
 
 /** Un passage à Standard programmé : Pro va à son terme, puis Standard prend la suite. */
 function Programme({ changement }: { changement: ChangementProgramme }) {
+  const t = useTranslations("pro.abonnement");
+  const p = useTranslations("pro.abonnement.programme");
+  const { dateLongue, montant } = useFormats();
+  const nom = nomPlan(t, changement.plan);
   return (
     <div className="mb-4 flex items-start gap-3 rounded-2xl border border-info/30 bg-info-bg p-3.5 sm:mb-6 sm:p-4">
       <Icon name="calendar" className="mt-0.5 size-5 shrink-0 text-info" />
       <div className="min-w-0 text-[12.5px] leading-relaxed text-ink sm:text-sm">
         <p className="font-semibold">
-          {changement.plan.name} à partir du {dateLongue.format(new Date(changement.debut))}
+          {p("titre", { offre: nom, date: dateLongue.format(new Date(changement.debut)) })}
         </p>
         <p className="mt-0.5 text-muted">
-          Votre offre actuelle va jusqu&apos;à son terme, puis {changement.plan.name} prend
-          la suite jusqu&apos;au {dateLongue.format(new Date(changement.fin))} (
-          {montant(changement.montant, changement.devise)}). Les fonctions Pro se mettront
-          alors en pause : vos réglages sont gardés, et reviennent si vous repassez à Pro.
+          {p("detail", {
+            offre: nom,
+            fin: dateLongue.format(new Date(changement.fin)),
+            montant: montant(changement.montant, changement.devise),
+          })}
         </p>
       </div>
     </div>
@@ -854,6 +858,8 @@ function PasserALAnnuel({
   finPeriode: string | null;
   onChoisir: () => void;
 }) {
+  const t = useTranslations("pro.abonnement.annuel");
+  const { dateLongue, montant } = useFormats();
   return (
     <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-salon/30 bg-salon-soft/60 p-3.5 sm:mb-6 sm:gap-4 sm:p-4">
       <span className="salon-gradient flex size-9 shrink-0 items-center justify-center rounded-full text-white sm:size-10">
@@ -861,19 +867,23 @@ function PasserALAnnuel({
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-ink sm:text-base">
-          Passez à l&apos;annuel, économisez{" "}
-          {montant(proposition.economie.montant, proposition.devise)} par an
+          {t("titre", { montant: montant(proposition.economie.montant, proposition.devise) })}
         </p>
         <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted sm:text-sm">
-          {montant(proposition.montant_annuel, proposition.devise)} pour douze mois
-          (−{proposition.economie.pourcentage} %)
           {finPeriode
-            ? `, à partir du ${dateLongue.format(new Date(finPeriode))} — à la suite de votre mois en cours.`
-            : "."}
+            ? t("detailSuite", {
+                montant: montant(proposition.montant_annuel, proposition.devise),
+                pct: proposition.economie.pourcentage,
+                date: dateLongue.format(new Date(finPeriode)),
+              })
+            : t("detail", {
+                montant: montant(proposition.montant_annuel, proposition.devise),
+                pct: proposition.economie.pourcentage,
+              })}
         </p>
       </div>
       <Button type="button" onClick={onChoisir} className="w-full sm:w-auto">
-        Passer à l&apos;annuel
+        {t("bouton")}
       </Button>
     </div>
   );
@@ -884,6 +894,9 @@ function PasserALAnnuel({
 // ---------------------------------------------------------------------------
 
 function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
+  const t = useTranslations("pro.abonnement");
+  const a = useTranslations("pro.abonnement.attente");
+  const { dateLongue, montant } = useFormats();
   const { membership } = useDashboard();
   return (
     <Card className="mb-6 sm:mb-8">
@@ -894,21 +907,19 @@ function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-semibold text-ink sm:text-base">
-            Paiement en cours de vérification
+            {a("titre")}
           </p>
           <p className="mt-1 text-[12.5px] leading-relaxed text-muted sm:text-sm">
-            {demande.method_kind === "kkiapay" ? "KKIAPAY confirme votre transaction auprès du serveur. Votre période s’ouvre après cette confirmation." : <>L&apos;équipe Beauty Salon retrouve votre versement sur le compte
-            crédité, puis ouvre votre période. Cette page se met à jour
-            d&apos;elle-même ; vous recevez aussi un e-mail et une notification.</>}
+            {demande.method_kind === "kkiapay" ? a("kkiapay") : a("manuel")}
           </p>
         </div>
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Fait terme="Offre">
-          {demande.plan.name} · {demande.billing_months} mois
+        <Fait terme={a("offre")}>
+          {nomPlan(t, demande.plan)} · {a("mois", { n: demande.billing_months })}
         </Fait>
-        <Fait terme="Montant">
+        <Fait terme={a("montant")}>
           {montant(demande.amount, demande.currency)}
           {Number(demande.remise_montant) > 0 && (
             <span className="ml-1 text-[11px] font-normal text-success">
@@ -916,14 +927,13 @@ function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
             </span>
           )}
         </Fait>
-        <Fait terme="Moyen">{demande.method_label}</Fait>
-        <Fait terme="Référence">
+        <Fait terme={a("moyen")}>{demande.method_label}</Fait>
+        <Fait terme={a("reference")}>
           <span className="font-mono text-xs">{demande.reference}</span>
         </Fait>
       </dl>
       <p className="mt-3 text-[11px] text-subtle sm:text-xs">
-        Déclaré le {dateLongue.format(new Date(demande.created_at))}. Un seul
-        paiement peut attendre à la fois.
+        {a("declare", { date: dateLongue.format(new Date(demande.created_at)) })}
       </p>
     </Card>
   );
@@ -966,6 +976,9 @@ function Commande({
   /** Le tarif a change depuis l'affichage : relire les offres. */
   onTarifModifie: () => void;
 }) {
+  const t = useTranslations("pro.abonnement");
+  const c = useTranslations("pro.abonnement.commande");
+  const { region, dateLongue, montant } = useFormats();
   const toast = useToast();
   const [choixPays, setChoixPays] = useState<string | null>(null);
   const [choixDevise, setChoixDevise] = useState<string | null>(null);
@@ -990,11 +1003,7 @@ function Commande({
   if (offres.pays.length === 0) {
     return (
       <div id="offres" className="mb-8 scroll-mt-24">
-        <EmptyState title="Le règlement n'est pas encore ouvert">
-          Aucun moyen de paiement n&apos;est configuré pour le moment.
-          L&apos;équipe Beauty Salon vous contacte avant la fin de votre
-          période — rien ne s&apos;interrompt sans prévenir.
-        </EmptyState>
+        <EmptyState title={c("fermee.titre")}>{c("fermee.corps")}</EmptyState>
       </div>
     );
   }
@@ -1037,19 +1046,29 @@ function Commande({
   }
 
   const debutPeriode = plan?.effet
-    ? decrireEffet(plan.effet, acces.raison === "essai")
+    ? decrireEffet(plan.effet, c, dateLongue, acces.raison === "essai")
     : acces.raison === "essai" || acces.raison === "periode"
-      ? `Votre nouvelle période commencera le ${dateLongue.format(new Date(acces.fin_periode ?? ""))}, à la suite de l'actuelle.`
-      : "Votre période commencera à la validation du paiement.";
+      ? c("debutSuite", { date: dateLongue.format(new Date(acces.fin_periode ?? "")) })
+      : c("debutValidation");
+
+  /** Le pays, nommé par le navigateur dans la langue de l'espace. */
+  const nomPays = (code: string, repli: string) => {
+    try {
+      return new Intl.DisplayNames([region], { type: "region" }).of(code) ?? repli;
+    } catch {
+      return repli;
+    }
+  };
+  const nomOffre = plan ? nomPlan(t, { code: plan.code, name: plan.nom }) : "";
 
   function choisirPreuve(fichier: File | null) {
     setErreurPreuve(null);
     if (fichier && !FORMATS_PREUVE.includes(fichier.type)) {
-      setErreurPreuve("Envoyez une capture en JPEG, PNG ou WebP.");
+      setErreurPreuve(c("preuveFormat"));
       return;
     }
     if (fichier && fichier.size > PREUVE_MAX) {
-      setErreurPreuve("La capture dépasse 15 Mo. Envoyez une image plus légère.");
+      setErreurPreuve(c("preuveTaille"));
       return;
     }
     setPreuve(fichier);
@@ -1061,7 +1080,7 @@ function Commande({
     if (!plan || !moyen) return;
     setErreurEnvoi(null);
     if (reference.trim().length < 4) {
-      setErreurEnvoi("Indiquez la référence complète de la transaction.");
+      setErreurEnvoi(c("referenceCourte"));
       return;
     }
 
@@ -1083,13 +1102,13 @@ function Commande({
         { method: "POST", body: corps },
         tenantId,
       );
-      toast.success("Paiement déclaré. Vous recevez un e-mail de confirmation.");
+      toast.success(c("declareOk"));
       setReference("");
       choisirPreuve(null);
       onEnvoye();
     } catch (caught) {
       setErreurEnvoi(
-        caught instanceof DashboardError ? caught.message : "Envoi impossible pour le moment.",
+        caught instanceof DashboardError ? caught.message : c("envoiImpossible"),
       );
       if (caught instanceof DashboardError && caught.code === "demande_en_attente") {
         onEnvoye();
@@ -1106,14 +1125,14 @@ function Commande({
     <form id="offres" onSubmit={envoyer} className="mb-8 scroll-mt-24 space-y-5 sm:space-y-7">
       {/* 1. L'offre */}
       <div>
-        <Etape numero={1} titre="Votre offre" />
+        <Etape numero={1} titre={c("etape1")} />
 
         {(offres.pays.length > 1 || pays.devises.length > 1) && (
           <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             {offres.pays.length > 1 && (
               <Pastilles
-                libelle="Pays"
-                options={offres.pays.map((item) => ({ valeur: item.code, texte: item.nom }))}
+                libelle={c("pays")}
+                options={offres.pays.map((item) => ({ valeur: item.code, texte: nomPays(item.code, item.nom) }))}
                 valeur={pays.code}
                 onChange={(valeur) => {
                   setChoixPays(valeur);
@@ -1124,7 +1143,7 @@ function Commande({
             )}
             {pays.devises.length > 1 && (
               <Pastilles
-                libelle="Devise"
+                libelle={c("devise")}
                 options={pays.devises.map((item) => ({ valeur: item.code, texte: item.code }))}
                 valeur={devise.code}
                 onChange={(valeur) => {
@@ -1139,7 +1158,7 @@ function Commande({
         {groupes.length > 1 && (
           <div
             role="tablist"
-            aria-label="Gamme"
+            aria-label={c("gamme")}
             className="mb-3 grid w-full grid-cols-2 rounded-xl border border-line bg-surface-muted p-1 sm:inline-grid sm:w-auto"
           >
             {groupes.map((item) => (
@@ -1154,7 +1173,7 @@ function Commande({
                 }`}
               >
                 {item === "pro" && <Icon name="crown" className="size-3.5" />}
-                {GROUPES[item]}
+                {t(`groupes.${item}`)}
               </button>
             ))}
           </div>
@@ -1164,18 +1183,19 @@ function Commande({
           <p className="mb-3 flex items-start gap-2 rounded-xl bg-success-bg px-3 py-2 text-[12px] leading-relaxed text-success sm:text-[13px]">
             <Icon name="gift" className="mt-0.5 size-4 shrink-0" />
             <span>
-              <strong className="font-semibold">Parrainage : −{remise.pourcentage} %</strong> sur ce
-              paiement ({remise.nombre} remise{remise.nombre > 1 ? "s" : ""}). Elle
-              {remise.nombre > 1 ? "s sont utilisées" : " est utilisée"} à la validation, rendue
-              {remise.nombre > 1 ? "s" : ""} si le paiement est refusé.{" "}
+              {c.rich("remise", {
+                pct: remise.pourcentage,
+                n: remise.nombre,
+                gras: (texte) => <strong className="font-semibold">{texte}</strong>,
+              })}{" "}
               <Link href="/parrainage" className="font-medium underline underline-offset-2">
-                Mon parrainage
+                {c("monParrainage")}
               </Link>
             </span>
           </p>
         )}
 
-        <div role="radiogroup" aria-label="Offre" className="grid grid-cols-2 gap-2.5 sm:gap-4">
+        <div role="radiogroup" aria-label={c("offre")} className="grid grid-cols-2 gap-2.5 sm:gap-4">
           {plansDuGroupe.map((item) => (
             <CarteOffre
               key={item.code}
@@ -1191,7 +1211,7 @@ function Commande({
         {groupe === "pro" && offres.fonctions_pro.length > 0 && (
           <div className="mt-3 rounded-2xl border border-line bg-surface p-3 sm:p-4">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-subtle sm:text-xs">
-              Tout Standard, plus
+              {c("toutStandard")}
             </p>
             <ListeFonctions fonctions={offres.fonctions_pro} />
           </div>
@@ -1199,8 +1219,7 @@ function Commande({
 
         {bloque ? (
           <p className="mt-2 rounded-xl bg-warning-bg px-3 py-2 text-[12px] leading-relaxed text-warning sm:text-xs">
-            Un passage à {programme?.plan.name} est déjà programmé : un nouveau paiement
-            Pro sera possible une fois ce changement en vigueur.
+            {c("bloque", { offre: programme ? nomPlan(t, programme.plan) : "" })}
           </p>
         ) : (
           <p className="mt-2 text-[11.5px] leading-relaxed text-muted sm:text-xs">{debutPeriode}</p>
@@ -1209,12 +1228,12 @@ function Commande({
 
       {/* 2. Le règlement */}
       <div>
-        <Etape numero={2} titre={`Payez ${somme}`} />
+        <Etape numero={2} titre={c("etape2", { somme })} />
 
         {devise.moyens.length > 1 && (
           <div
             role="radiogroup"
-            aria-label="Moyen de paiement"
+            aria-label={c("moyen")}
             className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"
           >
             {devise.moyens.map((item) => (
@@ -1245,12 +1264,12 @@ function Commande({
 
       {/* 3. La déclaration */}
       {moyen?.kind !== "kkiapay" && <div>
-        <Etape numero={3} titre="Déclarez votre paiement" />
+        <Etape numero={3} titre={c("etape3")} />
         <Card padded={false}>
           <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
             <Field
-              label="Référence de la transaction"
-              hint="Le numéro du reçu, dans votre application de paiement."
+              label={c("reference")}
+              hint={c("referenceAide")}
             >
               <input
                 className={inputClass}
@@ -1261,20 +1280,20 @@ function Commande({
                 spellCheck={false}
                 inputMode="text"
                 required
-                placeholder="Ex. : 4200001234202609251234"
+                placeholder={c("referenceExemple")}
               />
             </Field>
 
             <div>
               <span className="mb-1.5 block text-sm font-medium text-ink">
-                Capture du reçu <span className="font-normal text-subtle">(facultative)</span>
+                {c("capture")} <span className="font-normal text-subtle">{c("facultative")}</span>
               </span>
               <div className="flex items-center gap-3">
                 {apercu ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={apercu}
-                    alt="Aperçu de la capture"
+                    alt={c("apercuCapture")}
                     className="size-14 shrink-0 rounded-lg border border-line object-cover"
                   />
                 ) : (
@@ -1284,7 +1303,7 @@ function Commande({
                 )}
                 <div className="min-w-0 flex-1">
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-ink transition hover:bg-surface-hover">
-                    {preuve ? "Changer" : "Ajouter"}
+                    {preuve ? c("changer") : c("ajouter")}
                     <input
                       type="file"
                       accept={FORMATS_PREUVE.join(",")}
@@ -1301,7 +1320,7 @@ function Commande({
                       onClick={() => choisirPreuve(null)}
                       className="ml-2 text-xs text-muted underline-offset-2 hover:underline"
                     >
-                      Retirer
+                      {c("retirer")}
                     </button>
                   )}
                   <p className="mt-1 truncate text-[11.5px] text-muted sm:text-xs">
@@ -1310,7 +1329,7 @@ function Commande({
                     ) : preuve ? (
                       preuve.name
                     ) : (
-                      "JPEG, PNG ou WebP, 15 Mo au plus."
+                      c("formats")
                     )}
                   </p>
                 </div>
@@ -1331,25 +1350,21 @@ function Commande({
             <div className="min-w-0 flex-1">
               <p className="tabular truncate text-sm font-semibold text-ink sm:text-base">
                 {somme}
-                <span className="hidden font-normal text-muted sm:inline"> · {plan?.nom}</span>
+                <span className="hidden font-normal text-muted sm:inline"> · {nomOffre}</span>
               </p>
               <p className="truncate text-[11px] text-muted sm:hidden">
-                Offre {plan?.nom.toLowerCase()}
+                {c("offreMin", { offre: nomOffre })}
               </p>
-              <p className="hidden text-xs text-muted sm:block">
-                Votre accès s&apos;ouvre à la vérification du versement, pas à
-                l&apos;envoi de ce formulaire.
-              </p>
+              <p className="hidden text-xs text-muted sm:block">{c("accesVerification")}</p>
             </div>
             <Button type="submit" pending={envoi} disabled={!plan || !moyen || bloque} className="shrink-0">
-              Déclarer
-              <span className="hidden sm:inline"> mon paiement</span>
+              {c("declarer")}
+              <span className="hidden sm:inline">{c("declarerSuite")}</span>
             </Button>
           </div>
         </Card>
         <p className="mt-2 text-[11.5px] leading-relaxed text-muted sm:hidden">
-          Votre accès s&apos;ouvre à la vérification du versement, pas à
-          l&apos;envoi de ce formulaire.
+          {c("accesVerification")}
         </p>
       </div>}
     </form>
@@ -1357,7 +1372,12 @@ function Commande({
 }
 
 /** Ce que fera le paiement, en une phrase — calculé aujourd'hui, appliqué à la validation. */
-function decrireEffet(effet: Effet, pendantEssai = false): string {
+function decrireEffet(
+  effet: Effet,
+  c: Traduire,
+  dateLongue: Intl.DateTimeFormat,
+  pendantEssai = false,
+): string {
   const debut = dateLongue.format(new Date(effet.debut));
   const fin = dateLongue.format(new Date(effet.fin));
   const jours = Math.round(effet.jours_credites);
@@ -1367,18 +1387,18 @@ function decrireEffet(effet: Effet, pendantEssai = false): string {
       // conversion (decide avec le produit).
       if (pendantEssai) {
         return jours > 0
-          ? `Pro s'ouvre dès la validation du paiement, et vos ${jours} jour${jours > 1 ? "s" : ""} d'essai restant${jours > 1 ? "s" : ""} s'ajoutent à votre période : jusqu'au ${fin} environ.`
-          : `Pro s'ouvre dès la validation du paiement, jusqu'au ${fin} environ.`;
+          ? c("effet.monteeEssai", { n: jours, fin })
+          : c("effet.monteeSimple", { fin });
       }
       return jours > 0
-        ? `Pro s'ouvre dès la validation du paiement. Vos jours Standard restants deviennent ${jours} jour${jours > 1 ? "s" : ""} de Pro, ajoutés à votre période : jusqu'au ${fin} environ.`
-        : `Pro s'ouvre dès la validation du paiement, jusqu'au ${fin} environ.`;
+        ? c("effet.montee", { n: jours, fin })
+        : c("effet.monteeSimple", { fin });
     case "descente":
-      return `Votre offre Pro va jusqu'à son terme, le ${debut}. Standard prend la suite jusqu'au ${fin} ; les fonctions Pro se mettent alors en pause, vos réglages sont gardés.`;
+      return c("effet.descente", { debut, fin });
     case "renouvellement":
-      return `Votre nouvelle période commencera le ${debut}, à la suite de l'actuelle, et ira jusqu'au ${fin}.`;
+      return c("effet.renouvellement", { debut, fin });
     default:
-      return `Votre période commencera à la validation du paiement, jusqu'au ${fin} environ.`;
+      return c("effet.defaut", { fin });
   }
 }
 
@@ -1440,6 +1460,9 @@ function CarteOffre({
   actuelle: boolean;
   onChoisir: () => void;
 }) {
+  const t = useTranslations("pro.abonnement");
+  const o = useTranslations("pro.abonnement.carte");
+  const { montant } = useFormats();
   const annuel = offre.mois === 12;
   const final = offre.montant_final ?? offre.montant;
   const remise = Number(final) < Number(offre.montant);
@@ -1461,12 +1484,14 @@ function CarteOffre({
     >
       {annuel && economie && (
         <span className="salon-gradient absolute -top-2.5 right-3 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm sm:text-[11px]">
-          Meilleur prix
+          {o("meilleurPrix")}
         </span>
       )}
 
       <span className="flex items-center justify-between gap-2">
-        <span className="text-[13px] font-semibold text-ink sm:text-base">{offre.nom}</span>
+        <span className="text-[13px] font-semibold text-ink sm:text-base">
+          {nomPlan(t, { code: offre.code, name: offre.nom })}
+        </span>
         <span
           aria-hidden
           className={`flex size-4 shrink-0 items-center justify-center rounded-full border sm:size-5 ${
@@ -1488,10 +1513,11 @@ function CarteOffre({
         {montant(final, devise.code)}
       </span>
       <span className="text-[11px] text-muted sm:text-xs">
-        {annuel ? "par an" : "par mois"}
+        {annuel ? o("parAn") : o("parMois")}
         {parMois !== null && (
           <span className="block sm:inline">
-            <span className="hidden sm:inline"> · </span>soit {montant(parMois.toFixed(2), devise.code)}/mois
+            <span className="hidden sm:inline"> · </span>
+            {o("soit", { montant: montant(parMois.toFixed(2), devise.code) })}
           </span>
         )}
       </span>
@@ -1502,11 +1528,11 @@ function CarteOffre({
             −{economie.pourcentage} % · {montant(economie.montant, devise.code)}
           </span>
         ) : (
-          <span className="text-[10.5px] text-subtle sm:text-xs">Sans engagement</span>
+          <span className="text-[10.5px] text-subtle sm:text-xs">{o("sansEngagement")}</span>
         )}
         {actuelle && (
           <span className="inline-flex w-fit rounded-full bg-surface-muted px-2 py-0.5 text-[10.5px] font-medium text-muted sm:text-xs">
-            Votre offre
+            {o("votreOffre")}
           </span>
         )}
       </span>
@@ -1515,6 +1541,7 @@ function CarteOffre({
 }
 
 function PanneauMoyen({ moyen, somme }: { moyen: Moyen; somme: string }) {
+  const m = useTranslations("pro.abonnement.moyen");
   const [qrEnErreur, setQrEnErreur] = useState<string | null>(null);
 
   if (moyen.kind !== "mobile_money") {
@@ -1525,29 +1552,32 @@ function PanneauMoyen({ moyen, somme }: { moyen: Moyen; somme: string }) {
         <div className="grid grid-cols-[7.5rem_1fr] items-start gap-3 p-3.5 sm:grid-cols-[13rem_1fr] sm:gap-6 sm:p-5">
           <div>
             {moyen.qr_url && qrEnErreur !== moyen.qr_url ? (
-              <a href={moyen.qr_url} target="_blank" rel="noreferrer noopener" title="Agrandir">
+              <a href={moyen.qr_url} target="_blank" rel="noreferrer noopener" title={m("agrandir")}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={moyen.qr_url}
-                  alt={`QR code ${moyen.libelle}`}
+                  alt={m("qr", { moyen: moyen.libelle })}
                   className="aspect-square w-full rounded-xl border border-line bg-white object-contain p-1.5 sm:p-2"
                   onError={() => setQrEnErreur(moyen.qr_url)}
                 />
               </a>
             ) : (
               <p className="rounded-xl border border-dashed border-line p-3 text-center text-[11px] text-muted">
-                QR code indisponible. Rechargez la page.
+                {m("qrIndisponible")}
               </p>
             )}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-ink sm:text-base">{moyen.libelle}</p>
             <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-[12.5px] leading-relaxed text-muted sm:text-sm">
-              <li>Scannez le code avec {moyen.libelle}.</li>
+              <li>{m("scannez", { moyen: moyen.libelle })}</li>
               <li>
-                Envoyez exactement <strong className="text-ink">{somme}</strong>.
+                {m.rich("envoyez", {
+                  somme,
+                  gras: (texte) => <strong className="text-ink">{texte}</strong>,
+                })}
               </li>
-              <li>Copiez la référence du reçu ci-dessous.</li>
+              <li>{m("copiez")}</li>
             </ol>
           </div>
         </div>
@@ -1567,25 +1597,24 @@ function PanneauMoyen({ moyen, somme }: { moyen: Moyen; somme: string }) {
         <dl className="mt-3 grid grid-cols-2 gap-2">
           <div className="col-span-2 flex items-center justify-between gap-3 rounded-xl bg-surface-muted px-3 py-2.5">
             <div className="min-w-0">
-              <dt className="text-[10.5px] uppercase tracking-wide text-subtle sm:text-[11px]">Numéro</dt>
+              <dt className="text-[10.5px] uppercase tracking-wide text-subtle sm:text-[11px]">{m("numero")}</dt>
               <dd className="tabular truncate text-base font-semibold text-ink sm:text-lg">
                 {moyen.account_number}
               </dd>
             </div>
-            <Copier texte={moyen.account_number} quoi="Numéro" />
+            <Copier texte={moyen.account_number} succes={m("numeroCopie")} />
           </div>
           <div className="min-w-0 rounded-xl bg-surface-muted px-3 py-2">
-            <dt className="text-[10.5px] uppercase tracking-wide text-subtle sm:text-[11px]">Titulaire</dt>
+            <dt className="text-[10.5px] uppercase tracking-wide text-subtle sm:text-[11px]">{m("titulaire")}</dt>
             <dd className="truncate text-[13px] font-medium text-ink sm:text-sm">{moyen.account_holder}</dd>
           </div>
           <div className="min-w-0 rounded-xl bg-surface-muted px-3 py-2">
-            <dt className="text-[10.5px] uppercase tracking-wide text-subtle sm:text-[11px]">Montant</dt>
+            <dt className="text-[10.5px] uppercase tracking-wide text-subtle sm:text-[11px]">{m("montant")}</dt>
             <dd className="tabular truncate text-[13px] font-medium text-ink sm:text-sm">{somme}</dd>
           </div>
         </dl>
         <p className="mt-2.5 text-[11.5px] leading-relaxed text-muted sm:text-xs">
-          Vérifiez que le nom du titulaire s&apos;affiche avant de valider
-          l&apos;envoi dans votre application.
+          {m("verifiez")}
         </p>
       </div>
       {moyen.instructions && (
@@ -1597,7 +1626,8 @@ function PanneauMoyen({ moyen, somme }: { moyen: Moyen; somme: string }) {
   );
 }
 
-function Copier({ texte, quoi }: { texte: string; quoi: string }) {
+function Copier({ texte, succes }: { texte: string; succes: string }) {
+  const m = useTranslations("pro.abonnement.moyen");
   const toast = useToast();
   const [copie, setCopie] = useState(false);
 
@@ -1616,13 +1646,13 @@ function Copier({ texte, quoi }: { texte: string; quoi: string }) {
         try {
           await navigator.clipboard.writeText(texte);
           setCopie(true);
-          toast.success(`${quoi} copié.`);
+          toast.success(succes);
         } catch {
-          toast.error("Copie impossible : sélectionnez le texte à la main.");
+          toast.error(m("copieImpossible"));
         }
       }}
     >
-      {copie ? "Copié" : "Copier"}
+      {copie ? m("copie") : m("copier")}
     </GhostButton>
   );
 }
@@ -1642,19 +1672,20 @@ function Suivi({
   factures: Page<Invoice> | null;
   erreurFactures: string | null;
 }) {
+  const s = useTranslations("pro.abonnement.suivi");
   const [onglet, setOnglet] = useState<"paiements" | "factures">("paiements");
   const factures = rows(page);
 
   const onglets = [
-    { cle: "paiements" as const, texte: "Paiements", nombre: demandes?.length ?? 0 },
-    { cle: "factures" as const, texte: "Factures", nombre: factures.length },
+    { cle: "paiements" as const, texte: s("paiements"), nombre: demandes?.length ?? 0 },
+    { cle: "factures" as const, texte: s("factures"), nombre: factures.length },
   ];
 
   return (
     <div className="mb-8">
       <div
         role="tablist"
-        aria-label="Suivi de l'abonnement"
+        aria-label={s("aria")}
         className="mb-3 inline-flex rounded-xl border border-line bg-surface-muted p-1"
       >
         {onglets.map((item) => (
@@ -1702,14 +1733,17 @@ function Historique({
   demandes: PaymentRequest[] | null;
   erreur: string | null;
 }) {
-  if (erreur) return <ErrorState>Impossible de charger l&apos;historique.</ErrorState>;
+  const t = useTranslations("pro.abonnement");
+  const s = useTranslations("pro.abonnement.suivi");
+  const { dateLongue, montant } = useFormats();
+  if (erreur) return <ErrorState>{s("erreurHistorique")}</ErrorState>;
   if (demandes === null) return <Skeleton rows={2} />;
-  if (demandes.length === 0) return <Vide>Aucun paiement déclaré pour l&apos;instant.</Vide>;
+  if (demandes.length === 0) return <Vide>{s("aucunPaiement")}</Vide>;
 
   return (
     <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3">
       {demandes.map((demande) => {
-        const etat = DEMANDE[demande.status];
+        const ton = DEMANDE[demande.status] ?? "neutral";
         return (
           <li key={demande.id} className="min-w-0">
             <Card padded={false} className="h-full p-3 sm:p-4">
@@ -1717,15 +1751,21 @@ function Historique({
                 <span className="tabular text-sm font-semibold text-ink sm:text-base">
                   {montant(demande.amount, demande.currency)}
                 </span>
-                <Badge tone={etat.tone}>{etat.label}</Badge>
+                <Badge tone={ton}>
+                  {demande.status in DEMANDE
+                    ? t(`statutDemande.${demande.status}`)
+                    : demande.status_label}
+                </Badge>
               </div>
               <p className="mt-1 truncate text-[11.5px] text-muted sm:text-xs">
-                {demande.plan.name} · {demande.method_label}
+                {nomPlan(t, demande.plan)} · {demande.method_label}
               </p>
               {Number(demande.remise_montant) > 0 && (
                 <p className="mt-1 truncate text-[10.5px] font-medium text-success sm:text-xs">
-                  Parrainage −{Number(demande.remise_pourcentage)} % ·{" "}
-                  {montant(demande.remise_montant, demande.currency)} déduits
+                  {s("parrainage", {
+                    pct: Number(demande.remise_pourcentage),
+                    montant: montant(demande.remise_montant, demande.currency),
+                  })}
                 </p>
               )}
               <p className="mt-0.5 truncate font-mono text-[10.5px] text-subtle sm:text-[11px]">
@@ -1737,8 +1777,10 @@ function Historique({
 
               {demande.status === "approved" && demande.period_start && demande.period_end && (
                 <p className="mt-2 rounded-lg bg-success-bg px-2 py-1.5 text-[10.5px] text-success sm:text-xs">
-                  Du {dateLongue.format(new Date(demande.period_start))} au{" "}
-                  {dateLongue.format(new Date(demande.period_end))}
+                  {s("periode", {
+                    debut: dateLongue.format(new Date(demande.period_start)),
+                    fin: dateLongue.format(new Date(demande.period_end)),
+                  })}
                 </p>
               )}
               {demande.status === "rejected" && demande.rejection_reason && (
@@ -1754,7 +1796,7 @@ function Historique({
                   className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-salon hover:underline sm:text-xs"
                 >
                   <Icon name="image" className="size-3.5" />
-                  Capture
+                  {s("capture")}
                 </a>
               )}
             </Card>
@@ -1774,15 +1816,18 @@ function Factures({
   chargees: boolean;
   erreur: string | null;
 }) {
-  if (erreur) return <ErrorState>Impossible de charger les factures.</ErrorState>;
+  const t = useTranslations("pro.abonnement");
+  const s = useTranslations("pro.abonnement.suivi");
+  const { dateLongue, montant } = useFormats();
+  if (erreur) return <ErrorState>{s("erreurFactures")}</ErrorState>;
   if (!chargees) return <Skeleton rows={2} />;
-  if (factures.length === 0) return <Vide>Une facture est émise à chaque paiement validé.</Vide>;
+  if (factures.length === 0) return <Vide>{s("aucuneFacture")}</Vide>;
 
   return (
     <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3">
       {factures.map((facture) => {
         const retard = facture.is_overdue && facture.status === "issued";
-        const etat = FACTURE[facture.status];
+        const ton = FACTURE[facture.status];
         return (
           <li key={facture.id} className="min-w-0">
             <Card padded={false} className="h-full p-3 sm:p-4">
@@ -1790,8 +1835,12 @@ function Factures({
                 <span className="tabular text-sm font-semibold text-ink sm:text-base">
                   {montant(facture.amount, facture.currency)}
                 </span>
-                <Badge tone={retard ? "danger" : (etat?.tone ?? "neutral")}>
-                  {retard ? "En retard" : (etat?.label ?? facture.status)}
+                <Badge tone={retard ? "danger" : (ton ?? "neutral")}>
+                  {retard
+                    ? s("enRetard")
+                    : ton
+                      ? t(`statutFacture.${facture.status}`)
+                      : facture.status}
                 </Badge>
               </div>
               <p className="tabular mt-1 truncate text-[11.5px] font-medium text-ink sm:text-xs">
@@ -1802,8 +1851,8 @@ function Factures({
               </p>
               <p className="mt-1.5 text-[10.5px] text-subtle sm:text-xs">
                 {facture.paid_at
-                  ? `Réglée le ${dateLongue.format(new Date(facture.paid_at))}`
-                  : `Émise le ${dateLongue.format(new Date(facture.issued_at))}`}
+                  ? s("regleeLe", { date: dateLongue.format(new Date(facture.paid_at)) })
+                  : s("emiseLe", { date: dateLongue.format(new Date(facture.issued_at)) })}
               </p>
             </Card>
           </li>
@@ -1817,47 +1866,18 @@ function Factures({
 // Les questions qu'on se pose avant de payer
 // ---------------------------------------------------------------------------
 
-const QUESTIONS: { question: string; reponse: string }[] = [
-  {
-    question: "Quand ma période payée commence-t-elle ?",
-    reponse:
-      "À la suite de votre période en cours (essai ou mois payé), sans perdre un jour. Exception : Pro choisi pendant l'essai s'ouvre dès la validation, et vos jours d'essai restants s'y ajoutent. Si votre période est déjà terminée, elle commence à la validation du paiement.",
-  },
-  {
-    question: "Puis-je passer du mensuel à l'annuel ?",
-    reponse:
-      "Oui, à tout moment : choisissez l'offre annuelle et réglez-la. Votre année commence à la fin de votre mois en cours.",
-  },
-  {
-    question: "Si je passe de Standard à Pro, je perds mes jours payés ?",
-    reponse:
-      "Non. Pro s'ouvre dès la validation de votre paiement, et vos jours Standard restants sont convertis en jours Pro au prorata des prix mensuels, puis ajoutés à votre période Pro. Ni remboursement, ni supplément.",
-  },
-  {
-    question: "Et si je repasse de Pro à Standard ?",
-    reponse:
-      "Votre offre Pro va jusqu'au bout de ce que vous avez payé, puis Standard prend la suite. Les fonctions Pro se mettent en pause — domaine, apparence, assistants — mais leurs réglages sont gardés et reviennent si vous repassez à Pro.",
-  },
-  {
-    question: "Que se passe-t-il si je ne paie pas à temps ?",
-    reponse:
-      "Vous disposez de 3 jours de grâce. Ensuite, les réservations en ligne s'arrêtent et le tableau de bord passe en lecture seule — votre mini-site reste visible et vos données restent intactes. Tout se rouvre dès la validation de votre paiement.",
-  },
-  {
-    question: "Recevrai-je un rappel avant l'échéance ?",
-    reponse:
-      "Oui, par e-mail : une semaine avant, trois jours avant et la veille (un mois avant pour l'offre annuelle), puis à chaque étape de votre paiement.",
-  },
-];
+/** Les questions, sous `pro.abonnement.questions` (`q` et `r`). */
+const QUESTIONS = ["debut", "annuel", "versPro", "versStandard", "retard", "rappel"];
 
 function Questions() {
+  const q = useTranslations("pro.abonnement.questions");
   return (
     <div>
       <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-subtle">
-        Questions fréquentes
+        {q("titre")}
       </h2>
       <div className="grid gap-2 sm:grid-cols-2">
-        {QUESTIONS.map((item) => (
+        {QUESTIONS.map((cle) => ({ question: q(`${cle}.q`), reponse: q(`${cle}.r`) })).map((item) => (
           <details
             key={item.question}
             className="group rounded-2xl border border-line bg-surface px-4 py-3 open:shadow-card"

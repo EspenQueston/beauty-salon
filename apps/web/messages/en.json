@@ -3103,6 +3103,240 @@
       "toutEnregistre": "Everything is saved.",
       "enregistrer": "Save",
       "lectureSeule": "Only the owner and the manager can edit the profile."
+    },
+    "abonnement": {
+      "titre": "Subscription",
+      "description": "Your access, your plan and your payments, in one place.",
+      "reserve": {
+        "titre": "For the owner only",
+        "corps": "The subscription is paid from the account of the person who owns the salon."
+      },
+      "paiementValide": "Payment validated: your subscription is active.",
+      "paiementTraite": "Your payment has been processed. Check the history.",
+      "aucunAbonnement": "No subscription is attached to this salon yet. The Beauty Salon team takes care of it on validation.",
+      "erreur": "Could not load.",
+      "statutDemande": {
+        "pending": "Under review",
+        "approved": "Validated",
+        "rejected": "Rejected"
+      },
+      "statutFacture": {
+        "draft": "Draft",
+        "issued": "To pay",
+        "paid": "Paid",
+        "void": "Cancelled"
+      },
+      "plans": {
+        "trial": "Trial",
+        "monthly": "Standard monthly",
+        "yearly": "Standard yearly",
+        "pro_monthly": "Pro monthly",
+        "pro_yearly": "Pro yearly"
+      },
+      "statutAbonnement": {
+        "trialing": "Trial period",
+        "active": "Active",
+        "expired": "Expired",
+        "pending_payment": "Payment under review",
+        "suspended": "Suspended",
+        "past_due": "Unpaid",
+        "cancelled": "Cancelled"
+      },
+      "etat": {
+        "jours": "{n, plural, one {day} other {days}}",
+        "restants": "{n, plural, one {# day left} other {# days left}}",
+        "essai": {
+          "titre": "Free trial in progress",
+          "detail": "Until <gras>{date}</gras>. Choose your plan whenever you like: the paid period starts when the trial ends.",
+          "badge": "Trial",
+          "action": "Choose my plan"
+        },
+        "periode": {
+          "titre": "{offre} plan active",
+          "detail": "Your salon is covered until <gras>{date}</gras>. An early payment is added on top, without losing a day.",
+          "badge": "Active",
+          "action": "Extend"
+        },
+        "grace": {
+          "titre": "Period over — grace period",
+          "detail": "Pay before <gras>{date}</gras>: after that, online bookings stop and the dashboard becomes read-only.",
+          "badge": "Grace",
+          "action": "Pay now"
+        },
+        "expire": {
+          "titre": "Subscription expired",
+          "detail": "Online bookings closed, dashboard read-only. Your data is intact: everything reopens as soon as your payment is validated.",
+          "badge": "Expired",
+          "action": "Reactivate my salon"
+        },
+        "suspendu": {
+          "titre": "Subscription suspended",
+          "detail": "The Beauty Salon team has suspended this salon. Contact them to reopen it.",
+          "badge": "Suspended"
+        },
+        "resilie": {
+          "titre": "Subscription cancelled",
+          "detail": "Contact the Beauty Salon team to resume.",
+          "badge": "Cancelled"
+        },
+        "sansAbonnement": {
+          "titre": "Subscription being set up",
+          "detail": "The Beauty Salon team will attach your trial shortly."
+        },
+        "faits": {
+          "offre": "Plan",
+          "statut": "Status",
+          "finEssai": "Trial ends",
+          "finPeriode": "Period ends",
+          "tarif": "Price",
+          "an": "year",
+          "mois": "month",
+          "gratuit": "Free"
+        }
+      },
+      "pro": {
+        "titre": "Upgrade to Pro",
+        "plus": "Everything in Standard, plus:",
+        "decouvrir": "Discover Pro"
+      },
+      "programme": {
+        "titre": "{offre} from {date}",
+        "detail": "Your current plan runs to its end, then {offre} takes over until {fin} ({montant}). Pro features will then pause: your settings are kept, and come back if you return to Pro."
+      },
+      "annuel": {
+        "titre": "Switch to yearly, save {montant} a year",
+        "detail": "{montant} for twelve months (−{pct}%).",
+        "detailSuite": "{montant} for twelve months (−{pct}%), starting {date} — right after your current month.",
+        "bouton": "Switch to yearly"
+      },
+      "attente": {
+        "titre": "Payment under review",
+        "kkiapay": "KKIAPAY is confirming your transaction with the server. Your period opens after this confirmation.",
+        "manuel": "The Beauty Salon team finds your payment on the receiving account, then opens your period. This page updates on its own; you'll also get an email and a notification.",
+        "offre": "Plan",
+        "montant": "Amount",
+        "moyen": "Method",
+        "reference": "Reference",
+        "mois": "{n, plural, one {# month} other {# months}}",
+        "declare": "Submitted on {date}. Only one payment can be pending at a time."
+      },
+      "groupes": {
+        "standard": "Standard",
+        "pro": "Pro"
+      },
+      "commande": {
+        "fermee": {
+          "titre": "Payment isn't open yet",
+          "corps": "No payment method is set up at the moment. The Beauty Salon team will contact you before your period ends — nothing stops without warning."
+        },
+        "debutSuite": "Your new period will start on {date}, right after the current one.",
+        "debutValidation": "Your period will start when the payment is validated.",
+        "preuveFormat": "Send a JPEG, PNG or WebP screenshot.",
+        "preuveTaille": "The screenshot is over 15 MB. Send a lighter image.",
+        "referenceCourte": "Enter the full transaction reference.",
+        "declareOk": "Payment submitted. You'll receive a confirmation email.",
+        "envoiImpossible": "Could not send at the moment.",
+        "etape1": "Your plan",
+        "pays": "Country",
+        "devise": "Currency",
+        "gamme": "Range",
+        "offre": "Plan",
+        "remise": "<gras>Referral: −{pct}%</gras> on this payment ({n, plural, one {# discount} other {# discounts}}). {n, plural, one {It is used on validation, and returned if the payment is rejected.} other {They are used on validation, and returned if the payment is rejected.}}",
+        "monParrainage": "My referrals",
+        "toutStandard": "Everything in Standard, plus",
+        "bloque": "A switch to {offre} is already scheduled: a new Pro payment will be possible once this change takes effect.",
+        "etape2": "Pay {somme}",
+        "moyen": "Payment method",
+        "etape3": "Submit your payment",
+        "reference": "Transaction reference",
+        "referenceAide": "The receipt number, in your payment app.",
+        "referenceExemple": "E.g. 4200001234202609251234",
+        "capture": "Receipt screenshot",
+        "facultative": "(optional)",
+        "apercuCapture": "Screenshot preview",
+        "changer": "Change",
+        "ajouter": "Add",
+        "retirer": "Remove",
+        "formats": "JPEG, PNG or WebP, 15 MB at most.",
+        "offreMin": "{offre} plan",
+        "accesVerification": "Your access opens when the payment is verified, not when this form is sent.",
+        "declarer": "Submit",
+        "declarerSuite": " my payment",
+        "effet": {
+          "monteeEssai": "Pro opens as soon as the payment is validated, and your {n, plural, one {# remaining trial day is} other {# remaining trial days are}} added to your period: until around {fin}.",
+          "monteeSimple": "Pro opens as soon as the payment is validated, until around {fin}.",
+          "montee": "Pro opens as soon as the payment is validated. Your remaining Standard days become {n, plural, one {# day} other {# days}} of Pro, added to your period: until around {fin}.",
+          "descente": "Your Pro plan runs to its end, on {debut}. Standard takes over until {fin}; Pro features then pause, and your settings are kept.",
+          "renouvellement": "Your new period will start on {debut}, right after the current one, and run until {fin}.",
+          "defaut": "Your period will start when the payment is validated, until around {fin}."
+        }
+      },
+      "carte": {
+        "meilleurPrix": "Best price",
+        "parAn": "per year",
+        "parMois": "per month",
+        "soit": "i.e. {montant}/month",
+        "sansEngagement": "No commitment",
+        "votreOffre": "Your plan"
+      },
+      "moyen": {
+        "agrandir": "Enlarge",
+        "qr": "{moyen} QR code",
+        "qrIndisponible": "QR code unavailable. Reload the page.",
+        "scannez": "Scan the code with {moyen}.",
+        "envoyez": "Send exactly <gras>{somme}</gras>.",
+        "copiez": "Copy the receipt reference below.",
+        "numero": "Number",
+        "numeroCopie": "Number copied.",
+        "titulaire": "Account holder",
+        "montant": "Amount",
+        "verifiez": "Check that the account holder's name is shown before confirming the transfer in your app.",
+        "copieImpossible": "Could not copy: select the text by hand.",
+        "copie": "Copied",
+        "copier": "Copy"
+      },
+      "suivi": {
+        "paiements": "Payments",
+        "factures": "Invoices",
+        "aria": "Subscription history",
+        "erreurHistorique": "Could not load the history.",
+        "aucunPaiement": "No payments submitted yet.",
+        "parrainage": "Referral −{pct}% · {montant} deducted",
+        "periode": "From {debut} to {fin}",
+        "capture": "Screenshot",
+        "erreurFactures": "Could not load the invoices.",
+        "aucuneFacture": "An invoice is issued for every validated payment.",
+        "enRetard": "Overdue",
+        "regleeLe": "Paid on {date}",
+        "emiseLe": "Issued on {date}"
+      },
+      "questions": {
+        "titre": "Frequently asked questions",
+        "debut": {
+          "q": "When does my paid period start?",
+          "r": "Right after your current period (trial or paid month), without losing a day. Exception: Pro chosen during the trial opens on validation, and your remaining trial days are added to it. If your period has already ended, it starts when the payment is validated."
+        },
+        "annuel": {
+          "q": "Can I switch from monthly to yearly?",
+          "r": "Yes, at any time: choose the yearly plan and pay for it. Your year starts at the end of your current month."
+        },
+        "versPro": {
+          "q": "If I switch from Standard to Pro, do I lose my paid days?",
+          "r": "No. Pro opens as soon as your payment is validated, and your remaining Standard days are converted into Pro days pro rata to the monthly prices, then added to your Pro period. No refund, no extra charge."
+        },
+        "versStandard": {
+          "q": "And if I go back from Pro to Standard?",
+          "r": "Your Pro plan runs to the end of what you've paid, then Standard takes over. Pro features pause — domain, appearance, assistants — but their settings are kept and come back if you return to Pro."
+        },
+        "retard": {
+          "q": "What happens if I don't pay on time?",
+          "r": "You have 3 days of grace. After that, online bookings stop and the dashboard becomes read-only — your mini-site stays visible and your data stays intact. Everything reopens as soon as your payment is validated."
+        },
+        "rappel": {
+          "q": "Will I get a reminder before the due date?",
+          "r": "Yes, by email: a week before, three days before and the day before (a month before for the yearly plan), then at each step of your payment."
+        }
+      }
     }
   },
   "theme": {

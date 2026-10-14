@@ -3103,6 +3103,240 @@
       "toutEnregistre": "Tout est enregistré.",
       "enregistrer": "Enregistrer",
       "lectureSeule": "Seuls le propriétaire et le gérant peuvent modifier le profil."
+    },
+    "abonnement": {
+      "titre": "Abonnement",
+      "description": "Votre accès, votre offre et vos paiements, au même endroit.",
+      "reserve": {
+        "titre": "Réservé au propriétaire",
+        "corps": "Le règlement de l'abonnement se fait depuis le compte de la personne qui possède le salon."
+      },
+      "paiementValide": "Paiement validé : votre abonnement est actif.",
+      "paiementTraite": "Votre paiement a été traité. Consultez l'historique.",
+      "aucunAbonnement": "Aucun abonnement n'est encore rattaché à ce salon. L'équipe Beauty Salon s'en charge à la validation.",
+      "erreur": "Chargement impossible.",
+      "statutDemande": {
+        "pending": "En vérification",
+        "approved": "Validé",
+        "rejected": "Refusé"
+      },
+      "statutFacture": {
+        "draft": "Brouillon",
+        "issued": "À régler",
+        "paid": "Réglée",
+        "void": "Annulée"
+      },
+      "plans": {
+        "trial": "Essai",
+        "monthly": "Standard mensuel",
+        "yearly": "Standard annuel",
+        "pro_monthly": "Pro mensuel",
+        "pro_yearly": "Pro annuel"
+      },
+      "statutAbonnement": {
+        "trialing": "Période d'essai",
+        "active": "Actif",
+        "expired": "Expiré",
+        "pending_payment": "Paiement en vérification",
+        "suspended": "Suspendu",
+        "past_due": "Impayé",
+        "cancelled": "Résilié"
+      },
+      "etat": {
+        "jours": "{n, plural, one {jour} other {jours}}",
+        "restants": "{n, plural, one {# jour restant} other {# jours restants}}",
+        "essai": {
+          "titre": "Essai gratuit en cours",
+          "detail": "Jusqu'au <gras>{date}</gras>. Choisissez votre offre quand vous voulez : la période payée commence à la fin de l'essai.",
+          "badge": "Essai",
+          "action": "Choisir mon offre"
+        },
+        "periode": {
+          "titre": "Offre {offre} active",
+          "detail": "Votre salon est couvert jusqu'au <gras>{date}</gras>. Un paiement anticipé s'ajoute à la suite, sans perdre un jour.",
+          "badge": "Actif",
+          "action": "Prolonger"
+        },
+        "grace": {
+          "titre": "Période terminée — délai de grâce",
+          "detail": "Réglez avant le <gras>{date}</gras> : ensuite, les réservations en ligne s'arrêtent et le tableau de bord passe en lecture seule.",
+          "badge": "Grâce",
+          "action": "Régler maintenant"
+        },
+        "expire": {
+          "titre": "Abonnement expiré",
+          "detail": "Réservations en ligne fermées, tableau de bord en lecture seule. Vos données sont intactes : tout se rouvre dès la validation de votre paiement.",
+          "badge": "Expiré",
+          "action": "Réactiver mon salon"
+        },
+        "suspendu": {
+          "titre": "Abonnement suspendu",
+          "detail": "L'équipe Beauty Salon a suspendu ce salon. Contactez-la pour le rouvrir.",
+          "badge": "Suspendu"
+        },
+        "resilie": {
+          "titre": "Abonnement résilié",
+          "detail": "Contactez l'équipe Beauty Salon pour reprendre.",
+          "badge": "Résilié"
+        },
+        "sansAbonnement": {
+          "titre": "Abonnement en préparation",
+          "detail": "L'équipe Beauty Salon rattache votre essai sous peu."
+        },
+        "faits": {
+          "offre": "Offre",
+          "statut": "Statut",
+          "finEssai": "Fin de l'essai",
+          "finPeriode": "Fin de période",
+          "tarif": "Tarif",
+          "an": "an",
+          "mois": "mois",
+          "gratuit": "Gratuit"
+        }
+      },
+      "pro": {
+        "titre": "Passez à Pro",
+        "plus": "Tout Standard, plus :",
+        "decouvrir": "Découvrir Pro"
+      },
+      "programme": {
+        "titre": "{offre} à partir du {date}",
+        "detail": "Votre offre actuelle va jusqu'à son terme, puis {offre} prend la suite jusqu'au {fin} ({montant}). Les fonctions Pro se mettront alors en pause : vos réglages sont gardés, et reviennent si vous repassez à Pro."
+      },
+      "annuel": {
+        "titre": "Passez à l'annuel, économisez {montant} par an",
+        "detail": "{montant} pour douze mois (−{pct} %).",
+        "detailSuite": "{montant} pour douze mois (−{pct} %), à partir du {date} — à la suite de votre mois en cours.",
+        "bouton": "Passer à l'annuel"
+      },
+      "attente": {
+        "titre": "Paiement en cours de vérification",
+        "kkiapay": "KKIAPAY confirme votre transaction auprès du serveur. Votre période s’ouvre après cette confirmation.",
+        "manuel": "L'équipe Beauty Salon retrouve votre versement sur le compte crédité, puis ouvre votre période. Cette page se met à jour d'elle-même ; vous recevez aussi un e-mail et une notification.",
+        "offre": "Offre",
+        "montant": "Montant",
+        "moyen": "Moyen",
+        "reference": "Référence",
+        "mois": "{n} mois",
+        "declare": "Déclaré le {date}. Un seul paiement peut attendre à la fois."
+      },
+      "groupes": {
+        "standard": "Standard",
+        "pro": "Pro"
+      },
+      "commande": {
+        "fermee": {
+          "titre": "Le règlement n'est pas encore ouvert",
+          "corps": "Aucun moyen de paiement n'est configuré pour le moment. L'équipe Beauty Salon vous contacte avant la fin de votre période — rien ne s'interrompt sans prévenir."
+        },
+        "debutSuite": "Votre nouvelle période commencera le {date}, à la suite de l'actuelle.",
+        "debutValidation": "Votre période commencera à la validation du paiement.",
+        "preuveFormat": "Envoyez une capture en JPEG, PNG ou WebP.",
+        "preuveTaille": "La capture dépasse 15 Mo. Envoyez une image plus légère.",
+        "referenceCourte": "Indiquez la référence complète de la transaction.",
+        "declareOk": "Paiement déclaré. Vous recevez un e-mail de confirmation.",
+        "envoiImpossible": "Envoi impossible pour le moment.",
+        "etape1": "Votre offre",
+        "pays": "Pays",
+        "devise": "Devise",
+        "gamme": "Gamme",
+        "offre": "Offre",
+        "remise": "<gras>Parrainage : −{pct} %</gras> sur ce paiement ({n, plural, one {# remise} other {# remises}}). {n, plural, one {Elle est utilisée à la validation, rendue si le paiement est refusé.} other {Elles sont utilisées à la validation, rendues si le paiement est refusé.}}",
+        "monParrainage": "Mon parrainage",
+        "toutStandard": "Tout Standard, plus",
+        "bloque": "Un passage à {offre} est déjà programmé : un nouveau paiement Pro sera possible une fois ce changement en vigueur.",
+        "etape2": "Payez {somme}",
+        "moyen": "Moyen de paiement",
+        "etape3": "Déclarez votre paiement",
+        "reference": "Référence de la transaction",
+        "referenceAide": "Le numéro du reçu, dans votre application de paiement.",
+        "referenceExemple": "Ex. : 4200001234202609251234",
+        "capture": "Capture du reçu",
+        "facultative": "(facultative)",
+        "apercuCapture": "Aperçu de la capture",
+        "changer": "Changer",
+        "ajouter": "Ajouter",
+        "retirer": "Retirer",
+        "formats": "JPEG, PNG ou WebP, 15 Mo au plus.",
+        "offreMin": "Offre {offre}",
+        "accesVerification": "Votre accès s'ouvre à la vérification du versement, pas à l'envoi de ce formulaire.",
+        "declarer": "Déclarer",
+        "declarerSuite": " mon paiement",
+        "effet": {
+          "monteeEssai": "Pro s'ouvre dès la validation du paiement, et vos {n, plural, one {# jour d'essai restant s'ajoute} other {# jours d'essai restants s'ajoutent}} à votre période : jusqu'au {fin} environ.",
+          "monteeSimple": "Pro s'ouvre dès la validation du paiement, jusqu'au {fin} environ.",
+          "montee": "Pro s'ouvre dès la validation du paiement. Vos jours Standard restants deviennent {n, plural, one {# jour} other {# jours}} de Pro, ajoutés à votre période : jusqu'au {fin} environ.",
+          "descente": "Votre offre Pro va jusqu'à son terme, le {debut}. Standard prend la suite jusqu'au {fin} ; les fonctions Pro se mettent alors en pause, vos réglages sont gardés.",
+          "renouvellement": "Votre nouvelle période commencera le {debut}, à la suite de l'actuelle, et ira jusqu'au {fin}.",
+          "defaut": "Votre période commencera à la validation du paiement, jusqu'au {fin} environ."
+        }
+      },
+      "carte": {
+        "meilleurPrix": "Meilleur prix",
+        "parAn": "par an",
+        "parMois": "par mois",
+        "soit": "soit {montant}/mois",
+        "sansEngagement": "Sans engagement",
+        "votreOffre": "Votre offre"
+      },
+      "moyen": {
+        "agrandir": "Agrandir",
+        "qr": "QR code {moyen}",
+        "qrIndisponible": "QR code indisponible. Rechargez la page.",
+        "scannez": "Scannez le code avec {moyen}.",
+        "envoyez": "Envoyez exactement <gras>{somme}</gras>.",
+        "copiez": "Copiez la référence du reçu ci-dessous.",
+        "numero": "Numéro",
+        "numeroCopie": "Numéro copié.",
+        "titulaire": "Titulaire",
+        "montant": "Montant",
+        "verifiez": "Vérifiez que le nom du titulaire s'affiche avant de valider l'envoi dans votre application.",
+        "copieImpossible": "Copie impossible : sélectionnez le texte à la main.",
+        "copie": "Copié",
+        "copier": "Copier"
+      },
+      "suivi": {
+        "paiements": "Paiements",
+        "factures": "Factures",
+        "aria": "Suivi de l'abonnement",
+        "erreurHistorique": "Impossible de charger l'historique.",
+        "aucunPaiement": "Aucun paiement déclaré pour l'instant.",
+        "parrainage": "Parrainage −{pct} % · {montant} déduits",
+        "periode": "Du {debut} au {fin}",
+        "capture": "Capture",
+        "erreurFactures": "Impossible de charger les factures.",
+        "aucuneFacture": "Une facture est émise à chaque paiement validé.",
+        "enRetard": "En retard",
+        "regleeLe": "Réglée le {date}",
+        "emiseLe": "Émise le {date}"
+      },
+      "questions": {
+        "titre": "Questions fréquentes",
+        "debut": {
+          "q": "Quand ma période payée commence-t-elle ?",
+          "r": "À la suite de votre période en cours (essai ou mois payé), sans perdre un jour. Exception : Pro choisi pendant l'essai s'ouvre dès la validation, et vos jours d'essai restants s'y ajoutent. Si votre période est déjà terminée, elle commence à la validation du paiement."
+        },
+        "annuel": {
+          "q": "Puis-je passer du mensuel à l'annuel ?",
+          "r": "Oui, à tout moment : choisissez l'offre annuelle et réglez-la. Votre année commence à la fin de votre mois en cours."
+        },
+        "versPro": {
+          "q": "Si je passe de Standard à Pro, je perds mes jours payés ?",
+          "r": "Non. Pro s'ouvre dès la validation de votre paiement, et vos jours Standard restants sont convertis en jours Pro au prorata des prix mensuels, puis ajoutés à votre période Pro. Ni remboursement, ni supplément."
+        },
+        "versStandard": {
+          "q": "Et si je repasse de Pro à Standard ?",
+          "r": "Votre offre Pro va jusqu'au bout de ce que vous avez payé, puis Standard prend la suite. Les fonctions Pro se mettent en pause — domaine, apparence, assistants — mais leurs réglages sont gardés et reviennent si vous repassez à Pro."
+        },
+        "retard": {
+          "q": "Que se passe-t-il si je ne paie pas à temps ?",
+          "r": "Vous disposez de 3 jours de grâce. Ensuite, les réservations en ligne s'arrêtent et le tableau de bord passe en lecture seule — votre mini-site reste visible et vos données restent intactes. Tout se rouvre dès la validation de votre paiement."
+        },
+        "rappel": {
+          "q": "Recevrai-je un rappel avant l'échéance ?",
+          "r": "Oui, par e-mail : une semaine avant, trois jours avant et la veille (un mois avant pour l'offre annuelle), puis à chaque étape de votre paiement."
+        }
+      }
     }
   },
   "theme": {
