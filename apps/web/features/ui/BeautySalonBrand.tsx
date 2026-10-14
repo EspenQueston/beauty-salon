@@ -2,7 +2,7 @@ import Image from "next/image";
 
 const SYMBOL = "/icones/beauty-salon-symbol.png";
 const WORDMARK = "/icones/beauty-salon-wordmark.png";
-const WORDMARK_CLAIR = "/icones/beauty-salon-wordmark-clair.png";
+const WORDMARK_PIED = "/icones/beauty-salon-wordmark-pied.png";
 
 /** The source artwork has transparent margins; these wrappers crop only those margins. */
 export function BeautySalonSymbol({ className = "size-8" }: { className?: string }) {
@@ -43,10 +43,15 @@ export function BeautySalonBrand({ compact = false }: { compact?: boolean }) {
 /**
  * The wordmark of the platform footer, which is dark in both UI modes.
  *
- * `beauty-salon-wordmark-clair.png` is the same artwork, trimmed to the
- * letters and recoloured in a lighter tint of the brand hue (343°): the
- * original berry reaches only 3.0:1 on the footer background (#0b0b10), this
- * one 7.25:1. The previous version brightened the berry with a CSS filter and
+ * `beauty-salon-wordmark-pied.png` is the same artwork, trimmed to the
+ * letters and filled with rgb(237, 59, 118): exactly the colour the header
+ * logo takes on screen in dark mode (the berry #AE2553 through the
+ * `.platform-logo` filter, brightness 1.45 then saturate 0.9). A paler tint
+ * used here before read as another brand next to the header. The original
+ * berry reaches only 3.0:1 on the footer background (#0b0b10); this one 5.1:1.
+ *
+ * The file was renamed rather than overwritten: `/icones` is cached for a
+ * week, and phones would have kept the old colour. The previous version brightened the berry with a CSS filter and
  * a blurred glow, inside a box narrower than the image — the letters looked
  * soft and the final "n" was cut off.
  *
@@ -56,7 +61,7 @@ export function BeautySalonBrand({ compact = false }: { compact?: boolean }) {
 export function BeautySalonFooterWordmark() {
   return (
     <Image
-      src={WORDMARK_CLAIR}
+      src={WORDMARK_PIED}
       alt="Beauty Salon"
       width={1200}
       height={228}
