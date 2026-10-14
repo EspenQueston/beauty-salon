@@ -2944,6 +2944,165 @@
         "description": "La description de votre salon s'affiche ici.",
         "reserver": "Réserver"
       }
+    },
+    "profil": {
+      "titre": "Profil du salon",
+      "description": "Ce que voient vos clientes avant de réserver, et les règles que suit votre agenda.",
+      "erreur": "Chargement impossible.",
+      "ok": "Profil enregistré. Votre mini-site est à jour.",
+      "alignees": "{n, plural, one {# prestation est désormais proposée à domicile.} other {# prestations sont désormais proposées à domicile.}}",
+      "sections": {
+        "vitrine": "Vitrine",
+        "reseaux": "Réseaux",
+        "couleurs": "Couleurs",
+        "apropos": "À propos",
+        "regles": "Réservation",
+        "deplacement": "Déplacement",
+        "acompte": "Acompte",
+        "devise": "Devise",
+        "encaissement": "Encaissement",
+        "annulation": "Annulation",
+        "retard": "Retard"
+      },
+      "vitrine": {
+        "titre": "Vitrine",
+        "presentation": "Présentation",
+        "presentationAide": "Deux ou trois phrases : votre spécialité, ce qui vous distingue.",
+        "adresse": "Adresse",
+        "ville": "Ville",
+        "telephone": "Téléphone",
+        "whatsappAide": "Format international, ex. +242060000000.",
+        "email": "E-mail de contact",
+        "emailAide": "Affiché sur votre mini-site, dans le pied de page et la page Infos.",
+        "emailExemple": "contact@monsalon.com",
+        "utiliser": "Utiliser {email}",
+        "monEmail": "Mon e-mail",
+        "lieu": "Prestations réalisées",
+        "lieuSalon": "Ouvrir le domicile proposera aussi vos prestations chez la cliente, sauf celles que vous aurez mises à part.",
+        "lieuDomicile": "Vos prestations sont proposées à domicile, sauf celles réglées sur « Au salon » dans leur fiche. Les forfaits se règlent dans « Déplacement ».",
+        "lieux": {
+          "salon": "Au salon",
+          "home": "À domicile",
+          "hybrid": "Les deux"
+        }
+      },
+      "reseaux": {
+        "titre": "Réseaux sociaux",
+        "wechat": "Vous ajouter sur WeChat",
+        "wechatAide": "Le QR code s'affiche sur votre mini-site avec votre identifiant à côté. Une cliente scanne depuis son ordinateur, ou recopie l'identifiant si elle lit la page depuis WeChat.",
+        "wechatId": "Identifiant WeChat",
+        "wechatIdAide": "Celui qu'on tape pour vous chercher, pas votre nom affiché.",
+        "wechatQr": "QR code WeChat",
+        "wechatQrAide": "Dans WeChat : Moi › QR code personnel › enregistrer l'image, puis téléversez-la ici."
+      },
+      "couleurs": {
+        "titre": "Couleurs",
+        "intro": "Elles habillent votre mini-site. La mise en page, elle, reste la même pour tous — c'est ce qui garantit qu'il reste lisible sur un petit écran.",
+        "principale": "Principale",
+        "principaleAide": "Boutons et prix",
+        "secondaire": "Secondaire",
+        "secondaireAide": "Pastilles, médaillons",
+        "fond": "Fond de page",
+        "fondAide": "Derrière les cartes",
+        "apercu": "Aperçu du mini-site",
+        "ville": "Votre ville",
+        "pastille": "Tresses",
+        "reserver": "Réserver",
+        "hexa": "{couleur} en hexadécimal"
+      },
+      "regles": {
+        "titre": "Règles de réservation",
+        "intro": "Ces réglages changent les créneaux proposés à vos clientes. Une modification s'applique aux réservations à venir, pas à celles déjà prises.",
+        "pas": "Pas des créneaux",
+        "pasAide": "{n} min propose {exemple}…",
+        "battement": "Battement entre rendez-vous",
+        "battementAide": "{duree} réservées après chaque prestation.",
+        "battementAucun": "Aucun temps de remise en état réservé.",
+        "delai": "Délai minimal avant un rendez-vous",
+        "delaiAide": "Une cliente ne peut pas réserver dans les {duree}.",
+        "delaiAucun": "Réservation possible jusqu'à la dernière minute.",
+        "horizon": "Réservable jusqu'à (jours à l'avance)",
+        "horizonAide": "Agenda ouvert sur {n} jours."
+      },
+      "apropos": {
+        "titre": "Page « À propos »",
+        "intro": "Votre histoire, en quelques paragraphes. Elle devient une page à part sur votre mini-site, et le lien n'apparaît dans le menu qu'une fois le texte écrit.",
+        "titrePage": "Titre de la page",
+        "titrePageAide": "Laissé vide, votre mini-site affiche « À propos de {salon} ».",
+        "titrePageExemple": "À propos de {salon}",
+        "presentation": "Votre présentation",
+        "presentationAide": "Séparez vos paragraphes par une ligne vide. Depuis quand vous exercez, ce que vous faites le mieux, ce qui vous distingue.",
+        "presentationExemple": "Nous avons ouvert en 2015, dans un quartier où personne ne coiffait le cheveu afro.\n\nAujourd'hui, trois prestataires vous reçoivent sur rendez-vous…",
+        "mots": "{n, plural, =0 {0 mot} one {# mot} other {# mots}}",
+        "enLigne": "la page est en ligne",
+        "masquee": "la page reste masquée tant que ce champ est vide",
+        "photo": "Photo de la page",
+        "photoAide": "Portrait ou vue du salon. Sans photo, une image d'ambiance est affichée à la place."
+      },
+      "deplacement": {
+        "titre": "Où vous vous déplacez",
+        "quartiers": "Quartiers desservis",
+        "quartiersAide": "Séparés par des virgules. Affichés tels quels sur votre mini-site."
+      },
+      "acompte": {
+        "titre": "Montant de l'acompte",
+        "intro": "Le temps se réserve à un pourcentage : un créneau libéré assez tôt peut être repris. Les fournitures, elles, se règlent en entier — vous les avez déjà achetées.",
+        "part": "Part de la prestation demandée (%)",
+        "partAide": "S'applique aux prestations que vous avez marquées « demande un acompte ».",
+        "minimum": "Acompte minimum ({devise})",
+        "minimumAide": "Plancher, quel que soit le pourcentage. Utile sur les petites prestations.",
+        "fournitures": "Fournitures payées d'avance",
+        "fournituresAide": "Des mèches achetées pour une cliente précise ne se revendent pas toujours.",
+        "aucun": "Avec 0 % et aucun minimum, aucun acompte ne sera demandé — même sur les prestations qui en réclament un."
+      },
+      "annulation": {
+        "titre": "Annulation",
+        "politique": "Politique affichée à la cliente",
+        "politiqueAide": "Elle doit être acceptée avant toute réservation : c'est ce texte que vous pourrez opposer en cas de litige.",
+        "delai": "Annulation gratuite jusqu'à (heures avant)"
+      },
+      "retard": {
+        "titre": "Retard",
+        "intro": "Le retard se règle en le disant à l'avance. Une cliente prévenue arrive à l'heure ; une cliente qui l'apprend sur place se sent lésée — et vous perdez les deux.",
+        "audela": "Ce qu'il se passe au-delà",
+        "audelaAide": "Affiché sur votre mini-site et rappelé dans l'e-mail de confirmation.",
+        "audelaExemple": "Nous faisons notre possible pour vous prendre quand même, mais la prestation peut être raccourcie ou reportée selon les rendez-vous suivants.",
+        "tolerance": "Tolérance",
+        "aucune": "Aucune",
+        "autre": "Autre",
+        "toleranceAria": "Tolérance de retard en minutes",
+        "vuParCliente": "Vu par la cliente",
+        "apercuSansTolerance": "Merci d'arriver à l'heure. En cas de retard :",
+        "apercuTolerance": "Merci d'arriver à l'heure. Au-delà de {n} minutes de retard :",
+        "vide": "Tant que ce champ est vide, rien n'est affiché à la cliente et l'e-mail ne mentionne pas le retard.",
+        "agendaSignale": "L'agenda, lui, signale déjà les rendez-vous en retard de plus de {n} min."
+      },
+      "point": {
+        "recherche": "salon de beauté",
+        "format": "Format attendu : 4.2634, 15.2429",
+        "libelle": "Point exact (facultatif)",
+        "aide": "Collez les coordonnées depuis Google Maps : clic droit sur votre salon, puis clic sur les chiffres pour les copier.",
+        "aria": "Latitude et longitude",
+        "verifier": "Vérifier le point sur la carte",
+        "trouver": "Trouver mon salon sur la carte",
+        "itineraireExact": "L'itinéraire mène au point exact.",
+        "itineraireAdresse": "Sans point, l'itinéraire cherche l'adresse écrite."
+      },
+      "exemple": {
+        "titre": "Sur un exemple",
+        "prestation": "Prestation",
+        "options": "Options",
+        "fournitures": "Fournitures",
+        "total": "Total",
+        "acompte": "Acompte demandé",
+        "partTotal": "{pct} % du total",
+        "sansPourcentage": "Sans pourcentage, l'acompte reste au minimum quel que soit le panier — {minimum}, plus les fournitures.",
+        "minimumApplique": "Ici c'est le minimum qui s'applique : {taux} % ne feraient que {montant}."
+      },
+      "nonEnregistre": "Modifications non enregistrées.",
+      "toutEnregistre": "Tout est enregistré.",
+      "enregistrer": "Enregistrer",
+      "lectureSeule": "Seuls le propriétaire et le gérant peuvent modifier le profil."
     }
   },
   "theme": {

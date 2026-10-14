@@ -2944,6 +2944,165 @@
         "description": "Your salon description appears here.",
         "reserver": "Book"
       }
+    },
+    "profil": {
+      "titre": "Salon profile",
+      "description": "What your clients see before booking, and the rules your calendar follows.",
+      "erreur": "Could not load.",
+      "ok": "Profile saved. Your mini-site is up to date.",
+      "alignees": "{n, plural, one {# service is now offered at home.} other {# services are now offered at home.}}",
+      "sections": {
+        "vitrine": "Showcase",
+        "reseaux": "Social",
+        "couleurs": "Colours",
+        "apropos": "About",
+        "regles": "Booking",
+        "deplacement": "Travel",
+        "acompte": "Deposit",
+        "devise": "Currency",
+        "encaissement": "Payments",
+        "annulation": "Cancellation",
+        "retard": "Lateness"
+      },
+      "vitrine": {
+        "titre": "Showcase",
+        "presentation": "Description",
+        "presentationAide": "Two or three sentences: your specialty, what sets you apart.",
+        "adresse": "Address",
+        "ville": "City",
+        "telephone": "Phone",
+        "whatsappAide": "International format, e.g. +242060000000.",
+        "email": "Contact email",
+        "emailAide": "Shown on your mini-site, in the footer and on the Info page.",
+        "emailExemple": "contact@mysalon.com",
+        "utiliser": "Use {email}",
+        "monEmail": "My email",
+        "lieu": "Where services take place",
+        "lieuSalon": "Opening home visits will also offer your services at the client's home, except those you set apart.",
+        "lieuDomicile": "Your services are offered at home, except those set to “At the salon” on their page. Travel fees are set in “Travel”.",
+        "lieux": {
+          "salon": "At the salon",
+          "home": "At home",
+          "hybrid": "Both"
+        }
+      },
+      "reseaux": {
+        "titre": "Social media",
+        "wechat": "Let clients add you on WeChat",
+        "wechatAide": "The QR code is shown on your mini-site with your ID next to it. A client scans it from their computer, or copies the ID if they're reading the page inside WeChat.",
+        "wechatId": "WeChat ID",
+        "wechatIdAide": "The one people type to find you, not your display name.",
+        "wechatQr": "WeChat QR code",
+        "wechatQrAide": "In WeChat: Me › My QR code › save the image, then upload it here."
+      },
+      "couleurs": {
+        "titre": "Colours",
+        "intro": "They dress your mini-site. The layout stays the same for everyone — that's what keeps it readable on a small screen.",
+        "principale": "Main",
+        "principaleAide": "Buttons and prices",
+        "secondaire": "Secondary",
+        "secondaireAide": "Badges, medallions",
+        "fond": "Page background",
+        "fondAide": "Behind the cards",
+        "apercu": "Mini-site preview",
+        "ville": "Your city",
+        "pastille": "Braids",
+        "reserver": "Book",
+        "hexa": "{couleur} in hexadecimal"
+      },
+      "regles": {
+        "titre": "Booking rules",
+        "intro": "These settings change the slots offered to your clients. A change applies to future bookings, not those already made.",
+        "pas": "Slot interval",
+        "pasAide": "{n} min offers {exemple}…",
+        "battement": "Buffer between appointments",
+        "battementAide": "{duree} reserved after each service.",
+        "battementAucun": "No turnaround time reserved.",
+        "delai": "Minimum notice before an appointment",
+        "delaiAide": "A client can't book within the next {duree}.",
+        "delaiAucun": "Booking possible up to the last minute.",
+        "horizon": "Bookable up to (days ahead)",
+        "horizonAide": "Calendar open {n} days ahead."
+      },
+      "apropos": {
+        "titre": "“About” page",
+        "intro": "Your story, in a few paragraphs. It becomes a separate page on your mini-site, and the link only appears in the menu once the text is written.",
+        "titrePage": "Page title",
+        "titrePageAide": "Left empty, your mini-site shows “About {salon}”.",
+        "titrePageExemple": "About {salon}",
+        "presentation": "Your story",
+        "presentationAide": "Separate your paragraphs with a blank line. How long you've been working, what you do best, what sets you apart.",
+        "presentationExemple": "We opened in 2015, in a neighbourhood where nobody styled afro hair.\n\nToday, three stylists welcome you by appointment…",
+        "mots": "{n, plural, one {# word} other {# words}}",
+        "enLigne": "the page is live",
+        "masquee": "the page stays hidden while this field is empty",
+        "photo": "Page photo",
+        "photoAide": "Portrait or view of the salon. Without a photo, a mood image is shown instead."
+      },
+      "deplacement": {
+        "titre": "Where you travel",
+        "quartiers": "Neighbourhoods served",
+        "quartiersAide": "Separated by commas. Shown as written on your mini-site."
+      },
+      "acompte": {
+        "titre": "Deposit amount",
+        "intro": "Time is reserved with a percentage: a slot freed early enough can be rebooked. Supplies are paid in full — you've already bought them.",
+        "part": "Share of the service requested (%)",
+        "partAide": "Applies to the services you've marked “requires a deposit”.",
+        "minimum": "Minimum deposit ({devise})",
+        "minimumAide": "A floor, whatever the percentage. Useful for small services.",
+        "fournitures": "Supplies paid in advance",
+        "fournituresAide": "Hair bought for a specific client can't always be resold.",
+        "aucun": "With 0% and no minimum, no deposit will be requested — even on services that require one."
+      },
+      "annulation": {
+        "titre": "Cancellation",
+        "politique": "Policy shown to the client",
+        "politiqueAide": "It must be accepted before any booking: this is the text you can rely on in case of dispute.",
+        "delai": "Free cancellation up to (hours before)"
+      },
+      "retard": {
+        "titre": "Lateness",
+        "intro": "Lateness is handled by saying it upfront. A client who's been told arrives on time; one who finds out on the spot feels cheated — and you lose both.",
+        "audela": "What happens beyond that",
+        "audelaAide": "Shown on your mini-site and repeated in the confirmation email.",
+        "audelaExemple": "We do our best to see you anyway, but the service may be shortened or postponed depending on the following appointments.",
+        "tolerance": "Grace period",
+        "aucune": "None",
+        "autre": "Other",
+        "toleranceAria": "Grace period in minutes",
+        "vuParCliente": "As the client sees it",
+        "apercuSansTolerance": "Please arrive on time. If you are late:",
+        "apercuTolerance": "Please arrive on time. Beyond {n} minutes late:",
+        "vide": "While this field is empty, nothing is shown to the client and the email doesn't mention lateness.",
+        "agendaSignale": "The calendar already flags appointments more than {n} min late."
+      },
+      "point": {
+        "recherche": "beauty salon",
+        "format": "Expected format: 4.2634, 15.2429",
+        "libelle": "Exact location (optional)",
+        "aide": "Paste the coordinates from Google Maps: right-click on your salon, then click the numbers to copy them.",
+        "aria": "Latitude and longitude",
+        "verifier": "Check the location on the map",
+        "trouver": "Find my salon on the map",
+        "itineraireExact": "Directions lead to the exact spot.",
+        "itineraireAdresse": "Without a location, directions search for the written address."
+      },
+      "exemple": {
+        "titre": "On an example",
+        "prestation": "Service",
+        "options": "Options",
+        "fournitures": "Supplies",
+        "total": "Total",
+        "acompte": "Deposit requested",
+        "partTotal": "{pct}% of the total",
+        "sansPourcentage": "Without a percentage, the deposit stays at the minimum whatever the basket — {minimum}, plus supplies.",
+        "minimumApplique": "Here the minimum applies: {taux}% would only be {montant}."
+      },
+      "nonEnregistre": "Unsaved changes.",
+      "toutEnregistre": "Everything is saved.",
+      "enregistrer": "Save",
+      "lectureSeule": "Only the owner and the manager can edit the profile."
     }
   },
   "theme": {

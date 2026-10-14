@@ -8,6 +8,7 @@
  * à l'aveugle déplace de vrais rendez-vous. Chaque champ dit donc son effet.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { adjustForContrast } from "@/lib/contrast";
@@ -36,6 +37,7 @@ import { TravelZones } from "./TravelZones";
 import { rows, useResource, type Page } from "./useResource";
 import { SectionNav, type NavSection } from "./SectionNav";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 
 interface Profile {
   description: string;
@@ -75,18 +77,18 @@ const NETWORKS = [
 ] as const;
 
 /** Ordre de la barre de sections : celui de la page, pas un autre. */
-const PROFILE_SECTIONS: NavSection[] = [
-  { id: "vitrine", label: "Vitrine" },
-  { id: "reseaux", label: "Réseaux" },
-  { id: "couleurs", label: "Couleurs" },
-  { id: "apropos", label: "À propos" },
-  { id: "regles", label: "Réservation" },
-  { id: "deplacement", label: "Déplacement" },
-  { id: "acompte", label: "Acompte" },
-  { id: "devise", label: "Devise" },
-  { id: "encaissement", label: "Encaissement" },
-  { id: "annulation", label: "Annulation" },
-  { id: "retard", label: "Retard" },
+const PROFILE_SECTIONS = [
+  "vitrine",
+  "reseaux",
+  "couleurs",
+  "apropos",
+  "regles",
+  "deplacement",
+  "acompte",
+  "devise",
+  "encaissement",
+  "annulation",
+  "retard",
 ];
 
 const DEFAULT_PRIMARY = "#B4436C";
@@ -94,6 +96,13 @@ const DEFAULT_ACCENT = "#F2C4CE";
 const DEFAULT_SURFACE = "#FAF7F8";
 
 export function SalonProfileScreen() {
+  const t = useTranslations("pro.profil");
+  const site = useTranslations("site");
+  const { region } = useFormats();
+  const sections: NavSection[] = PROFILE_SECTIONS.map((id) => ({
+    id,
+    label: t(`sections.${id}`),
+  }));
   const { membership, user } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -109,7 +118,7 @@ export function SalonProfileScreen() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [saved, setSaved] = useState<Profile | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -121,7 +130,7 @@ export function SalonProfileScreen() {
         setSaved(data);
       })
       .catch(() => {
-        if (!cancelled) setError("Chargement impossible.");
+        if (!cancelled) setError(true);
       });
     return () => {
       cancelled = true;
@@ -159,18 +168,14 @@ export function SalonProfileScreen() {
         );
         alignees = reponse.prestations_alignees ?? 0;
       },
-      { success: "Profil enregistré. Votre mini-site est à jour." },
+      { success: t("ok") },
     );
 
     setPending(false);
     if (ok) {
       setSaved(profile);
       if (alignees > 0) {
-        toast.info(
-          alignees === 1
-            ? "1 prestation est désormais proposée à domicile."
-            : `${alignees} prestations sont désormais proposées à domicile.`,
-        );
+        toast.info(t("alignees", { n: alignees }));
       }
     }
   }
@@ -178,8 +183,8 @@ export function SalonProfileScreen() {
   if (error) {
     return (
       <section>
-        <PageHeader title="Profil du salon" />
-        <ErrorState>{error}</ErrorState>
+        <PageHeader title={t("titre")} />
+        <ErrorState>{t("erreur")}</ErrorState>
       </section>
     );
   }
@@ -187,7 +192,7 @@ export function SalonProfileScreen() {
   if (!profile) {
     return (
       <section>
-        <PageHeader title="Profil du salon" />
+        <PageHeader title={t("titre")} />
         <Skeleton rows={5} />
       </section>
     );
@@ -211,22 +216,22 @@ export function SalonProfileScreen() {
   return (
     <section>
       <PageHeader
-        title="Profil du salon"
-        description="Ce que voient vos clientes avant de réserver, et les règles que suit votre agenda."
+        title={t("titre")}
+        description={t("description")}
       />
 
       {/* Six blocs sur trois écrans : la barre évite de les parcourir à
           l'aveugle, et dit laquelle on est en train de remplir. */}
-      <SectionNav sections={PROFILE_SECTIONS} />
+      <SectionNav sections={sections} />
 
       <form onSubmit={submit} className="space-y-6 pb-24">
         {/* ---------------------------------------------------------- vitrine */}
         <Card id="vitrine">
-          <SectionTitle>Vitrine</SectionTitle>
+          <SectionTitle>{t("vitrine.titre")}</SectionTitle>
 
           <Field
-            label="Présentation"
-            hint="Deux ou trois phrases : votre spécialité, ce qui vous distingue."
+            label={t("vitrine.presentation")}
+            hint={t("vitrine.presentationAide")}
           >
             <textarea
               value={profile.description}
@@ -238,7 +243,7 @@ export function SalonProfileScreen() {
           </Field>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Adresse">
+            <Field label={t("vitrine.adresse")}>
               <input
                 value={profile.address}
                 onChange={(event) => set("address", event.target.value)}
@@ -246,7 +251,7 @@ export function SalonProfileScreen() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Ville">
+            <Field label={t("vitrine.ville")}>
               <input
                 value={profile.city}
                 onChange={(event) => set("city", event.target.value)}
@@ -254,7 +259,7 @@ export function SalonProfileScreen() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Téléphone">
+            <Field label={t("vitrine.telephone")}>
               <input
                 value={profile.phone}
                 onChange={(event) => set("phone", event.target.value)}
@@ -264,7 +269,7 @@ export function SalonProfileScreen() {
             </Field>
             <Field
               label="WhatsApp"
-              hint="Format international, ex. +242060000000."
+              hint={t("vitrine.whatsappAide")}
             >
               <input
                 value={profile.whatsapp_number}
@@ -275,8 +280,8 @@ export function SalonProfileScreen() {
               />
             </Field>
             <Field
-              label="E-mail de contact"
-              hint="Affiché sur votre mini-site, dans le pied de page et la page Infos."
+              label={t("vitrine.email")}
+              hint={t("vitrine.emailAide")}
             >
               <div className="flex gap-2">
                 <input
@@ -284,7 +289,7 @@ export function SalonProfileScreen() {
                   value={profile.contact_email ?? ""}
                   onChange={(event) => set("contact_email", event.target.value)}
                   disabled={!canEdit}
-                  placeholder="contact@monsalon.com"
+                  placeholder={t("vitrine.emailExemple")}
                   autoComplete="email"
                   className={inputClass}
                 />
@@ -293,9 +298,9 @@ export function SalonProfileScreen() {
                     type="button"
                     onClick={() => set("contact_email", user.email)}
                     className="shrink-0 rounded-lg border border-line px-3 text-xs font-medium text-ink transition hover:bg-surface-hover"
-                    title={`Utiliser ${user.email}`}
+                    title={t("vitrine.utiliser", { email: user.email })}
                   >
-                    Mon e-mail
+                    {t("vitrine.monEmail")}
                   </button>
                 )}
               </div>
@@ -312,12 +317,12 @@ export function SalonProfileScreen() {
               plutôt que de le faire découvrir.
             */}
             <Field
-              label="Prestations réalisées"
+              label={t("vitrine.lieu")}
               className="sm:col-span-2"
               hint={
                 profile.service_mode === "salon"
-                  ? "Ouvrir le domicile proposera aussi vos prestations chez la cliente, sauf celles que vous aurez mises à part."
-                  : "Vos prestations sont proposées à domicile, sauf celles réglées sur « Au salon » dans leur fiche. Les forfaits se règlent dans « Déplacement »."
+                  ? t("vitrine.lieuSalon")
+                  : t("vitrine.lieuDomicile")
               }
             >
               <select
@@ -331,9 +336,9 @@ export function SalonProfileScreen() {
                 disabled={!canEdit}
                 className={inputClass}
               >
-                <option value="salon">Au salon</option>
-                <option value="home">À domicile</option>
-                <option value="hybrid">Les deux</option>
+                <option value="salon">{t("vitrine.lieux.salon")}</option>
+                <option value="home">{t("vitrine.lieux.home")}</option>
+                <option value="hybrid">{t("vitrine.lieux.hybrid")}</option>
               </select>
             </Field>
           </div>
@@ -341,7 +346,7 @@ export function SalonProfileScreen() {
 
         {/* --------------------------------------------------------- réseaux */}
         <Card id="reseaux">
-          <SectionTitle>Réseaux sociaux</SectionTitle>
+          <SectionTitle>{t("reseaux.titre")}</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2">
             {NETWORKS.map((network) => (
               <Field key={network.key} label={network.label}>
@@ -375,18 +380,14 @@ export function SalonProfileScreen() {
           */}
           <div className="mt-6 border-t border-line pt-5">
             <h3 className="text-sm font-semibold text-ink">
-              Vous ajouter sur WeChat
+              {t("reseaux.wechat")}
             </h3>
-            <p className="mt-1 text-sm text-muted">
-              Le QR code s&apos;affiche sur votre mini-site avec votre
-              identifiant à côté. Une cliente scanne depuis son ordinateur, ou
-              recopie l&apos;identifiant si elle lit la page depuis WeChat.
-            </p>
+            <p className="mt-1 text-sm text-muted">{t("reseaux.wechatAide")}</p>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field
-                label="Identifiant WeChat"
-                hint="Celui qu'on tape pour vous chercher, pas votre nom affiché."
+                label={t("reseaux.wechatId")}
+                hint={t("reseaux.wechatIdAide")}
               >
                 <input
                   value={profile.wechat_id ?? ""}
@@ -406,8 +407,8 @@ export function SalonProfileScreen() {
                 value={profile.wechat_qr}
                 onChange={(id) => set("wechat_qr", id)}
                 onUploaded={media.reload}
-                label="QR code WeChat"
-                hint="Dans WeChat : Moi › QR code personnel › enregistrer l.image, puis téléversez-la ici."
+                label={t("reseaux.wechatQr")}
+                hint={t("reseaux.wechatQrAide")}
                 // Un genre à lui : ce code n.est ni une réalisation, ni le QR
                 // de paiement. Les confondre ferait payer une cliente qui
                 // voulait poser une question.
@@ -419,12 +420,8 @@ export function SalonProfileScreen() {
 
         {/* --------------------------------------------------------- couleurs */}
         <Card id="couleurs">
-          <SectionTitle>Couleurs</SectionTitle>
-          <p className="mb-4 text-sm text-muted">
-            Elles habillent votre mini-site. La mise en page, elle, reste la
-            même pour tous — c&apos;est ce qui garantit qu&apos;il reste lisible
-            sur un petit écran.
-          </p>
+          <SectionTitle>{t("couleurs.titre")}</SectionTitle>
+          <p className="mb-4 text-sm text-muted">{t("couleurs.intro")}</p>
 
           {canEdit && (
             <div className="mb-5 flex flex-wrap gap-2">
@@ -465,7 +462,7 @@ export function SalonProfileScreen() {
                         style={{ background: palette.surface }}
                       />
                     </span>
-                    {palette.name}
+                    {site(`palettes.${palette.cle}`)}
                   </button>
                 );
               })}
@@ -475,8 +472,8 @@ export function SalonProfileScreen() {
           <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
             <div className="flex flex-wrap gap-5">
               <ColorField
-                label="Principale"
-                hint="Boutons et prix"
+                label={t("couleurs.principale")}
+                hint={t("couleurs.principaleAide")}
                 value={primary}
                 disabled={!canEdit}
                 onChange={(value) =>
@@ -484,8 +481,8 @@ export function SalonProfileScreen() {
                 }
               />
               <ColorField
-                label="Secondaire"
-                hint="Pastilles, médaillons"
+                label={t("couleurs.secondaire")}
+                hint={t("couleurs.secondaireAide")}
                 value={accent}
                 disabled={!canEdit}
                 onChange={(value) =>
@@ -493,8 +490,8 @@ export function SalonProfileScreen() {
                 }
               />
               <ColorField
-                label="Fond de page"
-                hint="Derrière les cartes"
+                label={t("couleurs.fond")}
+                hint={t("couleurs.fondAide")}
                 value={surface}
                 disabled={!canEdit}
                 onChange={(value) =>
@@ -508,7 +505,7 @@ export function SalonProfileScreen() {
                 trois couleurs et pas un échantillon isolé. */}
             <div className="min-w-0">
               <span className="mb-1.5 block text-sm font-medium text-ink">
-                Aperçu du mini-site
+                {t("couleurs.apercu")}
               </span>
               <div
                 className="rounded-xl border border-line p-4"
@@ -522,7 +519,7 @@ export function SalonProfileScreen() {
                     {membership.tenant.name}
                   </p>
                   <p className="mt-0.5 text-sm text-black/55">
-                    {profile.city || "Votre ville"}
+                    {profile.city || t("couleurs.ville")}
                   </p>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -530,7 +527,7 @@ export function SalonProfileScreen() {
                       className="rounded-full px-2.5 py-1 text-xs font-medium"
                       style={{ background: accent, color: encrePastille }}
                     >
-                      Tresses
+                      {t("couleurs.pastille")}
                     </span>
                     <span
                       className="tabular text-sm font-semibold"
@@ -544,7 +541,7 @@ export function SalonProfileScreen() {
                     className="mt-3 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white"
                     style={{ background: primary }}
                   >
-                    Réserver
+                    {t("couleurs.reserver")}
                   </span>
                 </div>
               </div>
@@ -569,17 +566,16 @@ export function SalonProfileScreen() {
 
         {/* ------------------------------------------- règles de réservation */}
         <Card id="regles">
-          <SectionTitle>Règles de réservation</SectionTitle>
-          <p className="mb-4 text-sm text-muted">
-            Ces réglages changent les créneaux proposés à vos clientes. Une
-            modification s&apos;applique aux réservations à venir, pas à celles
-            déjà prises.
-          </p>
+          <SectionTitle>{t("regles.titre")}</SectionTitle>
+          <p className="mb-4 text-sm text-muted">{t("regles.intro")}</p>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
-              label="Pas des créneaux"
-              hint={`${profile.slot_granularity_minutes} min propose ${describeStep(profile.slot_granularity_minutes)}…`}
+              label={t("regles.pas")}
+              hint={t("regles.pasAide", {
+                n: profile.slot_granularity_minutes,
+                exemple: describeStep(profile.slot_granularity_minutes, region),
+              })}
             >
               <input
                 type="number"
@@ -596,11 +592,11 @@ export function SalonProfileScreen() {
             </Field>
 
             <Field
-              label="Battement entre rendez-vous"
+              label={t("regles.battement")}
               hint={
                 profile.buffer_minutes > 0
-                  ? `${formatDuration(profile.buffer_minutes)} réservées après chaque prestation.`
-                  : "Aucun temps de remise en état réservé."
+                  ? t("regles.battementAide", { duree: formatDuration(profile.buffer_minutes) })
+                  : t("regles.battementAucun")
               }
             >
               <input
@@ -618,11 +614,11 @@ export function SalonProfileScreen() {
             </Field>
 
             <Field
-              label="Délai minimal avant un rendez-vous"
+              label={t("regles.delai")}
               hint={
                 profile.min_lead_time_minutes > 0
-                  ? `Une cliente ne peut pas réserver dans les ${formatDuration(profile.min_lead_time_minutes)}.`
-                  : "Réservation possible jusqu'à la dernière minute."
+                  ? t("regles.delaiAide", { duree: formatDuration(profile.min_lead_time_minutes) })
+                  : t("regles.delaiAucun")
               }
             >
               <input
@@ -639,8 +635,8 @@ export function SalonProfileScreen() {
             </Field>
 
             <Field
-              label="Réservable jusqu'à (jours à l'avance)"
-              hint={`Agenda ouvert sur ${profile.max_advance_days} jours.`}
+              label={t("regles.horizon")}
+              hint={t("regles.horizonAide", { n: profile.max_advance_days })}
             >
               <input
                 type="number"
@@ -659,29 +655,25 @@ export function SalonProfileScreen() {
 
         {/* -------------------------------------------------------- à propos */}
         <Card id="apropos">
-          <SectionTitle>Page « À propos »</SectionTitle>
-          <p className="mb-4 text-sm text-muted">
-            Votre histoire, en quelques paragraphes. Elle devient une page à
-            part sur votre mini-site, et le lien n&apos;apparaît dans le menu
-            qu&apos;une fois le texte écrit.
-          </p>
+          <SectionTitle>{t("apropos.titre")}</SectionTitle>
+          <p className="mb-4 text-sm text-muted">{t("apropos.intro")}</p>
 
           <Field
-            label="Titre de la page"
-            hint={`Laissé vide, votre mini-site affiche « À propos de ${membership.tenant.name} ».`}
+            label={t("apropos.titrePage")}
+            hint={t("apropos.titrePageAide", { salon: membership.tenant.name })}
           >
             <input
               value={profile.about_title}
               onChange={(event) => set("about_title", event.target.value)}
               disabled={!canEdit}
-              placeholder={`À propos de ${membership.tenant.name}`}
+              placeholder={t("apropos.titrePageExemple", { salon: membership.tenant.name })}
               className={inputClass}
             />
           </Field>
 
           <Field
-            label="Votre présentation"
-            hint="Séparez vos paragraphes par une ligne vide. Depuis quand vous exercez, ce que vous faites le mieux, ce qui vous distingue."
+            label={t("apropos.presentation")}
+            hint={t("apropos.presentationAide")}
             className="mt-4"
           >
             <textarea
@@ -689,21 +681,14 @@ export function SalonProfileScreen() {
               onChange={(event) => set("about_content", event.target.value)}
               disabled={!canEdit}
               rows={9}
-              placeholder={
-                "Nous avons ouvert en 2015, dans un quartier où personne ne " +
-                "coiffait le cheveu afro.\n\nAujourd'hui, trois prestataires " +
-                "vous reçoivent sur rendez-vous…"
-              }
+              placeholder={t("apropos.presentationExemple")}
               className={inputClass}
             />
           </Field>
 
           <p className="mt-3 text-xs text-subtle">
-            {aboutWordCount(profile.about_content)} mot
-            {aboutWordCount(profile.about_content) > 1 ? "s" : ""} ·{" "}
-            {profile.about_content.trim()
-              ? "la page est en ligne"
-              : "la page reste masquée tant que ce champ est vide"}
+            {t("apropos.mots", { n: aboutWordCount(profile.about_content) })} ·{" "}
+            {profile.about_content.trim() ? t("apropos.enLigne") : t("apropos.masquee")}
           </p>
 
           {/*
@@ -721,8 +706,8 @@ export function SalonProfileScreen() {
               value={profile.about_image}
               onChange={(id) => set("about_image", id)}
               onUploaded={media.reload}
-              label="Photo de la page"
-              hint="Portrait ou vue du salon. Sans photo, une image d.ambiance est affichée à la place."
+              label={t("apropos.photo")}
+              hint={t("apropos.photoAide")}
               // « about » et non « gallery » : cette photo a son emploi, elle
               // n.a rien à faire dans les réalisations du salon.
               kind="about"
@@ -734,11 +719,11 @@ export function SalonProfileScreen() {
         {profile.service_mode !== "salon" && (
           <>
             <Card id="deplacement">
-              <SectionTitle>Où vous vous déplacez</SectionTitle>
+              <SectionTitle>{t("deplacement.titre")}</SectionTitle>
 
               <Field
-                label="Quartiers desservis"
-                hint="Séparés par des virgules. Affichés tels quels sur votre mini-site."
+                label={t("deplacement.quartiers")}
+                hint={t("deplacement.quartiersAide")}
               >
                 <input
                   value={profile.service_area}
@@ -776,12 +761,8 @@ export function SalonProfileScreen() {
             33 %, les mêmes 150 sur 690 n'en font plus que 22 — alors qu'un
             rendez-vous plus cher qui ne vient pas coûte davantage. */}
         <Card id="acompte">
-          <SectionTitle>Montant de l&apos;acompte</SectionTitle>
-          <p className="-mt-2 mb-4 text-sm text-muted">
-            Le temps se réserve à un pourcentage : un créneau libéré assez tôt
-            peut être repris. Les fournitures, elles, se règlent en entier —
-            vous les avez déjà achetées.
-          </p>
+          <SectionTitle>{t("acompte.titre")}</SectionTitle>
+          <p className="-mt-2 mb-4 text-sm text-muted">{t("acompte.intro")}</p>
 
           {/*
             Les deux chiffres ensemble, et nulle part ailleurs.
@@ -795,8 +776,8 @@ export function SalonProfileScreen() {
           */}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
-              label="Part de la prestation demandée (%)"
-              hint="S'applique aux prestations que vous avez marquées « demande un acompte »."
+              label={t("acompte.part")}
+              hint={t("acompte.partAide")}
             >
               <input
                 type="number"
@@ -812,8 +793,8 @@ export function SalonProfileScreen() {
             </Field>
 
             <Field
-              label={`Acompte minimum (${membership.tenant.currency})`}
-              hint="Plancher, quel que soit le pourcentage. Utile sur les petites prestations."
+              label={t("acompte.minimum", { devise: membership.tenant.currency })}
+              hint={t("acompte.minimumAide")}
             >
               <input
                 type="number"
@@ -830,8 +811,8 @@ export function SalonProfileScreen() {
               <Toggle
                 checked={profile.deposit_covers_items}
                 onChange={(value) => set("deposit_covers_items", value)}
-                label="Fournitures payées d'avance"
-                hint="Des mèches achetées pour une cliente précise ne se revendent pas toujours."
+                label={t("acompte.fournitures")}
+                hint={t("acompte.fournituresAide")}
               />
             </div>
           </div>
@@ -843,10 +824,7 @@ export function SalonProfileScreen() {
             Number(profile.deposit_minimum) === 0 && (
               <p className="mt-3 flex items-start gap-2 rounded-xl bg-warning-bg px-3 py-2.5 text-sm text-warning">
                 <Icon name="clock" className="mt-0.5 size-4 shrink-0" />
-                <span>
-                  Avec 0 % et aucun minimum, aucun acompte ne sera demandé —
-                  même sur les prestations qui en réclament un.
-                </span>
+                <span>{t("acompte.aucun")}</span>
               </p>
             )}
 
@@ -877,11 +855,11 @@ export function SalonProfileScreen() {
 
         {/* ------------------------------------------------------- annulation */}
         <Card id="annulation">
-          <SectionTitle>Annulation</SectionTitle>
+          <SectionTitle>{t("annulation.titre")}</SectionTitle>
 
           <Field
-            label="Politique affichée à la cliente"
-            hint="Elle doit être acceptée avant toute réservation : c'est ce texte que vous pourrez opposer en cas de litige."
+            label={t("annulation.politique")}
+            hint={t("annulation.politiqueAide")}
           >
             <textarea
               value={profile.cancellation_policy}
@@ -895,7 +873,7 @@ export function SalonProfileScreen() {
           </Field>
 
           <Field
-            label="Annulation gratuite jusqu'à (heures avant)"
+            label={t("annulation.delai")}
             className="mt-4 max-w-xs"
           >
             <input
@@ -914,13 +892,9 @@ export function SalonProfileScreen() {
 
         {/* ------------------------------------------------------------ retard */}
         <Card id="retard">
-          <SectionTitle>Retard</SectionTitle>
+          <SectionTitle>{t("retard.titre")}</SectionTitle>
 
-          <p className="-mt-2 mb-5 text-sm text-muted">
-            Le retard se règle en le disant à l&apos;avance. Une cliente
-            prévenue arrive à l&apos;heure ; une cliente qui l&apos;apprend sur
-            place se sent lésée — et vous perdez les deux.
-          </p>
+          <p className="-mt-2 mb-5 text-sm text-muted">{t("retard.intro")}</p>
 
           <div className="grid gap-5 sm:grid-cols-[minmax(0,13rem)_1fr]">
             <ToleranceInput
@@ -930,19 +904,15 @@ export function SalonProfileScreen() {
             />
 
             <Field
-              label="Ce qu'il se passe au-delà"
-              hint="Affiché sur votre mini-site et rappelé dans l'e-mail de confirmation."
+              label={t("retard.audela")}
+              hint={t("retard.audelaAide")}
             >
               <textarea
                 value={profile.late_policy}
                 onChange={(event) => set("late_policy", event.target.value)}
                 disabled={!canEdit}
                 rows={3}
-                placeholder={
-                  "Nous faisons notre possible pour vous prendre quand même, " +
-                  "mais la prestation peut être raccourcie ou reportée selon " +
-                  "les rendez-vous suivants."
-                }
+                placeholder={t("retard.audelaExemple")}
                 className={inputClass}
               />
             </Field>
@@ -960,18 +930,16 @@ export function SalonProfileScreen() {
           <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur lg:left-[17rem]">
             <div className="mx-auto flex max-w-4xl items-center justify-between gap-4">
               <p className="text-sm text-muted">
-                {dirty
-                  ? "Modifications non enregistrées."
-                  : "Tout est enregistré."}
+                {dirty ? t("nonEnregistre") : t("toutEnregistre")}
               </p>
               <Button type="submit" pending={pending} disabled={!dirty}>
-                Enregistrer
+                {t("enregistrer")}
               </Button>
             </div>
           </div>
         ) : (
           <p className="text-sm text-muted">
-            Seuls le propriétaire et le gérant peuvent modifier le profil.
+            {t("lectureSeule")}
           </p>
         )}
       </form>
@@ -992,17 +960,21 @@ function aboutWordCount(text: string): number {
  * haut : les deux se lisaient côte à côte avec deux conventions
  * différentes, « 9 h 30 » d'un côté et « 9:30 » de l'autre.
  */
-function describeStep(minutes: number): string {
+function describeStep(minutes: number, region: string): string {
   const step = Math.max(5, minutes);
   return [0, step, step * 2]
-    .map((offset) => frenchClock(9 * 60 + offset))
+    .map((offset) => frenchClock(9 * 60 + offset, region))
     .join(", ");
 }
 
-/** Minutes depuis minuit → « 9 h » ou « 9 h 30 », espaces insécables. */
-function frenchClock(total: number): string {
+/**
+ * Minutes depuis minuit → « 9 h » ou « 9 h 30 », espaces insécables ; en
+ * anglais, « 9:00 » et « 9:30 ».
+ */
+function frenchClock(total: number, region: string): string {
   const hours = Math.floor(total / 60);
   const minutes = total % 60;
+  if (!region.startsWith("fr")) return `${hours}:${String(minutes).padStart(2, "0")}`;
   const hour = `${hours} h`;
   return minutes === 0 ? hour : `${hour} ${String(minutes).padStart(2, "0")}`;
 }
@@ -1020,6 +992,7 @@ function ColorField({
   disabled?: boolean;
   onChange: (value: string) => void;
 }) {
+  const t = useTranslations("pro.profil.couleurs");
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">
@@ -1039,7 +1012,7 @@ function ColorField({
           onChange={(event) => onChange(event.target.value)}
           disabled={disabled}
           spellCheck={false}
-          aria-label={`${label} en hexadécimal`}
+          aria-label={t("hexa", { couleur: label })}
           className="tabular w-28 rounded-lg border border-line bg-surface px-2.5 py-2 text-sm text-ink"
         />
       </span>
@@ -1066,11 +1039,12 @@ function ToleranceInput({
   disabled?: boolean;
   onChange: (minutes: number) => void;
 }) {
+  const t = useTranslations("pro.profil.retard");
   const isPreset = (TOLERANCES as readonly number[]).includes(value);
 
   return (
     <fieldset className="min-w-0">
-      <legend className="mb-1.5 text-sm font-medium text-ink">Tolérance</legend>
+      <legend className="mb-1.5 text-sm font-medium text-ink">{t("tolerance")}</legend>
 
       <div className="flex flex-wrap gap-1.5">
         {TOLERANCES.map((minutes) => (
@@ -1086,13 +1060,13 @@ function ToleranceInput({
                 : "border border-line text-muted hover:border-ink/40 hover:text-ink"
             } disabled:opacity-50`}
           >
-            {minutes === 0 ? "Aucune" : `${minutes} min`}
+            {minutes === 0 ? t("aucune") : `${minutes} min`}
           </button>
         ))}
       </div>
 
       <label className="mt-2.5 flex items-center gap-2">
-        <span className="text-xs text-subtle">Autre</span>
+        <span className="text-xs text-subtle">{t("autre")}</span>
         <input
           type="number"
           min={0}
@@ -1105,7 +1079,7 @@ function ToleranceInput({
             );
           }}
           disabled={disabled}
-          aria-label="Tolérance de retard en minutes"
+          aria-label={t("toleranceAria")}
           className={`tabular w-20 rounded-lg border bg-surface px-2.5 py-1.5 text-sm text-ink ${
             isPreset ? "border-line" : "border-ink/40"
           }`}
@@ -1124,29 +1098,24 @@ function ToleranceInput({
  * évite de découvrir le ton employé dans un e-mail déjà parti.
  */
 function LatePreview({ minutes, policy }: { minutes: number; policy: string }) {
+  const t = useTranslations("pro.profil.retard");
   const written = policy.trim();
 
   return (
     <div className="mt-5 rounded-xl border border-dashed border-line bg-surface-muted px-4 py-3.5">
       <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-wide text-subtle">
-        Vu par la cliente
+        {t("vuParCliente")}
       </p>
 
       {written ? (
         <p className="text-sm leading-relaxed text-ink">
-          {minutes === 0
-            ? "Merci d'arriver à l'heure. En cas de retard : "
-            : `Merci d'arriver à l'heure. Au-delà de ${minutes} minutes de retard : `}
+          {minutes === 0 ? t("apercuSansTolerance") : t("apercuTolerance", { n: minutes })}{" "}
           <span className="text-muted">{written}</span>
         </p>
       ) : (
         <p className="text-sm leading-relaxed text-muted">
-          Tant que ce champ est vide, rien n&apos;est affiché à la cliente et
-          l&apos;e-mail ne mentionne pas le retard.{" "}
-          <span className="text-ink">
-            L&apos;agenda, lui, signale déjà les rendez-vous en retard de plus
-            de {minutes} min.
-          </span>
+          {t("vide")}{" "}
+          <span className="text-ink">{t("agendaSignale", { n: minutes })}</span>
         </p>
       )}
     </div>
@@ -1188,6 +1157,7 @@ function PinField({
   const [raw, setRaw] = useState(
     latitude && longitude ? `${latitude}, ${longitude}` : "",
   );
+  const t = useTranslations("pro.profil.point");
   const [error, setError] = useState<string | null>(null);
 
   const posed = Boolean(latitude && longitude);
@@ -1196,7 +1166,7 @@ function PinField({
   const lookup = posed
     ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        [address, city].filter(Boolean).join(" ") || "salon de beauté",
+        [address, city].filter(Boolean).join(" ") || t("recherche"),
       )}`;
 
   function commit(value: string) {
@@ -1210,7 +1180,7 @@ function PinField({
 
     const parsed = parseCoordinates(trimmed);
     if (!parsed) {
-      setError("Format attendu : 4.2634, 15.2429");
+      setError(t("format"));
       return;
     }
     setError(null);
@@ -1221,8 +1191,8 @@ function PinField({
   return (
     <div className="mt-4">
       <Field
-        label="Point exact (facultatif)"
-        hint="Collez les coordonnées depuis Google Maps : clic droit sur votre salon, puis clic sur les chiffres pour les copier."
+        label={t("libelle")}
+        hint={t("aide")}
         error={error ?? undefined}
       >
         <input
@@ -1232,7 +1202,7 @@ function PinField({
           disabled={disabled}
           spellCheck={false}
           placeholder="-4.2634, 15.2429"
-          aria-label="Latitude et longitude"
+          aria-label={t("aria")}
           className={`${inputClass} tabular`}
         />
       </Field>
@@ -1244,14 +1214,10 @@ function PinField({
           rel="noreferrer noopener"
           className="font-medium text-salon underline-offset-2 hover:underline"
         >
-          {posed
-            ? "Vérifier le point sur la carte"
-            : "Trouver mon salon sur la carte"}
+          {posed ? t("verifier") : t("trouver")}
         </a>
         <span className={posed ? "text-success" : "text-subtle"}>
-          {posed
-            ? "L'itinéraire mène au point exact."
-            : "Sans point, l'itinéraire cherche l'adresse écrite."}
+          {posed ? t("itineraireExact") : t("itineraireAdresse")}
         </span>
       </div>
     </div>
@@ -1324,6 +1290,9 @@ function DepositPreview({
   coversItems: boolean;
   currency: string;
 }) {
+  const t = useTranslations("pro.profil.exemple");
+  const { region } = useFormats();
+  const prix = (valeur: number) => formatPrice(String(valeur), currency, region);
   const service = 450;
   const options = 80;
   const items = 240;
@@ -1336,46 +1305,36 @@ function DepositPreview({
   return (
     <div className="mt-5 rounded-xl border border-dashed border-line bg-surface-muted/40 p-3.5">
       <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-wide text-subtle">
-        Sur un exemple
+        {t("titre")}
       </p>
 
       {/* Deux colonnes dès le téléphone : ces lignes sont courtes, et
           empilées elles éloigneraient le total du réglage qu'on ajuste. */}
       <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
-        <Row
-          label="Prestation"
-          value={formatPrice(String(service), currency)}
-        />
-        <Row label="Options" value={formatPrice(String(options), currency)} />
-        <Row label="Fournitures" value={formatPrice(String(items), currency)} />
-        <Row
-          label="Total"
-          value={formatPrice(String(total), currency)}
-          strong
-        />
+        <Row label={t("prestation")} value={prix(service)} />
+        <Row label={t("options")} value={prix(options)} />
+        <Row label={t("fournitures")} value={prix(items)} />
+        <Row label={t("total")} value={prix(total)} strong />
       </dl>
 
       <p className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-line pt-2.5">
-        <span className="text-sm font-medium text-ink">Acompte demandé</span>
+        <span className="text-sm font-medium text-ink">{t("acompte")}</span>
         <span className="tabular text-base font-semibold text-salon">
-          {formatPrice(String(due), currency)}
+          {prix(due)}
           <span className="ml-1.5 text-xs font-normal text-subtle">
-            {Math.round((due / total) * 100)} % du total
+            {t("partTotal", { pct: Math.round((due / total) * 100) })}
           </span>
         </span>
       </p>
 
       {rate === 0 && minimum > 0 && (
         <p className="mt-1.5 text-xs text-muted">
-          Sans pourcentage, l&apos;acompte reste au minimum quel que soit le
-          panier — {formatPrice(String(minimum), currency)}, plus les
-          fournitures.
+          {t("sansPourcentage", { minimum: prix(minimum) })}
         </p>
       )}
       {rate > 0 && minimum > fromRate && (
         <p className="mt-1.5 text-xs text-muted">
-          Ici c&apos;est le minimum qui s&apos;applique : {rate} % ne feraient
-          que {formatPrice(String(Math.floor(fromRate)), currency)}.
+          {t("minimumApplique", { taux: rate, montant: prix(Math.floor(fromRate)) })}
         </p>
       )}
     </div>
