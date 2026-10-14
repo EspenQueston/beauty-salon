@@ -12,6 +12,7 @@
  * sa date : ce que le serveur en envoie, rien de plus.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState, type ReactNode } from "react";
 // Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
 // passerait par une redirection.
@@ -19,8 +20,8 @@ import { Lien as Link } from "@/features/ui/Lien";
 
 import { Badge, Card, EmptyState, ErrorState, GhostButton, PageHeader, Skeleton } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
-import { dateLongue, montant } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 import { useResource } from "./useResource";
 import { ParrainageClients } from "./ParrainageClients";
@@ -74,23 +75,21 @@ interface ParrainageSalon {
   resume?: { pourcentage_prochain_paiement: string; remises_prochain_paiement: number };
 }
 
-export const STATUT_FILLEUL: Record<StatutFilleul, { label: string; tone: "warning" | "success" | "neutral" }> = {
-  en_verification: { label: "En vérification", tone: "warning" },
-  admissible: { label: "Validé", tone: "success" },
-  non_retenu: { label: "Non retenu", tone: "neutral" },
+/** Le ton de chaque statut ; libellés sous `pro.parrainage.statutFilleul` et `.statutRemise`. */
+export const STATUT_FILLEUL: Record<StatutFilleul, "warning" | "success" | "neutral"> = {
+  en_verification: "warning",
+  admissible: "success",
+  non_retenu: "neutral",
 };
 
-export const STATUT_REMISE: Record<
-  StatutRemise,
-  { label: string; tone: "success" | "warning" | "neutral" | "danger" }
-> = {
-  en_attente: { label: "Délai de sécurité", tone: "warning" },
-  suspendue: { label: "À vérifier", tone: "warning" },
-  disponible: { label: "Disponible", tone: "success" },
-  reservee: { label: "Réservée", tone: "warning" },
-  utilisee: { label: "Utilisée", tone: "neutral" },
-  expiree: { label: "Expirée", tone: "neutral" },
-  annulee: { label: "Annulée", tone: "danger" },
+export const STATUT_REMISE: Record<StatutRemise, "success" | "warning" | "neutral" | "danger"> = {
+  en_attente: "warning",
+  suspendue: "warning",
+  disponible: "success",
+  reservee: "warning",
+  utilisee: "neutral",
+  expiree: "neutral",
+  annulee: "danger",
 };
 
 // ---------------------------------------------------------------------------
@@ -98,6 +97,7 @@ export const STATUT_REMISE: Record<
 // ---------------------------------------------------------------------------
 
 export function Parrainage() {
+  const t = useTranslations("pro.parrainage");
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const { data, error } = useResource<ParrainageSalon>("/api/v1/parrainage", tenantId, {
@@ -106,8 +106,8 @@ export function Parrainage() {
 
   const entete = (
     <PageHeader
-      title="Parrainage"
-      description="Invitez un salon : il profite de 30 jours d'essai si le parrainage est éligible, et vous obtenez une remise sur votre abonnement après validation."
+      title={t("titre")}
+      description={t("description")}
     />
   );
 
@@ -115,9 +115,7 @@ export function Parrainage() {
     return (
       <>
         {entete}
-        <EmptyState title="Réservé à la propriétaire du salon">
-          Le parrainage touche à l&apos;abonnement : seule la propriétaire le consulte.
-        </EmptyState>
+        <EmptyState title={t("reserve.titre")}>{t("reserve.corps")}</EmptyState>
       </>
     );
   }
@@ -125,7 +123,7 @@ export function Parrainage() {
     return (
       <>
         {entete}
-        <ErrorState>Impossible de charger votre parrainage. Réessayez dans un instant.</ErrorState>
+        <ErrorState>{t("erreur")}</ErrorState>
       </>
     );
   }
@@ -141,10 +139,7 @@ export function Parrainage() {
     return (
       <>
         {entete}
-        <EmptyState title="Le parrainage est en pause">
-          Le programme de parrainage n&apos;est pas ouvert pour le moment. Vos remises déjà
-          obtenues sont conservées.
-        </EmptyState>
+        <EmptyState title={t("pause.titre")}>{t("pause.corps")}</EmptyState>
       </>
     );
   }
@@ -160,15 +155,15 @@ export function Parrainage() {
       {entete}
 
       <ParrainageClients tenantId={tenantId} devise={membership.tenant.currency} />
-      <h2 className="mb-3 text-base font-semibold text-ink">Vers un nouveau salon — plateforme</h2>
+      <h2 className="mb-3 text-base font-semibold text-ink">{t("versSalon")}</h2>
       <PartageCode code={data.code} lien={data.lien} regles={data.regles} />
 
       <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:mb-8 sm:grid-cols-4 sm:gap-4">
-        <Chiffre terme="Salons parrainés" valeur={filleuls.length} />
-        <Chiffre terme="Validés" valeur={valides} />
-        <Chiffre terme="Remises disponibles" valeur={disponibles} />
+        <Chiffre terme={t("chiffres.parraines")} valeur={filleuls.length} />
+        <Chiffre terme={t("chiffres.valides")} valeur={valides} />
+        <Chiffre terme={t("chiffres.disponibles")} valeur={disponibles} />
         <Chiffre
-          terme="Prochain paiement"
+          terme={t("chiffres.prochain")}
           valeur={Number(prochain) > 0 ? `−${prochain} %` : "—"}
           accent={Number(prochain) > 0}
         />
@@ -178,9 +173,9 @@ export function Parrainage() {
         <p className="mb-6 flex items-start gap-2 rounded-xl bg-success-bg px-3 py-2.5 text-[12.5px] leading-relaxed text-success sm:mb-8 sm:text-sm">
           <Icon name="gift" className="mt-0.5 size-4 shrink-0" />
           <span>
-            Votre prochain paiement d&apos;abonnement sera réduit de {prochain} %, automatiquement.{" "}
+            {t("reduction", { pct: prochain })}{" "}
             <Link href="/abonnement" className="font-medium underline underline-offset-2">
-              Voir mon abonnement
+              {t("voirAbonnement")}
             </Link>
           </span>
         </p>
@@ -188,11 +183,11 @@ export function Parrainage() {
 
       <div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:gap-8">
         <section className="min-w-0">
-          <Titre>Salons parrainés</Titre>
+          <Titre>{t("chiffres.parraines")}</Titre>
           <ListeFilleuls filleuls={filleuls} />
         </section>
         <section className="min-w-0">
-          <Titre>Vos remises</Titre>
+          <Titre>{t("vosRemises")}</Titre>
           <ListeRemises remises={remises} />
         </section>
       </div>
@@ -217,22 +212,23 @@ export function PartageCode({
 }) {
   // Lu au premier rendu : ce bloc n'apparaît qu'une fois les données chargées
   // dans le navigateur, jamais au rendu du serveur — pas d'écart d'hydratation.
+  const t = useTranslations("pro.parrainage.partage");
   const [partageNatif] = useState(
     () => typeof navigator !== "undefined" && typeof navigator.share === "function",
   );
 
-  const message = `Je gère mon salon avec Beauty Salon : réservations, rappels, mini-site. Inscrivez le vôtre avec mon code ${code} et profitez de 30 jours d'essai si le parrainage est éligible : ${lien}`;
+  const message = t("message", { code, lien });
 
   return (
     <Card className="mb-6 overflow-hidden sm:mb-8" padded={false}>
       <div className="salon-gradient px-4 py-4 text-white sm:px-6 sm:py-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 sm:text-xs">
-          Votre code de parrainage
+          {t("votreCode")}
         </p>
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
           <span className="font-mono text-2xl font-bold tracking-[0.18em] sm:text-3xl">{code}</span>
           <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold sm:text-xs">
-            −{regles.pourcentage} % par salon validé
+            {t("parSalon", { pct: regles.pourcentage })}
           </span>
         </div>
       </div>
@@ -243,8 +239,8 @@ export function PartageCode({
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          <Copier texte={code} quoi="Code" libelle="Copier le code" />
-          <Copier texte={lien} quoi="Lien" libelle="Copier le lien" />
+          <Copier texte={code} succes={t("codeCopie")} libelle={t("copierCode")} />
+          <Copier texte={lien} succes={t("lienCopie")} libelle={t("copierLien")} />
           <a
             href={`https://wa.me/?text=${encodeURIComponent(message)}`}
             target="_blank"
@@ -267,7 +263,7 @@ export function PartageCode({
                 });
               }}
             >
-              Partager
+              {t("partager")}
             </GhostButton>
           )}
         </div>
@@ -276,7 +272,8 @@ export function PartageCode({
   );
 }
 
-function Copier({ texte, quoi, libelle }: { texte: string; quoi: string; libelle: string }) {
+function Copier({ texte, succes, libelle }: { texte: string; succes: string; libelle: string }) {
+  const t = useTranslations("pro.parrainage.partage");
   const toast = useToast();
   const [copie, setCopie] = useState(false);
 
@@ -295,13 +292,13 @@ function Copier({ texte, quoi, libelle }: { texte: string; quoi: string; libelle
         try {
           await navigator.clipboard.writeText(texte);
           setCopie(true);
-          toast.success(`${quoi} copié.`);
+          toast.success(succes);
         } catch {
-          toast.error("Copie impossible : sélectionnez le texte à la main.");
+          toast.error(t("copieImpossible"));
         }
       }}
     >
-      {copie ? "Copié" : libelle}
+      {copie ? t("copie") : libelle}
     </GhostButton>
   );
 }
@@ -336,18 +333,19 @@ function Titre({ children }: { children: ReactNode }) {
 }
 
 export function ListeFilleuls({ filleuls }: { filleuls: Filleul[] }) {
+  const t = useTranslations("pro.parrainage");
+  const { dateLongue } = useFormats();
   if (filleuls.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-muted sm:text-sm">
-        Aucun salon parrainé pour l&apos;instant. Partagez votre code : il suffit que le salon le
-        saisisse en s&apos;inscrivant.
+        {t("aucunFilleul")}
       </p>
     );
   }
   return (
     <ul className="grid gap-2">
       {filleuls.map((filleul, index) => {
-        const etat = STATUT_FILLEUL[filleul.statut];
+        const ton = STATUT_FILLEUL[filleul.statut] ?? "neutral";
         return (
           <li
             key={`${filleul.nom}-${filleul.date}-${index}`}
@@ -358,10 +356,10 @@ export function ListeFilleuls({ filleuls }: { filleuls: Filleul[] }) {
                 {filleul.nom}
               </span>
               <span className="block text-[11px] text-subtle sm:text-xs">
-                Inscrit le {dateLongue.format(new Date(filleul.date))}
+                {t("inscritLe", { date: dateLongue.format(new Date(filleul.date)) })}
               </span>
             </span>
-            <Badge tone={etat.tone}>{etat.label}</Badge>
+            <Badge tone={ton}>{t(`statutFilleul.${filleul.statut}`)}</Badge>
           </li>
         );
       })}
@@ -370,39 +368,42 @@ export function ListeFilleuls({ filleuls }: { filleuls: Filleul[] }) {
 }
 
 export function ListeRemises({ remises }: { remises: RemiseParrainage[] }) {
+  const t = useTranslations("pro.parrainage");
+  const { dateLongue, montant } = useFormats();
   if (remises.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-muted sm:text-sm">
-        Pas encore de remise. Elle arrive quand un salon parrainé est validé.
+        {t("aucuneRemise")}
       </p>
     );
   }
   return (
     <ul className="grid grid-cols-2 gap-2 sm:gap-2.5">
       {remises.map((remise) => {
-        const etat = STATUT_REMISE[remise.statut];
+        const ton = STATUT_REMISE[remise.statut] ?? "neutral";
         return (
           <li key={remise.id} className="min-w-0 rounded-xl border border-line bg-surface p-3">
             <div className="flex flex-wrap items-center justify-between gap-1.5">
               <span className="tabular text-base font-bold text-ink sm:text-lg">
                 −{remise.pourcentage} %
               </span>
-              <Badge tone={etat.tone}>{etat.label}</Badge>
+              <Badge tone={ton}>{t(`statutRemise.${remise.statut}`)}</Badge>
             </div>
             <p className="mt-1 truncate text-[11px] text-muted sm:text-xs" title={remise.filleul}>
-              {remise.declencheur === "paiement" ? "Paiement de " : "Inscription de "}
-              {remise.filleul}
+              {remise.declencheur === "paiement"
+                ? t("paiementDe", { nom: remise.filleul })
+                : t("inscriptionDe", { nom: remise.filleul })}
             </p>
             <p className="mt-1 text-[10.5px] text-subtle sm:text-[11px]">
               {remise.statut === "utilisee" && remise.utilisee_le
-                ? `Utilisée le ${dateLongue.format(new Date(remise.utilisee_le))}${
+                ? `${t("utiliseeLe", { date: dateLongue.format(new Date(remise.utilisee_le)) })}${
                     remise.montant_deduit && remise.devise
                       ? ` · ${montant(remise.montant_deduit, remise.devise)}`
                       : ""
                   }`
                 : remise.statut === "disponible" || remise.statut === "reservee"
-                  ? `Jusqu'au ${dateLongue.format(new Date(remise.expire_le ?? remise.cree_le))}`
-                  : `Créée le ${dateLongue.format(new Date(remise.cree_le))}`}
+                  ? t("jusquAu", { date: dateLongue.format(new Date(remise.expire_le ?? remise.cree_le)) })
+                  : t("creeeLe", { date: dateLongue.format(new Date(remise.cree_le)) })}
             </p>
           </li>
         );
@@ -416,29 +417,24 @@ export function ListeRemises({ remises }: { remises: RemiseParrainage[] }) {
 // ---------------------------------------------------------------------------
 
 export function Regles({ regles, salon }: { regles: Regles; salon: boolean }) {
+  const t = useTranslations("pro.parrainage.regles");
   const etapes = [
+    { titre: t("partager.titre"), texte: t("partager.texte") },
+    { titre: t("valide.titre"), texte: t("valide.texte") },
     {
-      titre: "Partagez votre code",
-      texte: "Le salon le saisit en s'inscrivant, ou suit votre lien. Un salon n'a qu'un parrain.",
+      titre: t("recevez.titre", { pct: regles.pourcentage }),
+      texte: salon ? t("recevez.salon") : t("recevez.autre"),
     },
     {
-      titre: "Le salon est validé",
-      texte: "Après son premier paiement confirmé : Standard ou Pro, mensuel ou annuel.",
-    },
-    {
-      titre: `Vous recevez −${regles.pourcentage} %`,
-      texte: salon
-        ? "Une remise unique de 10 %, après un délai de sécurité égal à la moitié de la période payée."
-        : "Le salon filleul reçoit 30 jours d’essai. Aucun avantage client supplémentaire n’est annoncé.",
-    },
-    {
-      titre: "Elle s'applique toute seule",
-      texte: regles.configure ? `Sur une seule échéance, sans cumul de remises, valable ${regles.validite_jours} jours après disponibilité.` : "Les paramètres doivent être validés dans l’administration avant le déblocage des remises.",
+      titre: t("auto.titre"),
+      texte: regles.configure
+        ? t("auto.texte", { jours: regles.validite_jours ?? 0 })
+        : t("auto.nonConfigure"),
     },
   ];
   return (
     <section className="mt-8 sm:mt-10">
-      <Titre>Comment ça marche</Titre>
+      <Titre>{t("titre")}</Titre>
       <ol className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         {etapes.map((etape, index) => (
           <li key={etape.titre} className="min-w-0 rounded-2xl border border-line bg-surface p-3 sm:p-4">
@@ -451,8 +447,7 @@ export function Regles({ regles, salon }: { regles: Regles; salon: boolean }) {
         ))}
       </ol>
       <p className="mt-3 text-[11.5px] leading-relaxed text-subtle sm:text-xs">
-        Une remise n&apos;est pas de l&apos;argent : elle ne se retire pas et ne se transfère pas.
-        Un parrainage de soi-même, ou entre membres d&apos;un même salon, n&apos;est pas retenu.
+        {t("note")}
       </p>
     </section>
   );

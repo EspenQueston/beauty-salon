@@ -2263,6 +2263,99 @@
         "motDePasse": "Changer votre mot de passe déconnecte tous vos autres appareils.",
         "journal": "Chaque connexion et chaque changement sensible sont consignés par l'équipe Beauty Salon."
       }
+    },
+    "parrainage": {
+      "titre": "Parrainage",
+      "description": "Invitez un salon : il profite de 30 jours d'essai si le parrainage est éligible, et vous obtenez une remise sur votre abonnement après validation.",
+      "reserve": {
+        "titre": "Réservé à la propriétaire du salon",
+        "corps": "Le parrainage touche à l'abonnement : seule la propriétaire le consulte."
+      },
+      "erreur": "Impossible de charger votre parrainage. Réessayez dans un instant.",
+      "pause": {
+        "titre": "Le parrainage est en pause",
+        "corps": "Le programme de parrainage n'est pas ouvert pour le moment. Vos remises déjà obtenues sont conservées."
+      },
+      "versSalon": "Vers un nouveau salon — plateforme",
+      "chiffres": {
+        "parraines": "Salons parrainés",
+        "valides": "Validés",
+        "disponibles": "Remises disponibles",
+        "prochain": "Prochain paiement"
+      },
+      "reduction": "Votre prochain paiement d'abonnement sera réduit de {pct} %, automatiquement.",
+      "voirAbonnement": "Voir mon abonnement",
+      "vosRemises": "Vos remises",
+      "aucunFilleul": "Aucun salon parrainé pour l'instant. Partagez votre code : il suffit que le salon le saisisse en s'inscrivant.",
+      "inscritLe": "Inscrit le {date}",
+      "aucuneRemise": "Pas encore de remise. Elle arrive quand un salon parrainé est validé.",
+      "paiementDe": "Paiement de {nom}",
+      "inscriptionDe": "Inscription de {nom}",
+      "utiliseeLe": "Utilisée le {date}",
+      "jusquAu": "Jusqu'au {date}",
+      "creeeLe": "Créée le {date}",
+      "statutFilleul": {
+        "en_verification": "En vérification",
+        "admissible": "Validé",
+        "non_retenu": "Non retenu"
+      },
+      "statutRemise": {
+        "en_attente": "Délai de sécurité",
+        "suspendue": "À vérifier",
+        "disponible": "Disponible",
+        "reservee": "Réservée",
+        "utilisee": "Utilisée",
+        "expiree": "Expirée",
+        "annulee": "Annulée"
+      },
+      "partage": {
+        "message": "Je gère mon salon avec Beauty Salon : réservations, rappels, mini-site. Inscrivez le vôtre avec mon code {code} et profitez de 30 jours d'essai si le parrainage est éligible : {lien}",
+        "votreCode": "Votre code de parrainage",
+        "parSalon": "−{pct} % par salon validé",
+        "codeCopie": "Code copié.",
+        "lienCopie": "Lien copié.",
+        "copierCode": "Copier le code",
+        "copierLien": "Copier le lien",
+        "partager": "Partager",
+        "copieImpossible": "Copie impossible : sélectionnez le texte à la main.",
+        "copie": "Copié"
+      },
+      "regles": {
+        "titre": "Comment ça marche",
+        "partager": {
+          "titre": "Partagez votre code",
+          "texte": "Le salon le saisit en s'inscrivant, ou suit votre lien. Un salon n'a qu'un parrain."
+        },
+        "valide": {
+          "titre": "Le salon est validé",
+          "texte": "Après son premier paiement confirmé : Standard ou Pro, mensuel ou annuel."
+        },
+        "recevez": {
+          "titre": "Vous recevez −{pct} %",
+          "salon": "Une remise unique de 10 %, après un délai de sécurité égal à la moitié de la période payée.",
+          "autre": "Le salon filleul reçoit 30 jours d’essai. Aucun avantage client supplémentaire n’est annoncé."
+        },
+        "auto": {
+          "titre": "Elle s'applique toute seule",
+          "texte": "Sur une seule échéance, sans cumul de remises, valable {jours} jours après disponibilité.",
+          "nonConfigure": "Les paramètres doivent être validés dans l’administration avant le déblocage des remises."
+        },
+        "note": "Une remise n'est pas de l'argent : elle ne se retire pas et ne se transfère pas. Un parrainage de soi-même, ou entre membres d'un même salon, n'est pas retenu."
+      },
+      "clients": {
+        "erreur": "Impossible de charger le parrainage clients.",
+        "invalide": "Configuration non valide.",
+        "titre": "Clients vers clients — dans votre salon",
+        "intro": "Un client recommande votre salon. À la première réservation confirmée de son filleul, il reçoit une réduction sur sa prochaine réservation chez vous. Vous financez cette réduction.",
+        "reduction": "Réduction (%)",
+        "reductionAide": "10 % minimum",
+        "validite": "Validité (jours)",
+        "plafond": "Réduction maximale ({devise})",
+        "activer": "Activer le programme",
+        "detailsTitre": "Calcul, éligibilité et annulations",
+        "details": "Une seule récompense par réservation, cumulable avec les promotions. Calcul après promotions sur la prestation et ses options. Le plafond est un montant maximal par réservation. Les conditions déjà accordées sont conservées. Une réservation antérieure, même annulée, exclut le filleul. La récompense reste acquise après confirmation ; si le parrain annule sa réservation, sa réduction est restituée jusqu’à son expiration.",
+        "enregistrer": "Enregistrer"
+      }
     }
   },
   "theme": {

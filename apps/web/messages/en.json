@@ -2263,6 +2263,99 @@
         "motDePasse": "Changing your password signs out all your other devices.",
         "journal": "Every sign-in and every sensitive change is logged by the Beauty Salon team."
       }
+    },
+    "parrainage": {
+      "titre": "Referrals",
+      "description": "Invite a salon: it gets a 30-day trial if the referral is eligible, and you get a discount on your subscription once it's validated.",
+      "reserve": {
+        "titre": "For the salon owner only",
+        "corps": "Referrals affect the subscription: only the owner can see them."
+      },
+      "erreur": "Could not load your referrals. Please try again in a moment.",
+      "pause": {
+        "titre": "Referrals are paused",
+        "corps": "The referral programme isn't open at the moment. Discounts you've already earned are kept."
+      },
+      "versSalon": "To a new salon — platform",
+      "chiffres": {
+        "parraines": "Salons referred",
+        "valides": "Validated",
+        "disponibles": "Discounts available",
+        "prochain": "Next payment"
+      },
+      "reduction": "Your next subscription payment will be reduced by {pct}%, automatically.",
+      "voirAbonnement": "View my subscription",
+      "vosRemises": "Your discounts",
+      "aucunFilleul": "No salons referred yet. Share your code: the salon just needs to enter it when signing up.",
+      "inscritLe": "Signed up on {date}",
+      "aucuneRemise": "No discount yet. It arrives when a referred salon is validated.",
+      "paiementDe": "Payment by {nom}",
+      "inscriptionDe": "Sign-up of {nom}",
+      "utiliseeLe": "Used on {date}",
+      "jusquAu": "Until {date}",
+      "creeeLe": "Created on {date}",
+      "statutFilleul": {
+        "en_verification": "Under review",
+        "admissible": "Validated",
+        "non_retenu": "Not eligible"
+      },
+      "statutRemise": {
+        "en_attente": "Safety period",
+        "suspendue": "Under review",
+        "disponible": "Available",
+        "reservee": "Reserved",
+        "utilisee": "Used",
+        "expiree": "Expired",
+        "annulee": "Cancelled"
+      },
+      "partage": {
+        "message": "I run my salon with Beauty Salon: bookings, reminders, mini-site. Sign yours up with my code {code} and get a 30-day trial if the referral is eligible: {lien}",
+        "votreCode": "Your referral code",
+        "parSalon": "−{pct}% per validated salon",
+        "codeCopie": "Code copied.",
+        "lienCopie": "Link copied.",
+        "copierCode": "Copy the code",
+        "copierLien": "Copy the link",
+        "partager": "Share",
+        "copieImpossible": "Could not copy: select the text by hand.",
+        "copie": "Copied"
+      },
+      "regles": {
+        "titre": "How it works",
+        "partager": {
+          "titre": "Share your code",
+          "texte": "The salon enters it when signing up, or follows your link. A salon has only one referrer."
+        },
+        "valide": {
+          "titre": "The salon is validated",
+          "texte": "After its first confirmed payment: Standard or Pro, monthly or yearly."
+        },
+        "recevez": {
+          "titre": "You get −{pct}%",
+          "salon": "A one-off 10% discount, after a safety period equal to half of the paid period.",
+          "autre": "The referred salon gets a 30-day trial. No additional client benefit is offered."
+        },
+        "auto": {
+          "titre": "It applies automatically",
+          "texte": "On a single payment, discounts can't be combined, valid {jours} days after becoming available.",
+          "nonConfigure": "The settings must be approved in the administration before discounts are released."
+        },
+        "note": "A discount isn't money: it can't be withdrawn or transferred. Self-referrals, or referrals between members of the same salon, aren't eligible."
+      },
+      "clients": {
+        "erreur": "Could not load client referrals.",
+        "invalide": "Invalid settings.",
+        "titre": "Client to client — in your salon",
+        "intro": "A client recommends your salon. When the person they referred makes their first confirmed booking, they get a discount on their next booking with you. You fund this discount.",
+        "reduction": "Discount (%)",
+        "reductionAide": "10% minimum",
+        "validite": "Validity (days)",
+        "plafond": "Maximum discount ({devise})",
+        "activer": "Turn on the programme",
+        "detailsTitre": "Calculation, eligibility and cancellations",
+        "details": "One reward per booking, combinable with promotions. Calculated after promotions on the service and its options. The cap is a maximum amount per booking. Conditions already granted are kept. Any earlier booking, even cancelled, excludes the referred client. The reward stays earned after confirmation; if the referrer cancels their booking, their discount is restored until it expires.",
+        "enregistrer": "Save"
+      }
     }
   },
   "theme": {
