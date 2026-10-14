@@ -29,7 +29,7 @@ export default function DashboardLayout({
 
         Elle n'apparaît qu'à la deuxième visite, et une seule fois.
       */}
-      <Installer nom="votre espace" />
+      <Installer />
     </>
   );
 }

@@ -44,6 +44,7 @@
  * réseau tant qu'on ne l'a pas touché.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /** Le fichier peut-il être téléchargé sans décider à la place de la personne ? */
@@ -66,6 +67,7 @@ function telechargementPermis() {
 }
 
 export function FilmAcces({ legende }: { legende?: string }) {
+  const t = useTranslations("compte.film");
   const video = useRef<HTMLVideoElement>(null);
   /* L'état vient des événements de l'élément, jamais d'une supposition : c'est
      lui qui sait, y compris quand le navigateur l'arrête de son côté. */
@@ -155,14 +157,14 @@ export function FilmAcces({ legende }: { legende?: string }) {
           <button
             type="button"
             onClick={lancer}
-            aria-label="Lancer le film de présentation, 29 secondes, sans son"
+            aria-label={t("lancer")}
             className="group absolute inset-0 grid place-items-center bg-gradient-to-t from-black/55 via-black/10 to-black/20 transition"
           >
             <span className="grid size-14 place-items-center rounded-full bg-white/95 text-[#b4436c] shadow-[0_14px_40px_-10px_rgb(0_0_0/0.7)] transition duration-300 group-hover:scale-110">
               <Triangle className="size-6 translate-x-[2px]" />
             </span>
             <span className="absolute bottom-3 left-3 rounded-full bg-black/60 px-2.5 py-1 text-[0.66rem] font-medium text-white backdrop-blur">
-              Voir le film · 29 s
+              {t("voir")}
             </span>
           </button>
         )}
@@ -176,16 +178,16 @@ export function FilmAcces({ legende }: { legende?: string }) {
                 aria-hidden
                 className="size-1.5 rounded-full bg-[#d9628a]"
               />
-              Le produit, en 29 s
+              {t("pastille")}
             </span>
 
             <button
               type="button"
               onClick={basculer}
               aria-label={
-                joue ? "Mettre le film en pause" : "Reprendre le film"
+                joue ? t("pauseAria") : t("reprendreAria")
               }
-              title={joue ? "Mettre en pause" : "Reprendre"}
+              title={joue ? t("pause") : t("reprendre")}
               className="absolute bottom-2.5 right-2.5 grid size-8 place-items-center rounded-full bg-black/55 text-white/90 backdrop-blur transition hover:bg-black/75 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               {joue ? (

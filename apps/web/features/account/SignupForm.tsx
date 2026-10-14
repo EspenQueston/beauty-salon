@@ -83,31 +83,31 @@ const COUNTRIES = [
 ];
 
 const schema = z.object({
-  salon_name: z.string().min(2, "Indiquez le nom de votre salon."),
+  salon_name: z.string().min(2, "nomSalon"),
   slug: z
     .string()
-    .min(3, "Au moins 3 caractères.")
+    .min(3, "slugCourt")
     .max(63)
     .regex(
       /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/,
-      "Minuscules, chiffres et tirets uniquement.",
+      "slugFormat",
     ),
-  email: z.string().email("Adresse e-mail invalide."),
-  password: z.string().min(10, "Au moins 10 caractères."),
+  email: z.string().email("email"),
+  password: z.string().min(10, "motDePasse"),
   display_name: z.string().max(120).optional(),
   phone: z.string().max(32).optional(),
   country: z.string(),
   palette: z.string().refine(
     (value) => PALETTES.some((entry) => entry.cle === value),
-    "Choisissez les couleurs de votre salon.",
+    "palette",
   ),
   accepts_terms: z.literal(true, {
-    message: "Vous devez accepter les conditions.",
+    message: "conditions",
   }),
   code_parrainage: z
     .string()
     .max(32)
-    .regex(/^[A-Za-z0-9 -]*$/, "Lettres et chiffres uniquement.")
+    .regex(/^[A-Za-z0-9 -]*$/, "code")
     .optional(),
 });
 
@@ -124,19 +124,19 @@ type Values = z.infer<typeof schema>;
 const GROUPES = [
   {
     cle: "salon",
-    titre: "Votre salon",
+    titre: "salon",
     champs: ["salon_name", "slug", "country", "palette"],
     requis: ["salon_name", "slug", "palette"],
   },
   {
     cle: "vous",
-    titre: "Vous",
+    titre: "vous",
     champs: ["display_name", "email", "code_parrainage"],
     requis: ["email"],
   },
   {
     cle: "acces",
-    titre: "Votre accès",
+    titre: "acces",
     champs: ["password", "accepts_terms"],
     requis: ["password", "accepts_terms"],
   },
@@ -172,11 +172,11 @@ interface Etape {
 
 const PLAN_BUREAU: Etape[] = [
   {
-    titre: "Votre salon",
+    titre: "salon",
     groupes: [0],
   },
   {
-    titre: "Votre compte",
+    titre: "compte",
     groupes: [1, 2],
   },
 ];
@@ -258,6 +258,18 @@ export function SignupForm() {
   useEffect(()=>{if(!signupTracked.current){signupTracked.current=true;trackSignupStarted()}},[]);
   const toast = useToast();
   const site = useTranslations("site");
+  const t = useTranslations("compte.inscription");
+  const langue = useLocale();
+  /** Le message d'une erreur du schéma, qui porte une clé. */
+  const erreur = (cle: string | undefined) => (cle ? t(`erreurs.${cle}`) : undefined);
+  /** Le pays, nommé par le navigateur dans la langue de la page. */
+  const nomPays = (code: string, repli: string) => {
+    try {
+      return new Intl.DisplayNames([langue], { type: "region" }).of(code) ?? repli;
+    } catch {
+      return repli;
+    }
+  };
   const [prefill] = useState(readPrefill);
   const [done, setDone] = useState<{
     hostname: string;
@@ -423,7 +435,7 @@ export function SignupForm() {
     const requis = pas.groupes.flatMap((i) => GROUPES[i].requis);
     return {
       cle: `pas-${index}`,
-      titre: pas.titre,
+      titre: t(`etapes.${pas.titre}`),
       requis: requis.length,
       faits: requis.filter((champ) => rempli[champ]).length,
     };
@@ -520,7 +532,7 @@ export function SignupForm() {
           },
         });
         toast.success(
-          `${result.tenant.name} est créé. Connectez-vous pour entrer.`,
+          t("cree", { salon: result.tenant.name }),
         );
         setDone({
           hostname: result.tenant.hostname,
@@ -531,11 +543,11 @@ export function SignupForm() {
         toast.error(
           error instanceof DashboardError
             ? error.message
-            : "L'inscription a échoué. Réessayez.",
+            : t("echec"),
         );
       }
     },
-    [place, toast],
+    [place, toast, t],
   );
 
   /*
@@ -592,7 +604,7 @@ export function SignupForm() {
 
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-ink">
-              Vos choix sont repris
+              {t("choixRepris")}
             </p>
             <p className="mt-0.5 text-xs text-muted">
               {prefill.slug && (
@@ -603,7 +615,7 @@ export function SignupForm() {
                   {prefill.theme && " · "}
                 </>
               )}
-              {prefill.theme && "vos couleurs"}
+              {prefill.theme && t("vosCouleurs")}
             </p>
           </div>
         </div>
@@ -623,7 +635,7 @@ export function SignupForm() {
           C'est aussi ce que fait l'écran de connexion, pour la même raison.
         */}
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Créer mon salon
+          {t("titre")}
         </h1>
         {/*
           Ancrage sur des faits vérifiables, pas sur une promesse vague.
@@ -632,8 +644,9 @@ export function SignupForm() {
           paiement n'est enregistré, le salon choisit ensuite son offre.
         */}
         <p className="mb-6 mt-1.5 text-sm text-muted">
-          <strong className="font-medium text-ink">14 jours gratuits</strong>,
-          jusqu&apos;à 30 jours avec un parrainage éligible, sans carte bancaire.
+          {t.rich("essai", {
+            gras: (texte) => <strong className="font-medium text-ink">{texte}</strong>,
+          })}
         </p>
 
         <form ref={formulaire} onSubmit={surEnvoi} noValidate>
@@ -642,8 +655,8 @@ export function SignupForm() {
           {/* ------------------------------------------------- 1. Le salon */}
           <Cadre index={0} plan={plan} etape={etape}>
             <Field
-              label="Nom du salon"
-              error={errors.salon_name?.message}
+              label={t("nomSalon")}
+              error={erreur(errors.salon_name?.message)}
               className="mb-1"
             >
               <input
@@ -651,24 +664,24 @@ export function SignupForm() {
                 autoComplete="organization"
                 autoCapitalize="words"
                 enterKeyHint="next"
-                placeholder="Chez Fatou"
+                placeholder={t("nomSalonExemple")}
                 className={inputClass}
               />
             </Field>
             <Acquis actif={rempli.salon_name}>
-              Votre page s&apos;affichera au nom de{" "}
-              <strong className="font-medium">{salonName}</strong>.
+              {t.rich("auNomDe", {
+                nom: salonName,
+                gras: (texte) => <strong className="font-medium">{texte}</strong>,
+              })}
             </Acquis>
 
             <Field
-              label="Adresse de votre mini-site"
+              label={t("adresse")}
               error={
-                errors.slug?.message ??
-                (slugState === "taken"
-                  ? "Cette adresse est déjà prise."
-                  : undefined)
+                erreur(errors.slug?.message) ??
+                (slugState === "taken" ? t("prise") : undefined)
               }
-              hint={slugState === "checking" ? "Vérification…" : undefined}
+              hint={slugState === "checking" ? t("verification") : undefined}
               className="mb-1 mt-4"
             >
               <div className="flex items-center gap-1.5">
@@ -691,7 +704,7 @@ export function SignupForm() {
               <strong className="break-all font-medium">
                 {slug}.{PLATFORM_DOMAIN}
               </strong>{" "}
-              est libre.
+              {t("libre")}
               {/*
                 Conséquence réelle de l'abandon, pas une menace fabriquée :
                 tant que le formulaire n'est pas envoyé, rien n'est réservé et
@@ -701,27 +714,27 @@ export function SignupForm() {
               */}
               <span className="text-muted">
                 {" "}
-                Elle sera à vous à la création du salon.
+                {t("aVous")}
               </span>
             </Acquis>
 
-            <Field label="Pays" className="mb-1 mt-4">
+            <Field label={t("pays")} className="mb-1 mt-4">
               <select {...register("country")} className={inputClass}>
                 {COUNTRIES.map((entry) => (
                   <option key={entry.code} value={entry.code}>
-                    {entry.label}
+                    {nomPays(entry.code, entry.label)}
                   </option>
                 ))}
               </select>
             </Field>
             <Acquis actif ton="neutre">
-              Tarifs en {place.currency} · fuseau {place.tz}
+              {t("tarifsEn", { devise: place.currency, fuseau: place.tz })}
             </Acquis>
 
             <fieldset className="mt-5" aria-describedby={errors.palette ? "palette-erreur" : undefined}>
               <legend className="mb-2 text-sm font-medium text-ink">
-                Vos couleurs <span className="text-danger" aria-hidden="true">*</span>
-                <span className="sr-only">(obligatoire)</span>
+                {t("couleurs")} <span className="text-danger" aria-hidden="true">*</span>
+                <span className="sr-only">{t("obligatoire")}</span>
               </legend>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {PALETTES.map((entry) => {
@@ -752,7 +765,7 @@ export function SignupForm() {
               </div>
               {errors.palette && (
                 <p id="palette-erreur" role="alert" className="mt-2 text-xs font-medium text-danger">
-                  {errors.palette.message}
+                  {erreur(errors.palette.message)}
                 </p>
               )}
               {couleursChoisies && (
@@ -769,9 +782,9 @@ export function SignupForm() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-xs font-semibold" style={{ color: couleursChoisies.primary }}>
-                      {salonName?.trim() || "Votre salon"}
+                      {salonName?.trim() || t("votreSalon")}
                     </span>
-                    <span className="block text-[0.68rem] text-muted">Aperçu de votre mini-site</span>
+                    <span className="block text-[0.68rem] text-muted">{t("apercu")}</span>
                   </span>
                   <span className="size-2 shrink-0 rounded-full" style={{ background: couleursChoisies.accent }} aria-hidden="true" />
                 </div>
@@ -794,7 +807,7 @@ export function SignupForm() {
             */}
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-x-3">
               <div>
-                <Field label="Votre e-mail" error={errors.email?.message}>
+                <Field label={t("email")} error={erreur(errors.email?.message)}>
                   <input
                     {...register("email")}
                     type="email"
@@ -806,29 +819,27 @@ export function SignupForm() {
                     className={inputClass}
                   />
                 </Field>
-                <Acquis actif={rempli.email}>Ce sera votre identifiant.</Acquis>
+                <Acquis actif={rempli.email}>{t("identifiant")}</Acquis>
               </div>
 
-              <Field label="Votre nom" hint="Facultatif">
+              <Field label={t("nom")} hint={t("facultatif")}>
                 <input
                   {...register("display_name")}
                   autoComplete="name"
                   autoCapitalize="words"
                   enterKeyHint="next"
-                  placeholder="Grâce Mabiala"
+                  placeholder={t("nomExemple")}
                   className={inputClass}
                 />
               </Field>
 
               <div className="sm:col-span-2">
                 <Field
-                  label="Code de parrainage"
-                  hint="Facultatif"
+                  label={t("code")}
+                  hint={t("facultatif")}
                   error={
-                    errors.code_parrainage?.message ??
-                    (codeState.etat === "inconnu"
-                      ? "Code inconnu. Vérifiez-le, ou laissez ce champ vide."
-                      : undefined)
+                    erreur(errors.code_parrainage?.message) ??
+                    (codeState.etat === "inconnu" ? t("codeInconnu") : undefined)
                   }
                 >
                   <input
@@ -839,14 +850,14 @@ export function SignupForm() {
                     spellCheck={false}
                     enterKeyHint="next"
                     maxLength={20}
-                    placeholder="Ex. : 7KQ2M9XP4T"
+                    placeholder={t("codeExemple")}
                     className={`${inputClass} font-mono uppercase tracking-[0.12em]`}
                   />
                 </Field>
                 <Acquis actif={codeState.etat === "valide"}>
                   {codeState.etat === "valide" && codeState.salon
-                    ? `Parrainé par ${codeState.salon}.`
-                    : "Code reconnu : jusqu'à 30 jours d'essai si le parrainage est éligible."}
+                    ? t("parrainePar", { salon: codeState.salon })
+                    : t("codeReconnu")}
                 </Acquis>
               </div>
             </div>
@@ -858,7 +869,7 @@ export function SignupForm() {
                 tape : sur un clavier de téléphone, un mot de passe saisi à
                 l'aveugle se recommence entier au lieu de se corriger. */}
             <PasswordField
-              label="Mot de passe"
+              label={t("motDePasse")}
               value={password}
               onChange={(valeur) =>
                 setValue("password", valeur, {
@@ -870,7 +881,7 @@ export function SignupForm() {
             />
             {errors.password && (
               <p className="mt-1.5 text-xs font-medium text-danger">
-                {errors.password.message}
+                {erreur(errors.password.message)}
               </p>
             )}
             <ForceMotDePasse valeur={password} />
@@ -882,13 +893,12 @@ export function SignupForm() {
                 className="mt-0.5 size-4 accent-[var(--salon-primary)]"
               />
               <span>
-                J&apos;accepte les conditions d&apos;utilisation de Beauty
-                Salon.
+                {t("conditions")}
               </span>
             </label>
             {errors.accepts_terms && (
               <p className="mt-1.5 text-xs font-medium text-danger">
-                {errors.accepts_terms.message}
+                {erreur(errors.accepts_terms.message)}
               </p>
             )}
 
@@ -897,7 +907,7 @@ export function SignupForm() {
             {rempli.salon_name && rempli.slug && (
               <p className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-xl border border-line bg-surface-muted px-3.5 py-2.5 text-xs text-muted">
                 <span className="font-medium uppercase tracking-[0.1em]">
-                  Vous créez
+                  {t("vousCreez")}
                 </span>
                 <span className="font-medium text-ink">{salonName}</span>
                 <span className="tabular break-all">
@@ -917,7 +927,7 @@ export function SignupForm() {
                 disabled={slugState === "taken" || codeState.etat === "inconnu"}
                 className="w-full py-3"
               >
-                Créer mon salon
+                {t("creer")}
               </Button>
             </div>
 
@@ -928,7 +938,7 @@ export function SignupForm() {
                 disabled={slugState === "taken"}
                 className="w-full py-3"
               >
-                Continuer
+                {t("continuer")}
               </Button>
             </div>
 
@@ -938,7 +948,7 @@ export function SignupForm() {
                 onClick={precedent}
                 className="w-full justify-center py-3"
               >
-                Retour
+                {t("retour")}
               </GhostButton>
             )}
           </div>
@@ -968,8 +978,8 @@ export function SignupForm() {
           // « 14 jours gratuits, sans carte bancaire » est déjà écrit en haut
           // de la carte, et « trois minutes suffisent » accompagne désormais
           // l'avancement. Restent les deux choses que rien d'autre ne dit.
-          ["Rien n'est prélevé", "à la fin de l'essai."],
-          ["Vos données restent les vôtres", "exportables à tout moment."],
+          [t("arguments.preleveTitre"), t("arguments.preleve")],
+          [t("arguments.donneesTitre"), t("arguments.donnees")],
         ].map(([titre, corps]) => (
           <li key={titre} className="flex gap-2">
             <svg
@@ -993,12 +1003,12 @@ export function SignupForm() {
       </ul>
 
       <p className="mt-5 text-center text-sm text-muted">
-        Vous avez déjà un compte ?{" "}
+        {t("dejaCompte")}{" "}
         <Link
           href={loginUrl}
           className="font-medium text-salon-ink underline-offset-2 hover:underline"
         >
-          Se connecter
+          {t("connexion")}
         </Link>
       </p>
     </>
@@ -1023,6 +1033,7 @@ function Cadre({
   etape: number;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("compte.inscription");
   const reunis = plan[etape].groupes;
   const affiche = reunis.includes(index);
   /* Quand une étape réunit plusieurs groupes, chacun reprend son nom : sans
@@ -1038,7 +1049,7 @@ function Cadre({
       // du clavier et des lecteurs d'écran.
       className={`groupe ${affiche ? "" : "hidden"}`}
     >
-      <legend className="sr-only">{GROUPES[index].titre}</legend>
+      <legend className="sr-only">{t(`etapes.${GROUPES[index].titre}`)}</legend>
       {nomme && (
         <p
           className={`mb-3 text-xs font-semibold uppercase tracking-[0.1em] text-muted ${
@@ -1046,7 +1057,7 @@ function Cadre({
           }`}
           aria-hidden
         >
-          {GROUPES[index].titre}
+          {t(`etapes.${GROUPES[index].titre}`)}
         </p>
       )}
       {children}
@@ -1071,6 +1082,7 @@ function Bienvenue({
   email: string;
 }) {
   const loginUrl = professionalUrl(useLocale());
+  const t = useTranslations("compte.inscription.bienvenue");
   return (
     <Card>
       <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-success-bg text-success">
@@ -1090,26 +1102,27 @@ function Bienvenue({
       </span>
 
       <h1 className="mt-4 text-xl font-semibold tracking-tight text-ink">
-        {name} est créé
+        {t("titre", { salon: name })}
       </h1>
 
       <p className="mt-3 text-sm leading-relaxed text-ink">
-        Votre adresse est réservée :{" "}
-        <strong className="break-all">{hostname}</strong>
+        {t.rich("adresse", {
+          adresse: hostname,
+          gras: (texte) => <strong className="break-all">{texte}</strong>,
+        })}
       </p>
 
       <p className="mt-3 text-sm leading-relaxed text-muted">
-        Notre équipe vérifie votre salon avant de mettre votre mini-site en
-        ligne. En attendant, vous pouvez déjà préparer votre catalogue, vos
-        horaires et votre équipe.
+        {t("verification")}
       </p>
 
       <div className="mt-5 rounded-xl border border-line bg-surface-muted p-4">
-        <p className="text-sm font-medium text-ink">Dernière étape</p>
+        <p className="text-sm font-medium text-ink">{t("derniere")}</p>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Connectez-vous avec l&apos;adresse{" "}
-          <strong className="break-all text-ink">{email}</strong> et le mot de
-          passe que vous venez de choisir.
+          {t.rich("connectez", {
+            email,
+            gras: (texte) => <strong className="break-all text-ink">{texte}</strong>,
+          })}
         </p>
       </div>
 
@@ -1117,7 +1130,7 @@ function Bienvenue({
         href={`${loginUrl}?email=${encodeURIComponent(email)}`}
         className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-salon px-4 py-3 text-sm font-medium text-white shadow-sm transition hover:brightness-110 sm:w-auto sm:py-2.5"
       >
-        Me connecter
+        {t("bouton")}
       </Link>
     </Card>
   );

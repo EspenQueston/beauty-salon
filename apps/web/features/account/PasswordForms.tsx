@@ -8,8 +8,10 @@
  * annuaire des salons inscrits.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
-import Link from "next/link";
+// Les liens portent la langue (/en/…).
+import { Lien as Link } from "@/features/ui/Lien";
 import { useSearchParams } from "next/navigation";
 
 import { confirmPasswordReset, requestPasswordReset } from "@/lib/dashboard";
@@ -18,6 +20,7 @@ import { PasswordField } from "@/features/ui/PasswordField";
 import { useToast } from "@/features/ui/Toast";
 
 export function ForgotPasswordForm() {
+  const t = useTranslations("compte.oubli");
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -28,8 +31,8 @@ export function ForgotPasswordForm() {
     setPending(true);
 
     const ok = await toast.run(() => requestPasswordReset(email), {
-      success: "Lien envoyé. Vérifiez votre boîte mail.",
-      error: "Envoi impossible. Réessayez dans un instant.",
+      success: t("envoye"),
+      error: t("echec"),
     });
 
     setPending(false);
@@ -40,31 +43,29 @@ export function ForgotPasswordForm() {
     return (
       <Card>
         <h1 className="text-xl font-semibold tracking-tight text-ink">
-          Vérifiez votre boîte mail
+          {t("boite.titre")}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Si un compte existe pour <strong className="text-ink">{email}</strong>
-          , un lien vient d&apos;être envoyé. Il est valable 24 heures et ne
-          fonctionne qu&apos;une fois.
+          {t.rich("boite.corps", {
+            email,
+            gras: (texte) => <strong className="text-ink">{texte}</strong>,
+          })}
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Rien reçu ? Regardez dans les indésirables, puis vérifiez
-          l&apos;orthographe de votre adresse.
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{t("boite.rien")}</p>
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/"
             className="inline-flex items-center justify-center rounded-lg bg-salon px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:brightness-110"
           >
-            Retour à la connexion
+            {t("retour")}
           </Link>
           <button
             type="button"
             onClick={() => setSent(false)}
             className="inline-flex items-center justify-center rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink transition hover:bg-surface-hover"
           >
-            Corriger mon adresse
+            {t("corriger")}
           </button>
         </div>
       </Card>
@@ -75,16 +76,14 @@ export function ForgotPasswordForm() {
     <>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Mot de passe oublié
+          {t("titre")}
         </h1>
-        <p className="mt-1.5 text-sm text-muted">
-          Indiquez votre adresse e-mail, nous vous enverrons un lien.
-        </p>
+        <p className="mt-1.5 text-sm text-muted">{t("intro")}</p>
       </div>
 
       <Card>
         <form onSubmit={submit}>
-          <Field label="E-mail" className="mb-5">
+          <Field label={t("email")} className="mb-5">
             <input
               type="email"
               value={email}
@@ -96,14 +95,14 @@ export function ForgotPasswordForm() {
           </Field>
 
           <Button type="submit" pending={pending} className="w-full">
-            Envoyer le lien
+            {t("envoyer")}
           </Button>
         </form>
       </Card>
 
       <p className="mt-5 text-center text-sm text-muted">
         <Link href="/" className="underline-offset-2 hover:underline">
-          Retour à la connexion
+          {t("retour")}
         </Link>
       </p>
     </>
@@ -111,6 +110,7 @@ export function ForgotPasswordForm() {
 }
 
 export function NewPasswordForm() {
+  const t = useTranslations("compte.nouveau");
   const toast = useToast();
   const params = useSearchParams();
   const uid = params.get("uid") ?? "";
@@ -126,7 +126,7 @@ export function NewPasswordForm() {
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (mismatch) {
-      toast.error("Les deux mots de passe ne correspondent pas.");
+      toast.error(t("differents"));
       return;
     }
     setPending(true);
@@ -134,8 +134,8 @@ export function NewPasswordForm() {
     const ok = await toast.run(
       () => confirmPasswordReset({ uid, token, password }),
       {
-        success: "Mot de passe mis à jour.",
-        error: "Ce lien n'est plus valable. Demandez-en un nouveau.",
+        success: t("ok"),
+        error: t("lienExpire"),
       },
     );
 
@@ -147,17 +147,14 @@ export function NewPasswordForm() {
     return (
       <Card>
         <h1 className="text-xl font-semibold tracking-tight text-ink">
-          Lien incomplet
+          {t("incomplet.titre")}
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Ouvrez le lien tel qu&apos;il figure dans l&apos;e-mail, sans le
-          modifier. Certains logiciels de messagerie le coupent en deux.
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{t("incomplet.corps")}</p>
         <Link
           href="/mot-de-passe-oublie"
           className="mt-6 inline-flex items-center justify-center rounded-lg bg-salon px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:brightness-110"
         >
-          Demander un nouveau lien
+          {t("incomplet.demander")}
         </Link>
       </Card>
     );
@@ -182,18 +179,14 @@ export function NewPasswordForm() {
           </svg>
         </span>
         <h1 className="mt-4 text-xl font-semibold tracking-tight text-ink">
-          Mot de passe mis à jour
+          {t("fini.titre")}
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Vous pouvez maintenant vous connecter. Les autres sessions ouvertes
-          restent valides ; changez-le à nouveau si vous soupçonnez un accès non
-          autorisé.
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{t("fini.corps")}</p>
         <Link
           href="/"
           className="mt-6 inline-flex items-center justify-center rounded-lg bg-salon px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:brightness-110"
         >
-          Se connecter
+          {t("fini.connexion")}
         </Link>
       </Card>
     );
@@ -203,11 +196,9 @@ export function NewPasswordForm() {
     <>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Nouveau mot de passe
+          {t("titre")}
         </h1>
-        <p className="mt-1.5 text-sm text-muted">
-          Choisissez un mot de passe d&apos;au moins 10 caractères.
-        </p>
+        <p className="mt-1.5 text-sm text-muted">{t("intro")}</p>
       </div>
 
       <Card>
@@ -222,18 +213,18 @@ export function NewPasswordForm() {
           */}
           <div className="mb-4">
             <PasswordField
-              label="Nouveau mot de passe"
+              label={t("champ")}
               value={password}
               onChange={setPassword}
               autoComplete="new-password"
               inputClassName={inputClass}
-              hint="Au moins 10 caractères."
+              hint={t("champAide")}
             />
           </div>
 
           <div className="mb-5">
             <PasswordField
-              label="Confirmation"
+              label={t("confirmation")}
               value={confirmation}
               onChange={setConfirmation}
               autoComplete="new-password"
@@ -241,7 +232,7 @@ export function NewPasswordForm() {
             />
             {mismatch && (
               <p className="mt-1.5 text-xs font-medium text-danger">
-                Les deux saisies diffèrent.
+                {t("saisiesDifferent")}
               </p>
             )}
           </div>
@@ -252,7 +243,7 @@ export function NewPasswordForm() {
             disabled={mismatch || password.length < 10}
             className="w-full"
           >
-            Enregistrer
+            {t("enregistrer")}
           </Button>
         </form>
       </Card>

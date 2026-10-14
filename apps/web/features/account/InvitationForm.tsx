@@ -9,8 +9,10 @@
  * l'équipe en un clic.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+// Les liens portent la langue (/en/…).
+import { Lien as Link } from "@/features/ui/Lien";
 import { useSearchParams } from "next/navigation";
 
 import {
@@ -30,11 +32,13 @@ import {
 import { useToast } from "@/features/ui/Toast";
 
 export function InvitationForm() {
+  const t = useTranslations("compte.invitation");
   const toast = useToast();
   const token = useSearchParams().get("token") ?? "";
 
   const [invitation, setInvitation] = useState<InvitationPreview | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // Le message du serveur, ou `true` pour le message de l'écran.
+  const [loadError, setLoadError] = useState<string | true | null>(null);
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [pending, setPending] = useState(false);
@@ -50,11 +54,7 @@ export function InvitationForm() {
       })
       .catch((error) => {
         if (cancelled) return;
-        setLoadError(
-          error instanceof DashboardError
-            ? error.message
-            : "Cette invitation n'est plus valable.",
-        );
+        setLoadError(error instanceof DashboardError ? error.message : true);
       });
 
     return () => {
@@ -76,7 +76,7 @@ export function InvitationForm() {
           display_name: displayName || undefined,
         }),
       {
-        success: `Vous faites partie de l'équipe de ${invitation?.salon_name}.`,
+        success: t("ok", { salon: invitation?.salon_name ?? "" }),
       },
     );
 
@@ -86,19 +86,20 @@ export function InvitationForm() {
 
   // Déduit du rendu plutôt que posé dans l'effet : modifier l'état de façon
   // synchrone dans un effet déclenche un second rendu inutile.
-  const message = token ? loadError : "Lien d'invitation incomplet.";
+  const message = token
+    ? loadError === true
+      ? t("plusValable")
+      : loadError
+    : t("incomplet");
 
   if (message) {
     return (
       <Card>
         <h1 className="text-xl font-semibold tracking-tight text-ink">
-          Invitation indisponible
+          {t("indisponible")}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">{message}</p>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Une invitation est valable 7 jours. Demandez au salon de vous en
-          envoyer une nouvelle.
-        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{t("septJours")}</p>
       </Card>
     );
   }
@@ -122,16 +123,16 @@ export function InvitationForm() {
           </svg>
         </span>
         <h1 className="mt-4 text-xl font-semibold tracking-tight text-ink">
-          Bienvenue dans l&apos;équipe
+          {t("bienvenue")}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Vous faites maintenant partie de {invitation?.salon_name}.
+          {t("membre", { salon: invitation?.salon_name ?? "" })}
         </p>
         <Link
           href="/"
           className="mt-6 inline-flex items-center justify-center rounded-lg bg-salon px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:brightness-110"
         >
-          Accéder à l&apos;espace
+          {t("acceder")}
         </Link>
       </Card>
     );
@@ -145,11 +146,15 @@ export function InvitationForm() {
     <>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Rejoindre {invitation.salon_name}
+          {t("rejoindre", { salon: invitation.salon_name })}
         </h1>
         <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
           <span>{invitation.email}</span>
-          <Badge tone="salon">{invitation.role_display}</Badge>
+          <Badge tone="salon">
+            {["owner", "manager", "receptionist", "staff"].includes(invitation.role ?? "")
+              ? t(`roles.${invitation.role}`)
+              : invitation.role_display}
+          </Badge>
         </p>
       </div>
 
@@ -158,11 +163,9 @@ export function InvitationForm() {
           {invitation.account_exists ? (
             <>
               <p className="mb-4 rounded-lg bg-info-bg p-3 text-sm text-info">
-                Vous avez déjà un compte Beauty Salon. Confirmez avec son mot de
-                passe pour ajouter ce salon — vous basculerez de l&apos;un à
-                l&apos;autre depuis le menu.
+                {t("compteExistant")}
               </p>
-              <Field label="Mot de passe de votre compte" className="mb-5">
+              <Field label={t("motDePasseCompte")} className="mb-5">
                 <input
                   type="password"
                   value={password}
@@ -175,7 +178,7 @@ export function InvitationForm() {
             </>
           ) : (
             <>
-              <Field label="Votre nom" className="mb-4">
+              <Field label={t("nom")} className="mb-4">
                 <input
                   value={displayName}
                   onChange={(event) => setDisplayName(event.target.value)}
@@ -185,8 +188,8 @@ export function InvitationForm() {
               </Field>
 
               <Field
-                label="Mot de passe"
-                hint="Au moins 10 caractères."
+                label={t("motDePasse")}
+                hint={t("motDePasseAide")}
                 className="mb-5"
               >
                 <input
@@ -203,7 +206,7 @@ export function InvitationForm() {
           )}
 
           <Button type="submit" pending={pending} className="w-full">
-            Rejoindre l&apos;équipe
+            {t("bouton")}
           </Button>
         </form>
       </Card>

@@ -46,6 +46,7 @@
  * vaut moins que pas de chiffre.
  */
 
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 export interface PasDuParcours {
@@ -64,12 +65,12 @@ export interface PasDuParcours {
  * formulations-ci constatent, elles ne félicitent pas.
  */
 function encouragement(faits: number, total: number): string {
-  if (faits === 0) return "trois minutes suffisent";
-  if (faits === total) return "tout y est";
+  if (faits === 0) return "debut";
+  if (faits === total) return "fini";
   const reste = total - faits;
-  if (reste === 1) return "plus qu'un champ";
-  if (reste === 2) return "plus que deux";
-  return faits === 1 ? "bon début" : "vous avancez";
+  if (reste === 1) return "unChamp";
+  if (reste === 2) return "deuxChamps";
+  return faits === 1 ? "bonDebut" : "avance";
 }
 
 export function Parcours({
@@ -80,6 +81,7 @@ export function Parcours({
   /** Index de l'étape affichée. */
   etape: number;
 }) {
+  const t = useTranslations("compte.parcours");
   const total = etapes.reduce((n, g) => n + g.requis, 0);
   const faits = etapes.reduce((n, g) => n + Math.min(g.faits, g.requis), 0);
 
@@ -93,13 +95,13 @@ export function Parcours({
         */}
         <p className="text-sm text-muted" aria-live="polite">
           <span className="font-medium text-ink">
-            Étape {etape + 1} sur {etapes.length}
+            {t("etape", { n: etape + 1, total: etapes.length })}
           </span>{" "}
           · {etapes[etape]?.titre.toLowerCase()}
         </p>
 
         <span className="shrink-0 text-xs text-muted">
-          {encouragement(faits, total)}
+          {t(`encouragement.${encouragement(faits, total)}`)}
         </span>
       </div>
 
@@ -109,7 +111,7 @@ export function Parcours({
         aria-valuenow={faits}
         aria-valuemin={0}
         aria-valuemax={total}
-        aria-label="Avancement de l'inscription"
+        aria-label={t("avancement")}
       >
         {etapes.map((pas) => (
           <span key={pas.cle} className="segment">
@@ -185,6 +187,7 @@ export function Acquis({
  * caractères. Le reste est une information, pas une barrière.
  */
 export function ForceMotDePasse({ valeur }: { valeur: string }) {
+  const t = useTranslations("compte.parcours.force");
   if (!valeur) return null;
 
   const varietes =
@@ -202,11 +205,11 @@ export function ForceMotDePasse({ valeur }: { valeur: string }) {
 
   const mots = [
     {
-      texte: `Encore ${10 - valeur.length} caractère${10 - valeur.length > 1 ? "s" : ""}`,
+      texte: t("encore", { n: 10 - valeur.length }),
       ton: "text-muted",
     },
-    { texte: "Correct", ton: "text-success" },
-    { texte: "Solide", ton: "text-success" },
+    { texte: t("correct"), ton: "text-success" },
+    { texte: t("solide"), ton: "text-success" },
   ] as const;
 
   const largeur = Math.min(100, Math.round((valeur.length / 16) * 100));
@@ -226,7 +229,7 @@ export function ForceMotDePasse({ valeur }: { valeur: string }) {
         {niveau > 0 && valeur.length < 16 && (
           <span className="text-muted">
             {" "}
-            · un mot de plus le rendrait solide
+            · {t("unMotDePlus")}
           </span>
         )}
       </p>

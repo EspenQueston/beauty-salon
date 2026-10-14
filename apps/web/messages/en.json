@@ -25,6 +25,15 @@
     "motDePasse": {
       "afficher": "Show password",
       "masquer": "Hide password"
+    },
+    "installer": {
+      "votreEspace": "your space",
+      "titre": "Install {nom}",
+      "ios": "Tap <gras>Share</gras>, then <gras>Add to Home Screen</gras>. You'll then open it like an app.",
+      "autre": "Direct access from your home screen, and your pages stay readable even offline.",
+      "compris": "Got it",
+      "plusTard": "Later",
+      "installer": "Install"
     }
   },
   "accueil": {
@@ -3345,5 +3354,186 @@
     "light": "Light theme",
     "dark": "Dark theme",
     "changer": "{theme} — change"
+  },
+  "compte": {
+    "verifier": {
+      "attente": "Verifying your address…",
+      "ok": {
+        "titre": "Address confirmed",
+        "corps": "Thank you! Your email address is verified. Every feature of your space is open.",
+        "acceder": "Go to my space"
+      },
+      "erreur": {
+        "titre": "Invalid link",
+        "incomplet": "This link is incomplete. Open the one you received by email, or ask for a new one.",
+        "echec": "Verification failed. Please try again in a moment.",
+        "bandeau": "Sign in: a banner at the top of your space lets you get a new link.",
+        "connexion": "Sign in"
+      }
+    },
+    "invitation": {
+      "plusValable": "This invitation is no longer valid.",
+      "ok": "You're now part of {salon}'s team.",
+      "incomplet": "Incomplete invitation link.",
+      "indisponible": "Invitation unavailable",
+      "septJours": "An invitation is valid for 7 days. Ask the salon to send you a new one.",
+      "bienvenue": "Welcome to the team",
+      "membre": "You're now part of {salon}.",
+      "acceder": "Go to the space",
+      "rejoindre": "Join {salon}",
+      "roles": {
+        "owner": "Owner",
+        "manager": "Manager",
+        "receptionist": "Front desk",
+        "staff": "Staff member"
+      },
+      "compteExistant": "You already have a Beauty Salon account. Confirm with its password to add this salon — you'll switch between them from the menu.",
+      "motDePasseCompte": "Your account password",
+      "nom": "Your name",
+      "motDePasse": "Password",
+      "motDePasseAide": "At least 10 characters.",
+      "bouton": "Join the team"
+    },
+    "oubli": {
+      "envoye": "Link sent. Check your inbox.",
+      "echec": "Could not send. Please try again in a moment.",
+      "boite": {
+        "titre": "Check your inbox",
+        "corps": "If an account exists for <gras>{email}</gras>, a link has just been sent. It's valid for 24 hours and works only once.",
+        "rien": "Nothing received? Check your spam folder, then the spelling of your address."
+      },
+      "retour": "Back to sign in",
+      "corriger": "Correct my address",
+      "titre": "Forgot your password",
+      "intro": "Enter your email address and we'll send you a link.",
+      "email": "Email",
+      "envoyer": "Send the link"
+    },
+    "nouveau": {
+      "differents": "The two passwords don't match.",
+      "ok": "Password updated.",
+      "lienExpire": "This link is no longer valid. Ask for a new one.",
+      "incomplet": {
+        "titre": "Incomplete link",
+        "corps": "Open the link exactly as it appears in the email, without changing it. Some email apps split it in two.",
+        "demander": "Ask for a new link"
+      },
+      "fini": {
+        "titre": "Password updated",
+        "corps": "You can now sign in. Other open sessions stay valid; change it again if you suspect unauthorised access.",
+        "connexion": "Sign in"
+      },
+      "titre": "New password",
+      "intro": "Choose a password of at least 10 characters.",
+      "champ": "New password",
+      "champAide": "At least 10 characters.",
+      "confirmation": "Confirm",
+      "saisiesDifferent": "The two entries differ.",
+      "enregistrer": "Save"
+    },
+    "parcours": {
+      "etape": "Step {n} of {total}",
+      "avancement": "Sign-up progress",
+      "encouragement": {
+        "debut": "three minutes is enough",
+        "fini": "all set",
+        "unChamp": "one field left",
+        "deuxChamps": "two left",
+        "bonDebut": "good start",
+        "avance": "you're getting there"
+      },
+      "force": {
+        "encore": "{n, plural, one {# more character} other {# more characters}}",
+        "correct": "OK",
+        "solide": "Strong",
+        "unMotDePlus": "one more word would make it strong"
+      }
+    },
+    "film": {
+      "lancer": "Play the presentation film, 29 seconds, no sound",
+      "voir": "Watch the film · 29 s",
+      "pastille": "The product, in 29 s",
+      "pauseAria": "Pause the film",
+      "reprendreAria": "Resume the film",
+      "pause": "Pause",
+      "reprendre": "Resume"
+    },
+    "titres": {
+      "invitation": "Invitation",
+      "nouveau": "New password",
+      "oubli": "Forgot password",
+      "verifier": "Confirm my email address",
+      "inscription": "Create my salon"
+    },
+    "inscription": {
+      "erreurs": {
+        "nomSalon": "Enter your salon's name.",
+        "slugCourt": "At least 3 characters.",
+        "slugFormat": "Lowercase letters, numbers and hyphens only.",
+        "email": "Invalid email address.",
+        "motDePasse": "At least 10 characters.",
+        "palette": "Choose your salon's colours.",
+        "conditions": "You must accept the terms.",
+        "code": "Letters and numbers only."
+      },
+      "etapes": {
+        "salon": "Your salon",
+        "vous": "You",
+        "acces": "Your access",
+        "compte": "Your account"
+      },
+      "cree": "{salon} has been created. Sign in to enter.",
+      "echec": "Sign-up failed. Please try again.",
+      "choixRepris": "Your choices are carried over",
+      "vosCouleurs": "your colours",
+      "titre": "Create my salon",
+      "essai": "<gras>14 days free</gras>, up to 30 days with an eligible referral, no credit card.",
+      "nomSalon": "Salon name",
+      "nomSalonExemple": "Fatou's Salon",
+      "auNomDe": "Your page will be shown under the name <gras>{nom}</gras>.",
+      "adresse": "Your mini-site address",
+      "prise": "This address is already taken.",
+      "verification": "Checking…",
+      "libre": "is available.",
+      "aVous": "It will be yours once the salon is created.",
+      "pays": "Country",
+      "tarifsEn": "Prices in {devise} · time zone {fuseau}",
+      "couleurs": "Your colours",
+      "obligatoire": "(required)",
+      "votreSalon": "Your salon",
+      "apercu": "Preview of your mini-site",
+      "email": "Your email",
+      "identifiant": "This will be your sign-in identifier.",
+      "nom": "Your name",
+      "facultatif": "Optional",
+      "nomExemple": "Grace Mabiala",
+      "code": "Referral code",
+      "codeInconnu": "Unknown code. Check it, or leave this field empty.",
+      "codeExemple": "E.g. 7KQ2M9XP4T",
+      "parrainePar": "Referred by {salon}.",
+      "codeReconnu": "Code recognised: up to 30 days of trial if the referral is eligible.",
+      "motDePasse": "Password",
+      "conditions": "I accept the Beauty Salon terms of use.",
+      "vousCreez": "You're creating",
+      "creer": "Create my salon",
+      "continuer": "Continue",
+      "retour": "Back",
+      "arguments": {
+        "preleveTitre": "Nothing is charged",
+        "preleve": "at the end of the trial.",
+        "donneesTitre": "Your data stays yours",
+        "donnees": "exportable at any time."
+      },
+      "dejaCompte": "Already have an account?",
+      "connexion": "Sign in",
+      "bienvenue": {
+        "titre": "{salon} has been created",
+        "adresse": "Your address is reserved: <gras>{adresse}</gras>",
+        "verification": "Our team reviews your salon before putting your mini-site online. In the meantime, you can already prepare your catalogue, opening hours and team.",
+        "derniere": "Last step",
+        "connectez": "Sign in with the address <gras>{email}</gras> and the password you've just chosen.",
+        "bouton": "Sign me in"
+      }
+    }
   }
 }

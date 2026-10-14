@@ -25,6 +25,15 @@
     "motDePasse": {
       "afficher": "Afficher le mot de passe",
       "masquer": "Masquer le mot de passe"
+    },
+    "installer": {
+      "votreEspace": "votre espace",
+      "titre": "Installer {nom}",
+      "ios": "Touchez <gras>Partager</gras>, puis <gras>Sur l'écran d'accueil</gras>. Vous l'ouvrirez ensuite comme une application.",
+      "autre": "Un accès direct depuis votre écran d'accueil, et vos pages restent lisibles même sans réseau.",
+      "compris": "J'ai compris",
+      "plusTard": "Plus tard",
+      "installer": "Installer"
     }
   },
   "accueil": {
@@ -3345,5 +3354,186 @@
     "light": "Thème clair",
     "dark": "Thème sombre",
     "changer": "{theme} — changer"
+  },
+  "compte": {
+    "verifier": {
+      "attente": "Vérification de votre adresse…",
+      "ok": {
+        "titre": "Adresse confirmée",
+        "corps": "Merci ! Votre adresse e-mail est vérifiée. Toutes les fonctions de votre espace sont ouvertes.",
+        "acceder": "Accéder à mon espace"
+      },
+      "erreur": {
+        "titre": "Lien non valable",
+        "incomplet": "Ce lien est incomplet. Ouvrez celui reçu par e-mail, ou demandez-en un nouveau.",
+        "echec": "La vérification a échoué. Réessayez dans un instant.",
+        "bandeau": "Connectez-vous : un bandeau en haut de votre espace permet de recevoir un nouveau lien.",
+        "connexion": "Se connecter"
+      }
+    },
+    "invitation": {
+      "plusValable": "Cette invitation n'est plus valable.",
+      "ok": "Vous faites partie de l'équipe de {salon}.",
+      "incomplet": "Lien d'invitation incomplet.",
+      "indisponible": "Invitation indisponible",
+      "septJours": "Une invitation est valable 7 jours. Demandez au salon de vous en envoyer une nouvelle.",
+      "bienvenue": "Bienvenue dans l'équipe",
+      "membre": "Vous faites maintenant partie de {salon}.",
+      "acceder": "Accéder à l'espace",
+      "rejoindre": "Rejoindre {salon}",
+      "roles": {
+        "owner": "Propriétaire",
+        "manager": "Gérant",
+        "receptionist": "Réceptionniste",
+        "staff": "Prestataire"
+      },
+      "compteExistant": "Vous avez déjà un compte Beauty Salon. Confirmez avec son mot de passe pour ajouter ce salon — vous basculerez de l'un à l'autre depuis le menu.",
+      "motDePasseCompte": "Mot de passe de votre compte",
+      "nom": "Votre nom",
+      "motDePasse": "Mot de passe",
+      "motDePasseAide": "Au moins 10 caractères.",
+      "bouton": "Rejoindre l'équipe"
+    },
+    "oubli": {
+      "envoye": "Lien envoyé. Vérifiez votre boîte mail.",
+      "echec": "Envoi impossible. Réessayez dans un instant.",
+      "boite": {
+        "titre": "Vérifiez votre boîte mail",
+        "corps": "Si un compte existe pour <gras>{email}</gras>, un lien vient d'être envoyé. Il est valable 24 heures et ne fonctionne qu'une fois.",
+        "rien": "Rien reçu ? Regardez dans les indésirables, puis vérifiez l'orthographe de votre adresse."
+      },
+      "retour": "Retour à la connexion",
+      "corriger": "Corriger mon adresse",
+      "titre": "Mot de passe oublié",
+      "intro": "Indiquez votre adresse e-mail, nous vous enverrons un lien.",
+      "email": "E-mail",
+      "envoyer": "Envoyer le lien"
+    },
+    "nouveau": {
+      "differents": "Les deux mots de passe ne correspondent pas.",
+      "ok": "Mot de passe mis à jour.",
+      "lienExpire": "Ce lien n'est plus valable. Demandez-en un nouveau.",
+      "incomplet": {
+        "titre": "Lien incomplet",
+        "corps": "Ouvrez le lien tel qu'il figure dans l'e-mail, sans le modifier. Certains logiciels de messagerie le coupent en deux.",
+        "demander": "Demander un nouveau lien"
+      },
+      "fini": {
+        "titre": "Mot de passe mis à jour",
+        "corps": "Vous pouvez maintenant vous connecter. Les autres sessions ouvertes restent valides ; changez-le à nouveau si vous soupçonnez un accès non autorisé.",
+        "connexion": "Se connecter"
+      },
+      "titre": "Nouveau mot de passe",
+      "intro": "Choisissez un mot de passe d'au moins 10 caractères.",
+      "champ": "Nouveau mot de passe",
+      "champAide": "Au moins 10 caractères.",
+      "confirmation": "Confirmation",
+      "saisiesDifferent": "Les deux saisies diffèrent.",
+      "enregistrer": "Enregistrer"
+    },
+    "parcours": {
+      "etape": "Étape {n} sur {total}",
+      "avancement": "Avancement de l'inscription",
+      "encouragement": {
+        "debut": "trois minutes suffisent",
+        "fini": "tout y est",
+        "unChamp": "plus qu'un champ",
+        "deuxChamps": "plus que deux",
+        "bonDebut": "bon début",
+        "avance": "vous avancez"
+      },
+      "force": {
+        "encore": "{n, plural, one {Encore # caractère} other {Encore # caractères}}",
+        "correct": "Correct",
+        "solide": "Solide",
+        "unMotDePlus": "un mot de plus le rendrait solide"
+      }
+    },
+    "film": {
+      "lancer": "Lancer le film de présentation, 29 secondes, sans son",
+      "voir": "Voir le film · 29 s",
+      "pastille": "Le produit, en 29 s",
+      "pauseAria": "Mettre le film en pause",
+      "reprendreAria": "Reprendre le film",
+      "pause": "Mettre en pause",
+      "reprendre": "Reprendre"
+    },
+    "titres": {
+      "invitation": "Invitation",
+      "nouveau": "Nouveau mot de passe",
+      "oubli": "Mot de passe oublié",
+      "verifier": "Confirmer mon adresse e-mail",
+      "inscription": "Créer mon salon"
+    },
+    "inscription": {
+      "erreurs": {
+        "nomSalon": "Indiquez le nom de votre salon.",
+        "slugCourt": "Au moins 3 caractères.",
+        "slugFormat": "Minuscules, chiffres et tirets uniquement.",
+        "email": "Adresse e-mail invalide.",
+        "motDePasse": "Au moins 10 caractères.",
+        "palette": "Choisissez les couleurs de votre salon.",
+        "conditions": "Vous devez accepter les conditions.",
+        "code": "Lettres et chiffres uniquement."
+      },
+      "etapes": {
+        "salon": "Votre salon",
+        "vous": "Vous",
+        "acces": "Votre accès",
+        "compte": "Votre compte"
+      },
+      "cree": "{salon} est créé. Connectez-vous pour entrer.",
+      "echec": "L'inscription a échoué. Réessayez.",
+      "choixRepris": "Vos choix sont repris",
+      "vosCouleurs": "vos couleurs",
+      "titre": "Créer mon salon",
+      "essai": "<gras>14 jours gratuits</gras>, jusqu'à 30 jours avec un parrainage éligible, sans carte bancaire.",
+      "nomSalon": "Nom du salon",
+      "nomSalonExemple": "Chez Fatou",
+      "auNomDe": "Votre page s'affichera au nom de <gras>{nom}</gras>.",
+      "adresse": "Adresse de votre mini-site",
+      "prise": "Cette adresse est déjà prise.",
+      "verification": "Vérification…",
+      "libre": "est libre.",
+      "aVous": "Elle sera à vous à la création du salon.",
+      "pays": "Pays",
+      "tarifsEn": "Tarifs en {devise} · fuseau {fuseau}",
+      "couleurs": "Vos couleurs",
+      "obligatoire": "(obligatoire)",
+      "votreSalon": "Votre salon",
+      "apercu": "Aperçu de votre mini-site",
+      "email": "Votre e-mail",
+      "identifiant": "Ce sera votre identifiant.",
+      "nom": "Votre nom",
+      "facultatif": "Facultatif",
+      "nomExemple": "Grâce Mabiala",
+      "code": "Code de parrainage",
+      "codeInconnu": "Code inconnu. Vérifiez-le, ou laissez ce champ vide.",
+      "codeExemple": "Ex. : 7KQ2M9XP4T",
+      "parrainePar": "Parrainé par {salon}.",
+      "codeReconnu": "Code reconnu : jusqu'à 30 jours d'essai si le parrainage est éligible.",
+      "motDePasse": "Mot de passe",
+      "conditions": "J'accepte les conditions d'utilisation de Beauty Salon.",
+      "vousCreez": "Vous créez",
+      "creer": "Créer mon salon",
+      "continuer": "Continuer",
+      "retour": "Retour",
+      "arguments": {
+        "preleveTitre": "Rien n'est prélevé",
+        "preleve": "à la fin de l'essai.",
+        "donneesTitre": "Vos données restent les vôtres",
+        "donnees": "exportables à tout moment."
+      },
+      "dejaCompte": "Vous avez déjà un compte ?",
+      "connexion": "Se connecter",
+      "bienvenue": {
+        "titre": "{salon} est créé",
+        "adresse": "Votre adresse est réservée : <gras>{adresse}</gras>",
+        "verification": "Notre équipe vérifie votre salon avant de mettre votre mini-site en ligne. En attendant, vous pouvez déjà préparer votre catalogue, vos horaires et votre équipe.",
+        "derniere": "Dernière étape",
+        "connectez": "Connectez-vous avec l'adresse <gras>{email}</gras> et le mot de passe que vous venez de choisir.",
+        "bouton": "Me connecter"
+      }
+    }
   }
 }
