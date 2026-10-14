@@ -21,6 +21,10 @@
       "perte": "Your changes have not been saved.",
       "continuer": "Keep editing",
       "abandonner": "Discard"
+    },
+    "motDePasse": {
+      "afficher": "Show password",
+      "masquer": "Hide password"
     }
   },
   "accueil": {
@@ -2104,6 +2108,160 @@
         "adresse": "Photo or video address",
         "importer": "Import",
         "annuler": "Cancel"
+      }
+    },
+    "boutique": {
+      "titre": "Shop",
+      "description": "What you sell at the counter, and what clients need to bring for each service.",
+      "erreur": "Could not load the shop.",
+      "articleMaj": "Item updated.",
+      "retireBoutique": "“{nom}” removed from the shop.",
+      "ruptures": "{n, plural, one {# item out of stock} other {# items out of stock}}",
+      "bientotEpuises": "Running low: {liste}",
+      "onglets": {
+        "aria": "Shop sections",
+        "articles": "Items",
+        "prevoir": "To bring"
+      },
+      "vide": {
+        "titre": "Your shop is empty",
+        "corps": "Extensions, wigs, care kits… What you sell here can be offered to your clients when they book."
+      },
+      "ajouterArticle": "Add an item",
+      "retire": "Withdrawn",
+      "unites": {
+        "piece": "Per unit",
+        "pack": "Pack",
+        "meter": "Metre",
+        "gram": "Gram"
+      },
+      "stockDe": "Stock of {nom}",
+      "stock": {
+        "illimite": "always available",
+        "bas": "running low",
+        "ok": "in stock",
+        "rupture": "out of stock"
+      },
+      "modifier": "Edit",
+      "retirer": "Withdraw",
+      "remettre": "Restore",
+      "supprimer": "Delete",
+      "enregistrer": "Save",
+      "ajouter": "Add",
+      "annuler": "Cancel",
+      "form": {
+        "maj": "“{nom}” updated.",
+        "ajoute": "“{nom}” added to your shop.",
+        "modifier": "Edit “{nom}”",
+        "nouveau": "New item",
+        "nom": "Name",
+        "nomExemple": "Kanekalon braiding hair",
+        "prix": "Price ({devise})",
+        "vendu": "Sold",
+        "stock": "Stock",
+        "stockAide": "Empty = unlimited.",
+        "seuil": "Alert threshold",
+        "seuilAide": "Alert below this.",
+        "description": "Description (optional)",
+        "descriptionAide": "Length, colour, brand… what a client would ask at the counter.",
+        "photo": "Photo (optional)",
+        "photoAide": "A photo helps the client recognise what they're buying."
+      },
+      "prevoir": {
+        "maj": "“{nom}” updated.",
+        "ajoutee": "Supply added.",
+        "retiree": "“{nom}” removed.",
+        "plusPropose": "“{nom}” is no longer offered for this supply.",
+        "propose": "“{nom}” is now offered for this supply.",
+        "intro": "What the client needs to bring. Shown before booking — even if you sell nothing, writing it down avoids appointments cancelled on the spot.",
+        "vide": {
+          "titre": "Nothing to bring yet",
+          "corps": "“3 packs of braiding hair”, “a wig”, “your kit”… Your clients will see it when they book."
+        },
+        "ajouter": "Add a supply",
+        "indispensable": "Required",
+        "facultatif": "Optional",
+        "modifier": "Edit",
+        "supprimer": "Delete",
+        "proposez": "What you offer to those who don't have it:",
+        "annuler": "Cancel",
+        "form": {
+          "quoi": "What to bring",
+          "quoiExemple": "3 packs of braiding hair",
+          "prestation": "For which service",
+          "precision": "Details (optional)",
+          "precisionAide": "Length, colour, recommended quantity… The client reads it before booking.",
+          "precisionExemple": "26-inch length, colour 1B",
+          "indispensable": "Required — the client will have to say whether they're bringing it",
+          "enregistrer": "Save",
+          "ajouter": "Add",
+          "annuler": "Cancel"
+        }
+      }
+    },
+    "securite": {
+      "titre": "Security",
+      "description": "Protect access to your salon: two-factor authentication, password and sessions.",
+      "erreur": "Could not read the two-factor authentication status.",
+      "activee": "On",
+      "desactivee": "Off",
+      "deuxFacteurs": "Two-factor authentication",
+      "activation": {
+        "preparationEchec": "Could not prepare. Please try again.",
+        "ok": "Two-factor authentication turned on.",
+        "echec": "Could not turn it on. Please try again.",
+        "intro": "A password can leak, be guessed or be stolen. With two-factor authentication, every sign-in also asks for a six-digit code shown by an app on your phone: without it, your password alone opens nothing.",
+        "gratuit": "Free, no SMS",
+        "activer": "Turn on two-factor authentication",
+        "qr": "QR code to scan with your authenticator app",
+        "etape1": "In your app, add an account and scan this QR code.",
+        "sansCamera": "No camera? Enter this key:",
+        "etape2": "2. Code shown by the app",
+        "etape3": "3. Your password",
+        "confirmer": "Confirm and turn on",
+        "annuler": "Cancel"
+      },
+      "active": {
+        "desactiveeOk": "Two-factor authentication turned off.",
+        "echec": "Could not complete. Please try again.",
+        "restants": "Every sign-in asks for the code from your app. Backup codes left:",
+        "regenerer": "generate new ones now.",
+        "nouveauxCodes": "New backup codes",
+        "desactiver": "Turn off",
+        "avertissementCodes": "Your current codes will stop working.",
+        "avertissementDesactiver": "Your password alone will be enough to sign in again.",
+        "codeApplication": "Code from the app",
+        "motDePasse": "Password",
+        "generer": "Generate new codes",
+        "annuler": "Cancel"
+      },
+      "codes": {
+        "fichierTitre": "Beauty Salon backup codes",
+        "fichierNom": "beauty-salon-backup-codes.txt",
+        "activee": "On",
+        "titre": "Your backup codes",
+        "intro": "If you lose your phone, each of these codes opens <gras>one</gras> sign-in. They will never be shown again: store them now, away from this phone.",
+        "copies": "Codes copied.",
+        "copieImpossible": "Could not copy: write them down by hand.",
+        "copier": "Copy",
+        "telecharger": "Download (.txt)",
+        "ranges": "I have stored my codes somewhere safe.",
+        "terminer": "Done"
+      },
+      "motDePasse": {
+        "ok": "Password changed. Your other devices have been signed out.",
+        "echec": "Could not change it. Please try again.",
+        "titre": "Password",
+        "actuel": "Current password",
+        "nouveau": "New password",
+        "regle": "At least 10 characters. Common passwords, or ones already exposed in a data breach, are refused.",
+        "changer": "Change password"
+      },
+      "sessions": {
+        "titre": "Sessions",
+        "duree": "A session closes by itself after <gras>3 days</gras> of inactivity, and after 14 days at the latest.",
+        "motDePasse": "Changing your password signs out all your other devices.",
+        "journal": "Every sign-in and every sensitive change is logged by the Beauty Salon team."
       }
     }
   },

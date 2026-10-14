@@ -10,6 +10,7 @@
  * verrouiller la propriétaire dehors.
  */
 
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent, type ReactNode } from "react";
 
 import { DashboardError, dashboardFetch, mfa, type EtatMfa } from "@/lib/dashboard";
@@ -27,19 +28,20 @@ function message(caught: unknown, repli: string): string {
 }
 
 export function Securite() {
+  const t = useTranslations("pro.securite");
   const { membership, reload: rechargerSession } = useDashboard();
   const { data, error, reload } = useResource<EtatMfa>("/api/v1/auth/mfa", membership.tenant.id);
 
   return (
     <>
       <PageHeader
-        title="Sécurité"
-        description="Protégez l'accès à votre salon : double authentification, mot de passe et sessions."
+        title={t("titre")}
+        description={t("description")}
       />
       <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6">
         <div className="min-w-0">
           {error ? (
-            <ErrorState>Impossible de lire l&apos;état de la double authentification.</ErrorState>
+            <ErrorState>{t("erreur")}</ErrorState>
           ) : data === null ? (
             <Skeleton rows={2} />
           ) : (
@@ -78,6 +80,7 @@ function Titre({ icone, children, badge }: { icone: "lock" | "edit" | "clock"; c
 }
 
 function DoubleAuthentification({ etat, onChange }: { etat: EtatMfa; onChange: () => void }) {
+  const t = useTranslations("pro.securite");
   const [codes, setCodes] = useState<string[] | null>(null);
 
   if (codes) {
@@ -97,10 +100,14 @@ function DoubleAuthentification({ etat, onChange }: { etat: EtatMfa; onChange: (
       <Titre
         icone="lock"
         badge={
-          etat.enabled ? <Badge tone="success">Activée</Badge> : <Badge tone="warning">Désactivée</Badge>
+          etat.enabled ? (
+            <Badge tone="success">{t("activee")}</Badge>
+          ) : (
+            <Badge tone="warning">{t("desactivee")}</Badge>
+          )
         }
       >
-        Double authentification
+        {t("deuxFacteurs")}
       </Titre>
       {etat.enabled ? (
         <Active etat={etat} onCodes={setCodes} onChange={onChange} />
@@ -112,6 +119,7 @@ function DoubleAuthentification({ etat, onChange }: { etat: EtatMfa; onChange: (
 }
 
 function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
+  const t = useTranslations("pro.securite.activation");
   const toast = useToast();
   const [cle, setCle] = useState<{ qr_svg: string; secret: string } | null>(null);
   const [code, setCode] = useState("");
@@ -125,7 +133,7 @@ function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
     try {
       setCle(await mfa.preparer());
     } catch (caught) {
-      setErreur(message(caught, "Préparation impossible. Réessayez."));
+      setErreur(message(caught, t("preparationEchec")));
     } finally {
       setOccupe(false);
     }
@@ -137,10 +145,10 @@ function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
     setErreur("");
     try {
       const resultat = await mfa.confirmer(code, motDePasse);
-      toast.success("Double authentification activée.");
+      toast.success(t("ok"));
       onCodes(resultat.codes);
     } catch (caught) {
-      setErreur(message(caught, "Activation impossible. Réessayez."));
+      setErreur(message(caught, t("echec")));
     } finally {
       setOccupe(false);
     }
@@ -149,13 +157,9 @@ function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
   if (!cle) {
     return (
       <>
-        <p className="text-[13px] leading-relaxed text-muted sm:text-sm">
-          Un mot de passe peut fuiter, se deviner ou se voler. Avec la double authentification,
-          chaque connexion demande aussi un code à six chiffres affiché par une application sur
-          votre téléphone : sans lui, votre mot de passe seul n&apos;ouvre rien.
-        </p>
+        <p className="text-[13px] leading-relaxed text-muted sm:text-sm">{t("intro")}</p>
         <ul className="mt-3 grid gap-1.5 text-[13px] text-muted sm:grid-cols-2 sm:text-sm">
-          {["Google Authenticator", "Microsoft Authenticator", "1Password, Bitwarden…", "Gratuit, sans SMS"].map(
+          {["Google Authenticator", "Microsoft Authenticator", "1Password, Bitwarden…", t("gratuit")].map(
             (ligne) => (
               <li key={ligne} className="flex items-center gap-1.5">
                 <Icon name="check" className="size-3.5 shrink-0 text-success" />
@@ -166,7 +170,7 @@ function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
         </ul>
         {erreur && <p className="mt-3 text-sm font-medium text-danger">{erreur}</p>}
         <Button type="button" pending={occupe} onClick={() => void commencer()} className="mt-4 w-full sm:w-auto">
-          Activer la double authentification
+          {t("activer")}
         </Button>
       </>
     );
@@ -181,23 +185,22 @@ function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`data:image/svg+xml;utf8,${encodeURIComponent(cle.qr_svg)}`}
-            alt="QR code à scanner avec votre application d'authentification"
+            alt={t("qr")}
             className="size-40"
           />
         </div>
         <div className="min-w-0 text-[13px] leading-relaxed text-muted sm:text-sm">
           <p>
-            <strong className="text-ink">1.</strong> Dans votre application, ajoutez un compte et
-            scannez ce QR code.
+            <strong className="text-ink">1.</strong> {t("etape1")}
           </p>
-          <p className="mt-2">Pas d&apos;appareil photo ? Saisissez cette clé :</p>
+          <p className="mt-2">{t("sansCamera")}</p>
           <code className="mt-1 block break-all rounded-lg bg-surface-muted px-2.5 py-1.5 font-mono text-xs text-ink">
             {cle.secret}
           </code>
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="2. Code affiché par l'application">
+        <Field label={t("etape2")}>
           <input
             value={code}
             onChange={(event) => setCode(event.target.value)}
@@ -210,7 +213,7 @@ function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
           />
         </Field>
         <PasswordField
-          label="3. Votre mot de passe"
+          label={t("etape3")}
           value={motDePasse}
           onChange={setMotDePasse}
           autoComplete="current-password"
@@ -220,10 +223,10 @@ function Activation({ onCodes }: { onCodes: (codes: string[]) => void }) {
       {erreur && <p className="text-sm font-medium text-danger">{erreur}</p>}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" pending={occupe}>
-          Confirmer et activer
+          {t("confirmer")}
         </Button>
         <GhostButton type="button" onClick={() => setCle(null)}>
-          Annuler
+          {t("annuler")}
         </GhostButton>
       </div>
     </form>
@@ -239,6 +242,7 @@ function Active({
   onCodes: (codes: string[]) => void;
   onChange: () => void;
 }) {
+  const t = useTranslations("pro.securite.active");
   const toast = useToast();
   const [geste, setGeste] = useState<"aucun" | "codes" | "desactiver">("aucun");
   const [code, setCode] = useState("");
@@ -263,12 +267,12 @@ function Active({
         onCodes(resultat.codes);
       } else {
         await mfa.desactiver(code, motDePasse);
-        toast.success("Double authentification désactivée.");
+        toast.success(t("desactiveeOk"));
         onChange();
       }
       ouvrir("aucun");
     } catch (caught) {
-      setErreur(message(caught, "Opération impossible. Réessayez."));
+      setErreur(message(caught, t("echec")));
     } finally {
       setOccupe(false);
     }
@@ -277,32 +281,30 @@ function Active({
   return (
     <>
       <p className="text-[13px] leading-relaxed text-muted sm:text-sm">
-        Chaque connexion demande le code de votre application. Codes de secours restants :{" "}
+        {t("restants")}{" "}
         <strong className={etat.codes_restants <= 2 ? "text-danger" : "text-ink"}>
           {etat.codes_restants}
         </strong>
-        {etat.codes_restants <= 2 && " — régénérez-les sans attendre."}
+        {etat.codes_restants <= 2 && ` — ${t("regenerer")}`}
       </p>
 
       {geste === "aucun" ? (
         <div className="mt-4 flex flex-wrap gap-2">
           <GhostButton type="button" onClick={() => ouvrir("codes")}>
-            Nouveaux codes de secours
+            {t("nouveauxCodes")}
           </GhostButton>
           <GhostButton type="button" onClick={() => ouvrir("desactiver")} className="text-danger">
-            Désactiver
+            {t("desactiver")}
           </GhostButton>
         </div>
       ) : (
         <form onSubmit={valider} className="mt-4 grid gap-3 rounded-xl border border-line bg-surface-muted p-3 sm:p-4">
           <p className="text-[13px] font-medium text-ink sm:text-sm">
-            {geste === "codes"
-              ? "Les codes actuels cesseront de fonctionner."
-              : "Votre mot de passe suffira de nouveau pour vous connecter."}
+            {geste === "codes" ? t("avertissementCodes") : t("avertissementDesactiver")}
           </p>
           <div className={`grid gap-3 ${geste === "desactiver" ? "sm:grid-cols-2" : ""}`}>
             {geste === "desactiver" && (
-              <Field label="Code de l'application">
+              <Field label={t("codeApplication")}>
                 <input
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
@@ -315,7 +317,7 @@ function Active({
               </Field>
             )}
             <PasswordField
-              label="Mot de passe"
+              label={t("motDePasse")}
               value={motDePasse}
               onChange={setMotDePasse}
               autoComplete="current-password"
@@ -325,10 +327,10 @@ function Active({
           {erreur && <p className="text-sm font-medium text-danger">{erreur}</p>}
           <div className="flex flex-wrap gap-2">
             <Button type="submit" pending={occupe}>
-              {geste === "codes" ? "Générer de nouveaux codes" : "Désactiver"}
+              {geste === "codes" ? t("generer") : t("desactiver")}
             </Button>
             <GhostButton type="button" onClick={() => ouvrir("aucun")}>
-              Annuler
+              {t("annuler")}
             </GhostButton>
           </div>
         </form>
@@ -338,26 +340,26 @@ function Active({
 }
 
 function CodesDeSecours({ codes, onFini }: { codes: string[]; onFini: () => void }) {
+  const t = useTranslations("pro.securite.codes");
   const toast = useToast();
   const [range, setRange] = useState(false);
   const texte = codes.join("\n");
 
   function telecharger() {
     const lien = document.createElement("a");
-    lien.href = URL.createObjectURL(new Blob([`Codes de secours Beauty Salon\n\n${texte}\n`], { type: "text/plain" }));
-    lien.download = "codes-de-secours-beauty-salon.txt";
+    lien.href = URL.createObjectURL(new Blob([`${t("fichierTitre")}\n\n${texte}\n`], { type: "text/plain" }));
+    lien.download = t("fichierNom");
     lien.click();
     URL.revokeObjectURL(lien.href);
   }
 
   return (
     <Card>
-      <Titre icone="lock" badge={<Badge tone="success">Activée</Badge>}>
-        Vos codes de secours
+      <Titre icone="lock" badge={<Badge tone="success">{t("activee")}</Badge>}>
+        {t("titre")}
       </Titre>
       <p className="text-[13px] leading-relaxed text-muted sm:text-sm">
-        Si vous perdez votre téléphone, chacun de ces codes ouvre <strong>une</strong> connexion.
-        Ils ne seront plus jamais affichés : rangez-les maintenant, hors de ce téléphone.
+        {t.rich("intro", { gras: (texte) => <strong>{texte}</strong> })}
       </p>
       <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {codes.map((valeur) => (
@@ -376,14 +378,14 @@ function CodesDeSecours({ codes, onFini }: { codes: string[]; onFini: () => void
           onClick={() => {
             navigator.clipboard
               ?.writeText(texte)
-              .then(() => toast.success("Codes copiés."))
-              .catch(() => toast.error("Copie impossible : recopiez-les à la main."));
+              .then(() => toast.success(t("copies")))
+              .catch(() => toast.error(t("copieImpossible")));
           }}
         >
-          Copier
+          {t("copier")}
         </GhostButton>
         <GhostButton type="button" onClick={telecharger}>
-          Télécharger (.txt)
+          {t("telecharger")}
         </GhostButton>
       </div>
       <label className="mt-4 flex items-start gap-2 text-sm text-ink">
@@ -393,10 +395,10 @@ function CodesDeSecours({ codes, onFini }: { codes: string[]; onFini: () => void
           onChange={(event) => setRange(event.target.checked)}
           className="mt-0.5 size-4 accent-[var(--salon-primary)]"
         />
-        J&apos;ai rangé mes codes en lieu sûr.
+        {t("ranges")}
       </label>
       <Button type="button" disabled={!range} onClick={onFini} className="mt-3">
-        Terminer
+        {t("terminer")}
       </Button>
     </Card>
   );
@@ -407,6 +409,7 @@ function CodesDeSecours({ codes, onFini }: { codes: string[]; onFini: () => void
 // ---------------------------------------------------------------------------
 
 function MotDePasse() {
+  const t = useTranslations("pro.securite.motDePasse");
   const toast = useToast();
   const [actuel, setActuel] = useState("");
   const [nouveau, setNouveau] = useState("");
@@ -422,11 +425,11 @@ function MotDePasse() {
         method: "POST",
         body: JSON.stringify({ current_password: actuel, new_password: nouveau }),
       });
-      toast.success("Mot de passe changé. Vos autres appareils ont été déconnectés.");
+      toast.success(t("ok"));
       setActuel("");
       setNouveau("");
     } catch (caught) {
-      setErreur(message(caught, "Changement impossible. Réessayez."));
+      setErreur(message(caught, t("echec")));
     } finally {
       setOccupe(false);
     }
@@ -434,29 +437,28 @@ function MotDePasse() {
 
   return (
     <Card>
-      <Titre icone="edit">Mot de passe</Titre>
+      <Titre icone="edit">{t("titre")}</Titre>
       <form onSubmit={changer} className="grid gap-3">
         <PasswordField
-          label="Mot de passe actuel"
+          label={t("actuel")}
           value={actuel}
           onChange={setActuel}
           autoComplete="current-password"
           inputClassName={inputClass}
         />
         <PasswordField
-          label="Nouveau mot de passe"
+          label={t("nouveau")}
           value={nouveau}
           onChange={setNouveau}
           autoComplete="new-password"
           inputClassName={inputClass}
         />
         <p className="text-xs leading-relaxed text-subtle">
-          10 caractères au moins. Les mots de passe courants ou déjà publiés dans une fuite de
-          données sont refusés.
+          {t("regle")}
         </p>
         {erreur && <p className="text-sm font-medium text-danger">{erreur}</p>}
         <Button type="submit" pending={occupe} disabled={!actuel || nouveau.length < 10} className="w-full sm:w-auto">
-          Changer le mot de passe
+          {t("changer")}
         </Button>
       </form>
     </Card>
@@ -464,16 +466,14 @@ function MotDePasse() {
 }
 
 function Sessions() {
+  const t = useTranslations("pro.securite.sessions");
   return (
     <Card>
-      <Titre icone="clock">Sessions</Titre>
+      <Titre icone="clock">{t("titre")}</Titre>
       <ul className="grid gap-2 text-[13px] leading-relaxed text-muted sm:text-sm">
-        <li>
-          Une session se ferme d&apos;elle-même après <strong className="text-ink">3 jours</strong>{" "}
-          sans activité, et au plus tard après 14 jours.
-        </li>
-        <li>Changer votre mot de passe déconnecte tous vos autres appareils.</li>
-        <li>Chaque connexion et chaque changement sensible sont consignés par l&apos;équipe Beauty Salon.</li>
+        <li>{t.rich("duree", { gras: (texte) => <strong className="text-ink">{texte}</strong> })}</li>
+        <li>{t("motDePasse")}</li>
+        <li>{t("journal")}</li>
       </ul>
     </Card>
   );

@@ -21,6 +21,10 @@
       "perte": "Vos modifications ne sont pas enregistrées.",
       "continuer": "Continuer",
       "abandonner": "Abandonner"
+    },
+    "motDePasse": {
+      "afficher": "Afficher le mot de passe",
+      "masquer": "Masquer le mot de passe"
     }
   },
   "accueil": {
@@ -2104,6 +2108,160 @@
         "adresse": "Adresse de la photo ou de la vidéo",
         "importer": "Importer",
         "annuler": "Annuler"
+      }
+    },
+    "boutique": {
+      "titre": "Boutique",
+      "description": "Ce que vous vendez au comptoir, et ce qu'il faut prévoir pour chaque prestation.",
+      "erreur": "Impossible de charger la boutique.",
+      "articleMaj": "Article mis à jour.",
+      "retireBoutique": "« {nom} » retiré de la boutique.",
+      "ruptures": "{n, plural, one {# article en rupture} other {# articles en rupture}}",
+      "bientotEpuises": "Bientôt épuisé : {liste}",
+      "onglets": {
+        "aria": "Parties de la boutique",
+        "articles": "Articles",
+        "prevoir": "À prévoir"
+      },
+      "vide": {
+        "titre": "Votre boutique est vide",
+        "corps": "Mèches, perruques, kits d'entretien… Ce que vous vendez ici pourra être proposé à vos clientes au moment où elles réservent."
+      },
+      "ajouterArticle": "Ajouter un article",
+      "retire": "Retiré",
+      "unites": {
+        "piece": "À l'unité",
+        "pack": "Paquet",
+        "meter": "Mètre",
+        "gram": "Gramme"
+      },
+      "stockDe": "Stock de {nom}",
+      "stock": {
+        "illimite": "toujours dispo.",
+        "bas": "bientôt épuisé",
+        "ok": "en stock",
+        "rupture": "rupture"
+      },
+      "modifier": "Modifier",
+      "retirer": "Retirer",
+      "remettre": "Remettre",
+      "supprimer": "Supprimer",
+      "enregistrer": "Enregistrer",
+      "ajouter": "Ajouter",
+      "annuler": "Annuler",
+      "form": {
+        "maj": "« {nom} » mis à jour.",
+        "ajoute": "« {nom} » ajouté à votre boutique.",
+        "modifier": "Modifier « {nom} »",
+        "nouveau": "Nouvel article",
+        "nom": "Nom",
+        "nomExemple": "Mèches kanekalon",
+        "prix": "Prix ({devise})",
+        "vendu": "Vendu",
+        "stock": "Stock",
+        "stockAide": "Vide = illimité.",
+        "seuil": "Seuil d'alerte",
+        "seuilAide": "Alerte en dessous.",
+        "description": "Description (facultative)",
+        "descriptionAide": "Longueur, couleur, marque… ce qu'une cliente demanderait au comptoir.",
+        "photo": "Photo (facultative)",
+        "photoAide": "Une photo aide la cliente à reconnaître ce qu'elle achète."
+      },
+      "prevoir": {
+        "maj": "« {nom} » mise à jour.",
+        "ajoutee": "Fourniture ajoutée.",
+        "retiree": "« {nom} » retirée.",
+        "plusPropose": "« {nom} » n'est plus proposé pour cette fourniture.",
+        "propose": "« {nom} » est proposé pour cette fourniture.",
+        "intro": "Ce que la cliente doit apporter. Affiché avant la réservation — même sans rien vendre, l'écrire évite le rendez-vous annulé sur place.",
+        "vide": {
+          "titre": "Rien à prévoir pour l'instant",
+          "corps": "« 3 paquets de mèches », « une perruque », « votre kit »… Vos clientes le verront au moment de réserver."
+        },
+        "ajouter": "Ajouter une fourniture",
+        "indispensable": "Indispensable",
+        "facultatif": "Facultatif",
+        "modifier": "Modifier",
+        "supprimer": "Supprimer",
+        "proposez": "Ce que vous proposez à celles qui ne l'ont pas :",
+        "annuler": "Annuler",
+        "form": {
+          "quoi": "Ce qu'il faut prévoir",
+          "quoiExemple": "3 paquets de mèches",
+          "prestation": "Pour quelle prestation",
+          "precision": "Précision (facultative)",
+          "precisionAide": "Longueur, couleur, quantité conseillée… La cliente la lit avant de réserver.",
+          "precisionExemple": "Longueur 26 pouces, couleur 1B",
+          "indispensable": "Indispensable — la cliente devra dire si elle l'apporte",
+          "enregistrer": "Enregistrer",
+          "ajouter": "Ajouter",
+          "annuler": "Annuler"
+        }
+      }
+    },
+    "securite": {
+      "titre": "Sécurité",
+      "description": "Protégez l'accès à votre salon : double authentification, mot de passe et sessions.",
+      "erreur": "Impossible de lire l'état de la double authentification.",
+      "activee": "Activée",
+      "desactivee": "Désactivée",
+      "deuxFacteurs": "Double authentification",
+      "activation": {
+        "preparationEchec": "Préparation impossible. Réessayez.",
+        "ok": "Double authentification activée.",
+        "echec": "Activation impossible. Réessayez.",
+        "intro": "Un mot de passe peut fuiter, se deviner ou se voler. Avec la double authentification, chaque connexion demande aussi un code à six chiffres affiché par une application sur votre téléphone : sans lui, votre mot de passe seul n'ouvre rien.",
+        "gratuit": "Gratuit, sans SMS",
+        "activer": "Activer la double authentification",
+        "qr": "QR code à scanner avec votre application d'authentification",
+        "etape1": "Dans votre application, ajoutez un compte et scannez ce QR code.",
+        "sansCamera": "Pas d'appareil photo ? Saisissez cette clé :",
+        "etape2": "2. Code affiché par l'application",
+        "etape3": "3. Votre mot de passe",
+        "confirmer": "Confirmer et activer",
+        "annuler": "Annuler"
+      },
+      "active": {
+        "desactiveeOk": "Double authentification désactivée.",
+        "echec": "Opération impossible. Réessayez.",
+        "restants": "Chaque connexion demande le code de votre application. Codes de secours restants :",
+        "regenerer": "régénérez-les sans attendre.",
+        "nouveauxCodes": "Nouveaux codes de secours",
+        "desactiver": "Désactiver",
+        "avertissementCodes": "Les codes actuels cesseront de fonctionner.",
+        "avertissementDesactiver": "Votre mot de passe suffira de nouveau pour vous connecter.",
+        "codeApplication": "Code de l'application",
+        "motDePasse": "Mot de passe",
+        "generer": "Générer de nouveaux codes",
+        "annuler": "Annuler"
+      },
+      "codes": {
+        "fichierTitre": "Codes de secours Beauty Salon",
+        "fichierNom": "codes-de-secours-beauty-salon.txt",
+        "activee": "Activée",
+        "titre": "Vos codes de secours",
+        "intro": "Si vous perdez votre téléphone, chacun de ces codes ouvre <gras>une</gras> connexion. Ils ne seront plus jamais affichés : rangez-les maintenant, hors de ce téléphone.",
+        "copies": "Codes copiés.",
+        "copieImpossible": "Copie impossible : recopiez-les à la main.",
+        "copier": "Copier",
+        "telecharger": "Télécharger (.txt)",
+        "ranges": "J'ai rangé mes codes en lieu sûr.",
+        "terminer": "Terminer"
+      },
+      "motDePasse": {
+        "ok": "Mot de passe changé. Vos autres appareils ont été déconnectés.",
+        "echec": "Changement impossible. Réessayez.",
+        "titre": "Mot de passe",
+        "actuel": "Mot de passe actuel",
+        "nouveau": "Nouveau mot de passe",
+        "regle": "10 caractères au moins. Les mots de passe courants ou déjà publiés dans une fuite de données sont refusés.",
+        "changer": "Changer le mot de passe"
+      },
+      "sessions": {
+        "titre": "Sessions",
+        "duree": "Une session se ferme d'elle-même après <gras>3 jours</gras> sans activité, et au plus tard après 14 jours.",
+        "motDePasse": "Changer votre mot de passe déconnecte tous vos autres appareils.",
+        "journal": "Chaque connexion et chaque changement sensible sont consignés par l'équipe Beauty Salon."
       }
     }
   },

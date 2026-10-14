@@ -29,6 +29,7 @@
  * n'est pas la même chose et s'affiche différemment.
  */
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -48,6 +49,7 @@ import {
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 import { ProductMedia } from "@/features/booking/ProductMedia";
 import { productIllustrations } from "@/lib/illustrations";
@@ -88,14 +90,11 @@ interface ServiceRow {
   name: string;
 }
 
-const UNITS = [
-  { value: "piece", label: "À l'unité" },
-  { value: "pack", label: "Paquet" },
-  { value: "meter", label: "Mètre" },
-  { value: "gram", label: "Gramme" },
-];
+/** Les unités de vente (`Product.Unit`), libellées sous `pro.boutique.unites`. */
+const UNITS = ["piece", "pack", "meter", "gram"];
 
 export function Store() {
+  const t = useTranslations("pro.boutique");
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -135,7 +134,7 @@ export function Store() {
           { method: "PATCH", body: JSON.stringify(changes) },
           tenantId,
         ),
-      { success: "Article mis à jour." },
+      { success: t("articleMaj") },
     );
     if (ok) products.reload();
   }
@@ -148,7 +147,7 @@ export function Store() {
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `« ${product.name} » retiré de la boutique.` },
+      { success: t("retireBoutique", { nom: product.name }) },
     );
     if (ok) {
       products.reload();
@@ -159,12 +158,12 @@ export function Store() {
   return (
     <section>
       <PageHeader
-        title="Boutique"
-        description="Ce que vous vendez au comptoir, et ce qu'il faut prévoir pour chaque prestation."
+        title={t("titre")}
+        description={t("description")}
       />
 
       {(products.error || requirements.error) && (
-        <ErrorState>Impossible de charger la boutique.</ErrorState>
+        <ErrorState>{t("erreur")}</ErrorState>
       )}
 
       {/* Une alerte, pas un tableau de bord : un article en rupture reste
@@ -174,8 +173,7 @@ export function Store() {
           {outOfStock.length > 0 && (
             <p className="text-sm text-ink">
               <span className="font-medium">
-                {outOfStock.length} article{outOfStock.length > 1 ? "s" : ""} en
-                rupture
+                {t("ruptures", { n: outOfStock.length })}
               </span>{" "}
               <span className="text-muted">
                 — {outOfStock.map((p) => p.name).join(", ")}
@@ -184,8 +182,9 @@ export function Store() {
           )}
           {low.length > 0 && (
             <p className="mt-1 text-sm text-muted">
-              Bientôt épuisé :{" "}
-              {low.map((p) => `${p.name} (${p.stock})`).join(", ")}
+              {t("bientotEpuises", {
+                liste: low.map((p) => `${p.name} (${p.stock})`).join(", "),
+              })}
             </p>
           )}
         </div>
@@ -193,13 +192,13 @@ export function Store() {
 
       <div
         role="tablist"
-        aria-label="Parties de la boutique"
+        aria-label={t("onglets.aria")}
         className="mb-5 flex rounded-lg border border-line bg-surface p-0.5"
       >
         {(
           [
-            ["articles", "Articles", productRows.length],
-            ["prevoir", "À prévoir", requirementRows.length],
+            ["articles", t("onglets.articles"), productRows.length],
+            ["prevoir", t("onglets.prevoir"), requirementRows.length],
           ] as ["articles" | "prevoir", string, number][]
         ).map(([key, label, count]) => (
           <button
@@ -286,6 +285,7 @@ function Articles({
   onPatch: (product: Product, changes: Partial<Product>) => void;
   onRemove: (product: Product) => void;
 }) {
+  const t = useTranslations("pro.boutique");
   const [creating, setCreating] = useState(false);
 
   /*
@@ -307,17 +307,16 @@ function Articles({
 
       {!loading && products.length === 0 && !creating && (
         <EmptyState
-          title="Votre boutique est vide"
+          title={t("vide.titre")}
           action={
             canEdit && (
               <Button type="button" onClick={() => setCreating(true)}>
-                Ajouter un article
+                {t("ajouterArticle")}
               </Button>
             )
           }
         >
-          Mèches, perruques, kits d&apos;entretien… Ce que vous vendez ici
-          pourra être proposé à vos clientes au moment où elles réservent.
+          {t("vide.corps")}
         </EmptyState>
       )}
 
@@ -407,7 +406,7 @@ function Articles({
                 }}
                 icon={<Icon name="plus" className="size-4" />}
               >
-                Ajouter un article
+                {t("ajouterArticle")}
               </GhostButton>
             )
           )}
@@ -434,6 +433,8 @@ function ProductCard({
   onPatch: (changes: Partial<Product>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("pro.boutique");
+  const { region } = useFormats();
   const [stock, setStock] = useState(
     product.stock === null ? "" : String(product.stock),
   );
@@ -464,17 +465,19 @@ function ProductCard({
 
       <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-ink">
         <span className="min-w-0 truncate">{product.name}</span>
-        {!product.active && <Badge>Retiré</Badge>}
+        {!product.active && <Badge>{t("retire")}</Badge>}
       </p>
 
       <p className="tabular mt-0.5 text-sm text-salon">
-        {formatPrice(product.price, currency)}
-        <span className="ml-1 text-xs text-subtle">{product.unit_label}</span>
+        {formatPrice(product.price, currency, region)}
+        <span className="ml-1 text-xs text-subtle">
+          {UNITS.includes(product.unit) ? t(`unites.${product.unit}`) : product.unit_label}
+        </span>
       </p>
 
       <div className="mt-2.5 flex items-center gap-1.5">
         <label className="flex min-w-0 items-center gap-1.5">
-          <span className="sr-only">Stock de {product.name}</span>
+          <span className="sr-only">{t("stockDe", { nom: product.name })}</span>
           <input
             value={stock}
             onChange={(event) => setStock(event.target.value)}
@@ -482,7 +485,7 @@ function ProductCard({
             disabled={!canEdit}
             inputMode="numeric"
             placeholder="∞"
-            aria-label={`Stock de ${product.name}`}
+            aria-label={t("stockDe", { nom: product.name })}
             className={`tabular w-16 rounded-lg border bg-surface px-2 py-1.5 text-center text-sm text-ink ${
               product.active && !product.in_stock
                 ? "border-amber-500"
@@ -492,12 +495,12 @@ function ProductCard({
         </label>
         <span className="min-w-0 text-xs text-subtle">
           {product.stock === null
-            ? "toujours dispo."
+            ? t("stock.illimite")
             : product.in_stock
               ? product.is_low
-                ? "bientôt épuisé"
-                : "en stock"
-              : "rupture"}
+                ? t("stock.bas")
+                : t("stock.ok")
+              : t("stock.rupture")}
         </span>
       </div>
 
@@ -519,21 +522,21 @@ function ProductCard({
             onClick={onEdit}
             className="text-xs font-medium text-salon underline-offset-2 hover:underline"
           >
-            Modifier
+            {t("modifier")}
           </button>
           <button
             type="button"
             onClick={() => onPatch({ active: !product.active })}
             className="text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
           >
-            {product.active ? "Retirer" : "Remettre"}
+            {product.active ? t("retirer") : t("remettre")}
           </button>
           <button
             type="button"
             onClick={onRemove}
             className="text-xs text-danger underline-offset-2 hover:underline"
           >
-            Supprimer
+            {t("supprimer")}
           </button>
         </div>
       )}
@@ -567,6 +570,7 @@ function ProductForm({
   onCancel: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("pro.boutique");
   const toast = useToast();
   const [name, setName] = useState(product?.name ?? "");
   const [price, setPrice] = useState(product ? priceInput(product.price) : "");
@@ -613,8 +617,8 @@ function ProductForm({
         ),
       {
         success: product
-          ? `« ${trimmed} » mis à jour.`
-          : `« ${trimmed} » ajouté à votre boutique.`,
+          ? t("form.maj", { nom: trimmed })
+          : t("form.ajoute", { nom: trimmed }),
       },
     );
     setPending(false);
@@ -636,7 +640,7 @@ function ProductForm({
       className="rounded-xl border border-dashed border-line bg-surface p-3"
     >
       <p className="mb-3 text-sm font-medium text-ink">
-        {product ? `Modifier « ${product.name} »` : "Nouvel article"}
+        {product ? t("form.modifier", { nom: product.name }) : t("form.nouveau")}
       </p>
 
       {/*
@@ -648,18 +652,18 @@ function ProductForm({
         entière — ce sont les seuls à contenir des phrases.
       */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Field label="Nom" className="col-span-2 lg:col-span-4">
+        <Field label={t("form.nom")} className="col-span-2 lg:col-span-4">
           <input
             autoFocus
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={150}
-            placeholder="Mèches kanekalon"
+            placeholder={t("form.nomExemple")}
             className={inputClass}
           />
         </Field>
 
-        <Field label={`Prix (${currency})`}>
+        <Field label={t("form.prix", { devise: currency })}>
           <input
             value={price}
             onChange={(event) => setPrice(event.target.value)}
@@ -669,21 +673,21 @@ function ProductForm({
           />
         </Field>
 
-        <Field label="Vendu">
+        <Field label={t("form.vendu")}>
           <select
             value={unit}
             onChange={(event) => setUnit(event.target.value)}
             className={inputClass}
           >
             {UNITS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+              <option key={option} value={option}>
+                {t(`unites.${option}`)}
               </option>
             ))}
           </select>
         </Field>
 
-        <Field label="Stock" hint="Vide = illimité.">
+        <Field label={t("form.stock")} hint={t("form.stockAide")}>
           <input
             value={stock}
             onChange={(event) => setStock(event.target.value)}
@@ -693,7 +697,7 @@ function ProductForm({
           />
         </Field>
 
-        <Field label="Seuil d'alerte" hint="Alerte en dessous.">
+        <Field label={t("form.seuil")} hint={t("form.seuilAide")}>
           <input
             value={threshold}
             onChange={(event) => setThreshold(event.target.value)}
@@ -706,8 +710,8 @@ function ProductForm({
 
       <div className="mt-3">
         <Field
-          label="Description (facultative)"
-          hint="Longueur, couleur, marque… ce qu'une cliente demanderait au comptoir."
+          label={t("form.description")}
+          hint={t("form.descriptionAide")}
         >
           <textarea
             value={description}
@@ -725,8 +729,8 @@ function ProductForm({
           value={image}
           onChange={setImage}
           onUploaded={onMediaChanged}
-          label="Photo (facultative)"
-          hint="Une photo aide la cliente à reconnaître ce qu'elle achète."
+          label={t("form.photo")}
+          hint={t("form.photoAide")}
           // Photo d'article : elle vit dans la boutique, pas dans les
           // réalisations du salon.
           kind="product"
@@ -741,14 +745,14 @@ function ProductForm({
           disabled={!name.trim()}
           onClick={(event) => void submit(event)}
         >
-          {product ? "Enregistrer" : "Ajouter"}
+          {product ? t("enregistrer") : t("ajouter")}
         </Button>
         <button
           type="button"
           onClick={onCancel}
           className="rounded-lg px-2 py-2 text-sm text-muted transition hover:text-ink"
         >
-          Annuler
+          {t("annuler")}
         </button>
       </div>
     </div>
@@ -789,6 +793,8 @@ function ToBring({
   loading: boolean;
   onChanged: () => void;
 }) {
+  const t = useTranslations("pro.boutique.prevoir");
+  const { region } = useFormats();
   const toast = useToast();
   const [creating, setCreating] = useState(false);
   // Même règle que pour les articles : une seule fourniture ouverte à la
@@ -832,8 +838,8 @@ function ToBring({
         ),
       {
         success: requirement
-          ? `« ${payload.label} » mise à jour.`
-          : "Fourniture ajoutée.",
+          ? t("maj", { nom: payload.label })
+          : t("ajoutee"),
       },
     );
     if (ok) onChanged();
@@ -848,7 +854,7 @@ function ToBring({
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `« ${requirement.label} » retirée.` },
+      { success: t("retiree", { nom: requirement.label }) },
     );
     if (ok) onChanged();
   }
@@ -889,8 +895,8 @@ function ToBring({
       },
       {
         success: attached
-          ? `« ${product.name} » n'est plus proposé pour cette fourniture.`
-          : `« ${product.name} » est proposé pour cette fourniture.`,
+          ? t("plusPropose", { nom: product.name })
+          : t("propose", { nom: product.name }),
       },
     );
     if (ok) onChanged();
@@ -899,26 +905,24 @@ function ToBring({
   return (
     <div>
       <p className="mb-4 text-sm text-muted">
-        Ce que la cliente doit apporter. Affiché avant la réservation — même
-        sans rien vendre, l&apos;écrire évite le rendez-vous annulé sur place.
+        {t("intro")}
       </p>
 
       {loading && <Skeleton rows={2} />}
 
       {!loading && requirements.length === 0 && !creating && (
         <EmptyState
-          title="Rien à prévoir pour l'instant"
+          title={t("vide.titre")}
           action={
             canEdit &&
             services.length > 0 && (
               <Button type="button" onClick={() => setCreating(true)}>
-                Ajouter une fourniture
+                {t("ajouter")}
               </Button>
             )
           }
         >
-          « 3 paquets de mèches », « une perruque », « votre kit »… Vos clientes
-          le verront au moment de réserver.
+          {t("vide.corps")}
         </EmptyState>
       )}
 
@@ -952,9 +956,9 @@ function ToBring({
                         <p className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-ink">
                           {requirement.label}
                           {requirement.mandatory ? (
-                            <Badge tone="warning">Indispensable</Badge>
+                            <Badge tone="warning">{t("indispensable")}</Badge>
                           ) : (
-                            <Badge>Facultatif</Badge>
+                            <Badge>{t("facultatif")}</Badge>
                           )}
                         </p>
                         {/* La précision était enregistrable côté serveur,
@@ -977,7 +981,7 @@ function ToBring({
                             }}
                             className="text-xs font-medium text-salon underline-offset-2 hover:underline"
                           >
-                            Modifier
+                            {t("modifier")}
                           </button>
                           <span aria-hidden className="text-subtle">
                             ·
@@ -987,7 +991,7 @@ function ToBring({
                             onClick={() => remove(requirement)}
                             className="text-xs text-danger underline-offset-2 hover:underline"
                           >
-                            Supprimer
+                            {t("supprimer")}
                           </button>
                         </div>
                       )}
@@ -997,7 +1001,7 @@ function ToBring({
                   {products.length > 0 && (
                     <div className="mt-2.5 border-t border-line pt-2.5">
                       <p className="mb-1.5 text-xs text-subtle">
-                        Ce que vous proposez à celles qui ne l&apos;ont pas :
+                        {t("proposez")}
                       </p>
                       <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-3 lg:grid-cols-4">
                         {products.map((product) => {
@@ -1023,7 +1027,7 @@ function ToBring({
                                   {product.name}
                                 </span>
                                 <span className="tabular text-xs text-subtle">
-                                  {formatPrice(product.price, currency)}
+                                  {formatPrice(product.price, currency, region)}
                                 </span>
                               </button>
                             </li>
@@ -1063,7 +1067,7 @@ function ToBring({
                 }}
                 icon={<Icon name="plus" className="size-4" />}
               >
-                Ajouter une fourniture
+                {t("ajouter")}
               </GhostButton>
             )
           )}
@@ -1096,6 +1100,7 @@ function RequirementForm({
   onSave: (payload: RequirementDraft) => Promise<boolean>;
   onCancel: () => void;
 }) {
+  const t = useTranslations("pro.boutique.prevoir");
   const [label, setLabel] = useState(requirement?.label ?? "");
   const [detail, setDetail] = useState(requirement?.detail ?? "");
   const [serviceId, setServiceId] = useState(
@@ -1129,18 +1134,18 @@ function RequirementForm({
       }}
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Ce qu'il faut prévoir">
+        <Field label={t("form.quoi")}>
           <input
             autoFocus
             value={label}
             onChange={(event) => setLabel(event.target.value)}
             maxLength={150}
-            placeholder="3 paquets de mèches"
+            placeholder={t("form.quoiExemple")}
             className={inputClass}
           />
         </Field>
 
-        <Field label="Pour quelle prestation">
+        <Field label={t("form.prestation")}>
           <select
             value={serviceId}
             onChange={(event) => setServiceId(event.target.value)}
@@ -1155,15 +1160,15 @@ function RequirementForm({
         </Field>
 
         <Field
-          label="Précision (facultative)"
-          hint="Longueur, couleur, quantité conseillée… La cliente la lit avant de réserver."
+          label={t("form.precision")}
+          hint={t("form.precisionAide")}
           className="sm:col-span-2"
         >
           <input
             value={detail}
             onChange={(event) => setDetail(event.target.value)}
             maxLength={255}
-            placeholder="Longueur 26 pouces, couleur 1B"
+            placeholder={t("form.precisionExemple")}
             className={inputClass}
           />
         </Field>
@@ -1176,7 +1181,7 @@ function RequirementForm({
           onChange={(event) => setMandatory(event.target.checked)}
           className="size-4 accent-[var(--color-salon)]"
         />
-        Indispensable — la cliente devra dire si elle l&apos;apporte
+        {t("form.indispensable")}
       </label>
 
       <div className="mt-3 flex items-center gap-2">
@@ -1186,14 +1191,14 @@ function RequirementForm({
           disabled={!label.trim()}
           onClick={(event) => void submit(event)}
         >
-          {requirement ? "Enregistrer" : "Ajouter"}
+          {requirement ? t("form.enregistrer") : t("form.ajouter")}
         </Button>
         <button
           type="button"
           onClick={onCancel}
           className="rounded-lg px-2 py-2 text-sm text-muted transition hover:text-ink"
         >
-          Annuler
+          {t("annuler")}
         </button>
       </div>
     </div>
