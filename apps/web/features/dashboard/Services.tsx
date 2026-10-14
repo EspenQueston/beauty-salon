@@ -147,7 +147,7 @@ function depositLabel(
   const rate = rule.deposit_rate || 0;
   const minimum = Number(rule.deposit_minimum) || 0;
   if (rate === 0 && minimum === 0) return t("acompte.nonRegle");
-  if (service.price_kind === "quote") return `${rate} %`;
+  if (service.price_kind === "quote") return region.startsWith("fr") ? `${rate}\u00a0%` : `${rate}%`;
 
   const price = Number(service.price_amount) || 0;
   return formatPrice(

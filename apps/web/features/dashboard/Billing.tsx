@@ -896,7 +896,7 @@ function PasserALAnnuel({
 function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
   const t = useTranslations("pro.abonnement");
   const a = useTranslations("pro.abonnement.attente");
-  const { dateLongue, montant } = useFormats();
+  const { dateLongue, montant, pourcent } = useFormats();
   const { membership } = useDashboard();
   return (
     <Card className="mb-6 sm:mb-8">
@@ -923,7 +923,7 @@ function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
           {montant(demande.amount, demande.currency)}
           {Number(demande.remise_montant) > 0 && (
             <span className="ml-1 text-[11px] font-normal text-success">
-              (−{Number(demande.remise_pourcentage)} %)
+              ({pourcent(Number(demande.remise_pourcentage), "−")})
             </span>
           )}
         </Fait>
@@ -1525,7 +1525,7 @@ function CarteOffre({
       <span className="mt-2.5 flex flex-wrap gap-1">
         {annuel && economie ? (
           <span className="inline-flex w-fit rounded-full bg-success-bg px-2 py-0.5 text-[10.5px] font-semibold text-success sm:text-xs">
-            −{economie.pourcentage} % · {montant(economie.montant, devise.code)}
+            {o("economie", { pct: economie.pourcentage, montant: montant(economie.montant, devise.code) })}
           </span>
         ) : (
           <span className="text-[10.5px] text-subtle sm:text-xs">{o("sansEngagement")}</span>

@@ -29,6 +29,13 @@ export function formatsPour(langue: string) {
     dateCourte: new Intl.DateTimeFormat(region, { day: "numeric", month: "short" }),
     /** « 14:30 », dans les deux langues. */
     heure: new Intl.DateTimeFormat(region, { hour: "2-digit", minute: "2-digit" }),
+    /**
+     * Un pourcentage : « 30 % » (espace insécable) en français, « 30% » en
+     * anglais. `signe` le précède : « −16 % ».
+     */
+    pourcent(valeur: number | string, signe = ""): string {
+      return region.startsWith("fr") ? `${signe}${valeur}\u00a0%` : `${signe}${valeur}%`;
+    },
     /** Un montant, sans décimales inutiles : « 99 CNY », pas « 99,00 CNY ». */
     montant(valeur: string | number, devise: string): string {
       const nombre = Number(valeur);

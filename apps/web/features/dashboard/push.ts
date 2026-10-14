@@ -126,6 +126,9 @@ function installee(): boolean {
  */
 function nomAppareil(): string {
   const ua = navigator.userAgent;
+  // Le nom est écrit dans la langue de la page où l'on s'abonne : c'est
+  // celle dans laquelle on le relira, dans la liste des appareils.
+  const anglais = document.documentElement.lang.startsWith("en");
 
   const systeme = /Android/.test(ua)
     ? "Android"
@@ -153,9 +156,11 @@ function nomAppareil(): string {
             ? "Firefox"
             : /Safari\//.test(ua)
               ? "Safari"
-              : "Navigateur";
+              : anglais
+                ? "Browser"
+                : "Navigateur";
 
-  return systeme ? `${navigateur} sur ${systeme}` : navigateur;
+  return systeme ? `${navigateur} ${anglais ? "on" : "sur"} ${systeme}` : navigateur;
 }
 
 /** Le service worker, enregistré si besoin. */

@@ -3277,7 +3277,8 @@
         "parMois": "per month",
         "soit": "i.e. {montant}/month",
         "sansEngagement": "No commitment",
-        "votreOffre": "Your plan"
+        "votreOffre": "Your plan",
+        "economie": "−{pct}% · {montant}"
       },
       "moyen": {
         "agrandir": "Enlarge",

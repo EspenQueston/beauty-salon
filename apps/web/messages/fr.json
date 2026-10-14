@@ -3277,7 +3277,8 @@
         "parMois": "par mois",
         "soit": "soit {montant}/mois",
         "sansEngagement": "Sans engagement",
-        "votreOffre": "Votre offre"
+        "votreOffre": "Votre offre",
+        "economie": "−{pct} % · {montant}"
       },
       "moyen": {
         "agrandir": "Agrandir",

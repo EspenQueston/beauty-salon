@@ -98,6 +98,7 @@ export const STATUT_REMISE: Record<StatutRemise, "success" | "warning" | "neutra
 
 export function Parrainage() {
   const t = useTranslations("pro.parrainage");
+  const { pourcent } = useFormats();
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const { data, error } = useResource<ParrainageSalon>("/api/v1/parrainage", tenantId, {
@@ -164,7 +165,7 @@ export function Parrainage() {
         <Chiffre terme={t("chiffres.disponibles")} valeur={disponibles} />
         <Chiffre
           terme={t("chiffres.prochain")}
-          valeur={Number(prochain) > 0 ? `−${prochain} %` : "—"}
+          valeur={Number(prochain) > 0 ? pourcent(prochain, "−") : "—"}
           accent={Number(prochain) > 0}
         />
       </dl>
@@ -369,7 +370,7 @@ export function ListeFilleuls({ filleuls }: { filleuls: Filleul[] }) {
 
 export function ListeRemises({ remises }: { remises: RemiseParrainage[] }) {
   const t = useTranslations("pro.parrainage");
-  const { dateLongue, montant } = useFormats();
+  const { dateLongue, montant, pourcent } = useFormats();
   if (remises.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-muted sm:text-sm">
@@ -385,7 +386,7 @@ export function ListeRemises({ remises }: { remises: RemiseParrainage[] }) {
           <li key={remise.id} className="min-w-0 rounded-xl border border-line bg-surface p-3">
             <div className="flex flex-wrap items-center justify-between gap-1.5">
               <span className="tabular text-base font-bold text-ink sm:text-lg">
-                −{remise.pourcentage} %
+                {pourcent(remise.pourcentage, "−")}
               </span>
               <Badge tone={ton}>{t(`statutRemise.${remise.statut}`)}</Badge>
             </div>

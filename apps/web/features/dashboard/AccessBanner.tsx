@@ -132,6 +132,7 @@ export function AccesProvider({
  */
 export function UpgradeButton() {
   const t = useTranslations("pro.acces");
+  const { pourcent } = useFormats();
   const { acces, maintenant } = useAcces();
   if (!acces || !acces.peut_payer) return null;
 
@@ -151,7 +152,7 @@ export function UpgradeButton() {
     pastille = jours <= 1 ? t("bouton.dernierJour") : t("bouton.jours", { n: jours });
   } else if (acces.raison === "periode" && acces.montee_en_gamme) {
     libelle = t("bouton.annuel");
-    pastille = `−${acces.montee_en_gamme.economie.pourcentage} %`;
+    pastille = pourcent(acces.montee_en_gamme.economie.pourcentage, "−");
   } else if (acces.raison === "periode" && acces.pro_disponible) {
     libelle = t("bouton.pro");
     pastille = "Pro";

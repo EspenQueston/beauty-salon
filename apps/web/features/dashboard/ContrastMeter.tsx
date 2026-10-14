@@ -27,6 +27,7 @@ import {
   scoreContrast,
   type ContrastScore,
 } from "@/lib/contrast";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 
 interface Pair {
@@ -51,6 +52,7 @@ export function ContrastMeter({
   onFix: (field: "primary" | "surface", value: string) => void;
 }) {
   const t = useTranslations("pro.contraste");
+  const { pourcent } = useFormats();
   const pairs: Pair[] = [
     {
       key: "price",
@@ -154,7 +156,7 @@ export function ContrastMeter({
                       : "text-success"
                 }`}
               >
-                {score.percent} %
+                {pourcent(score.percent)}
               </span>
 
               {suggestion && (

@@ -504,6 +504,7 @@ function Ratings({ rows }: { rows: { rating: number; count: number }[] }) {
  */
 function Occupancy({ value }: { value: number | null }) {
   const t = useTranslations("pro.accueil.remplissage");
+  const { pourcent } = useFormats();
   if (value === null) {
     return (
       <Card>
@@ -525,7 +526,7 @@ function Occupancy({ value }: { value: number | null }) {
       <p className="mt-0.5 text-xs text-subtle">{t("septJours")}</p>
 
       <p className="tabular mt-3 text-3xl font-semibold tracking-tight text-ink">
-        {value} %
+        {pourcent(value)}
       </p>
 
       <div

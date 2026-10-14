@@ -535,6 +535,7 @@ export function ShareTable({
 }
 
 function Bar({ share }: { share: number }) {
+  const { region, pourcent } = useFormats();
   const width = Math.max(Math.min(share, 100), 1.5);
   return (
     <span className="flex items-center gap-2">
@@ -548,7 +549,7 @@ function Bar({ share }: { share: number }) {
         />
       </span>
       <span className="tabular w-9 shrink-0 text-right text-[0.7rem] text-subtle">
-        {share.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} %
+        {pourcent(share.toLocaleString(region, { maximumFractionDigits: 0 }))}
       </span>
     </span>
   );

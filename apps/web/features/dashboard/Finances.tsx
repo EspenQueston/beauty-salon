@@ -272,7 +272,7 @@ function marginChange(
 
 export function Finances() {
   const t = useTranslations("pro.finances");
-  const { region } = useFormats();
+  const { region, pourcent } = useFormats();
   const { money, compactMoney, monthName, longMonth, dayLabel } = useMemo(
     () => outils(region),
     [region],
@@ -549,7 +549,7 @@ export function Finances() {
               tone="info"
               label={t("cartes.marge")}
               value={
-                data.totals.margin === null ? "—" : `${data.totals.margin} %`
+                data.totals.margin === null ? "—" : pourcent(data.totals.margin)
               }
               unit={
                 data.totals.margin === null
