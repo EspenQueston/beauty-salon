@@ -77,6 +77,21 @@ ACTIONS: dict[str, tuple[tuple[str, str, str], ...]] = {
 #: avec `apps/web/app/notification-image/[genre]/route.tsx`.
 IMAGES_COMPOSEES = frozenset(ACTIONS)
 
+#: Les memes libelles en anglais, par libelle francais : la table ci-dessus
+#: reste la seule a dire quels boutons porte chaque genre.
+LIBELLES_EN = {
+    "Voir le rendez-vous": "View appointment",
+    "Ouvrir l'agenda": "Open calendar",
+    "Vérifier l'acompte": "Check deposit",
+    "Voir le créneau": "View time slot",
+    "Lire l'avis": "Read review",
+    "Voir la liste": "View list",
+    "Examiner le salon": "Review salon",
+    "Voir le détail": "View details",
+    "Voir l'abonnement": "View subscription",
+    "Vérifier le paiement": "Check payment",
+}
+
 
 def url_publique(asset) -> str:
     """L'adresse absolue d'un media public, ou chaine vide.
@@ -137,16 +152,23 @@ def apparence(tenant_id) -> dict:
     }
 
 
-def actions(genre: str, lien: str) -> list[dict]:
-    """Les boutons d'un genre, avec leur destination."""
+def actions(genre: str, lien: str, langue: str = "fr") -> list[dict]:
+    """Les boutons d'un genre, avec leur destination, dans la langue du
+    destinataire."""
     return [
-        {"id": identifiant, "titre": titre, "lien": propre or lien}
+        {
+            "id": identifiant,
+            "titre": LIBELLES_EN.get(titre, titre) if langue == "en" else titre,
+            "lien": propre or lien,
+        }
         for identifiant, titre, propre in ACTIONS.get(genre, ())
         if propre or lien
     ]
 
 
-def habiller(charge: dict, *, genre: str, lien: str, image: str = "", salon=None) -> dict:
+def habiller(
+    charge: dict, *, genre: str, lien: str, image: str = "", salon=None, langue: str = "fr"
+) -> dict:
     """Complete une charge de push avec son image, son icone et ses boutons.
 
     `salon` est le resultat d'`apparence()`, ou None hors de tout salon.
@@ -161,7 +183,7 @@ def habiller(charge: dict, *, genre: str, lien: str, image: str = "", salon=None
         # L'icone par defaut, celle de la plateforme, est posee par le
         # service worker : chacun connait la sienne.
         "icone": salon.get("logo", ""),
-        "actions": actions(genre, lien),
+        "actions": actions(genre, lien, langue),
         # En millisecondes, comme l'attend `Notification.timestamp`. Un
         # message remis en retard — telephone eteint la nuit — affiche ainsi
         # l'heure de l'evenement, et non celle de sa remise.

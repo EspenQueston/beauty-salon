@@ -37,6 +37,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.common.permissions import IsPlatformAdmin, IsTenantResolved
+from apps.translations.langue import demandee
 
 from . import habillage, push
 from .models import Genre, Notification, PlatformNotification, PushSubscription
@@ -292,7 +293,7 @@ class NotificationEssaiView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        charge = self._charge(request.tenant_id)
+        charge = self._charge(request.tenant_id, demandee(request))
         envoyes, echecs, disparus = 0, 0, []
         for abonnement in appareils:
             try:
@@ -310,7 +311,7 @@ class NotificationEssaiView(APIView):
         return Response({"envoyes": envoyes, "echecs": echecs, "retires": len(disparus)})
 
     @staticmethod
-    def _charge(tenant_id) -> dict:
+    def _charge(tenant_id, langue: str = "fr") -> dict:
         """Une reservation plausible, avec une vraie prestation du salon.
 
         Le titre dit que c'est un essai : une gerante qui la verrait sur son
@@ -329,17 +330,20 @@ class NotificationEssaiView(APIView):
             .order_by(F("image").asc(nulls_last=True), "name")
             .first()
         )
-        nom = prestation.name if prestation else "Votre prestation"
         lien = "/agenda"
+        if langue == "en":
+            nom = prestation.name if prestation else "Your service"
+            titre = "Test · A client booked"
+            corps = f"{nom} — tomorrow at 10:00. This is how your alerts will look."
+        else:
+            nom = prestation.name if prestation else "Votre prestation"
+            titre = "Essai · Une cliente a réservé"
+            corps = f"{nom} — demain à 10:00. Voici à quoi ressembleront vos alertes."
         return habillage.habiller(
-            {
-                "genre": Genre.RESERVATION,
-                "titre": "Essai · Une cliente a réservé",
-                "corps": f"{nom} — demain à 10:00. Voici à quoi ressembleront vos alertes.",
-                "lien": lien,
-            },
+            {"genre": Genre.RESERVATION, "titre": titre, "corps": corps, "lien": lien},
             genre=Genre.RESERVATION,
             lien=lien,
             image=habillage.url_publique(prestation.image) if prestation else "",
             salon=habillage.apparence(tenant_id),
+            langue=langue,
         )

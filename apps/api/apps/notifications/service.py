@@ -31,11 +31,13 @@ notification disparait avec elle, ce qui est exactement ce qu'on veut.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 from django.db import transaction
 
 from apps.accounts.models import Membership, User
 from apps.common.db import tenant_context
+from apps.translations.langue import normaliser
 
 from . import habillage
 from .models import Notification, PlatformNotification, PushSubscription
@@ -51,13 +53,25 @@ logger = logging.getLogger(__name__)
 # elle manquerait ensuite celles qui la concernent.
 ROLES_PREVENUS = (Membership.Role.OWNER, Membership.Role.MANAGER)
 
+#: Un texte deja ecrit, ou de quoi l'ecrire dans une langue donnee.
+#:
+#: La notification est rangee en base toute redigee : la cloche l'affiche
+#: telle quelle, et le push part d'une tache qui n'a plus de requete pour
+#: savoir a qui elle parle. C'est donc au depot qu'il faut choisir la
+#: langue — celle que chaque destinataire a retenue sur son compte.
+Texte = str | Callable[[str], str]
+
+
+def _dans(texte: Texte, langue: str) -> str:
+    return texte(langue) if callable(texte) else texte
+
 
 def prevenir_salon(
     tenant_id,
     *,
     genre: str,
-    titre: str,
-    corps: str = "",
+    titre: Texte,
+    corps: Texte = "",
     lien: str = "",
     image: str = "",
 ) -> int:
@@ -69,49 +83,64 @@ def prevenir_salon(
 
     `image` est la photo propre a l'evenement — celle de la prestation
     reservee. Elle ne sert qu'au push : la cloche n'affiche pas d'image.
+
+    `titre` et `corps` acceptent une fonction de la langue : la gerante qui
+    lit son espace en anglais recoit « Anna booked », la proprietaire
+    reste en francais, pour le meme evenement.
     """
     with tenant_context(tenant_id):
-        comptes = list(
+        lignes = (
             Membership.objects.filter(
                 tenant_id=tenant_id,
                 role__in=ROLES_PREVENUS,
                 status=Membership.Status.ACTIVE,
             )
-            .values_list("user_id", flat=True)
+            .values_list("user_id", "user__locale")
             .distinct()
         )
+        par_langue: dict[str, list] = {}
+        for compte, locale in lignes:
+            par_langue.setdefault(normaliser(locale), []).append(compte)
 
-        if not comptes:
+        if not par_langue:
             return 0
 
+        textes = {
+            langue: (_dans(titre, langue), _dans(corps, langue)) for langue in par_langue
+        }
         Notification.objects.bulk_create(
             [
                 Notification(
                     tenant_id=tenant_id,
                     recipient_id=compte,
                     genre=genre,
-                    titre=titre,
-                    corps=corps,
+                    titre=textes[langue][0],
+                    corps=textes[langue][1],
                     lien=lien,
                 )
+                for langue, comptes in par_langue.items()
                 for compte in comptes
             ]
         )
 
         salon = _apparence(tenant_id)
 
-    _pousser_apres_commit(
-        comptes,
-        PushSubscription.Portee.SALON,
-        habillage.habiller(
-            {"genre": genre, "titre": titre, "corps": corps, "lien": lien},
-            genre=genre,
-            lien=lien,
-            image=image,
-            salon=salon,
-        ),
-    )
-    return len(comptes)
+    # Un envoi par langue : la charge est commune a tous ses destinataires.
+    for langue, comptes in par_langue.items():
+        titre_ecrit, corps_ecrit = textes[langue]
+        _pousser_apres_commit(
+            comptes,
+            PushSubscription.Portee.SALON,
+            habillage.habiller(
+                {"genre": genre, "titre": titre_ecrit, "corps": corps_ecrit, "lien": lien},
+                genre=genre,
+                lien=lien,
+                image=image,
+                salon=salon,
+                langue=langue,
+            ),
+        )
+    return sum(len(comptes) for comptes in par_langue.values())
 
 
 def prevenir_plateforme(

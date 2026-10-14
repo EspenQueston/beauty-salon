@@ -58,5 +58,10 @@ def du_compte(user) -> str:
     (`User.locale`), qui decide. Une valeur inconnue — un compte cree avant,
     une saisie d'administration — vaut le francais.
     """
-    valeur = (getattr(user, "locale", "") or "").strip().lower()[:2]
-    return valeur if valeur in LANGUES else LANGUE_SOURCE
+    return normaliser(getattr(user, "locale", ""))
+
+
+def normaliser(valeur) -> str:
+    """« en-GB », « EN », None : une langue servie, ou le francais."""
+    racine = (valeur or "").strip().lower()[:2]
+    return racine if racine in LANGUES else LANGUE_SOURCE
