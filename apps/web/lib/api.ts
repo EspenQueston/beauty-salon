@@ -9,6 +9,7 @@
  */
 
 import { LANGUE_PAR_DEFAUT, type Langue } from "@/i18n/langues";
+import { langueDeLaPage } from "@/lib/langue-page";
 import type {
   BookingConfirmation,
   PublicReview,
@@ -191,6 +192,7 @@ export async function browserRequest<T>(
     headers: {
       "Content-Type": "application/json",
       "X-Tenant-Host": host,
+      ...langueDeLaPage(),
       ...(needsCsrf ? { "X-CSRFToken": await csrfToken() } : {}),
       ...(init.headers ?? {}),
     },
@@ -367,6 +369,7 @@ export async function postForm<T>(
     headers: {
       "X-Tenant-Host": host,
       "X-CSRFToken": await csrfToken(),
+      ...langueDeLaPage(),
     },
     body: form,
   });

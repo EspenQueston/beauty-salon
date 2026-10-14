@@ -1372,6 +1372,11 @@
         "minutes": "il y a {n} min",
         "heures": "il y a {n} h",
         "jours": "il y a {n} j"
+      },
+      "fil": {
+        "reservation": "{nom} a réservé",
+        "avis": "{nom} a laissé {note}/5",
+        "acompte": "Acompte reçu de {nom}"
       }
     },
     "connexion": {

@@ -1372,6 +1372,11 @@
         "minutes": "{n} min ago",
         "heures": "{n} h ago",
         "jours": "{n} d ago"
+      },
+      "fil": {
+        "reservation": "{nom} booked",
+        "avis": "{nom} left {note}/5",
+        "acompte": "Deposit received from {nom}"
       }
     },
     "connexion": {

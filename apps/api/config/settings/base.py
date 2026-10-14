@@ -118,6 +118,10 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    # Les requetes d'API dans la langue de la page qui les envoie, et leurs
+    # messages traduits a la sortie. Juste apres LocaleMiddleware, donc
+    # autour de tous les autres. Voir apps/common/langue_api.py.
+    "apps.common.langue_api.LangueApiMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -429,8 +433,8 @@ SPECTACULAR_SETTINGS = {
 # ---------------------------------------------------------------------------
 # Internationalisation
 # ---------------------------------------------------------------------------
-# Francais seul au lancement, mais tout passe par gettext : ajouter une
-# langue ne demandera aucune reecriture.
+# Le francais est la langue du produit et de l'administration. L'API repond
+# aussi en anglais aux pages qui le demandent : voir apps/common/langue_api.py.
 LANGUAGE_CODE = "fr"
 LANGUAGES = [("fr", "Francais")]
 LOCALE_PATHS = [BASE_DIR / "locale"]

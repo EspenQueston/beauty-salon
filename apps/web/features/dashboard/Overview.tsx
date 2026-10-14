@@ -77,7 +77,7 @@ interface Overview {
   };
   top_services: { name: string; count: number; revenue: string }[];
   ratings: { rating: number; count: number }[];
-  feed: { kind: string; at: string; title: string; detail: string }[];
+  feed: EntreeActivite[];
   occupancy: number | null;
 }
 
@@ -554,12 +554,37 @@ const FEED_ICONS: Record<string, IconName> = {
 };
 
 /** Ce qui s'est passé, du plus récent au plus ancien. */
-function Feed({
-  entries,
-}: {
-  entries: { kind: string; at: string; title: string; detail: string }[];
-}) {
+/**
+ * Une ligne du fil d'activité. Le serveur envoie les faits (`nom`, `note`,
+ * `montant`, `devise`) et la phrase se compose ici, dans la langue de la
+ * page ; `title` et `detail` sont sa version française, gardée en repli.
+ */
+interface EntreeActivite {
+  kind: string;
+  at: string;
+  title: string;
+  detail: string;
+  nom?: string;
+  note?: number;
+  montant?: string;
+  devise?: string;
+}
+
+function Feed({ entries }: { entries: EntreeActivite[] }) {
   const t = useTranslations("pro.accueil");
+  const { montant } = useFormats();
+
+  const titre = (entry: EntreeActivite) => {
+    if (entry.nom === undefined) return entry.title;
+    if (entry.kind === "booking") return t("fil.reservation", { nom: entry.nom });
+    if (entry.kind === "review") return t("fil.avis", { nom: entry.nom, note: entry.note ?? 0 });
+    if (entry.kind === "payment") return t("fil.acompte", { nom: entry.nom });
+    return entry.title;
+  };
+  const detail = (entry: EntreeActivite) =>
+    entry.kind === "payment" && entry.montant && entry.devise
+      ? montant(entry.montant, entry.devise)
+      : entry.detail;
   if (entries.length === 0) {
     return (
       <Card>
@@ -584,9 +609,9 @@ function Feed({
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-ink">{entry.title}</p>
-              {entry.detail && (
-                <p className="truncate text-xs text-subtle">{entry.detail}</p>
+              <p className="truncate text-sm text-ink">{titre(entry)}</p>
+              {detail(entry) && (
+                <p className="truncate text-xs text-subtle">{detail(entry)}</p>
               )}
             </div>
 

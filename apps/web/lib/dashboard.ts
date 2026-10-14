@@ -11,6 +11,7 @@
  */
 
 import { browserApi } from "./api";
+import { langueDeLaPage } from "./langue-page";
 
 export interface Membership {
   id: string;
@@ -70,18 +71,6 @@ export const ABONNEMENT_CHANGE = "beauty-salon:abonnement";
 function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
   return match ? decodeURIComponent(match[2]) : null;
-}
-
-/**
- * La langue de la page, et non celle du navigateur : c'est elle qui décide
- * de la langue des réponses du serveur (erreurs, fil d'activité) et de ce
- * qu'il retient sur le compte — un salon qui s'inscrit depuis la page
- * anglaise reçoit sa bienvenue en anglais, même sur un téléphone réglé en
- * français.
- */
-function langueDeLaPage(): Record<string, string> {
-  if (typeof document === "undefined" || !document.documentElement.lang) return {};
-  return { "Accept-Language": document.documentElement.lang };
 }
 
 /** Pose le cookie CSRF avant la premiere ecriture. */

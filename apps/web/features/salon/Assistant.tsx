@@ -21,6 +21,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { browserApi, csrfToken } from "@/lib/api";
+import { langueDeLaPage } from "@/lib/langue-page";
 import { TexteRiche } from "@/features/ui/TexteRiche";
 import { SalonIcon } from "./icons";
 import { whatsappHref } from "./contact";
@@ -106,6 +107,7 @@ export function Assistant({ host, salon, slug }: { host: string; salon: string; 
           "Content-Type": "application/json",
           "X-Tenant-Host": host,
           "X-CSRFToken": await csrfToken(),
+          ...langueDeLaPage(),
         },
         body: JSON.stringify({ messages: envoi }),
       });

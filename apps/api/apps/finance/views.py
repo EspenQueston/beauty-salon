@@ -3,6 +3,7 @@
 from datetime import date, timedelta
 
 from django.http import HttpResponse
+from django.utils import translation
 from django.utils.text import slugify
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -12,7 +13,7 @@ from apps.accounts.models import Membership
 from apps.common.viewsets import TenantReadOnlyViewSet
 from apps.tenants.models import Tenant
 
-from . import services
+from . import libelles, services
 from .excel import build_workbook
 from .models import Transaction
 
@@ -67,6 +68,16 @@ class TransactionSerializer(serializers.ModelSerializer):
         un trou dans la caisse.
         """
         return transaction.booking_id is not None
+
+    def to_representation(self, transaction):
+        """Les libelles des ecritures automatiques, dans la langue de la
+        requete (voir `finance/libelles.py`)."""
+        data = super().to_representation(transaction)
+        langue = translation.get_language()
+        data["label"] = libelles.libelle(transaction, langue)
+        data["category_label"] = libelles.poste(transaction, langue)
+        data["method_label"] = libelles.moyen(transaction, langue)
+        return data
 
 class TransactionViewSet(TenantReadOnlyViewSet):
     # Historique conservé ; aucune écriture, correction ou suppression manuelle.
@@ -155,7 +166,10 @@ class TransactionViewSet(TenantReadOnlyViewSet):
         start, end = self._window()
 
         content = build_workbook(
-            self.get_queryset(), currency=tenant.currency, salon_name=tenant.name
+            self.get_queryset(),
+            currency=tenant.currency,
+            salon_name=tenant.name,
+            langue=translation.get_language(),
         )
 
         name = f"comptes-{slugify(tenant.name) or 'salon'}-{start}-{end}.xlsx"

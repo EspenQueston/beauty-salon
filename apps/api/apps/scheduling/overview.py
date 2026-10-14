@@ -323,6 +323,11 @@ def _feed(bookings, since) -> list[dict]:
     Construit a partir des rendez-vous et des avis plutot que du journal
     d'audit. Le journal enregistre des actions techniques - « statut
     modifie » - la ou cette liste doit raconter ce qui est arrive au salon.
+
+    Chaque ligne porte ses faits bruts — `nom`, `note`, `montant`, `devise` —
+    et l'espace pro compose la phrase dans la langue de la page. `title` et
+    `detail` restent la version francaise, pour qui lirait l'API sans
+    l'interface.
     """
     entries: list[dict] = []
 
@@ -338,6 +343,7 @@ def _feed(bookings, since) -> list[dict]:
                 "at": booking.created_at,
                 "title": f"{booking.customer.full_name} a réservé",
                 "detail": booking.service_name,
+                "nom": booking.customer.full_name,
             }
         )
 
@@ -351,6 +357,8 @@ def _feed(bookings, since) -> list[dict]:
                 "at": review.created_at,
                 "title": f"{review.author_name} a laissé {review.rating}/5",
                 "detail": (review.comment or "")[:80],
+                "nom": review.author_name,
+                "note": review.rating,
             }
         )
 
@@ -366,6 +374,9 @@ def _feed(bookings, since) -> list[dict]:
                 "at": booking.deposit_paid_at,
                 "title": f"Acompte reçu de {booking.customer.full_name}",
                 "detail": f"{booking.deposit_received} {booking.tenant.currency}",
+                "nom": booking.customer.full_name,
+                "montant": str(booking.deposit_received),
+                "devise": booking.tenant.currency,
             }
         )
 
