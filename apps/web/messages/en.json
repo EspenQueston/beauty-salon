@@ -1910,6 +1910,201 @@
       },
       "prestataire": "staff member",
       "supprimer": "Delete"
+    },
+    "equipe": {
+      "titre": "Team",
+      "description": "Who can access this space, and with which rights. Providing services doesn't require an account: these two lists don't necessarily overlap.",
+      "erreur": "Could not load the team.",
+      "membres": "Members",
+      "invitations": "Invitations",
+      "vide": {
+        "titre": "No pending invitations",
+        "corps": "Invited people will appear here until they join the team."
+      },
+      "inviteePar": "invited by {nom}",
+      "annuler": "Cancel",
+      "lectureSeule": "Only the owner and the manager can invite new people.",
+      "invitationAnnulee": "Invitation for {email} cancelled.",
+      "invitationEnvoyee": "Invitation sent to {email}. The link is valid for 7 days.",
+      "inviter": "Invite someone",
+      "email": "Email",
+      "emailExemple": "name@example.com",
+      "role": "Role",
+      "envoyer": "Send the invitation",
+      "roles": {
+        "staff": {
+          "libelle": "Staff member",
+          "aide": "Only sees their own calendar."
+        },
+        "receptionist": {
+          "libelle": "Front desk",
+          "aide": "Manages appointments and clients."
+        },
+        "manager": {
+          "libelle": "Manager",
+          "aide": "Also manages the catalogue and the team."
+        },
+        "owner": {
+          "libelle": "Owner",
+          "aide": "Full access, billing included."
+        }
+      },
+      "statuts": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "revoked": "Cancelled",
+        "expired": "Expired"
+      },
+      "sansCompte": {
+        "titre": "<gras>{n, plural, one {# staff member} other {# staff members}}</gras> {n, plural, one {has} other {have}} no account:",
+        "aide": "They appear in the calendar and in booking without signing in. Invite them above only if they need to open this space."
+      }
+    },
+    "prestataires": {
+      "titre": "Staff",
+      "description": "Who provides the services, and which ones. A profile is enough for the calendar: the account to sign in is separate, and is given from Team.",
+      "ajouter": "Add",
+      "erreur": "Could not load your staff.",
+      "vide": {
+        "titre": "No staff members",
+        "ajouter": "Add the first person",
+        "corps": "Even if you work alone, create your profile: it holds your hours and your appointments."
+      },
+      "inactif": "Inactive",
+      "acces": "Has access",
+      "sansCompte": "No account",
+      "sansCompetence": "No skills — not shown in booking",
+      "modifier": "Edit",
+      "supprimer": "Delete",
+      "lectureSeule": "Only the owner and the manager can edit the team.",
+      "retire": "{nom} removed from the list.",
+      "retraitImpossible": "{nom} could not be removed.",
+      "form": {
+        "ajoute": "{nom} added to the team.",
+        "enregistree": "{nom}'s profile saved.",
+        "nouveau": "New staff member",
+        "modifier": "Edit “{nom}”",
+        "nom": "Name",
+        "specialite": "Specialty",
+        "specialiteAide": "Shown on the mini-site.",
+        "specialiteExemple": "Braids and wigs",
+        "presentation": "About",
+        "portrait": "Portrait",
+        "portraitAide": "Shown on your mini-site. Without a photo, their initials are used.",
+        "competences": "Skills",
+        "competencesAide": "Only the checked services will be offered with this person.",
+        "creezPrestations": "Create some services first.",
+        "accepte": "Accepts appointments",
+        "accepteAide": "Uncheck during long leave, without deleting the profile.",
+        "ajouter": "Add",
+        "enregistrer": "Save",
+        "annuler": "Cancel"
+      }
+    },
+    "avis": {
+      "titre": "Reviews",
+      "description": "What your clients say after their appointment. Every review is tied to a service that actually took place.",
+      "erreur": "Could not load the reviews.",
+      "vide": {
+        "titre": "No reviews yet",
+        "corps": "A review request is sent automatically by email a few hours after each completed service. The first ones will come on their own."
+      },
+      "moyenne": "Average rating",
+      "surAvis": "from {n, plural, one {# published review} other {# published reviews}}",
+      "cinq": "Five stars",
+      "partDesAvis": "{pct}% of reviews",
+      "troisOuMoins": "Three stars or fewer",
+      "priorite": "read these first",
+      "repartition": "Breakdown",
+      "masque": "Hidden by the platform",
+      "surCinq": "{n} out of 5",
+      "criteres": {
+        "rating_result": "The result",
+        "rating_welcome": "The welcome",
+        "rating_punctuality": "Punctuality",
+        "rating_cleanliness": "Salon cleanliness",
+        "rating_value": "Value for money"
+      },
+      "regle": "You can neither edit nor delete a review: that is what gives reviews their value in your clients' eyes. A clearly abusive review can be reported to the Beauty Salon team, who decide whether to remove it."
+    },
+    "galerie": {
+      "titre": "Photos",
+      "description": "Your work, your logo and your banner. It's the first thing a client sees.",
+      "erreur": "Could not load your photos.",
+      "identiteVisuelle": "Visual identity",
+      "identite": {
+        "logo": {
+          "titre": "Logo",
+          "aide": "Square, at least 400 px per side.",
+          "maj": "Logo updated on your mini-site.",
+          "retire": "Logo removed.",
+          "choisir": "Choose the logo"
+        },
+        "banner": {
+          "titre": "Banner",
+          "aide": "Panoramic, at least 1200 px wide.",
+          "maj": "Banner updated on your mini-site.",
+          "retire": "Banner removed.",
+          "choisir": "Choose the banner"
+        }
+      },
+      "galerie": "Gallery",
+      "compte": "{n, plural, one {# photo} other {# photos}} · {vitrine}/{max} featured",
+      "aideEtoile": "The star features a photo on your home page. The arrows change the order of the “Our work” page — the two are independent.",
+      "aideRelier": "Link each photo to its <gras>service</gras>: on your mini-site, it shows the price and a “Book this look” button, and lands in the right filter. Add who did it to showcase your team.",
+      "vide": {
+        "titre": "No photos",
+        "corps": "An empty gallery hurts the mini-site. Three or four sharp examples of your work are enough to trigger a booking."
+      },
+      "realisation": "Salon work",
+      "vitrine": "Featured",
+      "retirerVitrine": "Remove from featured",
+      "mettreVitrineAccueil": "Feature on the home page",
+      "mettreVitrine": "Feature",
+      "decrire": "Describe the photo",
+      "description_": "Photo description",
+      "prestationMontree": "Service shown in the photo",
+      "prestationAucune": "Service: none",
+      "realiseePar": "Staff member who did it",
+      "realiseeParAucun": "Done by: not specified",
+      "taille": {
+        "ko": "{n} KB",
+        "mo": "{n} MB"
+      },
+      "reculer": "Move back one place",
+      "avancer": "Move forward one place",
+      "supprimer": "Delete",
+      "retirer": "Remove",
+      "lectureSeule": "Only the owner and the manager can manage photos.",
+      "aucune": "— None —",
+      "numero": "Photo {n}",
+      "supprimee": "Photo deleted.",
+      "vitrinePleine": "The home page shows {n} items. Remove one before adding another.",
+      "misEnVitrine": "Photo featured on your home page.",
+      "retireeVitrine": "Photo removed from featured.",
+      "descriptionOk": "Description saved.",
+      "prestationReliee": "Service linked: the photo now offers “Book this look”.",
+      "prestationRetiree": "Service removed from the photo.",
+      "signatureOk": "Photo credit saved.",
+      "ordreOk": "Order updated.",
+      "envoi": {
+        "tropLourd": "Over 15 MB",
+        "impossible": "Upload failed",
+        "uneAjoutee": "Photo added. It's live on your mini-site.",
+        "ajoutees": "{n} photos added.",
+        "unEchec": "“{nom}” could not be uploaded.",
+        "echecs": "{n} files could not be uploaded.",
+        "deposer": "Drop your photos here",
+        "formats": "JPEG, PNG, WebP or short MP4 / WebM video. 15 MB maximum per file.",
+        "choisir": "Choose files"
+      },
+      "lien": {
+        "importe": "Media imported from the link.",
+        "ouvrir": "or paste the link to a photo or video",
+        "adresse": "Photo or video address",
+        "importer": "Import",
+        "annuler": "Cancel"
+      }
     }
   },
   "theme": {

@@ -1910,6 +1910,201 @@
       },
       "prestataire": "prestataire",
       "supprimer": "Supprimer"
+    },
+    "equipe": {
+      "titre": "Équipe",
+      "description": "Qui a accès à cet espace, et avec quels droits. Réaliser des prestations ne demande pas de compte : ces deux listes ne se recouvrent pas forcément.",
+      "erreur": "Impossible de charger l’équipe.",
+      "membres": "Membres",
+      "invitations": "Invitations",
+      "vide": {
+        "titre": "Aucune invitation en cours",
+        "corps": "Les personnes invitées apparaîtront ici jusqu'à ce qu'elles rejoignent l'équipe."
+      },
+      "inviteePar": "invitée par {nom}",
+      "annuler": "Annuler",
+      "lectureSeule": "Seuls le propriétaire et le gérant peuvent inviter de nouvelles personnes.",
+      "invitationAnnulee": "Invitation de {email} annulée.",
+      "invitationEnvoyee": "Invitation envoyée à {email}. Le lien est valable 7 jours.",
+      "inviter": "Inviter quelqu'un",
+      "email": "E-mail",
+      "emailExemple": "prenom@exemple.com",
+      "role": "Rôle",
+      "envoyer": "Envoyer l'invitation",
+      "roles": {
+        "staff": {
+          "libelle": "Prestataire",
+          "aide": "Voit uniquement son propre agenda."
+        },
+        "receptionist": {
+          "libelle": "Réceptionniste",
+          "aide": "Gère les rendez-vous et les clientes."
+        },
+        "manager": {
+          "libelle": "Gérant",
+          "aide": "Gère aussi le catalogue et l'équipe."
+        },
+        "owner": {
+          "libelle": "Propriétaire",
+          "aide": "Accès complet, facturation comprise."
+        }
+      },
+      "statuts": {
+        "pending": "En attente",
+        "accepted": "Acceptée",
+        "revoked": "Annulée",
+        "expired": "Expirée"
+      },
+      "sansCompte": {
+        "titre": "<gras>{n, plural, one {# prestataire} other {# prestataires}}</gras> {n, plural, one {n'a} other {n'ont}} pas de compte :",
+        "aide": "{n, plural, one {Elle apparaît} other {Elles apparaissent}} à l'agenda et à la réservation sans se connecter. Invitez-{n, plural, one {la} other {les}} ci-dessus seulement si {n, plural, one {elle doit} other {elles doivent}} ouvrir cet espace."
+      }
+    },
+    "prestataires": {
+      "titre": "Prestataires",
+      "description": "Qui réalise les prestations, et lesquelles. Une fiche suffit pour l’agenda : le compte pour se connecter est distinct, et se donne depuis Équipe.",
+      "ajouter": "Ajouter",
+      "erreur": "Impossible de charger les prestataires.",
+      "vide": {
+        "titre": "Aucun prestataire",
+        "ajouter": "Ajouter la première personne",
+        "corps": "Même si vous travaillez seule, créez votre fiche : c'est elle qui porte vos horaires et vos rendez-vous."
+      },
+      "inactif": "Inactif",
+      "acces": "Accès à l'espace",
+      "sansCompte": "Sans compte",
+      "sansCompetence": "Aucune compétence — n'apparaît pas à la réservation",
+      "modifier": "Modifier",
+      "supprimer": "Supprimer",
+      "lectureSeule": "Seuls le propriétaire et le gérant peuvent modifier l'équipe.",
+      "retire": "{nom} retiré de la liste.",
+      "retraitImpossible": "{nom} n'a pas pu être retiré.",
+      "form": {
+        "ajoute": "{nom} ajouté à l'équipe.",
+        "enregistree": "Fiche de {nom} enregistrée.",
+        "nouveau": "Nouveau prestataire",
+        "modifier": "Modifier « {nom} »",
+        "nom": "Nom",
+        "specialite": "Spécialité",
+        "specialiteAide": "Affichée sur le mini-site.",
+        "specialiteExemple": "Tresses et perruques",
+        "presentation": "Présentation",
+        "portrait": "Portrait",
+        "portraitAide": "Affiché sur votre mini-site. Sans photo, ses initiales sont utilisées.",
+        "competences": "Compétences",
+        "competencesAide": "Seules les prestations cochées seront proposées avec cette personne.",
+        "creezPrestations": "Créez d'abord des prestations.",
+        "accepte": "Accepte des rendez-vous",
+        "accepteAide": "Décochez pendant un congé long, sans supprimer la fiche.",
+        "ajouter": "Ajouter",
+        "enregistrer": "Enregistrer",
+        "annuler": "Annuler"
+      }
+    },
+    "avis": {
+      "titre": "Avis",
+      "description": "Ce que vos clientes disent après leur rendez-vous. Chaque avis est rattaché à une prestation réellement honorée.",
+      "erreur": "Impossible de charger les avis.",
+      "vide": {
+        "titre": "Aucun avis pour l'instant",
+        "corps": "Une demande d'avis part automatiquement par e-mail quelques heures après chaque prestation terminée. Les premiers arriveront d'eux-mêmes."
+      },
+      "moyenne": "Note moyenne",
+      "surAvis": "sur {n, plural, one {# avis publié} other {# avis publiés}}",
+      "cinq": "Cinq étoiles",
+      "partDesAvis": "{pct} % des avis",
+      "troisOuMoins": "Trois étoiles ou moins",
+      "priorite": "à lire en priorité",
+      "repartition": "Répartition",
+      "masque": "Masqué par la plateforme",
+      "surCinq": "{n} sur 5",
+      "criteres": {
+        "rating_result": "Le résultat",
+        "rating_welcome": "L'accueil",
+        "rating_punctuality": "La ponctualité",
+        "rating_cleanliness": "La propreté du salon",
+        "rating_value": "Le rapport qualité-prix"
+      },
+      "regle": "Vous ne pouvez ni modifier ni supprimer un avis : c'est ce qui leur donne leur valeur aux yeux de vos clientes. Un avis manifestement abusif peut être signalé à l'équipe Beauty Salon, qui décide de le retirer."
+    },
+    "galerie": {
+      "titre": "Photos",
+      "description": "Vos réalisations, votre logo et votre bannière. C'est la première chose que voit une cliente.",
+      "erreur": "Impossible de charger vos photos.",
+      "identiteVisuelle": "Identité visuelle",
+      "identite": {
+        "logo": {
+          "titre": "Logo",
+          "aide": "Carré, au moins 400 px de côté.",
+          "maj": "Logo mis à jour sur votre mini-site.",
+          "retire": "Logo retiré.",
+          "choisir": "Choisir le logo"
+        },
+        "banner": {
+          "titre": "Bannière",
+          "aide": "Panoramique, au moins 1200 px de large.",
+          "maj": "Bannière mise à jour sur votre mini-site.",
+          "retire": "Bannière retirée.",
+          "choisir": "Choisir la bannière"
+        }
+      },
+      "galerie": "Galerie",
+      "compte": "{n, plural, one {# photo} other {# photos}} · {vitrine}/{max} en vitrine",
+      "aideEtoile": "L'étoile met une photo en vitrine sur votre page d'accueil. Les flèches, elles, changent l'ordre de la page « Réalisations » — les deux sont indépendants.",
+      "aideRelier": "Reliez chaque photo à sa <gras>prestation</gras> : sur votre mini-site, elle affiche son prix et un bouton « Réserver ce look », et se range dans le bon filtre. Ajoutez qui l'a réalisée pour mettre votre équipe en valeur.",
+      "vide": {
+        "titre": "Aucune photo",
+        "corps": "Une galerie vide dessert le mini-site. Trois ou quatre réalisations nettes suffisent à déclencher une réservation."
+      },
+      "realisation": "Réalisation du salon",
+      "vitrine": "Vitrine",
+      "retirerVitrine": "Retirer de la vitrine",
+      "mettreVitrineAccueil": "Mettre en vitrine sur l'accueil",
+      "mettreVitrine": "Mettre en vitrine",
+      "decrire": "Décrire la photo",
+      "description_": "Description de la photo",
+      "prestationMontree": "Prestation montrée sur la photo",
+      "prestationAucune": "Prestation : aucune",
+      "realiseePar": "Prestataire qui a réalisé la photo",
+      "realiseeParAucun": "Réalisée par : non précisé",
+      "taille": {
+        "ko": "{n} Ko",
+        "mo": "{n} Mo"
+      },
+      "reculer": "Reculer d'une place",
+      "avancer": "Avancer d'une place",
+      "supprimer": "Supprimer",
+      "retirer": "Retirer",
+      "lectureSeule": "Seuls le propriétaire et le gérant peuvent gérer les photos.",
+      "aucune": "— Aucune —",
+      "numero": "Photo {n}",
+      "supprimee": "Photo supprimée.",
+      "vitrinePleine": "L'accueil affiche {n} médias. Retirez-en un avant d'en ajouter un autre.",
+      "misEnVitrine": "Photo mise en vitrine sur votre accueil.",
+      "retireeVitrine": "Photo retirée de la vitrine.",
+      "descriptionOk": "Description enregistrée.",
+      "prestationReliee": "Prestation reliée : la photo propose « Réserver ce look ».",
+      "prestationRetiree": "Prestation retirée de la photo.",
+      "signatureOk": "Signature de la photo enregistrée.",
+      "ordreOk": "Ordre mis à jour.",
+      "envoi": {
+        "tropLourd": "Plus de 15 Mo",
+        "impossible": "Envoi impossible",
+        "uneAjoutee": "Photo ajoutée. Elle est en ligne sur votre mini-site.",
+        "ajoutees": "{n} photos ajoutées.",
+        "unEchec": "« {nom} » n'a pas pu être envoyée.",
+        "echecs": "{n} fichiers n'ont pas pu être envoyés.",
+        "deposer": "Déposez vos photos ici",
+        "formats": "JPEG, PNG, WebP ou vidéo courte MP4 / WebM. 15 Mo maximum par fichier.",
+        "choisir": "Choisir des fichiers"
+      },
+      "lien": {
+        "importe": "Média importé depuis le lien.",
+        "ouvrir": "ou coller le lien d'une photo ou d'une vidéo",
+        "adresse": "Adresse de la photo ou de la vidéo",
+        "importer": "Importer",
+        "annuler": "Annuler"
+      }
     }
   },
   "theme": {
