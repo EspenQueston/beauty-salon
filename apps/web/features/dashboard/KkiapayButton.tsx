@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { useKKiaPay } from "kkiapay-react";
 import { dashboardFetch } from "@/lib/dashboard";
@@ -30,15 +31,17 @@ interface Props {
 }
 
 export function KkiapayButton(props: Props) {
+  const t = useTranslations("pro.kkiapay");
   const [pret, setPret] = useState(false);
   useEffect(() => {
     protegerMessages();
     Promise.resolve().then(() => setPret(true));
   }, []);
-  return pret ? <Paiement {...props} /> : <Button disabled>Chargement du paiement…</Button>;
+  return pret ? <Paiement {...props} /> : <Button disabled>{t("chargement")}</Button>;
 }
 
 function Paiement({ tenantId, choix, demande, onConfirme }: Props) {
+  const t = useTranslations("pro.kkiapay");
   const sdk = useKKiaPay();
   const intention = useRef<Intention | null>(null);
   const [pending, setPending] = useState(false);
@@ -57,13 +60,13 @@ function Paiement({ tenantId, choix, demande, onConfirme }: Props) {
           body: JSON.stringify({ intention: intention.current.id, transaction_id: data.transactionId }) }, tenantId);
         onConfirme();
       } catch {
-        setError("La confirmation serveur est en cours. Votre accès s’ouvrira après vérification ; ne payez pas une seconde fois.");
+        setError(t("enCours"));
       } finally { setVerification(false); }
     }
     sdk.addKkiapayListener("success", succes);
-    sdk.addKkiapayListener("failed", () => setError("Paiement non confirmé. Vous pouvez réessayer."));
+    sdk.addKkiapayListener("failed", () => setError(t("nonConfirme")));
     return () => { sdk.removeKkiapayListener("success"); sdk.removeKkiapayListener("failed"); };
-  }, [sdk, tenantId, onConfirme]);
+  }, [sdk, tenantId, onConfirme, t]);
 
   async function payer() {
     setPending(true); setError(null);
@@ -75,15 +78,15 @@ function Paiement({ tenantId, choix, demande, onConfirme }: Props) {
       sdk.openKkiapayWidget({ amount: i.amount, api_key: i.api_key, sandbox: i.sandbox,
         partnerId: i.partnerId, paymentmethod: ["momo", "card"] });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Le paiement n’est pas disponible.");
+      setError(e instanceof Error ? e.message : t("indisponible"));
     } finally { setPending(false); }
   }
 
   return <div className="space-y-2">
     <Button type="button" disabled={!sdkPret} pending={pending || verification} onClick={() => void payer()}>
-      {verification ? "Vérification du paiement…" : "Payer avec KKIAPAY"}
+      {verification ? t("verification") : t("payer")}
     </Button>
     {error && <ErrorState>{error}</ErrorState>}
-    <p className="text-xs text-muted">Paiement sécurisé en XOF. L’abonnement est activé après confirmation du serveur.</p>
+    <p className="text-xs text-muted">{t("securise")}</p>
   </div>;
 }

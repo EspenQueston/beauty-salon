@@ -9,6 +9,7 @@
  * un compteur plutot que par un appel imperatif.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -23,8 +24,11 @@ export function useResource<T>(
   tenantId: string,
   { enabled = true }: Options = {},
 ) {
+  const t = useTranslations("pro.commun");
   const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [echec, setEchec] = useState(false);
+  // Le texte est calculé au rendu : il suit la langue sans relancer la requête.
+  const error = echec ? t("chargementImpossible") : null;
   const [token, setToken] = useState(0);
 
   const reload = useCallback(() => setToken((value) => value + 1), []);
@@ -37,10 +41,10 @@ export function useResource<T>(
       .then((result) => {
         if (cancelled) return;
         setData(result);
-        setError(null);
+        setEchec(false);
       })
       .catch(() => {
-        if (!cancelled) setError("Chargement impossible.");
+        if (!cancelled) setEchec(true);
       });
 
     return () => {

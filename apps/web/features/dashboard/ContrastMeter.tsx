@@ -20,6 +20,8 @@
  * remède se contourne en l'ignorant.
  */
 
+import { useTranslations } from "next-intl";
+
 import {
   adjustForContrast,
   scoreContrast,
@@ -48,34 +50,35 @@ export function ContrastMeter({
   surface: string;
   onFix: (field: "primary" | "surface", value: string) => void;
 }) {
+  const t = useTranslations("pro.contraste");
   const pairs: Pair[] = [
     {
       key: "price",
-      label: "Prix et titres",
-      hint: "couleur principale sur une carte blanche",
+      label: t("paires.price.libelle"),
+      hint: t("paires.price.aide"),
       foreground: primary,
       background: "#FFFFFF",
       fix: { field: "primary", against: "#FFFFFF" },
     },
     {
       key: "button",
-      label: "Texte des boutons",
-      hint: "blanc sur la couleur principale",
+      label: t("paires.button.libelle"),
+      hint: t("paires.button.aide"),
       foreground: "#FFFFFF",
       background: primary,
       fix: { field: "primary", against: "#FFFFFF" },
     },
     {
       key: "body",
-      label: "Texte courant",
-      hint: "sur le fond de page",
+      label: t("paires.body.libelle"),
+      hint: t("paires.body.aide"),
       foreground: "#17171C",
       background: surface,
     },
     {
       key: "pill",
-      label: "Pastilles",
-      hint: "couleur principale sur la secondaire",
+      label: t("paires.pill.libelle"),
+      hint: t("paires.pill.aide"),
       foreground: primary,
       background: accent,
     },
@@ -106,13 +109,13 @@ export function ContrastMeter({
 
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
-            Lisibilité : {weakest.score.label}
+            {t("lisibilite", { verdict: t(`verdicts.${weakest.score.verdict}.libelle`) })}
             <span className="text-sm font-normal text-subtle">
-              contraste {weakest.score.ratio.toFixed(1)}:1
+              {t("ratio", { ratio: weakest.score.ratio.toFixed(1) })}
             </span>
           </p>
           <p className="mt-1 text-sm leading-relaxed text-muted">
-            {weakest.score.detail}
+            {t(`verdicts.${weakest.score.verdict}.detail`)}
           </p>
         </div>
       </div>
@@ -165,7 +168,7 @@ export function ContrastMeter({
                     className="size-3 rounded-full ring-1 ring-black/10"
                     style={{ background: suggestion }}
                   />
-                  Corriger
+                  {t("corriger")}
                 </button>
               )}
             </li>
@@ -174,8 +177,7 @@ export function ContrastMeter({
       </ul>
 
       <p className="mt-3 text-xs leading-relaxed text-subtle">
-        Mesure du contraste WCAG 2.1. Au-dessus de 70 %, vos textes restent
-        lisibles sur un petit écran en plein jour.
+        {t("mesure")}
       </p>
     </div>
   );
@@ -183,6 +185,7 @@ export function ContrastMeter({
 
 /** Jauge circulaire : le chiffre se lit sans avoir à comparer deux barres. */
 function Gauge({ score }: { score: ContrastScore }) {
+  const t = useTranslations("pro.contraste");
   const radius = 26;
   const circumference = 2 * Math.PI * radius;
   const filled = (score.percent / 100) * circumference;
@@ -234,7 +237,10 @@ function Gauge({ score }: { score: ContrastScore }) {
       </span>
 
       <span className="sr-only">
-        Note de lisibilité : {score.percent} sur 100. {score.label}.
+        {t("note", {
+          n: score.percent,
+          verdict: t(`verdicts.${score.verdict}.libelle`),
+        })}
       </span>
     </div>
   );

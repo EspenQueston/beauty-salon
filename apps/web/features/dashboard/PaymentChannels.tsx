@@ -26,6 +26,7 @@
  * Brazzaville et Kinshasa ; ils s'afficheront quand ces salons arriveront.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -65,6 +66,14 @@ const OFFERED = [
   { value: "alipay", label: "Alipay" },
 ];
 
+/**
+ * Le nom du moyen. WeChat Pay et Alipay sont des marques : on les écrit tels
+ * quels ; les autres moyens reprennent le libellé du serveur.
+ */
+function libelle(channel: Pick<Channel, "kind" | "kind_label">): string {
+  return OFFERED.find((option) => option.value === channel.kind)?.label ?? channel.kind_label;
+}
+
 export function PaymentChannels({
   tenantId,
   canEdit,
@@ -76,6 +85,7 @@ export function PaymentChannels({
   media: PickableMedia[];
   onMediaChanged: () => void;
 }) {
+  const t = useTranslations("pro.encaissement");
   const toast = useToast();
   const channels = useResource<Page<Channel>>(
     "/api/v1/payment-channels/",
@@ -98,7 +108,7 @@ export function PaymentChannels({
           },
           tenantId,
         ),
-      { success: "Moyen ajouté. Téléversez votre QR code." },
+      { success: t("ajoute") },
     );
     if (ok) channels.reload();
   }
@@ -111,7 +121,7 @@ export function PaymentChannels({
           { method: "PATCH", body: JSON.stringify(changes) },
           tenantId,
         ),
-      { success: "Enregistré." },
+      { success: t("enregistre") },
     );
     if (ok) channels.reload();
   }
@@ -124,26 +134,21 @@ export function PaymentChannels({
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `${channel.kind_label} retiré.` },
+      { success: t("retire", { moyen: libelle(channel) }) },
     );
     if (ok) channels.reload();
   }
 
   return (
     <Card id="encaissement">
-      <SectionTitle>Encaisser les acomptes</SectionTitle>
-      <p className="-mt-2 mb-4 text-sm text-muted">
-        Publiez le QR code de votre compte : vos clientes régleront leur acompte
-        dessus avant de venir. L&apos;argent arrive directement chez vous — nous
-        ne le touchons jamais.
-      </p>
+      <SectionTitle>{t("titre")}</SectionTitle>
+      <p className="-mt-2 mb-4 text-sm text-muted">{t("intro")}</p>
 
       {channels.data === null && !channels.error && <Skeleton rows={1} />}
 
       {list.length === 0 && channels.data !== null && (
         <p className="mb-3 text-sm text-muted">
-          Sans QR code, vos clientes réservent sans rien régler et vous
-          encaissez sur place, comme aujourd&apos;hui.
+          {t("sansQr")}
         </p>
       )}
 
@@ -173,7 +178,7 @@ export function PaymentChannels({
               type="button"
               onClick={() => create(option.value)}
             >
-              Ajouter {option.label}
+              {t("ajouter", { moyen: option.label })}
             </GhostButton>
           ))}
         </div>
@@ -199,6 +204,7 @@ function ChannelCard({
   onPatch: (changes: Partial<Channel>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("pro.encaissement");
   const [name, setName] = useState(channel.account_name);
   const [instructions, setInstructions] = useState(channel.instructions);
 
@@ -211,11 +217,11 @@ function ChannelCard({
       }`}
     >
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium text-ink">{channel.kind_label}</p>
+        <p className="font-medium text-ink">{libelle(channel)}</p>
         {channel.usable ? (
-          <Badge tone="success">Proposé</Badge>
+          <Badge tone="success">{t("propose")}</Badge>
         ) : (
-          <Badge tone="warning">QR manquant</Badge>
+          <Badge tone="warning">{t("qrManquant")}</Badge>
         )}
       </div>
 
@@ -227,7 +233,7 @@ function ChannelCard({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={channel.qr_url}
-            alt={`QR code ${channel.kind_label}`}
+            alt={t("qrDe", { moyen: libelle(channel) })}
             className="size-32 object-contain"
           />
         </span>
@@ -239,8 +245,8 @@ function ChannelCard({
         value={channel.qr_image}
         onChange={(id) => onPatch({ qr_image: id })}
         onUploaded={onMediaChanged}
-        label="QR code"
-        hint="La capture de votre code depuis l'application."
+        label={t("qr")}
+        hint={t("qrAide")}
         // Surtout pas « gallery » : le genre décide de ce qui apparaît sur la
         // page Réalisations du mini-site. Un QR téléversé puis jamais
         // rattaché y restait pour toujours, entre deux coiffures.
@@ -248,7 +254,7 @@ function ChannelCard({
       />
 
       <label className="mt-3 block">
-        <span className="mb-1 block text-xs text-muted">Nom du compte</span>
+        <span className="mb-1 block text-xs text-muted">{t("compte")}</span>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -256,13 +262,13 @@ function ChannelCard({
             if (name !== channel.account_name) onPatch({ account_name: name });
           }}
           disabled={!canEdit}
-          placeholder="Ce que la cliente verra en scannant"
+          placeholder={t("compteExemple")}
           className={inputClass}
         />
       </label>
 
       <label className="mt-2 block">
-        <span className="mb-1 block text-xs text-muted">Précision</span>
+        <span className="mb-1 block text-xs text-muted">{t("precision")}</span>
         <input
           value={instructions}
           onChange={(event) => setInstructions(event.target.value)}
@@ -271,7 +277,7 @@ function ChannelCard({
               onPatch({ instructions });
           }}
           disabled={!canEdit}
-          placeholder="« Mettez votre nom en commentaire »"
+          placeholder={t("precisionExemple")}
           className={inputClass}
         />
       </label>
@@ -283,7 +289,7 @@ function ChannelCard({
             onClick={() => onPatch({ active: !channel.active })}
             className="text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
           >
-            {channel.active ? "Suspendre" : "Réactiver"}
+            {channel.active ? t("suspendre") : t("reactiver")}
           </button>
           <span aria-hidden className="text-subtle">
             ·
@@ -293,7 +299,7 @@ function ChannelCard({
             onClick={onRemove}
             className="text-xs text-danger underline-offset-2 hover:underline"
           >
-            Supprimer
+            {t("supprimer")}
           </button>
         </div>
       )}

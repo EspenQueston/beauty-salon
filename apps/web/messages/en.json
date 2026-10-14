@@ -2677,6 +2677,109 @@
         "repondre": "Reply",
         "assistant": "Assistant"
       }
+    },
+    "zones": {
+      "majOk": "Area updated.",
+      "retiree": "“{nom}” removed from your list.",
+      "ajoutee": "“{nom}” added to your list.",
+      "titre": "Travel areas",
+      "desservies": "{n, plural, one {# area served} other {# areas served}}",
+      "sansFrais": "{n} free",
+      "intro": "The fee is added to the service price and shown to the client <fort>before</fort> they confirm. An area at 0 is served for free.",
+      "erreur": "Could not load your areas.",
+      "vide": {
+        "titre": "No areas yet",
+        "corps": "As long as this list is empty, home appointments aren't offered on your mini-site."
+      },
+      "ajouter": "Add an area",
+      "nom": "Neighbourhood name",
+      "frais": "Travel fee in {devise}",
+      "offert": "Free",
+      "suspendre": "Pause",
+      "reactiver": "Resume",
+      "supprimer": "Delete",
+      "exemple": "Bacongo",
+      "bouton": "Add",
+      "annuler": "Cancel"
+    },
+    "encaissement": {
+      "ajoute": "Method added. Upload your QR code.",
+      "enregistre": "Saved.",
+      "retire": "{moyen} removed.",
+      "titre": "Collect deposits",
+      "intro": "Publish your account's QR code: your clients will pay their deposit with it before coming. The money goes straight to you — we never touch it.",
+      "sansQr": "Without a QR code, your clients book without paying anything and you collect payment on site, as you do today.",
+      "ajouter": "Add {moyen}",
+      "propose": "Offered",
+      "qrManquant": "QR missing",
+      "qrDe": "{moyen} QR code",
+      "qr": "QR code",
+      "qrAide": "The screenshot of your code from the app.",
+      "compte": "Account name",
+      "compteExemple": "What the client will see when scanning",
+      "precision": "Note",
+      "precisionExemple": "“Put your name in the comment”",
+      "suspendre": "Pause",
+      "reactiver": "Resume",
+      "supprimer": "Delete"
+    },
+    "contraste": {
+      "paires": {
+        "price": {
+          "libelle": "Prices and titles",
+          "aide": "main colour on a white card"
+        },
+        "button": {
+          "libelle": "Button text",
+          "aide": "white on the main colour"
+        },
+        "body": {
+          "libelle": "Body text",
+          "aide": "on the page background"
+        },
+        "pill": {
+          "libelle": "Badges",
+          "aide": "main colour on the secondary one"
+        }
+      },
+      "lisibilite": "Readability: {verdict}",
+      "ratio": "contrast {ratio}:1",
+      "corriger": "Fix",
+      "mesure": "WCAG 2.1 contrast measurement. Above 70%, your text stays readable on a small screen in daylight.",
+      "note": "Readability score: {n} out of 100. {verdict}.",
+      "verdicts": {
+        "insuffisant": {
+          "libelle": "Unreadable",
+          "detail": "These two colours blend together. Your prices and buttons will be hard to read on a phone."
+        },
+        "limite": {
+          "libelle": "Borderline",
+          "detail": "Readable for large titles, but tiring for the rest. Darken the main colour a little."
+        },
+        "bon": {
+          "libelle": "Good",
+          "detail": "Readable everywhere, even in bright sunlight on a small screen."
+        },
+        "excellent": {
+          "libelle": "Excellent",
+          "detail": "Maximum reading comfort, whatever the screen."
+        }
+      }
+    },
+    "kkiapay": {
+      "chargement": "Loading payment…",
+      "enCours": "Server confirmation is in progress. Your access will open after verification; don't pay a second time.",
+      "nonConfirme": "Payment not confirmed. You can try again.",
+      "indisponible": "Payment is not available.",
+      "verification": "Verifying payment…",
+      "payer": "Pay with KKIAPAY",
+      "securise": "Secure payment in XOF. The subscription is activated after server confirmation."
+    },
+    "commun": {
+      "chargementImpossible": "Could not load."
+    },
+    "profilNav": {
+      "sections": "Profile sections"
     }
   },
   "theme": {

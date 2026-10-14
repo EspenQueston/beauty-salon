@@ -2677,6 +2677,109 @@
         "repondre": "Répondre",
         "assistant": "Assistant"
       }
+    },
+    "zones": {
+      "majOk": "Zone mise à jour.",
+      "retiree": "« {nom} » retirée de votre grille.",
+      "ajoutee": "« {nom} » ajoutée à votre grille.",
+      "titre": "Zones de déplacement",
+      "desservies": "{n, plural, one {# desservie} other {# desservies}}",
+      "sansFrais": "{n} sans frais",
+      "intro": "Le forfait s'ajoute au prix de la prestation et s'affiche à la cliente <fort>avant</fort> qu'elle confirme. Une zone à 0 est desservie gratuitement.",
+      "erreur": "Impossible de charger vos zones.",
+      "vide": {
+        "titre": "Aucune zone pour l'instant",
+        "corps": "Tant que cette grille est vide, la réservation à domicile n'est pas proposée sur votre mini-site."
+      },
+      "ajouter": "Ajouter une zone",
+      "nom": "Nom du quartier",
+      "frais": "Frais de déplacement en {devise}",
+      "offert": "Offert",
+      "suspendre": "Suspendre",
+      "reactiver": "Réactiver",
+      "supprimer": "Supprimer",
+      "exemple": "Bacongo",
+      "bouton": "Ajouter",
+      "annuler": "Annuler"
+    },
+    "encaissement": {
+      "ajoute": "Moyen ajouté. Téléversez votre QR code.",
+      "enregistre": "Enregistré.",
+      "retire": "{moyen} retiré.",
+      "titre": "Encaisser les acomptes",
+      "intro": "Publiez le QR code de votre compte : vos clientes régleront leur acompte dessus avant de venir. L'argent arrive directement chez vous — nous ne le touchons jamais.",
+      "sansQr": "Sans QR code, vos clientes réservent sans rien régler et vous encaissez sur place, comme aujourd'hui.",
+      "ajouter": "Ajouter {moyen}",
+      "propose": "Proposé",
+      "qrManquant": "QR manquant",
+      "qrDe": "QR code {moyen}",
+      "qr": "QR code",
+      "qrAide": "La capture de votre code depuis l'application.",
+      "compte": "Nom du compte",
+      "compteExemple": "Ce que la cliente verra en scannant",
+      "precision": "Précision",
+      "precisionExemple": "« Mettez votre nom en commentaire »",
+      "suspendre": "Suspendre",
+      "reactiver": "Réactiver",
+      "supprimer": "Supprimer"
+    },
+    "contraste": {
+      "paires": {
+        "price": {
+          "libelle": "Prix et titres",
+          "aide": "couleur principale sur une carte blanche"
+        },
+        "button": {
+          "libelle": "Texte des boutons",
+          "aide": "blanc sur la couleur principale"
+        },
+        "body": {
+          "libelle": "Texte courant",
+          "aide": "sur le fond de page"
+        },
+        "pill": {
+          "libelle": "Pastilles",
+          "aide": "couleur principale sur la secondaire"
+        }
+      },
+      "lisibilite": "Lisibilité : {verdict}",
+      "ratio": "contraste {ratio}:1",
+      "corriger": "Corriger",
+      "mesure": "Mesure du contraste WCAG 2.1. Au-dessus de 70 %, vos textes restent lisibles sur un petit écran en plein jour.",
+      "note": "Note de lisibilité : {n} sur 100. {verdict}.",
+      "verdicts": {
+        "insuffisant": {
+          "libelle": "Illisible",
+          "detail": "Ces deux couleurs se confondent. Vos prix et vos boutons seront difficiles à lire sur un téléphone."
+        },
+        "limite": {
+          "libelle": "Juste",
+          "detail": "Lisible pour les gros titres, mais fatigant pour le reste. Foncez un peu la couleur principale."
+        },
+        "bon": {
+          "libelle": "Bon",
+          "detail": "Lisible partout, y compris en plein soleil sur un petit écran."
+        },
+        "excellent": {
+          "libelle": "Excellent",
+          "detail": "Confort de lecture maximal, quel que soit l'écran."
+        }
+      }
+    },
+    "kkiapay": {
+      "chargement": "Chargement du paiement…",
+      "enCours": "La confirmation serveur est en cours. Votre accès s’ouvrira après vérification ; ne payez pas une seconde fois.",
+      "nonConfirme": "Paiement non confirmé. Vous pouvez réessayer.",
+      "indisponible": "Le paiement n’est pas disponible.",
+      "verification": "Vérification du paiement…",
+      "payer": "Payer avec KKIAPAY",
+      "securise": "Paiement sécurisé en XOF. L’abonnement est activé après confirmation du serveur."
+    },
+    "commun": {
+      "chargementImpossible": "Chargement impossible."
+    },
+    "profilNav": {
+      "sections": "Sections du profil"
     }
   },
   "theme": {
