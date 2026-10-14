@@ -43,6 +43,7 @@
  * jours d'avant, 12 mois aux 12 mois d'avant.
  */
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { browserApi } from "@/lib/api";
@@ -59,8 +60,15 @@ import {
 import { Reveal } from "@/features/ui/Reveal";
 import { useToast } from "@/features/ui/Toast";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon, type IconName } from "./icons";
-import { DonutChart, MonthlyBars, type MonthPoint, type Slice } from "./charts";
+import {
+  DonutChart,
+  MonthlyBars,
+  useLibellePoste,
+  type MonthPoint,
+  type Slice,
+} from "./charts";
 import {
   BoardCard,
   ChartCard,
@@ -139,6 +147,17 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   __other__: "grid",
 };
 
+/** Moyens et origines connus (`Transaction.Method`, `.Source`). */
+const METHODES = ["cash", "mobile_money", "transfer", "card", "wechat", "alipay", "other"];
+const SOURCES = [
+  "manual",
+  "booking_deposit",
+  "booking_balance",
+  "booking_items",
+  "booking_travel",
+  "subscription",
+];
+
 function categoryIcon(category: string, income: boolean): IconName {
   return CATEGORY_ICONS[category] ?? (income ? "wallet" : "receipt");
 }
@@ -152,9 +171,9 @@ function categoryIcon(category: string, income: boolean): IconName {
  * lettres — « +12 % » sans dire par rapport à quoi n'est pas un chiffre.
  */
 const WINDOWS = [
-  { days: 30, label: "30 jours", months: 2, against: "les 30 jours d'avant" },
-  { days: 90, label: "3 mois", months: 4, against: "les 3 mois d'avant" },
-  { days: 365, label: "12 mois", months: 12, against: "les 12 mois d'avant" },
+  { days: 30, cle: "j30", months: 2 },
+  { days: 90, cle: "m3", months: 4 },
+  { days: 365, cle: "m12", months: 12 },
 ];
 
 /*
@@ -170,46 +189,51 @@ const WINDOWS = [
   Voir `isoDateIn` : le raisonnement complet y est.
 */
 
-function money(value: number | string, currency: string): string {
-  return `${Number(value).toLocaleString("fr-FR", {
-    maximumFractionDigits: 0,
-  })} ${currency}`;
-}
+/** Les formats de l'écran, dans la langue de l'espace (`region` : fr-FR, en-GB). */
+function outils(region: string) {
+  return {
+    money(value: number | string, currency: string): string {
+      return `${Number(value).toLocaleString(region, {
+        maximumFractionDigits: 0,
+      })} ${currency}`;
+    },
 
-/** Abrège au-delà du millier : « 1 240 000 FCFA » déborde d'une carte de
- *  téléphone, « 1,2 M FCFA » se lit d'un coup d'œil. Le montant exact reste
- *  lisible dans la liste des mouvements. */
-function compactMoney(value: number | string): string {
-  const amount = Number(value);
-  const absolute = Math.abs(amount);
-  if (absolute >= 1_000_000)
-    return `${(amount / 1_000_000).toLocaleString("fr-FR", {
-      maximumFractionDigits: 1,
-    })} M`;
-  if (absolute >= 10_000)
-    return `${Math.round(amount / 1000).toLocaleString("fr-FR")} k`;
-  return amount.toLocaleString("fr-FR", { maximumFractionDigits: 0 });
-}
+    /** Abrège au-delà du millier : « 1 240 000 FCFA » déborde d'une carte de
+     *  téléphone, « 1,2 M FCFA » se lit d'un coup d'œil. Le montant exact reste
+     *  lisible dans la liste des mouvements. */
+    compactMoney(value: number | string): string {
+      const amount = Number(value);
+      const absolute = Math.abs(amount);
+      if (absolute >= 1_000_000)
+        return `${(amount / 1_000_000).toLocaleString(region, {
+          maximumFractionDigits: 1,
+        })} M`;
+      if (absolute >= 10_000)
+        return `${Math.round(amount / 1000).toLocaleString(region)} k`;
+      return amount.toLocaleString(region, { maximumFractionDigits: 0 });
+    },
 
-function monthName(iso: string): string {
-  return new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(
-    new Date(`${iso}T00:00:00`),
-  );
-}
+    monthName(iso: string): string {
+      return new Intl.DateTimeFormat(region, { month: "short" }).format(
+        new Date(`${iso}T00:00:00`),
+      );
+    },
 
-function longMonth(iso: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${iso}T00:00:00`));
-}
+    longMonth(iso: string): string {
+      return new Intl.DateTimeFormat(region, {
+        month: "long",
+        year: "numeric",
+      }).format(new Date(`${iso}T00:00:00`));
+    },
 
-function dayLabel(iso: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${iso}T00:00:00`));
+    dayLabel(iso: string): string {
+      return new Intl.DateTimeFormat(region, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(`${iso}T00:00:00`));
+    },
+  };
 }
 
 /**
@@ -247,6 +271,13 @@ function marginChange(
 }
 
 export function Finances() {
+  const t = useTranslations("pro.finances");
+  const { region } = useFormats();
+  const { money, compactMoney, monthName, longMonth, dayLabel } = useMemo(
+    () => outils(region),
+    [region],
+  );
+  const libellePoste = useLibellePoste();
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -257,6 +288,7 @@ export function Finances() {
   const [exporting, setExporting] = useState(false);
 
   const active = WINDOWS.find((option) => option.days === window) ?? WINDOWS[2];
+  const against = t(`fenetres.${active.cle}.avant`);
 
   const range = useMemo(
     () => `from=${isoDateIn(timeZone, -window)}&to=${isoDateIn(timeZone)}`,
@@ -313,9 +345,9 @@ export function Finances() {
       link.click();
       URL.revokeObjectURL(url);
 
-      toast.success("Classeur téléchargé : une feuille par sens.");
+      toast.success(t("exportOk"));
     } catch {
-      toast.error("Export impossible pour le moment.");
+      toast.error(t("exportEchec"));
     } finally {
       setExporting(false);
     }
@@ -335,9 +367,7 @@ export function Finances() {
     que la demi-seconde gagnée.
   */
   const compared = previous.data !== null;
-  const waiting = previous.error
-    ? "comparaison indisponible"
-    : "comparaison en cours…";
+  const waiting = previous.error ? t("comparaisonIndisponible") : t("comparaisonEnCours");
 
   /* ----- Ce que les figures consomment ---------------------------------- */
 
@@ -349,19 +379,19 @@ export function Finances() {
   const incomePoints: Point[] = months.map((point) => ({
     label: monthName(point.month),
     value: Number(point.income),
-    title: `${longMonth(point.month)} : ${money(point.income, currency)} de recettes`,
+    title: t("points.recettes", { mois: longMonth(point.month), montant: money(point.income, currency) }),
   }));
 
   const expensePoints: Point[] = months.map((point) => ({
     label: monthName(point.month),
     value: Number(point.expense),
-    title: `${longMonth(point.month)} : ${money(point.expense, currency)} de dépenses`,
+    title: t("points.depenses", { mois: longMonth(point.month), montant: money(point.expense, currency) }),
   }));
 
   const cumulativePoints: Point[] = months.map((point) => ({
     label: monthName(point.month),
     value: Number(point.cumulative),
-    title: `Fin ${longMonth(point.month)} : ${money(point.cumulative, currency)} cumulés`,
+    title: t("points.cumul", { mois: longMonth(point.month), montant: money(point.cumulative, currency) }),
   }));
 
   const bestMonth = months.reduce<MonthPoint | null>(
@@ -382,11 +412,11 @@ export function Finances() {
       key: slice.category,
       icon: categoryIcon(slice.category, false),
       tone: "dark" as Tone,
-      label: slice.label,
+      label: libellePoste(slice),
       amount: money(slice.total, currency),
       share: total > 0 ? (Number(slice.total) / total) * 100 : 0,
     }));
-  }, [data, currency]);
+  }, [data, currency, money, libellePoste]);
 
   /* Les six derniers mouvements, du plus récent au plus ancien. Six parce
      que le fil accompagne le tableau à sa droite et doit tenir la même
@@ -398,7 +428,11 @@ export function Finances() {
       icon: categoryIcon(transaction.category, income),
       tone: income ? "success" : "danger",
       title: transaction.label,
-      meta: `${dayLabel(transaction.occurred_on)} · ${transaction.method_label}`,
+      meta: `${dayLabel(transaction.occurred_on)} · ${
+        METHODES.includes(transaction.method)
+          ? t(`methodes.${transaction.method}`)
+          : transaction.method_label
+      }`,
       amount: `${income ? "+" : "−"} ${money(transaction.amount, currency)}`,
       income,
       badge: transaction.source !== "manual" ? "auto" : undefined,
@@ -408,8 +442,8 @@ export function Finances() {
   return (
     <section>
       <PageHeader
-        title="Finances"
-        description="Ce qui rentre, ce qui sort, ce qu'il vous reste."
+        title={t("titre")}
+        description={t("description")}
         action={
           <div className="flex flex-wrap gap-2">
             <GhostButton
@@ -417,7 +451,7 @@ export function Finances() {
               pending={exporting}
               onClick={() => void exportWorkbook()}
             >
-              Exporter en Excel
+              {t("exporter")}
             </GhostButton>
 
           </div>
@@ -425,7 +459,7 @@ export function Finances() {
       />
 
       {summary.error && (
-        <ErrorState>Impossible de charger vos finances.</ErrorState>
+        <ErrorState>{t("erreur")}</ErrorState>
       )}
 
       <div className="mb-5 flex rounded-xl border border-line bg-surface p-1 shadow-card">
@@ -441,7 +475,7 @@ export function Finances() {
                 : "text-muted hover:text-ink"
             }`}
           >
-            {option.label}
+            {t(`fenetres.${option.cle}.libelle`)}
           </button>
         ))}
       </div>
@@ -461,20 +495,20 @@ export function Finances() {
             <StatCard
               icon="wallet"
               tone="dark"
-              label="Résultat"
+              label={t("cartes.resultat")}
               value={compactMoney(data.totals.net)}
               unit={currency}
               note={waiting}
               evolution={
                 compared
-                  ? change(data.totals.net, before?.net, active.against, "up")
+                  ? change(data.totals.net, before?.net, against, "up")
                   : null
               }
             />
             <StatCard
               icon="trend"
               tone="success"
-              label="Recettes"
+              label={t("cartes.recettes")}
               value={compactMoney(data.totals.income)}
               unit={currency}
               note={waiting}
@@ -483,7 +517,7 @@ export function Finances() {
                   ? change(
                       data.totals.income,
                       before?.income,
-                      active.against,
+                      against,
                       "up",
                     )
                   : null
@@ -492,7 +526,7 @@ export function Finances() {
             <StatCard
               icon="receipt"
               tone="danger"
-              label="Dépenses"
+              label={t("cartes.depenses")}
               value={compactMoney(data.totals.expense)}
               unit={currency}
               note={waiting}
@@ -504,7 +538,7 @@ export function Finances() {
                   ? change(
                       data.totals.expense,
                       before?.expense,
-                      active.against,
+                      against,
                       "down",
                     )
                   : null
@@ -513,14 +547,14 @@ export function Finances() {
             <StatCard
               icon="percent"
               tone="info"
-              label="Marge"
+              label={t("cartes.marge")}
               value={
                 data.totals.margin === null ? "—" : `${data.totals.margin} %`
               }
               unit={
                 data.totals.margin === null
-                  ? "aucune recette"
-                  : "de ce qui rentre"
+                  ? t("cartes.aucuneRecette")
+                  : t("cartes.deCeQuiRentre")
               }
               note={waiting}
               evolution={
@@ -528,7 +562,7 @@ export function Finances() {
                   ? marginChange(
                       data.totals.margin,
                       previous.data?.totals.margin,
-                      active.against,
+                      against,
                     )
                   : null
               }
@@ -551,61 +585,51 @@ export function Finances() {
             <Reveal>
               <ChartCard
                 tone="salon"
-                title="Recettes mois par mois"
+                title={t("figures.recettes")}
                 subtitle={
                   bestMonth && Number(bestMonth.income) > 0
-                    ? `Meilleur mois : ${longMonth(bestMonth.month)}, ${money(
-                        bestMonth.income,
-                        currency,
-                      )}.`
-                    : "Aucune recette enregistrée sur la période."
+                    ? t("figures.meilleurMois", {
+                        mois: longMonth(bestMonth.month),
+                        montant: money(bestMonth.income, currency),
+                      })
+                    : t("figures.aucuneRecette")
                 }
-                foot={`${data.totals.count} mouvement${
-                  data.totals.count > 1 ? "s" : ""
-                } sur la période`}
+                foot={t("figures.mouvements", { n: data.totals.count })}
               >
-                <GradientBars
-                  points={incomePoints}
-                  caption="Recettes mois par mois"
-                />
+                <GradientBars points={incomePoints} caption={t("figures.recettes")} />
               </ChartCard>
             </Reveal>
 
             <Reveal delay={90}>
               <ChartCard
                 tone="success"
-                title="Résultat cumulé"
-                subtitle="Ce qu'il reste une fois tous les mois additionnés — la courbe qui dit si vous remontez la pente."
+                title={t("figures.cumul")}
+                subtitle={t("figures.cumulAide")}
                 foot={
                   months.length > 0
-                    ? `arrêté à ${longMonth(months[months.length - 1].month)}`
-                    : "aucun mois à afficher"
+                    ? t("figures.arreteA", { mois: longMonth(months[months.length - 1].month) })
+                    : t("figures.aucunMois")
                 }
               >
-                <GradientLine
-                  points={cumulativePoints}
-                  caption="Résultat cumulé mois par mois"
-                />
+                <GradientLine points={cumulativePoints} caption={t("figures.cumulCourbe")} />
               </ChartCard>
             </Reveal>
 
             <Reveal delay={180} className="md:col-span-2 lg:col-span-1">
               <ChartCard
                 tone="dark"
-                title="Dépenses mois par mois"
+                title={t("figures.depenses")}
                 subtitle={
                   expenseRows.length > 0
-                    ? `Poste le plus lourd : ${expenseRows[0].label}, ${expenseRows[0].amount}.`
-                    : "Aucune dépense enregistrée sur la période."
+                    ? t("figures.posteLourd", {
+                        poste: expenseRows[0].label,
+                        montant: expenseRows[0].amount,
+                      })
+                    : t("figures.aucuneDepense")
                 }
-                foot={`${expenseRows.length} poste${
-                  expenseRows.length > 1 ? "s" : ""
-                } de dépense`}
+                foot={t("figures.postes", { n: expenseRows.length })}
               >
-                <GradientLine
-                  points={expensePoints}
-                  caption="Dépenses mois par mois"
-                />
+                <GradientLine points={expensePoints} caption={t("figures.depenses")} />
               </ChartCard>
             </Reveal>
           </div>
@@ -619,7 +643,7 @@ export function Finances() {
           <div className="mb-6 grid gap-5 lg:grid-cols-3">
             <Reveal className="lg:col-span-2">
               <BoardCard
-                title="Où part l'argent"
+                title={t("ouPart")}
                 lead={
                   <>
                     <Icon
@@ -627,10 +651,10 @@ export function Finances() {
                       className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
                     />
                     <span>
-                      <strong className="font-semibold text-ink">
-                        {money(data.totals.expense, currency)}
-                      </strong>{" "}
-                      de dépenses sur la période
+                      {t.rich("depensesPeriode", {
+                        montant: money(data.totals.expense, currency),
+                        gras: (texte) => <strong className="font-semibold text-ink">{texte}</strong>,
+                      })}
                     </span>
                   </>
                 }
@@ -638,25 +662,25 @@ export function Finances() {
               >
                 <ShareTable
                   rows={expenseRows}
-                  empty="Aucune dépense enregistrée sur la période. Les paiements enregistrés alimentent ce suivi automatiquement."
+                  empty={t("aucuneDepenseTableau")}
                 />
               </BoardCard>
             </Reveal>
 
             <Reveal delay={120}>
               <BoardCard
-                title="Derniers mouvements"
+                title={t("derniers")}
                 lead={
                   <>
                     <Icon name="clock" className="size-3.5 shrink-0" />
-                    <span>les {feed.length} plus récents</span>
+                    <span>{t("plusRecents", { n: feed.length })}</span>
                   </>
                 }
                 className="h-full"
               >
                 <Feed
                   items={feed}
-                  empty="Rien encore. Les prestations que vous marquez « terminée » apparaîtront ici toutes seules."
+                  empty={t("rienEncore")}
                 />
               </BoardCard>
             </Reveal>
@@ -671,20 +695,18 @@ export function Finances() {
           */}
           <div className="mb-6 grid gap-5 lg:grid-cols-3">
             <Reveal>
-              <BoardCard title="D'où vient l'argent" className="h-full">
+              <BoardCard title={t("dOuVient")} className="h-full">
                 <DonutChart slices={data.income_slices} currency={currency} />
               </BoardCard>
             </Reveal>
 
             <Reveal delay={120} className="lg:col-span-2">
               <BoardCard
-                title="Recettes et dépenses, côte à côte"
+                title={t("coteACote")}
                 lead={
                   <>
                     <Icon name="trend" className="size-3.5 shrink-0" />
-                    <span>
-                      c&apos;est l&apos;écart entre les deux qui compte
-                    </span>
+                    <span>{t("ecart")}</span>
                   </>
                 }
                 className="h-full"
@@ -696,15 +718,14 @@ export function Finances() {
         </>
       )}
 
-      <SectionTitle>Mouvements</SectionTitle>
+      <SectionTitle>{t("mouvements")}</SectionTitle>
 
       {list.data === null && !list.error && <Skeleton rows={3} />}
 
       {transactions.length === 0 && list.data !== null && (
         <Card>
           <p className="text-sm text-muted">
-            Aucun mouvement sur la période. Les prestations que vous marquez «
-            terminée » apparaîtront ici automatiquement.
+            {t("aucunMouvement")}
           </p>
         </Card>
       )}
@@ -734,13 +755,20 @@ export function Finances() {
                           sans cela il cherche qui l'a écrite, ou pire, la
                           supprime en croyant à une erreur. */}
                       {transaction.source !== "manual" && (
-                        <Badge tone="neutral">{transaction.source_label}</Badge>
+                        <Badge tone="neutral">
+                          {SOURCES.includes(transaction.source)
+                            ? t(`sources.${transaction.source}`)
+                            : transaction.source_label}
+                        </Badge>
                       )}
                     </p>
                     <p className="mt-0.5 text-sm text-muted">
                       {dayLabel(transaction.occurred_on)}
                       {" · "}
-                      {transaction.category_label}
+                      {libellePoste({
+                        category: transaction.category,
+                        label: transaction.category_label,
+                      })}
                       {transaction.counterparty &&
                         ` · ${transaction.counterparty}`}
                     </p>
@@ -755,11 +783,13 @@ export function Finances() {
                       }`}
                     >
                       {income ? "+" : "−"}{" "}
-                      {Number(transaction.amount).toLocaleString("fr-FR")}{" "}
+                      {Number(transaction.amount).toLocaleString(region)}{" "}
                       {currency}
                     </p>
                     <p className="text-xs text-subtle">
-                      {transaction.method_label}
+                      {METHODES.includes(transaction.method)
+                        ? t(`methodes.${transaction.method}`)
+                        : transaction.method_label}
                     </p>
                   </div>
                 </div>
@@ -772,9 +802,7 @@ export function Finances() {
 
                 <div className="mt-2.5 border-t border-line pt-2.5">
                   <p className="text-xs text-subtle">
-                    {transaction.source === "manual"
-                      ? "Ancienne écriture manuelle conservée en lecture seule."
-                      : "Enregistrée automatiquement — se corrige à sa source."}
+                    {transaction.source === "manual" ? t("manuelle") : t("automatique")}
                   </p>
                 </div>
               </Card>

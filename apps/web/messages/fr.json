@@ -2356,6 +2356,128 @@
         "details": "Une seule récompense par réservation, cumulable avec les promotions. Calcul après promotions sur la prestation et ses options. Le plafond est un montant maximal par réservation. Les conditions déjà accordées sont conservées. Une réservation antérieure, même annulée, exclut le filleul. La récompense reste acquise après confirmation ; si le parrain annule sa réservation, sa réduction est restituée jusqu’à son expiration.",
         "enregistrer": "Enregistrer"
       }
+    },
+    "finances": {
+      "titre": "Finances",
+      "description": "Ce qui rentre, ce qui sort, ce qu'il vous reste.",
+      "exporter": "Exporter en Excel",
+      "exportOk": "Classeur téléchargé : une feuille par sens.",
+      "exportEchec": "Export impossible pour le moment.",
+      "erreur": "Impossible de charger vos finances.",
+      "fenetres": {
+        "j30": {
+          "libelle": "30 jours",
+          "avant": "les 30 jours d'avant"
+        },
+        "m3": {
+          "libelle": "3 mois",
+          "avant": "les 3 mois d'avant"
+        },
+        "m12": {
+          "libelle": "12 mois",
+          "avant": "les 12 mois d'avant"
+        }
+      },
+      "comparaisonIndisponible": "comparaison indisponible",
+      "comparaisonEnCours": "comparaison en cours…",
+      "points": {
+        "recettes": "{mois} : {montant} de recettes",
+        "depenses": "{mois} : {montant} de dépenses",
+        "cumul": "Fin {mois} : {montant} cumulés"
+      },
+      "cartes": {
+        "resultat": "Résultat",
+        "recettes": "Recettes",
+        "depenses": "Dépenses",
+        "marge": "Marge",
+        "aucuneRecette": "aucune recette",
+        "deCeQuiRentre": "de ce qui rentre"
+      },
+      "figures": {
+        "recettes": "Recettes mois par mois",
+        "meilleurMois": "Meilleur mois : {mois}, {montant}.",
+        "aucuneRecette": "Aucune recette enregistrée sur la période.",
+        "mouvements": "{n, plural, one {# mouvement} other {# mouvements}} sur la période",
+        "cumul": "Résultat cumulé",
+        "cumulAide": "Ce qu'il reste une fois tous les mois additionnés — la courbe qui dit si vous remontez la pente.",
+        "arreteA": "arrêté à {mois}",
+        "aucunMois": "aucun mois à afficher",
+        "cumulCourbe": "Résultat cumulé mois par mois",
+        "depenses": "Dépenses mois par mois",
+        "posteLourd": "Poste le plus lourd : {poste}, {montant}.",
+        "aucuneDepense": "Aucune dépense enregistrée sur la période.",
+        "postes": "{n, plural, one {# poste} other {# postes}} de dépense"
+      },
+      "ouPart": "Où part l'argent",
+      "depensesPeriode": "<gras>{montant}</gras> de dépenses sur la période",
+      "aucuneDepenseTableau": "Aucune dépense enregistrée sur la période. Les paiements enregistrés alimentent ce suivi automatiquement.",
+      "derniers": "Derniers mouvements",
+      "plusRecents": "les {n} plus récents",
+      "rienEncore": "Rien encore. Les prestations que vous marquez « terminée » apparaîtront ici toutes seules.",
+      "dOuVient": "D'où vient l'argent",
+      "coteACote": "Recettes et dépenses, côte à côte",
+      "ecart": "c'est l'écart entre les deux qui compte",
+      "mouvements": "Mouvements",
+      "aucunMouvement": "Aucun mouvement sur la période. Les prestations que vous marquez « terminée » apparaîtront ici automatiquement.",
+      "manuelle": "Ancienne écriture manuelle conservée en lecture seule.",
+      "automatique": "Enregistrée automatiquement — se corrige à sa source.",
+      "postes": {
+        "service": "Prestation",
+        "product": "Vente de produit",
+        "travel": "Déplacement",
+        "tip": "Pourboire",
+        "other_income": "Autre recette",
+        "supplies": "Fournitures et produits",
+        "rent": "Loyer",
+        "wages": "Salaires",
+        "utilities": "Eau, électricité, internet",
+        "transport": "Transport et déplacements",
+        "marketing": "Publicité",
+        "equipment": "Matériel",
+        "taxes": "Taxes et impôts",
+        "other_expense": "Autre dépense",
+        "autres": "Autres ({n} postes)"
+      },
+      "methodes": {
+        "cash": "Espèces",
+        "mobile_money": "Mobile Money",
+        "transfer": "Virement",
+        "card": "Carte",
+        "wechat": "WeChat Pay",
+        "alipay": "Alipay",
+        "other": "Autre"
+      },
+      "sources": {
+        "manual": "Saisie manuelle",
+        "booking_deposit": "Acompte encaissé",
+        "booking_balance": "Solde de la prestation",
+        "booking_items": "Vente au comptoir",
+        "booking_travel": "Forfait de déplacement",
+        "subscription": "Abonnement à la plateforme"
+      },
+      "graphiques": {
+        "recettes": "Recettes",
+        "depenses": "Dépenses",
+        "barresTitre": "Recettes et dépenses des {n} derniers mois",
+        "recettesMin": "recettes",
+        "depensesMin": "dépenses",
+        "survol": "Survolez un mois pour le détail.",
+        "cumulTitre": "Résultat cumulé sur la période",
+        "cumulAuJour": "Cumul à ce jour :",
+        "aucuneRecette": "Aucune recette sur la période.",
+        "anneauTitre": "Répartition des recettes par origine"
+      },
+      "evolution": {
+        "rien": "Rien à comparer sur {periode}",
+        "stable": "stable",
+        "vs": "vs {periode}",
+        "points": "pts"
+      },
+      "tableau": {
+        "poste": "Poste",
+        "montant": "Montant",
+        "part": "Part"
+      }
     }
   },
   "theme": {

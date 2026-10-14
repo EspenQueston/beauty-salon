@@ -2356,6 +2356,128 @@
         "details": "One reward per booking, combinable with promotions. Calculated after promotions on the service and its options. The cap is a maximum amount per booking. Conditions already granted are kept. Any earlier booking, even cancelled, excludes the referred client. The reward stays earned after confirmation; if the referrer cancels their booking, their discount is restored until it expires.",
         "enregistrer": "Save"
       }
+    },
+    "finances": {
+      "titre": "Finances",
+      "description": "What comes in, what goes out, what you have left.",
+      "exporter": "Export to Excel",
+      "exportOk": "Workbook downloaded: one sheet per direction.",
+      "exportEchec": "Export unavailable at the moment.",
+      "erreur": "Could not load your finances.",
+      "fenetres": {
+        "j30": {
+          "libelle": "30 days",
+          "avant": "the previous 30 days"
+        },
+        "m3": {
+          "libelle": "3 months",
+          "avant": "the previous 3 months"
+        },
+        "m12": {
+          "libelle": "12 months",
+          "avant": "the previous 12 months"
+        }
+      },
+      "comparaisonIndisponible": "comparison unavailable",
+      "comparaisonEnCours": "comparing…",
+      "points": {
+        "recettes": "{mois}: {montant} in income",
+        "depenses": "{mois}: {montant} in expenses",
+        "cumul": "End of {mois}: {montant} cumulative"
+      },
+      "cartes": {
+        "resultat": "Profit",
+        "recettes": "Income",
+        "depenses": "Expenses",
+        "marge": "Margin",
+        "aucuneRecette": "no income",
+        "deCeQuiRentre": "of income"
+      },
+      "figures": {
+        "recettes": "Income month by month",
+        "meilleurMois": "Best month: {mois}, {montant}.",
+        "aucuneRecette": "No income recorded in this period.",
+        "mouvements": "{n, plural, one {# transaction} other {# transactions}} in this period",
+        "cumul": "Cumulative profit",
+        "cumulAide": "What's left once every month is added up — the curve that tells you whether you're climbing back.",
+        "arreteA": "as of {mois}",
+        "aucunMois": "no month to show",
+        "cumulCourbe": "Cumulative profit month by month",
+        "depenses": "Expenses month by month",
+        "posteLourd": "Biggest expense: {poste}, {montant}.",
+        "aucuneDepense": "No expenses recorded in this period.",
+        "postes": "{n, plural, one {# expense category} other {# expense categories}}"
+      },
+      "ouPart": "Where the money goes",
+      "depensesPeriode": "<gras>{montant}</gras> in expenses over the period",
+      "aucuneDepenseTableau": "No expenses recorded in this period. Recorded payments feed this view automatically.",
+      "derniers": "Latest transactions",
+      "plusRecents": "the {n} most recent",
+      "rienEncore": "Nothing yet. Services you mark as “completed” will appear here on their own.",
+      "dOuVient": "Where the money comes from",
+      "coteACote": "Income and expenses, side by side",
+      "ecart": "it's the gap between the two that matters",
+      "mouvements": "Transactions",
+      "aucunMouvement": "No transactions in this period. Services you mark as “completed” will appear here automatically.",
+      "manuelle": "Former manual entry, kept read-only.",
+      "automatique": "Recorded automatically — corrected at its source.",
+      "postes": {
+        "service": "Service",
+        "product": "Product sale",
+        "travel": "Travel",
+        "tip": "Tip",
+        "other_income": "Other income",
+        "supplies": "Supplies and products",
+        "rent": "Rent",
+        "wages": "Wages",
+        "utilities": "Water, electricity, internet",
+        "transport": "Transport and travel",
+        "marketing": "Advertising",
+        "equipment": "Equipment",
+        "taxes": "Taxes",
+        "other_expense": "Other expense",
+        "autres": "Other ({n} categories)"
+      },
+      "methodes": {
+        "cash": "Cash",
+        "mobile_money": "Mobile Money",
+        "transfer": "Bank transfer",
+        "card": "Card",
+        "wechat": "WeChat Pay",
+        "alipay": "Alipay",
+        "other": "Other"
+      },
+      "sources": {
+        "manual": "Manual entry",
+        "booking_deposit": "Deposit received",
+        "booking_balance": "Service balance",
+        "booking_items": "Counter sale",
+        "booking_travel": "Travel fee",
+        "subscription": "Platform subscription"
+      },
+      "graphiques": {
+        "recettes": "Income",
+        "depenses": "Expenses",
+        "barresTitre": "Income and expenses over the last {n} months",
+        "recettesMin": "income",
+        "depensesMin": "expenses",
+        "survol": "Hover over a month for details.",
+        "cumulTitre": "Cumulative profit over the period",
+        "cumulAuJour": "Total to date:",
+        "aucuneRecette": "No income in this period.",
+        "anneauTitre": "Income breakdown by source"
+      },
+      "evolution": {
+        "rien": "Nothing to compare with {periode}",
+        "stable": "steady",
+        "vs": "vs {periode}",
+        "points": "pts"
+      },
+      "tableau": {
+        "poste": "Category",
+        "montant": "Amount",
+        "part": "Share"
+      }
     }
   },
   "theme": {
