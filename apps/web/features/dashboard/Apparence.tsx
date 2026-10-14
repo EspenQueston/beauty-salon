@@ -14,6 +14,7 @@
  * une barre le rappelle, et quitter la page demande confirmation.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
@@ -91,39 +92,20 @@ interface Reponse {
   active: boolean;
 }
 
-const NOMS_MENU: Record<string, string> = {
-  prestations: "Prestations",
-  realisations: "Réalisations",
-  equipe: "Équipe",
-  "a-propos": "À propos",
-  infos: "Infos pratiques",
-};
+/** Les rubriques connues ; libellés sous `pro.apparence.menu` et `.sections`. */
+const MENU_CONNU = ["prestations", "realisations", "equipe", "a-propos", "infos"];
+const SECTIONS_CONNUES = ["prestations", "etapes", "realisations", "equipe", "avis", "infos"];
 
-const NOMS_SECTIONS: Record<string, string> = {
-  prestations: "Prestations en vedette",
-  etapes: "Comment ça se passe",
-  realisations: "Réalisations",
-  equipe: "L'équipe",
-  avis: "Avis des clientes",
-  infos: "Infos pratiques",
-};
-
-const FAMILLES: { cle: Famille | "toutes"; nom: string }[] = [
-  { cle: "toutes", nom: "Toutes" },
-  { cle: "moderne", nom: "Modernes" },
-  { cle: "elegante", nom: "Élégantes" },
-  { cle: "affiche", nom: "Affiche" },
-  { cle: "manuscrite", nom: "Manuscrites" },
-];
+const FAMILLES: (Famille | "toutes")[] = ["toutes", "moderne", "elegante", "affiche", "manuscrite"];
 
 /** Des accords éprouvés : un titre qui a du caractère, un texte qui se lit. */
-const ACCORDS: { titres: string; texte: string; nom: string }[] = [
-  { titres: "playfair", texte: "nunito", nom: "Classique chic" },
-  { titres: "great-vibes", texte: "raleway", nom: "Romantique" },
-  { titres: "cinzel", texte: "manrope", nom: "Luxe" },
-  { titres: "fraunces", texte: "outfit", nom: "Contemporain" },
-  { titres: "dm-serif", texte: "poppins", nom: "Éditorial" },
-  { titres: "montserrat", texte: "montserrat", nom: "Épuré" },
+const ACCORDS: { titres: string; texte: string; cle: string }[] = [
+  { titres: "playfair", texte: "nunito", cle: "classique" },
+  { titres: "great-vibes", texte: "raleway", cle: "romantique" },
+  { titres: "cinzel", texte: "manrope", cle: "luxe" },
+  { titres: "fraunces", texte: "outfit", cle: "contemporain" },
+  { titres: "dm-serif", texte: "poppins", cle: "editorial" },
+  { titres: "montserrat", texte: "montserrat", cle: "epure" },
 ];
 
 const PREFIXE_PAGE = "page:";
@@ -159,6 +141,7 @@ const brut = (valeur: string) => valeur.replace(/[<>]/g, "");
 // ---------------------------------------------------------------------------
 
 export function Apparence() {
+  const t = useTranslations("pro.apparence");
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const direction = membership.role === "owner" || membership.role === "manager";
@@ -189,8 +172,8 @@ export function Apparence() {
   if (!direction) {
     return (
       <section>
-        <PageHeader title="Apparence avancée" />
-        <ErrorState>Réservé au propriétaire et à la gérante du salon.</ErrorState>
+        <PageHeader title={t("titre")} />
+        <ErrorState>{t("reserve")}</ErrorState>
       </section>
     );
   }
@@ -199,7 +182,7 @@ export function Apparence() {
   if (!donnees.data || !config) {
     return (
       <section>
-        <PageHeader title="Apparence avancée" />
+        <PageHeader title={t("titre")} />
         <Skeleton rows={4} />
       </section>
     );
@@ -246,7 +229,7 @@ export function Apparence() {
     if (!config) return;
     if (pageIncomplete) {
       setOuverte(pageIncomplete.id);
-      setErreur("Chaque page a besoin d'un titre (2 caractères au moins).");
+      setErreur(t("titreRequis"));
       return;
     }
     setEnvoi(true);
@@ -257,11 +240,11 @@ export function Apparence() {
         { method: "PUT", body: JSON.stringify(config) },
         tenantId,
       );
-      toast.success("Apparence enregistrée : votre mini-site est à jour.");
+      toast.success(t("ok"));
       setBrouillon(null);
       donnees.reload();
     } catch (caught) {
-      setErreur(caught instanceof DashboardError ? caught.message : "Enregistrement impossible.");
+      setErreur(caught instanceof DashboardError ? caught.message : t("echec"));
     } finally {
       setEnvoi(false);
     }
@@ -270,16 +253,16 @@ export function Apparence() {
   const nomRubrique = (cle: string) => {
     if (cle.startsWith(PREFIXE_PAGE)) {
       const page = config.pages.find((p) => PREFIXE_PAGE + p.id === cle);
-      return page?.titre.trim() || "Nouvelle page";
+      return page?.titre.trim() || t("nouvellePage");
     }
-    return NOMS_MENU[cle] ?? cle;
+    return MENU_CONNU.includes(cle) ? t(`menu.${cle}`) : cle;
   };
 
   return (
     <section className={TOUTES_LES_POLICES}>
       <PageHeader
-        title="Apparence avancée"
-        description="Polices, menu, pages et textes clés de votre mini-site. Les couleurs et le logo restent dans « Identité »."
+        title={t("titre")}
+        description={t("description")}
       />
 
       {!active && <VerrouPro fonction="customization" />}
@@ -299,8 +282,8 @@ export function Apparence() {
           <Card padded={false} className="p-4 sm:p-5">
             <EnteteCarte
               icone="edit"
-              titre="Vos pages"
-              detail="Jusqu'à trois pages à vous — tarifs, formations, événements… — ajoutées au menu du mini-site."
+              titre={t("pages.titre")}
+              detail={t("pages.detail")}
               statut={
                 <Badge tone={config.pages.length >= options.pages_max ? "warning" : "neutral"}>
                   {config.pages.length}/{options.pages_max}
@@ -330,11 +313,11 @@ export function Apparence() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm font-medium text-muted transition hover:border-salon hover:bg-salon-soft/40 hover:text-salon"
                 >
                   <Icon name="plus" className="size-4" />
-                  Ajouter une page
+                  {t("pages.ajouter")}
                 </button>
               ) : (
                 <p className="rounded-xl bg-surface-muted px-3 py-2 text-center text-[12px] text-muted sm:text-xs">
-                  Trois pages au plus : retirez-en une pour en créer une autre.
+                  {t("pages.max")}
                 </p>
               )}
             </div>
@@ -342,7 +325,7 @@ export function Apparence() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <Card padded={false} className="p-4 sm:p-5">
-              <EnteteCarte icone="menu" titre="Menu" detail="L'ordre des rubriques, et celles qu'on voit." />
+              <EnteteCarte icone="menu" titre={t("menuTitre")} detail={t("menuDetail")} />
               <Liste
                 elements={config.menu}
                 nom={nomRubrique}
@@ -350,19 +333,19 @@ export function Apparence() {
                 onChange={(menu) => changer({ menu })}
               />
               <p className="mt-2 text-[11px] leading-snug text-muted sm:text-xs">
-                Une rubrique sans contenu (aucune réalisation, par exemple) reste cachée.
+                {t("menuVide")}
               </p>
             </Card>
 
             <Card padded={false} className="p-4 sm:p-5">
               <EnteteCarte
                 icone="grid"
-                titre="Accueil"
-                detail="L'ordre des sections, entre l'en-tête et l'appel final."
+                titre={t("accueilTitre")}
+                detail={t("accueilDetail")}
               />
               <Liste
                 elements={config.sections}
-                nom={(cle) => NOMS_SECTIONS[cle] ?? cle}
+                nom={(cle) => (SECTIONS_CONNUES.includes(cle) ? t(`sections.${cle}`) : cle)}
                 onChange={(sections) => changer({ sections })}
               />
             </Card>
@@ -371,32 +354,38 @@ export function Apparence() {
           <Card padded={false} className="p-4 sm:p-5">
             <EnteteCarte
               icone="sparkles"
-              titre="Textes clés"
-              detail="Du texte simple, affiché tel quel dans les deux langues du site."
+              titre={t("textes.titre")}
+              detail={t("textes.detail")}
             />
             <div className="mt-4 grid gap-4 sm:grid-cols-[1fr_14rem]">
               <Field
-                label="Accroche de l'en-tête"
-                hint={`${config.accroche.length}/${options.longueurs.accroche} — vide : la description du salon.`}
+                label={t("textes.accroche")}
+                hint={t("textes.accrocheAide", {
+                  n: config.accroche.length,
+                  max: options.longueurs.accroche,
+                })}
               >
                 <textarea
                   className={`${inputClass} min-h-20 resize-y`}
                   value={config.accroche}
                   maxLength={options.longueurs.accroche}
                   onChange={(event) => changer({ accroche: brut(event.target.value) })}
-                  placeholder="Tresses, soins et coiffures, sur rendez-vous à Brazzaville."
+                  placeholder={t("textes.accrocheExemple")}
                 />
               </Field>
               <Field
-                label="Bouton de réservation"
-                hint={`${config.bouton_reserver.length}/${options.longueurs.bouton_reserver} — vide : « Réserver ».`}
+                label={t("textes.bouton")}
+                hint={t("textes.boutonAide", {
+                  n: config.bouton_reserver.length,
+                  max: options.longueurs.bouton_reserver,
+                })}
               >
                 <input
                   className={inputClass}
                   value={config.bouton_reserver}
                   maxLength={options.longueurs.bouton_reserver}
                   onChange={(event) => changer({ bouton_reserver: brut(event.target.value) })}
-                  placeholder="Prendre rendez-vous"
+                  placeholder={t("textes.boutonExemple")}
                 />
               </Field>
             </div>
@@ -465,12 +454,13 @@ function Actions({
   onEnregistrer: () => void;
   onAnnuler: () => void;
 }) {
+  const t = useTranslations("pro.apparence");
   return (
     <div>
       {modifie && (
         <p className="mb-2 flex items-center gap-1.5 text-[12px] font-medium text-warning sm:text-xs">
           <span className="size-1.5 animate-pulse rounded-full bg-warning" aria-hidden />
-          Modifications non enregistrées
+          {t("nonEnregistre")}
         </p>
       )}
       <div className="flex gap-2 lg:flex-col">
@@ -481,10 +471,10 @@ function Actions({
           disabled={!actif || !modifie}
           className="flex-1"
         >
-          Enregistrer
+          {t("enregistrer")}
         </Button>
         <GhostButton type="button" disabled={!actif || !modifie} onClick={onAnnuler} className="flex-1">
-          Annuler
+          {t("annuler")}
         </GhostButton>
       </div>
     </div>
@@ -506,6 +496,7 @@ function Polices({
   texte: string;
   onChange: (partiel: Partial<Config>) => void;
 }) {
+  const t = useTranslations("pro.apparence.polices");
   const [cible, setCible] = useState<"titres" | "texte">("titres");
   const [famille, setFamille] = useState<Famille | "toutes">("toutes");
 
@@ -520,8 +511,8 @@ function Polices({
   );
   const familles = FAMILLES.filter(
     (f) =>
-      f.cle === "toutes" ||
-      polices.some((p) => p.famille === f.cle && (cible === "titres" || p.texte)),
+      f === "toutes" ||
+      polices.some((p) => p.famille === f && (cible === "titres" || p.texte)),
   );
   const valeur = cible === "titres" ? titres : texte;
   const nomDe = (cle: string) => polices.find((p) => p.cle === cle)?.nom ?? cle;
@@ -530,21 +521,21 @@ function Polices({
     <Card padded={false} className="p-4 sm:p-5">
       <EnteteCarte
         icone="edit"
-        titre="Polices"
-        detail={`Titres : ${nomDe(titres)} · Texte : ${nomDe(texte)}`}
+        titre={t("titre")}
+        detail={t("resume", { titres: nomDe(titres), texte: nomDe(texte) })}
       />
 
       {/* Les accords, d'un geste : titre et texte ensemble. */}
       <div className="mt-4">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-subtle">
-          Accords suggérés
+          {t("accords")}
         </p>
         <div className="barre-discrete -mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1.5">
           {ACCORDS.map((accord) => {
             const choisi = titres === accord.titres && texte === accord.texte;
             return (
               <button
-                key={accord.nom}
+                key={accord.cle}
                 type="button"
                 onClick={() => onChange({ police_titres: accord.titres, police_texte: accord.texte })}
                 aria-pressed={choisi}
@@ -558,13 +549,13 @@ function Polices({
                   className="block truncate text-base leading-tight text-ink"
                   style={{ fontFamily: familleDe(accord.titres) }}
                 >
-                  Belle Allure
+                  {t("exempleAccord")}
                 </span>
                 <span
                   className="mt-0.5 block truncate text-[11px] text-muted"
                   style={{ fontFamily: familleDe(accord.texte) }}
                 >
-                  {accord.nom}
+                  {t(`accordsNoms.${accord.cle}`)}
                 </span>
               </button>
             );
@@ -573,7 +564,7 @@ function Polices({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label="Police à choisir" className="inline-grid grid-cols-2 rounded-xl border border-line bg-surface-muted p-1">
+        <div role="tablist" aria-label={t("aChoisir")} className="inline-grid grid-cols-2 rounded-xl border border-line bg-surface-muted p-1">
           {(["titres", "texte"] as const).map((item) => (
             <button
               key={item}
@@ -590,24 +581,24 @@ function Polices({
                 cible === item ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"
               }`}
             >
-              {item === "titres" ? "Titres" : "Texte"}
+              {item === "titres" ? t("titres") : t("texte")}
             </button>
           ))}
         </div>
         <div className="barre-discrete -mx-1 flex max-w-full gap-1.5 overflow-x-auto px-1 pb-1">
           {familles.map((f) => (
             <button
-              key={f.cle}
+              key={f}
               type="button"
-              onClick={() => setFamille(f.cle)}
-              aria-pressed={famille === f.cle}
+              onClick={() => setFamille(f)}
+              aria-pressed={famille === f}
               className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition ${
-                famille === f.cle
+                famille === f
                   ? "border-salon bg-salon text-white"
                   : "border-line text-muted hover:text-ink"
               }`}
             >
-              {f.nom}
+              {t(`familles.${f}`)}
             </button>
           ))}
         </div>
@@ -615,7 +606,7 @@ function Polices({
 
       <div
         role="radiogroup"
-        aria-label={cible === "titres" ? "Police des titres" : "Police du texte"}
+        aria-label={cible === "titres" ? t("policeTitres") : t("policeTexte")}
         className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4"
       >
         {proposees.map((police) => {
@@ -650,7 +641,7 @@ function Polices({
                 className="mt-1.5 truncate text-[12px] text-ink/80 sm:text-[13px]"
                 style={{ fontFamily: familleDe(police.cle) }}
               >
-                {cible === "titres" ? "Salon Élégance" : "Votre rendez-vous beauté"}
+                {cible === "titres" ? t("exempleTitre") : t("exempleTexte")}
               </span>
               <span className="mt-1 truncate text-[10.5px] text-subtle sm:text-[11px]">{police.nom}</span>
             </button>
@@ -659,8 +650,7 @@ function Polices({
       </div>
       {cible === "texte" && (
         <p className="mt-2 text-[11px] text-muted sm:text-xs">
-          Les polices d&apos;affiche et manuscrites sont réservées aux titres : en paragraphe,
-          elles se lisent mal sur téléphone.
+          {t("reserveesTitres")}
         </p>
       )}
     </Card>
@@ -694,6 +684,7 @@ function EditeurPage({
   onTeleverse: () => void;
   tenantId: string;
 }) {
+  const t = useTranslations("pro.apparence.page");
   const [confirmer, setConfirmer] = useState(false);
   const titre = page.titre.trim();
 
@@ -714,7 +705,7 @@ function EditeurPage({
         </span>
         <span className="min-w-0 flex-1">
           <span className={`block truncate text-sm font-medium ${titre ? "text-ink" : "text-subtle"}`}>
-            {titre || "Nouvelle page — donnez-lui un titre"}
+            {titre || t("sansTitre")}
           </span>
           <span className="block truncate font-mono text-[11px] text-subtle">/p/{slugDe(titre)}</span>
         </span>
@@ -728,7 +719,7 @@ function EditeurPage({
         <div className="space-y-3 border-t border-line p-3 sm:p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
-              label="Titre (dans le menu)"
+              label={t("titre")}
               hint={`${page.titre.length}/${longueurs.titre_page}`}
             >
               <input
@@ -736,30 +727,30 @@ function EditeurPage({
                 value={page.titre}
                 maxLength={longueurs.titre_page}
                 onChange={(event) => onChange({ titre: brut(event.target.value) })}
-                placeholder="Tarifs, Formations, Événements…"
+                placeholder={t("titreExemple")}
                 autoFocus={!page.titre}
               />
             </Field>
-            <Field label="Accroche (facultative)" hint="Une phrase en tête de page.">
+            <Field label={t("accroche")} hint={t("accrocheAide")}>
               <input
                 className={inputClass}
                 value={page.accroche}
                 maxLength={160}
                 onChange={(event) => onChange({ accroche: brut(event.target.value) })}
-                placeholder="Tout ce qu'il faut savoir avant de venir."
+                placeholder={t("accrocheExemple")}
               />
             </Field>
           </div>
           <Field
-            label="Contenu"
-            hint={`${page.contenu.length}/${longueurs.contenu_page} — une ligne vide sépare deux paragraphes.`}
+            label={t("contenu")}
+            hint={t("contenuAide", { n: page.contenu.length, max: longueurs.contenu_page })}
           >
             <textarea
               className={`${inputClass} min-h-36 resize-y leading-relaxed`}
               value={page.contenu}
               maxLength={longueurs.contenu_page}
               onChange={(event) => onChange({ contenu: brut(event.target.value) })}
-              placeholder={"Présentez ce qui compte pour vos clientes.\n\nUn paragraphe par idée."}
+              placeholder={t("contenuExemple")}
             />
           </Field>
           <MediaPicker
@@ -768,21 +759,21 @@ function EditeurPage({
             value={page.image}
             onChange={(id) => onChange({ image: id })}
             onUploaded={onTeleverse}
-            label="Image (facultative)"
-            hint="Affichée à côté du texte, au-dessus sur téléphone."
+            label={t("image")}
+            hint={t("imageAide")}
             kind="about"
           />
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-3">
             {confirmer ? (
               <>
                 <span className="mr-auto text-[12px] text-muted sm:text-sm">
-                  Retirer cette page et son entrée de menu ?
+                  {t("confirmer")}
                 </span>
                 <GhostButton type="button" onClick={() => setConfirmer(false)}>
-                  Garder
+                  {t("garder")}
                 </GhostButton>
                 <DangerButton type="button" onClick={onRetirer}>
-                  Retirer
+                  {t("retirer")}
                 </DangerButton>
               </>
             ) : (
@@ -791,7 +782,7 @@ function EditeurPage({
                 onClick={() => setConfirmer(true)}
                 icon={<Icon name="close" className="size-4" />}
               >
-                Retirer la page
+                {t("retirerPage")}
               </GhostButton>
             )}
           </div>
@@ -817,6 +808,7 @@ function Liste({
   estPage?: (cle: string) => boolean;
   onChange: (elements: Rubrique[]) => void;
 }) {
+  const t = useTranslations("pro.apparence.liste");
   function deplacer(index: number, sens: -1 | 1) {
     const cible = index + sens;
     if (cible < 0 || cible >= elements.length) return;
@@ -846,7 +838,7 @@ function Liste({
             </span>
             {estPage?.(element.cle) && (
               <span className="shrink-0 rounded-full bg-salon-soft px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-salon">
-                Page
+                {t("page")}
               </span>
             )}
             <button
@@ -858,7 +850,7 @@ function Liste({
                   ),
                 )
               }
-              aria-label={element.visible ? `Masquer ${libelle}` : `Montrer ${libelle}`}
+              aria-label={element.visible ? t("masquer", { nom: libelle }) : t("montrer", { nom: libelle })}
               aria-pressed={!element.visible}
               className={`flex size-8 shrink-0 items-center justify-center rounded-lg transition hover:bg-surface-hover ${
                 element.visible ? "text-salon" : "text-subtle"
@@ -870,7 +862,7 @@ function Liste({
               type="button"
               onClick={() => deplacer(index, -1)}
               disabled={index === 0}
-              aria-label={`Monter ${libelle}`}
+              aria-label={t("monter", { nom: libelle })}
               className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-surface-hover disabled:opacity-30"
             >
               <Icon name="chevron-left" className="size-4 rotate-90" />
@@ -879,7 +871,7 @@ function Liste({
               type="button"
               onClick={() => deplacer(index, 1)}
               disabled={index === elements.length - 1}
-              aria-label={`Descendre ${libelle}`}
+              aria-label={t("descendre", { nom: libelle })}
               className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-surface-hover disabled:opacity-30"
             >
               <Icon name="chevron-right" className="size-4 rotate-90" />
@@ -905,12 +897,13 @@ function Apercu({
   nom: string;
   nomRubrique: (cle: string) => string;
 }) {
+  const t = useTranslations("pro.apparence");
   const menu = config.menu.filter((item) => item.visible);
   const sections = config.sections.filter((item) => item.visible);
   return (
     <Card padded={false} className="overflow-hidden">
       <p className="flex items-center gap-1.5 border-b border-line px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-subtle">
-        <Icon name="eye" className="size-3.5" /> Aperçu en direct
+        <Icon name="eye" className="size-3.5" /> {t("apercu.titre")}
       </p>
       <div style={{ fontFamily: familleDe(config.police_texte) }}>
         <div className="flex items-center gap-2 border-b border-line px-3 py-2">
@@ -934,11 +927,11 @@ function Apercu({
             {nom}
           </p>
           <p className="mt-2 line-clamp-3 text-[12.5px] leading-relaxed opacity-90">
-            {config.accroche || "La description de votre salon s'affiche ici."}
+            {config.accroche || t("apercu.description")}
           </p>
           {/* Encre fixe : le bouton reste blanc dans les deux thèmes du produit. */}
           <span className="mt-3 inline-flex rounded-lg bg-white px-3 py-1.5 text-[12px] font-semibold text-[#17171c]">
-            {config.bouton_reserver || "Réserver"}
+            {config.bouton_reserver || t("apercu.reserver")}
           </span>
         </div>
         <ol className="space-y-1 px-4 py-3">
@@ -948,7 +941,7 @@ function Apercu({
                 {index + 1}
               </span>
               <span style={{ fontFamily: familleDe(config.police_titres) }} className="text-ink">
-                {NOMS_SECTIONS[section.cle] ?? section.cle}
+                {SECTIONS_CONNUES.includes(section.cle) ? t(`sections.${section.cle}`) : section.cle}
               </span>
             </li>
           ))}

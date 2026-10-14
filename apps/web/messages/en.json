@@ -2838,6 +2838,112 @@
         "USD": "US dollar",
         "EUR": "Euro"
       }
+    },
+    "apparence": {
+      "titre": "Advanced appearance",
+      "reserve": "For the salon owner and manager only.",
+      "titreRequis": "Each page needs a title (at least 2 characters).",
+      "ok": "Appearance saved: your mini-site is up to date.",
+      "echec": "Could not save.",
+      "nouvellePage": "New page",
+      "description": "Fonts, menu, pages and key texts of your mini-site. Colours and logo stay in “Identity”.",
+      "pages": {
+        "titre": "Your pages",
+        "detail": "Up to three pages of your own — prices, training, events… — added to the mini-site menu. Write them in French: the English version of the mini-site receives them translated automatically.",
+        "ajouter": "Add a page",
+        "max": "Three pages at most: remove one to create another."
+      },
+      "menuTitre": "Menu",
+      "menuDetail": "The order of the sections, and which ones are shown.",
+      "menuVide": "A section with no content (no work photos, for example) stays hidden.",
+      "accueilTitre": "Home page",
+      "accueilDetail": "The order of the sections, between the header and the final call to action.",
+      "textes": {
+        "titre": "Key texts",
+        "detail": "Plain text. The English version of the mini-site receives it translated automatically.",
+        "accroche": "Header tagline",
+        "accrocheAide": "{n}/{max} — empty: the salon description.",
+        "accrocheExemple": "Braids, treatments and hairstyles, by appointment in Brazzaville.",
+        "bouton": "Booking button",
+        "boutonAide": "{n}/{max} — empty: “Book”.",
+        "boutonExemple": "Book an appointment"
+      },
+      "nonEnregistre": "Unsaved changes",
+      "enregistrer": "Save",
+      "annuler": "Cancel",
+      "menu": {
+        "prestations": "Services",
+        "realisations": "Our work",
+        "equipe": "Team",
+        "a-propos": "About",
+        "infos": "Practical info"
+      },
+      "sections": {
+        "prestations": "Featured services",
+        "etapes": "How it works",
+        "realisations": "Our work",
+        "equipe": "The team",
+        "avis": "Client reviews",
+        "infos": "Practical info"
+      },
+      "polices": {
+        "titre": "Fonts",
+        "resume": "Titles: {titres} · Text: {texte}",
+        "accords": "Suggested pairings",
+        "exempleAccord": "Belle Allure",
+        "accordsNoms": {
+          "classique": "Classic chic",
+          "romantique": "Romantic",
+          "luxe": "Luxury",
+          "contemporain": "Contemporary",
+          "editorial": "Editorial",
+          "epure": "Minimal"
+        },
+        "aChoisir": "Font to choose",
+        "titres": "Titles",
+        "texte": "Text",
+        "familles": {
+          "toutes": "All",
+          "moderne": "Modern",
+          "elegante": "Elegant",
+          "affiche": "Display",
+          "manuscrite": "Handwritten"
+        },
+        "policeTitres": "Title font",
+        "policeTexte": "Text font",
+        "exempleTitre": "Salon Elegance",
+        "exempleTexte": "Your beauty appointment",
+        "reserveesTitres": "Display and handwritten fonts are reserved for titles: in paragraphs they're hard to read on a phone."
+      },
+      "page": {
+        "sansTitre": "New page — give it a title",
+        "titre": "Title (in the menu)",
+        "titreExemple": "Prices, Training, Events…",
+        "accroche": "Tagline (optional)",
+        "accrocheAide": "One sentence at the top of the page.",
+        "accrocheExemple": "Everything to know before you come.",
+        "contenu": "Content",
+        "contenuAide": "{n}/{max} — a blank line separates two paragraphs.",
+        "contenuExemple": "Present what matters to your clients.\n\nOne paragraph per idea.",
+        "image": "Image (optional)",
+        "imageAide": "Shown next to the text, above it on a phone.",
+        "confirmer": "Remove this page and its menu entry?",
+        "garder": "Keep",
+        "retirer": "Remove",
+        "retirerPage": "Remove the page"
+      },
+      "liste": {
+        "page": "Page",
+        "masquer": "Hide {nom}",
+        "montrer": "Show {nom}",
+        "monter": "Move {nom} up",
+        "descendre": "Move {nom} down"
+      },
+      "apercu": {
+        "titre": "Live preview",
+        "description": "Your salon description appears here.",
+        "reserver": "Book"
+      }
     }
   },
   "theme": {

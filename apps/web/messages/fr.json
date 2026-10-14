@@ -2838,6 +2838,112 @@
         "USD": "Dollar américain",
         "EUR": "Euro"
       }
+    },
+    "apparence": {
+      "titre": "Apparence avancée",
+      "reserve": "Réservé au propriétaire et à la gérante du salon.",
+      "titreRequis": "Chaque page a besoin d'un titre (2 caractères au moins).",
+      "ok": "Apparence enregistrée : votre mini-site est à jour.",
+      "echec": "Enregistrement impossible.",
+      "nouvellePage": "Nouvelle page",
+      "description": "Polices, menu, pages et textes clés de votre mini-site. Les couleurs et le logo restent dans « Identité ».",
+      "pages": {
+        "titre": "Vos pages",
+        "detail": "Jusqu'à trois pages à vous — tarifs, formations, événements… — ajoutées au menu du mini-site. Écrivez-les en français : la version anglaise du mini-site les reçoit traduites automatiquement.",
+        "ajouter": "Ajouter une page",
+        "max": "Trois pages au plus : retirez-en une pour en créer une autre."
+      },
+      "menuTitre": "Menu",
+      "menuDetail": "L'ordre des rubriques, et celles qu'on voit.",
+      "menuVide": "Une rubrique sans contenu (aucune réalisation, par exemple) reste cachée.",
+      "accueilTitre": "Accueil",
+      "accueilDetail": "L'ordre des sections, entre l'en-tête et l'appel final.",
+      "textes": {
+        "titre": "Textes clés",
+        "detail": "Du texte simple. La version anglaise du mini-site le reçoit traduit automatiquement.",
+        "accroche": "Accroche de l'en-tête",
+        "accrocheAide": "{n}/{max} — vide : la description du salon.",
+        "accrocheExemple": "Tresses, soins et coiffures, sur rendez-vous à Brazzaville.",
+        "bouton": "Bouton de réservation",
+        "boutonAide": "{n}/{max} — vide : « Réserver ».",
+        "boutonExemple": "Prendre rendez-vous"
+      },
+      "nonEnregistre": "Modifications non enregistrées",
+      "enregistrer": "Enregistrer",
+      "annuler": "Annuler",
+      "menu": {
+        "prestations": "Prestations",
+        "realisations": "Réalisations",
+        "equipe": "Équipe",
+        "a-propos": "À propos",
+        "infos": "Infos pratiques"
+      },
+      "sections": {
+        "prestations": "Prestations en vedette",
+        "etapes": "Comment ça se passe",
+        "realisations": "Réalisations",
+        "equipe": "L'équipe",
+        "avis": "Avis des clientes",
+        "infos": "Infos pratiques"
+      },
+      "polices": {
+        "titre": "Polices",
+        "resume": "Titres : {titres} · Texte : {texte}",
+        "accords": "Accords suggérés",
+        "exempleAccord": "Belle Allure",
+        "accordsNoms": {
+          "classique": "Classique chic",
+          "romantique": "Romantique",
+          "luxe": "Luxe",
+          "contemporain": "Contemporain",
+          "editorial": "Éditorial",
+          "epure": "Épuré"
+        },
+        "aChoisir": "Police à choisir",
+        "titres": "Titres",
+        "texte": "Texte",
+        "familles": {
+          "toutes": "Toutes",
+          "moderne": "Modernes",
+          "elegante": "Élégantes",
+          "affiche": "Affiche",
+          "manuscrite": "Manuscrites"
+        },
+        "policeTitres": "Police des titres",
+        "policeTexte": "Police du texte",
+        "exempleTitre": "Salon Élégance",
+        "exempleTexte": "Votre rendez-vous beauté",
+        "reserveesTitres": "Les polices d'affiche et manuscrites sont réservées aux titres : en paragraphe, elles se lisent mal sur téléphone."
+      },
+      "page": {
+        "sansTitre": "Nouvelle page — donnez-lui un titre",
+        "titre": "Titre (dans le menu)",
+        "titreExemple": "Tarifs, Formations, Événements…",
+        "accroche": "Accroche (facultative)",
+        "accrocheAide": "Une phrase en tête de page.",
+        "accrocheExemple": "Tout ce qu'il faut savoir avant de venir.",
+        "contenu": "Contenu",
+        "contenuAide": "{n}/{max} — une ligne vide sépare deux paragraphes.",
+        "contenuExemple": "Présentez ce qui compte pour vos clientes.\n\nUn paragraphe par idée.",
+        "image": "Image (facultative)",
+        "imageAide": "Affichée à côté du texte, au-dessus sur téléphone.",
+        "confirmer": "Retirer cette page et son entrée de menu ?",
+        "garder": "Garder",
+        "retirer": "Retirer",
+        "retirerPage": "Retirer la page"
+      },
+      "liste": {
+        "page": "Page",
+        "masquer": "Masquer {nom}",
+        "montrer": "Montrer {nom}",
+        "monter": "Monter {nom}",
+        "descendre": "Descendre {nom}"
+      },
+      "apercu": {
+        "titre": "Aperçu en direct",
+        "description": "La description de votre salon s'affiche ici.",
+        "reserver": "Réserver"
+      }
     }
   },
   "theme": {
