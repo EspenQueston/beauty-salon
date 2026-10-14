@@ -15,6 +15,7 @@
  * propriétaire. Le serveur vérifie les deux, et l'offre Pro, à chaque appel.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
@@ -31,9 +32,9 @@ import {
 } from "@/features/ui";
 import { TexteRiche } from "@/features/ui/TexteRiche";
 import { useToast } from "@/features/ui/Toast";
-import { dateLongue } from "./abonnement";
 import { CarteN8n, HistoriqueConversations } from "./AssistantHistorique";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 import { EnteteCarte, VerrouPro, useFonction } from "./Pro";
 import { useResource } from "./useResource";
@@ -56,13 +57,11 @@ interface Message {
   content: string;
 }
 
-const SUGGESTIONS = [
-  "Qu'est-ce qui m'attend demain ?",
-  "Combien de rendez-vous cette semaine ?",
-  "Où modifier mes horaires ?",
-];
+/** Les questions proposées, sous `pro.assistants.conversation.suggestions`. */
+const SUGGESTIONS = ["demain", "semaine", "horaires"];
 
 export function Assistants() {
+  const t = useTranslations("pro.assistants");
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const direction = membership.role === "owner" || membership.role === "manager";
@@ -73,16 +72,15 @@ export function Assistants() {
   return (
     <section>
       <PageHeader
-        title="Assistants IA"
-        description="Un assistant pour votre équipe, un pour vos clientes sur le mini-site, un sur WhatsApp. Ils renseignent ; ils ne réservent ni ne modifient rien."
+        title={t("titre")}
+        description={t("description")}
       />
 
       {ouvert === false && <VerrouPro fonction="platform_assistant" />}
       {direction && etat.data && !etat.data.ia_configuree && (
         <p className="mb-4 flex items-start gap-2 rounded-2xl border border-warning/30 bg-warning-bg p-3 text-[12.5px] leading-relaxed text-warning sm:text-sm">
           <Icon name="bolt" className="mt-0.5 size-4 shrink-0" />
-          Le service d&apos;IA n&apos;est pas encore branché sur la plateforme : les
-          assistants répondent par les coordonnées du salon en attendant.
+          {t("nonBranche")}
         </p>
       )}
 
@@ -121,6 +119,7 @@ export function Assistants() {
 // ---------------------------------------------------------------------------
 
 function Conversation({ tenantId, actif }: { tenantId: string; actif: boolean }) {
+  const t = useTranslations("pro.assistants.conversation");
   const [messages, setMessages] = useState<Message[]>([]);
   const [saisie, setSaisie] = useState("");
   const [attente, setAttente] = useState(false);
@@ -148,7 +147,7 @@ function Conversation({ tenantId, actif }: { tenantId: string; actif: boolean })
       );
       setMessages((avant) => [...avant, { role: "assistant", content: reponse.reponse }]);
     } catch (caught) {
-      setErreur(caught instanceof DashboardError ? caught.message : "L'assistant ne répond pas.");
+      setErreur(caught instanceof DashboardError ? caught.message : t("silence"));
     } finally {
       setAttente(false);
     }
@@ -166,14 +165,12 @@ function Conversation({ tenantId, actif }: { tenantId: string; actif: boolean })
           <Icon name="chat" className="size-4.5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink">Assistant de l&apos;espace pro</p>
-          <p className="truncate text-[11.5px] text-muted">
-            Il lit votre agenda des 7 prochains jours et votre catalogue.
-          </p>
+          <p className="text-sm font-semibold text-ink">{t("titre")}</p>
+          <p className="truncate text-[11.5px] text-muted">{t("lit")}</p>
         </div>
         {messages.length > 0 && (
           <GhostButton type="button" onClick={() => setMessages([])} className="!px-2.5 !py-1.5 text-xs">
-            Effacer
+            {t("effacer")}
           </GhostButton>
         )}
       </div>
@@ -184,9 +181,9 @@ function Conversation({ tenantId, actif }: { tenantId: string; actif: boolean })
             <span className="flex size-12 items-center justify-center rounded-full bg-salon-soft text-salon">
               <Icon name="sparkles" className="size-6" />
             </span>
-            <p className="mt-3 text-sm font-medium text-ink">Que voulez-vous savoir ?</p>
+            <p className="mt-3 text-sm font-medium text-ink">{t("question")}</p>
             <div className="mt-3 grid w-full max-w-sm gap-1.5">
-              {SUGGESTIONS.map((suggestion) => (
+              {SUGGESTIONS.map((cle) => t(`suggestions.${cle}`)).map((suggestion) => (
                 <button
                   key={suggestion}
                   type="button"
@@ -228,7 +225,7 @@ function Conversation({ tenantId, actif }: { tenantId: string; actif: boolean })
                 />
               ))}
             </span>
-            L&apos;assistant écrit…
+            {t("ecrit")}
           </p>
         )}
         {erreur && <ErrorState>{erreur}</ErrorState>}
@@ -247,14 +244,14 @@ function Conversation({ tenantId, actif }: { tenantId: string; actif: boolean })
           disabled={!actif}
           rows={1}
           maxLength={1000}
-          placeholder={actif ? "Votre question…" : "Réservé à l'offre Pro"}
-          aria-label="Votre question"
+          placeholder={actif ? t("placeholder") : t("reservePro")}
+          aria-label={t("aria")}
           className="max-h-28 min-h-10 flex-1 resize-none rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-subtle focus:border-salon disabled:opacity-60"
         />
         <Button
           type="submit"
           disabled={!actif || !saisie.trim() || attente}
-          aria-label="Envoyer"
+          aria-label={t("envoyer")}
           className="!size-10 !p-0"
           icon={<Icon name="send" className="size-4" />}
         />
@@ -276,6 +273,7 @@ function Clientes({
   tenantId: string;
   onChange: () => void;
 }) {
+  const t = useTranslations("pro.assistants.clientes");
   const toast = useToast();
   const [envoi, setEnvoi] = useState(false);
   const ouvert = etat.fonctions.clientes;
@@ -288,10 +286,10 @@ function Clientes({
         { method: "PATCH", body: JSON.stringify({ clientes_actif: valeur }) },
         tenantId,
       );
-      toast.success(valeur ? "Assistant activé sur votre mini-site." : "Assistant retiré du mini-site.");
+      toast.success(valeur ? t("active") : t("retire"));
       onChange();
     } catch (caught) {
-      toast.error(caught instanceof DashboardError ? caught.message : "Changement impossible.");
+      toast.error(caught instanceof DashboardError ? caught.message : t("changementImpossible"));
     } finally {
       setEnvoi(false);
     }
@@ -301,13 +299,13 @@ function Clientes({
     <Card padded={false} className="p-4">
       <EnteteCarte
         icone="globe"
-        titre="Sur le mini-site"
-        detail="Une IA répond jour et nuit aux questions des clientes — ce n'est pas une personne. En cas de panne, elle donne vos coordonnées."
+        titre={t("titre")}
+        detail={t("detail")}
         statut={
           ouvert && etat.clientes_actif ? (
-            <Badge tone="success">En ligne</Badge>
+            <Badge tone="success">{t("enLigne")}</Badge>
           ) : (
-            <Badge tone="neutral">Hors ligne</Badge>
+            <Badge tone="neutral">{t("horsLigne")}</Badge>
           )
         }
       />
@@ -315,8 +313,8 @@ function Clientes({
         <Toggle
           checked={ouvert && etat.clientes_actif}
           onChange={basculer}
-          label="Afficher l'assistant"
-          hint={ouvert ? "Une bulle en bas à gauche du mini-site." : "Offre Pro."}
+          label={t("afficher")}
+          hint={ouvert ? t("bulle") : t("offrePro")}
         />
       </div>
     </Card>
@@ -327,11 +325,12 @@ function Clientes({
 // WhatsApp
 // ---------------------------------------------------------------------------
 
-const STATUTS: Record<Etat["whatsapp"]["statut"], { texte: string; ton: "success" | "warning" | "neutral" | "danger" }> = {
-  aucun: { texte: "Non relié", ton: "neutral" },
-  en_attente: { texte: "En attente du scan", ton: "warning" },
-  connecte: { texte: "Relié", ton: "success" },
-  deconnecte: { texte: "Déconnecté", ton: "danger" },
+/** Le ton de chaque état ; libellés sous `pro.assistants.whatsapp.statuts`. */
+const STATUTS: Record<Etat["whatsapp"]["statut"], "success" | "warning" | "neutral" | "danger"> = {
+  aucun: "neutral",
+  en_attente: "warning",
+  connecte: "success",
+  deconnecte: "danger",
 };
 
 function WhatsApp({
@@ -345,13 +344,15 @@ function WhatsApp({
   proprietaire: boolean;
   onChange: () => void;
 }) {
+  const t = useTranslations("pro.assistants.whatsapp");
+  const { dateLongue } = useFormats();
   const toast = useToast();
   const ouvert = useFonction("whatsapp_assistant") ?? etat.fonctions.whatsapp;
   const [qr, setQr] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const { whatsapp } = etat;
-  const statut = STATUTS[whatsapp.statut] ?? STATUTS.aucun;
+  const cleStatut = whatsapp.statut in STATUTS ? whatsapp.statut : "aucun";
 
   // Tant qu'on attend le scan, on relit l'état : le QR se renouvelle, et
   // la connexion apparaît d'elle-même.
@@ -388,7 +389,7 @@ function WhatsApp({
       toast.success(succes);
       onChange();
     } catch (caught) {
-      setErreur(caught instanceof DashboardError ? caught.message : "Opération impossible.");
+      setErreur(caught instanceof DashboardError ? caught.message : t("operationImpossible"));
     } finally {
       setEnvoi(false);
     }
@@ -401,10 +402,10 @@ function WhatsApp({
         { method: "PATCH", body: JSON.stringify({ whatsapp_actif: valeur }) },
         tenantId,
       );
-      toast.success(valeur ? "L'assistant répond sur WhatsApp." : "L'assistant ne répond plus sur WhatsApp.");
+      toast.success(valeur ? t("repond") : t("neRepondPlus"));
       onChange();
     } catch (caught) {
-      toast.error(caught instanceof DashboardError ? caught.message : "Changement impossible.");
+      toast.error(caught instanceof DashboardError ? caught.message : t("changementImpossible"));
     }
   }
 
@@ -412,19 +413,18 @@ function WhatsApp({
     <Card padded={false} className="p-4">
       <EnteteCarte
         icone="phone"
-        titre="Sur WhatsApp"
-        detail="Répond aux messages reçus sur le numéro du salon, 20 réponses par heure et par contact au plus."
-        statut={<Badge tone={statut.ton}>{statut.texte}</Badge>}
+        titre={t("titre")}
+        detail={t("detail")}
+        statut={<Badge tone={STATUTS[cleStatut]}>{t(`statuts.${cleStatut}`)}</Badge>}
       />
 
       {!whatsapp.configuree ? (
         <p className="mt-3 rounded-xl bg-surface-muted px-3 py-2 text-[12px] leading-relaxed text-muted">
-          La passerelle WhatsApp n&apos;est pas encore configurée sur la plateforme.
-          L&apos;équipe Beauty Salon vous prévient dès qu&apos;elle l&apos;est.
+          {t("nonConfiguree")}
         </p>
       ) : !proprietaire ? (
         <p className="mt-3 text-[12px] text-muted">
-          Le propriétaire du salon relie le numéro WhatsApp.
+          {t("proprietaire")}
         </p>
       ) : (
         <div className="mt-3 space-y-3">
@@ -434,7 +434,7 @@ function WhatsApp({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={qr}
-                  alt="QR code à scanner avec WhatsApp"
+                  alt={t("qr")}
                   className="aspect-square w-full rounded-xl border border-line bg-white p-1.5"
                 />
               ) : (
@@ -443,9 +443,9 @@ function WhatsApp({
                 </div>
               )}
               <ol className="list-decimal space-y-1 pl-4 text-[12px] leading-relaxed text-muted">
-                <li>Ouvrez WhatsApp sur le téléphone du salon.</li>
-                <li>Réglages → Appareils connectés → Connecter un appareil.</li>
-                <li>Scannez ce code. Il se renouvelle tout seul.</li>
+                <li>{t("etape1")}</li>
+                <li>{t("etape2")}</li>
+                <li>{t("etape3")}</li>
               </ol>
             </div>
           )}
@@ -453,16 +453,16 @@ function WhatsApp({
           {whatsapp.statut === "connecte" && (
             <>
               <p className="text-[12px] text-muted">
-                {whatsapp.numero ? `Numéro ${whatsapp.numero}. ` : ""}
+                {whatsapp.numero ? `${t("numero", { numero: whatsapp.numero })} ` : ""}
                 {whatsapp.derniere_activite
-                  ? `Dernière activité le ${dateLongue.format(new Date(whatsapp.derniere_activite))}.`
-                  : "Aucun message traité pour l'instant."}
+                  ? t("derniereActivite", { date: dateLongue.format(new Date(whatsapp.derniere_activite)) })
+                  : t("aucunMessage")}
               </p>
               <Toggle
                 checked={whatsapp.actif}
                 onChange={basculer}
-                label="Répondre automatiquement"
-                hint="Coupez-le à tout moment pour répondre vous-même."
+                label={t("repondreAuto")}
+                hint={t("repondreAutoAide")}
               />
             </>
           )}
@@ -475,27 +475,25 @@ function WhatsApp({
                 type="button"
                 pending={envoi}
                 disabled={!ouvert}
-                onClick={() => appeler("POST", "Scannez le QR code avec le téléphone du salon.")}
+                onClick={() => appeler("POST", t("scannez"))}
                 className="w-full"
               >
-                Relier mon WhatsApp
+                {t("relier")}
               </Button>
             )}
             {whatsapp.statut !== "aucun" && (
               <DangerButton
                 type="button"
                 pending={envoi}
-                onClick={() => appeler("DELETE", "WhatsApp déconnecté.")}
+                onClick={() => appeler("DELETE", t("deconnecteOk"))}
                 className="w-full"
               >
-                Déconnecter
+                {t("deconnecter")}
               </DangerButton>
             )}
           </div>
           <p className="text-[10.5px] leading-snug text-subtle">
-            La liaison passe par WhatsApp Web, comme un ordinateur connecté : ce
-            n&apos;est pas l&apos;API officielle de Meta, et un usage jugé abusif peut
-            faire limiter le numéro.
+            {t("avertissement")}
           </p>
         </div>
       )}

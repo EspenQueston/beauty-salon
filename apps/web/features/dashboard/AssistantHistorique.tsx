@@ -24,6 +24,7 @@
  * recharger.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
@@ -40,7 +41,7 @@ import {
 import { TexteRiche } from "@/features/ui/TexteRiche";
 import { useToast } from "@/features/ui/Toast";
 
-import { dateLongue } from "./abonnement";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 import { EnteteCarte, useFonction } from "./Pro";
 import { useResource } from "./useResource";
@@ -96,6 +97,8 @@ export function CarteN8n({
   tenantId: string;
   proprietaire: boolean;
 }) {
+  const t = useTranslations("pro.assistants.n8n");
+  const { dateLongue } = useFormats();
   const toast = useToast();
   const ouvert = useFonction("whatsapp_assistant");
   const etat = useResource<EtatN8n>("/api/v1/assistant/n8n", tenantId, {
@@ -120,10 +123,10 @@ export function CarteN8n({
         tenantId,
       );
       setNumero(null);
-      toast.success("Numéro enregistré.");
+      toast.success(t("numeroOk"));
       etat.reload();
     } catch (caught) {
-      setErreur(caught instanceof DashboardError ? caught.message : "Numéro refusé.");
+      setErreur(caught instanceof DashboardError ? caught.message : t("numeroRefuse"));
     } finally {
       setEnvoi(null);
     }
@@ -133,7 +136,7 @@ export function CarteN8n({
     if (
       etat.data?.relie &&
       !window.confirm(
-        "Régénérer l'adresse ? L'ancienne cessera de fonctionner : pensez à mettre à jour n8n.",
+        t("confirmerRegenerer"),
       )
     ) {
       return;
@@ -149,35 +152,35 @@ export function CarteN8n({
       setAdresse(reponse.adresse ?? "");
       etat.reload();
     } catch (caught) {
-      setErreur(caught instanceof DashboardError ? caught.message : "Opération impossible.");
+      setErreur(caught instanceof DashboardError ? caught.message : t("operationImpossible"));
     } finally {
       setEnvoi(null);
     }
   }
 
   async function retirer() {
-    if (!window.confirm("Débrancher n8n ? Les messages déjà reçus restent dans l'historique.")) {
+    if (!window.confirm(t("confirmerDebrancher"))) {
       return;
     }
     setEnvoi("retrait");
     try {
       await dashboardFetch("/api/v1/assistant/n8n", { method: "DELETE" }, tenantId);
       setAdresse("");
-      toast.success("n8n débranché.");
+      toast.success(t("debranche"));
       etat.reload();
     } catch (caught) {
-      toast.error(caught instanceof DashboardError ? caught.message : "Opération impossible.");
+      toast.error(caught instanceof DashboardError ? caught.message : t("operationImpossible"));
     } finally {
       setEnvoi(null);
     }
   }
 
-  async function copier(texte: string, quoi: string) {
+  async function copier(texte: string, succes: string) {
     try {
       await navigator.clipboard.writeText(texte);
-      toast.success(`${quoi} copié.`);
+      toast.success(succes);
     } catch {
-      toast.error("Copie impossible : sélectionnez le texte à la main.");
+      toast.error(t("copieImpossible"));
     }
   }
 
@@ -187,16 +190,20 @@ export function CarteN8n({
     <Card padded={false} className="p-4">
       <EnteteCarte
         icone="bolt"
-        titre="Avec n8n"
-        detail="Votre automatisation WhatsApp sur n8n envoie chaque message ici : vous suivez les échanges dans l'historique, plus bas."
+        titre={t("titre")}
+        detail={t("detail")}
         statut={
-          relie ? <Badge tone="success">Relié</Badge> : <Badge tone="neutral">Non relié</Badge>
+          relie ? (
+            <Badge tone="success">{t("relie")}</Badge>
+          ) : (
+            <Badge tone="neutral">{t("nonRelie")}</Badge>
+          )
         }
       />
 
       {ouvert === false ? (
         <p className="mt-3 rounded-xl bg-surface-muted px-3 py-2 text-[12px] leading-relaxed text-muted">
-          Fonction de l&apos;offre Pro.
+          {t("offrePro")}
         </p>
       ) : !etat.data ? (
         etat.error ? (
@@ -212,7 +219,7 @@ export function CarteN8n({
         <div className="mt-3 space-y-3">
           <form onSubmit={enregistrerNumero} className="space-y-1.5">
             <label htmlFor="n8n-numero" className="block text-[12.5px] font-medium text-ink">
-              Numéro WhatsApp de l&apos;assistant
+              {t("numero")}
             </label>
             <div className="flex gap-2">
               <input
@@ -231,18 +238,18 @@ export function CarteN8n({
                 disabled={!modifie}
                 className="shrink-0"
               >
-                Enregistrer
+                {t("enregistrer")}
               </GhostButton>
             </div>
             <p className="text-[11px] leading-snug text-subtle">
-              Celui que vos clientes écrivent. Il s&apos;affiche dans l&apos;historique.
+              {t("numeroAide")}
             </p>
           </form>
 
           {adresse && (
             <div className="rounded-xl border border-success/30 bg-success-bg p-3">
               <p className="text-[12px] font-semibold text-success">
-                Copiez cette adresse maintenant : elle ne sera plus affichée.
+                {t("copiezMaintenant")}
               </p>
               <div className="mt-2 flex items-start gap-2">
                 <code className="min-w-0 flex-1 break-all rounded-lg bg-surface px-2 py-1.5 font-mono text-[11px] leading-snug text-ink">
@@ -250,8 +257,8 @@ export function CarteN8n({
                 </code>
                 <button
                   type="button"
-                  aria-label="Copier l'adresse du webhook"
-                  onClick={() => void copier(adresse, "Adresse")}
+                  aria-label={t("copierAdresse")}
+                  onClick={() => void copier(adresse, t("adresseCopiee"))}
                   className="shrink-0 rounded-lg border border-line bg-surface p-2 text-muted transition hover:text-ink"
                 >
                   <Icon name="copy" className="size-4" />
@@ -263,8 +270,11 @@ export function CarteN8n({
           {relie && (
             <p className="text-[12px] text-muted">
               {etat.data.derniere_reception
-                ? `Dernier message reçu le ${dateLongue.format(new Date(etat.data.derniere_reception))} · ${etat.data.messages} au total.`
-                : "Adresse prête : en attente du premier message de n8n."}
+                ? t("dernierMessage", {
+                    date: dateLongue.format(new Date(etat.data.derniere_reception)),
+                    n: etat.data.messages,
+                  })
+                : t("enAttente")}
             </p>
           )}
 
@@ -279,7 +289,7 @@ export function CarteN8n({
                 icon={<Icon name="bolt" className="size-4" />}
                 className={relie ? "" : "sm:col-span-2 lg:col-span-1 xl:col-span-2"}
               >
-                {relie ? "Régénérer l'adresse" : "Créer l'adresse du webhook"}
+                {relie ? t("regenerer") : t("creer")}
               </Button>
               {relie && (
                 <DangerButton
@@ -287,19 +297,19 @@ export function CarteN8n({
                   pending={envoi === "retrait"}
                   onClick={() => void retirer()}
                 >
-                  Débrancher
+                  {t("debrancher")}
                 </DangerButton>
               )}
             </div>
           ) : (
             <p className="text-[12px] text-muted">
-              Le propriétaire du salon crée l&apos;adresse du webhook.
+              {t("proprietaire")}
             </p>
           )}
 
           <details className="group rounded-xl border border-line">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-[12.5px] font-medium text-ink">
-              Dans n8n : nœud « HTTP Request »
+              {t("dansN8n")}
               <Icon
                 name="chevron-right"
                 className="size-4 text-muted transition group-open:rotate-90"
@@ -307,9 +317,10 @@ export function CarteN8n({
             </summary>
             <div className="space-y-2 border-t border-line px-3 py-3 text-[11.5px] leading-relaxed text-muted">
               <p>
-                Méthode <strong className="text-ink">POST</strong>, corps{" "}
-                <strong className="text-ink">JSON</strong>, vers l&apos;adresse ci-dessus.
-                Un message par appel — ou <code>{`{"messages": [...]}`}</code>, 50 au plus.
+                {t.rich("methode", {
+                  gras: (texte) => <strong className="text-ink">{texte}</strong>,
+                  code: (texte) => <code>{texte}</code>,
+                })}
               </p>
               <div className="relative">
                 <pre className="overflow-x-auto rounded-lg bg-surface-muted p-2.5 font-mono text-[10.5px] leading-snug text-ink">
@@ -317,18 +328,14 @@ export function CarteN8n({
                 </pre>
                 <button
                   type="button"
-                  aria-label="Copier l'exemple"
-                  onClick={() => void copier(EXEMPLE, "Exemple")}
+                  aria-label={t("copierExemple")}
+                  onClick={() => void copier(EXEMPLE, t("exempleCopie"))}
                   className="absolute right-1.5 top-1.5 rounded-md bg-surface p-1 text-muted transition hover:text-ink"
                 >
                   <Icon name="copy" className="size-3.5" />
                 </button>
               </div>
-              <p>
-                <code>direction</code> : <code>entrant</code> (la cliente) ou{" "}
-                <code>sortant</code> (l&apos;assistant). <code>id</code> évite les
-                doublons si n8n renvoie un message.
-              </p>
+              <p>{t.rich("champs", { code: (texte) => <code>{texte}</code> })}</p>
             </div>
           </details>
         </div>
@@ -341,26 +348,31 @@ export function CarteN8n({
 // L'historique
 // ---------------------------------------------------------------------------
 
-const CANAUX = [
-  { valeur: "", libelle: "Tous" },
-  { valeur: "whatsapp", libelle: "WhatsApp" },
-  { valeur: "n8n", libelle: "n8n" },
-] as const;
+const CANAUX = ["", "whatsapp", "n8n"] as const;
 
-const heure = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
-const jourCourt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
-const jourLong = new Intl.DateTimeFormat("fr-FR", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-});
-
-function quand(iso: string): string {
-  const date = new Date(iso);
-  const aujourdhui = new Date();
-  return date.toDateString() === aujourdhui.toDateString()
-    ? heure.format(date)
-    : jourCourt.format(date);
+/** Les heures et les jours du fil, dans la langue de l'espace. */
+function useFormatsFil() {
+  const { region } = useFormats();
+  return useMemo(() => {
+    const heure = new Intl.DateTimeFormat(region, { hour: "2-digit", minute: "2-digit" });
+    const jourCourt = new Intl.DateTimeFormat(region, { day: "numeric", month: "short" });
+    const jourLong = new Intl.DateTimeFormat(region, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    return {
+      heure,
+      jourLong,
+      quand(iso: string): string {
+        const date = new Date(iso);
+        const aujourdhui = new Date();
+        return date.toDateString() === aujourdhui.toDateString()
+          ? heure.format(date)
+          : jourCourt.format(date);
+      },
+    };
+  }, [region]);
 }
 
 /** Relit `charger` à intervalles, seulement quand l'onglet est visible. */
@@ -379,6 +391,8 @@ function useRelecture(charger: () => void, intervalle: number, actif: boolean) {
 }
 
 export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
+  const t = useTranslations("pro.assistants.historique");
+  const { quand } = useFormatsFil();
   const ouvert = useFonction("whatsapp_assistant");
   const [canal, setCanal] = useState<"" | "whatsapp" | "n8n">("");
   const [saisie, setSaisie] = useState("");
@@ -408,31 +422,29 @@ export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 id="historique-titre" className="text-base font-semibold text-ink sm:text-lg">
-            Historique des conversations
+            {t("titre")}
           </h2>
-          <p className="text-[12.5px] text-muted sm:text-sm">
-            Les échanges entre l&apos;assistant et vos clientes, sur WhatsApp et via n8n.
-          </p>
+          <p className="text-[12.5px] text-muted sm:text-sm">{t("description")}</p>
         </div>
         {ouvert !== false && (
           <div
             role="radiogroup"
-            aria-label="Canal"
+            aria-label={t("canal")}
             className="inline-flex rounded-xl border border-line bg-surface p-0.5"
           >
             {CANAUX.map((option) => (
               <button
-                key={option.valeur}
+                key={option}
                 type="button"
                 role="radio"
-                aria-checked={canal === option.valeur}
+                aria-checked={canal === option}
                 onClick={() => {
-                  setCanal(option.valeur);
+                  setCanal(option);
                   setChoisi(null);
                 }}
                 className="rounded-lg px-3 py-1.5 text-[12px] font-medium text-muted transition aria-checked:bg-salon aria-checked:text-white"
               >
-                {option.libelle}
+                {option === "" ? t("tous") : option === "whatsapp" ? "WhatsApp" : "n8n"}
               </button>
             ))}
           </div>
@@ -441,7 +453,7 @@ export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
 
       {ouvert === false ? (
         <Card className="text-sm text-muted">
-          L&apos;historique des conversations fait partie de l&apos;offre Pro.
+          {t("offrePro")}
         </Card>
       ) : (
         <Card
@@ -456,7 +468,7 @@ export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
           >
             <div className="border-b border-line p-2.5">
               <label className="relative block">
-                <span className="sr-only">Rechercher un contact</span>
+                <span className="sr-only">{t("rechercher")}</span>
                 <Icon
                   name="search"
                   className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-subtle"
@@ -465,7 +477,7 @@ export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
                   type="search"
                   value={saisie}
                   onChange={(evenement) => setSaisie(evenement.target.value)}
-                  placeholder="Nom ou numéro"
+                  placeholder={t("rechercheExemple")}
                   className={`${inputClass} py-2 pl-8`}
                 />
               </label>
@@ -486,9 +498,7 @@ export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
                     <Icon name="chat" className="size-5" />
                   </span>
                   <p className="text-[12.5px] leading-relaxed text-muted">
-                    {recherche || canal
-                      ? "Aucune conversation ne correspond."
-                      : "Aucune conversation pour l'instant. Elles apparaissent dès que l'assistant répond sur WhatsApp ou que n8n envoie un message."}
+                    {recherche || canal ? t("aucuneCorrespond") : t("aucune")}
                   </p>
                 </div>
               ) : (
@@ -540,7 +550,7 @@ export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 p-8 text-center">
                 <Icon name="chat" className="size-6 text-subtle" />
-                <p className="text-[13px] text-muted">Choisissez une conversation.</p>
+                <p className="text-[13px] text-muted">{t("choisissez")}</p>
               </div>
             )}
           </div>
@@ -571,6 +581,8 @@ function FilDeDiscussion({
   tenantId: string;
   onRetour: () => void;
 }) {
+  const t = useTranslations("pro.assistants.historique");
+  const { heure, jourLong } = useFormatsFil();
   const fil = useResource<FilOuvert>(`/api/v1/assistant/conversations/${id}`, tenantId);
   useRelecture(fil.reload, 10_000, true);
   const bas = useRef<HTMLDivElement>(null);
@@ -591,7 +603,7 @@ function FilDeDiscussion({
       else groupes.push({ jour, messages: [message] });
     }
     return groupes;
-  }, [fil.data]);
+  }, [fil.data, jourLong]);
 
   return (
     <>
@@ -599,7 +611,7 @@ function FilDeDiscussion({
         <button
           type="button"
           onClick={onRetour}
-          aria-label="Retour aux conversations"
+          aria-label={t("retour")}
           className="-ml-1 rounded-lg p-1.5 text-muted transition hover:bg-surface-hover hover:text-ink md:hidden"
         >
           <Icon name="chevron-left" className="size-5" />
@@ -612,7 +624,7 @@ function FilDeDiscussion({
           {fil.data && (
             <p className="truncate text-[11.5px] text-muted">
               {fil.data.nom ? `${fil.data.contact} · ` : ""}
-              {fil.data.canal === "n8n" ? "via n8n" : "WhatsApp (plateforme)"}
+              {fil.data.canal === "n8n" ? t("viaN8n") : t("viaPlateforme")}
             </p>
           )}
         </div>
@@ -624,7 +636,7 @@ function FilDeDiscussion({
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-medium text-ink transition hover:bg-surface-hover"
           >
             <Icon name="external" className="size-3.5" />
-            <span className="hidden sm:inline">Répondre</span>
+            <span className="hidden sm:inline">{t("repondre")}</span>
           </a>
         )}
       </div>
@@ -659,7 +671,7 @@ function FilDeDiscussion({
                       >
                         {sortant && (
                           <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wide text-white/75">
-                            Assistant
+                            {t("assistant")}
                           </span>
                         )}
                         <TexteRiche
