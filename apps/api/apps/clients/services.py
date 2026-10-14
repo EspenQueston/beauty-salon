@@ -376,7 +376,7 @@ def demander_nouveau_mot_de_passe(email: str, tenant, langue: str = "fr") -> Non
         logger.info("Mot de passe oublie : adresse inconnue.")
         return
     if not hasattr(user, "client_profile"):
-        request_password_reset(user.email)
+        request_password_reset(user.email, langue if langue in ("fr", "en") else None)
         return
 
     langue = langue if langue in ("fr", "en") else "fr"

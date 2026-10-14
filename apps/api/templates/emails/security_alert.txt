@@ -1,9 +1,9 @@
-{% autoescape off %}Bonjour{% if nom %} {{ nom }}{% endif %},
+{% autoescape off %}{{ salutation }}
 
 {{ intro }}
 
 {{ aide }}
 {{ reset_url }}
 
-L'équipe Beauty Salon
+{{ t.pro_signature }}
 {% endautoescape %}

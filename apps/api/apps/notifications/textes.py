@@ -34,6 +34,8 @@ LANGUE_PAR_DEFAUT = "fr"
 FR: dict[str, str] = {
     # --- vocabulaire commun -------------------------------------------------
     "bonjour": "Bonjour {prenom},",
+    # Apres une etiquette, dans les versions texte : « Date : », « Date: ».
+    "deux_points": " :",
     "a_bientot": "À bientôt,",
     "pied_cliente": (
         "Vous recevez ce message parce que vous avez pris rendez-vous chez {salon}."
@@ -188,6 +190,7 @@ FR: dict[str, str] = {
 
 EN: dict[str, str] = {
     "bonjour": "Hello {prenom},",
+    "deux_points": ":",
     "a_bientot": "See you soon,",
     "pied_cliente": (
         "You are receiving this message because you booked an appointment at {salon}."
@@ -319,6 +322,14 @@ EN: dict[str, str] = {
     "pre_avis": "Your review of {service} in two minutes",
     "cliente": "Client",
 }
+
+# Les e-mails aux professionnels : leurs phrases vivent a part, pour qu'on
+# les relise ensemble, mais rejoignent le meme catalogue.
+from .textes_pro import EN_PRO, FR_PRO  # noqa: E402
+
+assert not (set(FR_PRO) & set(FR)), "Une cle pro recouvre une cle cliente."
+FR.update(FR_PRO)
+EN.update(EN_PRO)
 
 CATALOGUES: dict[str, dict[str, str]] = {"fr": FR, "en": EN}
 

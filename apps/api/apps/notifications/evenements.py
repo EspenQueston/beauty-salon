@@ -327,6 +327,7 @@ def abonnement_decide(demande) -> None:
     motif, tel que l'administrateur l'a ecrit — c'est ce qui lui permet de
     corriger et de renvoyer.
     """
+    from apps.billing.courriers import nom_offre
     from apps.notifications.tasks import _money, _tenant_timezone
 
     if demande.status == demande.Status.APPROVED and demande.period_end:
@@ -341,7 +342,7 @@ def abonnement_decide(demande) -> None:
         )
         corps = _texte(
             "abonnement.verifie",
-            formule=demande.plan.name,
+            formule=lambda langue: nom_offre(demande.plan, langue),
             montant=_money(demande.amount, demande.currency),
         )
     else:

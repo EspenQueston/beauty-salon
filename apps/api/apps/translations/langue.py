@@ -65,3 +65,39 @@ def normaliser(valeur) -> str:
     """« en-GB », « EN », None : une langue servie, ou le francais."""
     racine = (valeur or "").strip().lower()[:2]
     return racine if racine in LANGUES else LANGUE_SOURCE
+
+
+def prefixe(langue) -> str:
+    """Le debut de chemin d'une langue sur le site : rien pour le francais,
+    « /en » pour l'anglais — la meme regle que les adresses du site."""
+    langue = normaliser(langue)
+    return "" if langue == LANGUE_SOURCE else f"/{langue}"
+
+
+def adresse_app(chemin: str, langue) -> str:
+    """Un lien vers l'espace pro, qui s'ouvre dans la langue du destinataire.
+
+    Sans le prefixe, la page s'ouvrirait selon le cookie ou le navigateur de
+    l'appareil : un lien d'e-mail anglais ouvert sur un telephone regle en
+    francais montrerait une page francaise.
+    """
+    from django.conf import settings
+
+    return f"{settings.APP_BASE_URL.rstrip('/')}{prefixe(langue)}{chemin}"
+
+
+def par_langue(lignes) -> dict[str, list]:
+    """Regroupe des paires (valeur, langue du compte) par langue.
+
+    Sert a ecrire une fois par langue a un groupe de destinataires : la
+    proprietaire en francais, la gerante en anglais. Les valeurs vides (un
+    compte sans adresse) sont ecartees, les doublons aussi.
+    """
+    groupes: dict[str, list] = {}
+    for valeur, locale in lignes:
+        if not valeur:
+            continue
+        groupe = groupes.setdefault(normaliser(locale), [])
+        if valeur not in groupe:
+            groupe.append(valeur)
+    return groupes

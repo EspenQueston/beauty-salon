@@ -17,7 +17,6 @@ from __future__ import annotations
 import logging
 
 from celery import shared_task
-from django.conf import settings
 
 from . import securite
 
@@ -25,14 +24,15 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(ignore_result=True)
-def reinitialisation(email: str) -> None:
-    """« Mot de passe oublie » de l'espace professionnel."""
+def reinitialisation(email: str, langue: str = "") -> None:
+    """« Mot de passe oublie » de l'espace professionnel, dans la langue de
+    la page ou il a ete demande."""
     from .services import request_password_reset
 
     if not securite.envoi_autorise("reinitialisation", email):
         logger.info("Reinitialisation : envoi freine pour cette adresse.")
         return
-    request_password_reset(email)
+    request_password_reset(email, langue or None)
 
 
 @shared_task(ignore_result=True)
@@ -51,15 +51,21 @@ def reinitialisation_cliente(email: str, tenant_id: str, langue: str = "fr") -> 
 
 
 @shared_task(ignore_result=True)
-def verification(user_id: str, base: str = "", langue: str = "fr") -> None:
-    """Le lien de verification d'adresse, a l'adresse actuelle du compte."""
+def verification(user_id: str, base: str = "", langue: str = "") -> None:
+    """Le lien de verification d'adresse, a l'adresse actuelle du compte.
+
+    Sans langue precisee — a l'inscription, apres un changement d'adresse —
+    c'est celle retenue sur le compte.
+    """
+    from apps.translations.langue import du_compte
+
     from . import verification as verif
     from .models import User
 
     user = User.objects.filter(pk=user_id, is_active=True).first()
     if user is None or user.email_verified_at is not None:
         return
-    verif.envoyer(user, base=base, langue=langue)
+    verif.envoyer(user, base=base, langue=langue or du_compte(user))
 
 
 def base_cliente(user, langue: str = "fr") -> str:
@@ -75,49 +81,36 @@ def base_cliente(user, langue: str = "fr") -> str:
 
 @shared_task(ignore_result=True)
 def alerte_securite(
-    email: str, genre: str, *, nom: str = "", nouvelle_adresse: str = ""
+    email: str, genre: str, *, nom: str = "", nouvelle_adresse: str = "", langue: str = "fr"
 ) -> None:
     """Prevenir le titulaire d'un changement sensible sur son compte.
 
     Jamais le mot de passe lui-meme, jamais un lien de connexion : seulement
     ce qui a change, quand, et quoi faire si ce n'etait pas lui.
+
+    `langue` : celle retenue sur le compte, passee par l'appelant — pour un
+    changement d'adresse, le message part a l'ancienne, qu'aucun compte ne
+    porte plus.
     """
     from apps.notifications.email import send_email
+    from apps.notifications.textes import textes
+    from apps.translations.langue import adresse_app, normaliser
 
-    contenus = {
-        "mot_de_passe": (
-            "Votre mot de passe Beauty Salon a été modifié",
-            "Le mot de passe de votre compte vient d'être modifié. Toutes les autres "
-            "sessions ouvertes ont été fermées.",
-        ),
-        "mfa_active": (
-            "Double authentification activée sur votre compte Beauty Salon",
-            "La double authentification vient d'être activée : un code de votre application "
-            "sera demandé à chaque connexion. Gardez vos codes de secours en lieu sûr.",
-        ),
-        "mfa_desactive": (
-            "Double authentification désactivée sur votre compte Beauty Salon",
-            "La double authentification vient d'être désactivée : votre mot de passe suffit "
-            "de nouveau pour vous connecter.",
-        ),
-        "adresse": (
-            "L'adresse e-mail de votre compte Beauty Salon a changé",
-            f"L'adresse de connexion de votre compte a été remplacée par "
-            f"{nouvelle_adresse}. Ce message est envoyé à l'ancienne adresse.",
-        ),
-    }
-    sujet, texte = contenus[genre]
+    langue = normaliser(langue)
+    t = textes(langue)
+    if genre not in ("mot_de_passe", "mfa_active", "mfa_desactive", "adresse"):
+        raise KeyError(genre)
     send_email(
-        subject=sujet,
+        subject=t[f"secu_{genre}_objet"],
         template="security_alert",
         context={
+            "t": t,
+            "langue": langue,
             "nom": nom,
-            "intro": texte,
-            "aide": (
-                "Ce n'était pas vous ? Choisissez tout de suite un nouveau mot de passe "
-                "depuis « Mot de passe oublié », puis écrivez-nous en répondant à ce message."
-            ),
-            "reset_url": f"{settings.APP_BASE_URL}/mot-de-passe-oublie",
+            "salutation": t.dire("bonjour", prenom=nom) if nom else t["pro_bonjour"],
+            "intro": t.dire(f"secu_{genre}", adresse=nouvelle_adresse),
+            "aide": t["secu_aide"],
+            "reset_url": adresse_app("/mot-de-passe-oublie", langue),
         },
         to=[email],
     )

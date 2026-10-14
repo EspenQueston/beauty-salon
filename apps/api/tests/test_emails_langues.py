@@ -127,7 +127,7 @@ def test_une_reservation_en_anglais_produit_un_e_mail_en_anglais(
     tenant_a, salon_a, monkeypatch
 ):
     """Le chemin réel : la tâche Celery, pas un contexte recopié."""
-    monkeypatch.setattr(tasks, "_salon_recipients", lambda tenant: [])
+    monkeypatch.setattr(tasks, "_salon_recipients_par_langue", lambda tenant: {})
 
     with as_tenant(tenant_a):
         booking = _reservation(salon_a, langue="en")
@@ -153,7 +153,7 @@ def test_une_reservation_en_anglais_produit_un_e_mail_en_anglais(
 def test_une_reservation_en_francais_reste_en_francais(
     tenant_a, salon_a, monkeypatch
 ):
-    monkeypatch.setattr(tasks, "_salon_recipients", lambda tenant: [])
+    monkeypatch.setattr(tasks, "_salon_recipients_par_langue", lambda tenant: {})
 
     with as_tenant(tenant_a):
         booking = _reservation(salon_a, langue="fr")

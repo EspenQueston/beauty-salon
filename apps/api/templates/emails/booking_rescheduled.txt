@@ -8,6 +8,6 @@
 {% block action %}
 {{ inchange }}
 {% if status_url %}
-{{ t.voir_rdv }} : {{ status_url }}
+{{ t.voir_rdv }}{{ t.deux_points }} {{ status_url }}
 {% endif %}
 {% endblock %}

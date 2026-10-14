@@ -38,6 +38,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import BaseThrottle
 from rest_framework.views import APIView
 
+from apps.translations.langue import du_compte
+
 from . import journal, securite, tasks
 from .mfa import _issue_recovery_codes, _qr_svg, confirmed_device, pending_device
 from .models import Membership, User
@@ -245,7 +247,9 @@ class MfaConfirmView(APIView):
         user = request.user
         journal.consigner("AUTH_MFA_ENABLED", request=request, user=user)
         transaction.on_commit(
-            lambda: tasks.alerte_securite.delay(user.email, "mfa_active", nom=user.display_name)
+            lambda: tasks.alerte_securite.delay(
+                user.email, "mfa_active", nom=user.display_name, langue=du_compte(user)
+            )
         )
         return Response({"enabled": True, "codes": codes})
 
@@ -269,7 +273,9 @@ class MfaDisableView(APIView):
         user = request.user
         journal.consigner("AUTH_MFA_DISABLED", request=request, user=user)
         transaction.on_commit(
-            lambda: tasks.alerte_securite.delay(user.email, "mfa_desactive", nom=user.display_name)
+            lambda: tasks.alerte_securite.delay(
+                user.email, "mfa_desactive", nom=user.display_name, langue=du_compte(user)
+            )
         )
         return Response({"enabled": False})
 

@@ -5,12 +5,10 @@
 {% block body %}
   {% include "emails/_parts.html" with part="title" text=subject %}
   {% include "emails/_parts.html" with part="text" text=intro %}
-
-  {% include "emails/_parts.html" with part="notice" title="Ce n'était pas vous ?" text=aide %}
-
-  {% include "emails/_parts.html" with part="button" url=reset_url text="Sécuriser mon compte" color="#B4436C" %}
+  {% include "emails/_parts.html" with part="notice" title=t.secu_pas_vous text=aide %}
+  {% include "emails/_parts.html" with part="button" url=reset_url text=t.secu_bouton color="#B4436C" %}
 {% endblock %}
 
 {% block footer %}
-  Message de sécurité envoyé automatiquement par Beauty Salon.
+  {{ t.secu_pied }}
 {% endblock %}

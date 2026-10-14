@@ -6,7 +6,7 @@
 {% endfor %}{% endblock %}
 
 {% block action %}{% if review_url %}
-{{ t.avis_bouton }} :
+{{ t.avis_bouton }}{{ t.deux_points }}
 {{ review_url }}
 {% endif %}
 {% endblock %}

@@ -1,7 +1,7 @@
 {% extends "emails/base_client.txt" %}
 
 {% block extra %}{% if booking.deposit_received %}
-{{ t.acompte }} : {{ booking.deposit_received }} {{ salon.currency }}
+{{ t.acompte }}{{ t.deux_points }} {{ booking.deposit_received }} {{ salon.currency }}
 {% endif %}{% if profile.late_policy %}
 {{ late_title }}
 {{ profile.late_policy }}

@@ -61,20 +61,23 @@ def envoyer_courrier_abonnement(self, genre: str, tenant_id: str, demande_id: st
                     raise ValueError(f"Courrier inconnu : {genre}")
                 # L'alerte a l'equipe est une tache a part : une nouvelle
                 # tentative ne renvoie pas l'accuse de reception au salon.
-                destinataires = (
-                    courriers.verificateurs()
-                    if genre == "paiement_a_verifier"
-                    else courriers.proprietaires(tenant_id)
-                )
-                courriers.envoyer(composer(demande), destinataires, salon)
+                # Elle reste en francais ; le salon, lui, lit sa langue.
+                if genre == "paiement_a_verifier":
+                    courriers.envoyer(composer(demande), courriers.verificateurs(), salon)
+                else:
+                    courriers.envoyer_par_langue(
+                        lambda langue: composer(demande, langue),
+                        courriers.proprietaires_par_langue(tenant_id),
+                        salon,
+                    )
                 return
 
             abonnement = Subscription.objects.select_related("plan", "tenant").get(
                 tenant_id=tenant_id
             )
-            courriers.envoyer(
-                courriers.geste(abonnement, genre),
-                courriers.proprietaires(tenant_id),
+            courriers.envoyer_par_langue(
+                lambda langue: courriers.geste(abonnement, genre, langue),
+                courriers.proprietaires_par_langue(tenant_id),
                 abonnement.tenant,
             )
     except ValueError:
@@ -103,7 +106,17 @@ def annoncer_changement_de_tarif(prix_id: str, ancien: str):
     if prix is None or not prix.active or prix.amount == Decimal(ancien):
         return 0
 
-    courrier = courriers.tarif_modifie(prix, Decimal(ancien), timezone.now())
+    applicable = timezone.now()
+    # Un courrier par langue, ecrit une fois pour tous les salons.
+    versions: dict[str, courriers.Courrier] = {}
+
+    def courrier(langue: str) -> courriers.Courrier:
+        if langue not in versions:
+            versions[langue] = courriers.tarif_modifie(
+                prix, Decimal(ancien), applicable, langue
+            )
+        return versions[langue]
+
     envoyes = 0
     for tenant in Tenant.objects.all():
         with bypass_tenant_context(), tenant_context(tenant.id):
@@ -115,7 +128,9 @@ def annoncer_changement_de_tarif(prix_id: str, ancien: str):
         if not concerne:
             continue
         try:
-            if courriers.envoyer(courrier, courriers.proprietaires(tenant.id), tenant):
+            if courriers.envoyer_par_langue(
+                courrier, courriers.proprietaires_par_langue(tenant.id), tenant
+            ):
                 envoyes += 1
         except Exception:  # noqa: BLE001 - un salon injoignable n'arrete pas les autres
             logger.exception("Annonce de tarif non envoyee a %s.", tenant.id)

@@ -46,6 +46,7 @@ from apps.accounts.models import Membership, User
 from apps.audit.models import AuditLog
 from apps.common.permissions import HasTenantRole, IsTenantMember
 from apps.tenants.models import Tenant
+from apps.translations.langue import du_compte
 
 MANAGERS = (Membership.Role.OWNER, Membership.Role.MANAGER)
 EVERYONE = (*MANAGERS, Membership.Role.RECEPTIONIST, Membership.Role.STAFF)
@@ -206,6 +207,7 @@ class SalonIdentityView(APIView):
                         "adresse",
                         nom=user.display_name,
                         nouvelle_adresse=nouvelle,
+                        langue=du_compte(user),
                     )
                 )
 

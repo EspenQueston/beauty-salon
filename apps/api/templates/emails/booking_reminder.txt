@@ -6,7 +6,7 @@
 {% endif %}{% endblock %}
 
 {% block action %}{% if maps_url %}
-{{ t.itineraire }} :
+{{ t.itineraire }}{{ t.deux_points }}
 {{ maps_url }}
 {% endif %}
 {{ t.rappel_prevenir }}

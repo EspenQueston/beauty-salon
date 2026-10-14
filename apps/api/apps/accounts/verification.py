@@ -102,6 +102,13 @@ def lien(user, base: str = "") -> str:
     return f"{settings.APP_BASE_URL}/verifier-email?token={jeton(user)}"
 
 
+def _lien_pro(user, langue: str) -> str:
+    """Le lien de l'espace pro, qui s'ouvre dans la langue de l'e-mail."""
+    from apps.translations.langue import adresse_app
+
+    return adresse_app(f"/verifier-email?token={jeton(user)}", langue)
+
+
 def envoyer(user, *, base: str = "", langue: str = "fr") -> None:
     """Envoie le lien a l'adresse du compte. A appeler hors de la requete (tache)."""
     from apps.notifications.email import send_email
@@ -120,7 +127,7 @@ def envoyer(user, *, base: str = "", langue: str = "fr") -> None:
         context={
             "anglais": anglais,
             "nom": user.display_name,
-            "verify_url": lien(user, base),
+            "verify_url": lien(user, base) if base else _lien_pro(user, langue),
             "heures": heures,
         },
         to=[user.email],

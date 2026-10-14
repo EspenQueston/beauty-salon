@@ -20,8 +20,10 @@ from apps.common.db import tenant_context
 from apps.domains.services import ensure_platform_domain
 from apps.notifications.details import grouper
 from apps.notifications.email import send_email
+from apps.notifications.textes import textes
 from apps.salons.models import SalonProfile
 from apps.tenants.models import Tenant
+from apps.translations.langue import adresse_app, du_compte, normaliser
 
 from .models import Invitation, Membership, User
 
@@ -38,14 +40,22 @@ class InvitationError(Exception):
     """Invitation invalide, expiree, revoquee ou deja utilisee."""
 
 
-def _send(subject: str, template: str, context: dict, to: str) -> None:
+def _send(subject: str, template: str, context: dict, to: str, langue: str = "fr") -> None:
     """Un destinataire unique, mais le meme envoi que partout ailleurs.
 
     Ces trois messages partaient en texte brut parce qu'ils avaient leur
     propre fonction d'envoi. Ils passent maintenant par celle du produit,
     et recoivent donc leur version HTML comme les autres.
+
+    Le catalogue `t` de la langue voulue rejoint le contexte : les gabarits
+    y prennent toutes leurs phrases.
     """
-    send_email(subject=subject, template=template, context=context, to=[to])
+    send_email(
+        subject=subject,
+        template=template,
+        context={"t": textes(langue), "langue": langue, **context},
+        to=[to],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -68,6 +78,7 @@ def signup_salon(
     theme_config: dict | None = None,
     code_parrainage: str = "",
     ip: str = "",
+    langue: str = "fr",
 ) -> tuple[Tenant, User]:
     """Cree un salon et son compte proprietaire.
 
@@ -75,6 +86,10 @@ def signup_salon(
     reserve, mais son mini-site n'est pas public tant que l'equipe
     plateforme ne l'a pas valide. C'est ce qui permet d'ouvrir les
     inscriptions sans laisser publier n'importe quelle page sous le domaine.
+
+    `langue` est celle de la page d'inscription. Elle est retenue sur le
+    compte des sa creation : la bienvenue, le lien de verification et tout
+    ce qui suivra parlent la langue dans laquelle le salon s'est inscrit.
     """
     email = email.strip().lower()
     slug = slug.strip().lower()
@@ -103,6 +118,7 @@ def signup_salon(
         password=password,
         display_name=display_name.strip() or name.strip(),
         phone=phone.strip(),
+        locale=normaliser(langue),
     )
     membership = Membership.objects.create(
         tenant=tenant,
@@ -181,24 +197,29 @@ def signup_salon(
 
 def _notify_signup(tenant: Tenant, user: User) -> None:
     hostname = f"{tenant.slug}.{settings.PLATFORM_DOMAIN}"
+    langue = du_compte(user)
+    t = textes(langue)
+    espace = adresse_app("", langue)
     _send(
-        subject=f"Bienvenue sur Beauty Salon, {tenant.name}",
+        subject=t.dire("bienvenue_objet", salon=tenant.name),
         template="signup_welcome",
         context={
             "salon": tenant,
             "user": user,
             "hostname": hostname,
-            "app_url": settings.APP_BASE_URL,
-            "intro": (
-                f"Votre salon {tenant.name} est créé. Voici où le retrouver."
-            ),
+            "app_url": espace,
+            "intro": t.dire("bienvenue_intro", salon=tenant.name),
+            "texte_cree": t.dire("bienvenue_txt_cree", salon=tenant.name),
+            "texte_adresse": t.dire("bienvenue_txt_adresse", adresse=hostname),
+            "texte_espace": t.dire("bienvenue_txt_espace", adresse=espace),
             "details": grouper([
-                {"label": "Mini-site", "value": hostname},
-                {"label": "Espace professionnel", "value": settings.APP_BASE_URL},
-                {"label": "Compte", "value": user.email, "strong": True},
+                {"label": t["bienvenue_mini_site"], "value": hostname},
+                {"label": t["bienvenue_espace"], "value": espace},
+                {"label": t["bienvenue_compte"], "value": user.email, "strong": True},
             ]),
         },
         to=user.email,
+        langue=langue,
     )
 
 
@@ -207,8 +228,18 @@ def _notify_signup(tenant: Tenant, user: User) -> None:
 # ---------------------------------------------------------------------------
 
 
-def invite_member(*, tenant, email: str, role: str, invited_by=None) -> Invitation:
+def invite_member(
+    *, tenant, email: str, role: str, invited_by=None, langue: str = "fr"
+) -> Invitation:
+    """Invite quelqu'un dans l'equipe.
+
+    L'invitation part dans la langue de la page d'ou elle est envoyee :
+    l'invitee n'a pas encore de compte, et c'est le salon qui sait dans
+    quelle langue il parle a son equipe.
+    """
     email = email.strip().lower()
+    langue = normaliser(langue)
+    t = textes(langue)
 
     already_member = Membership.objects.filter(
         tenant=tenant, user__email=email
@@ -220,30 +251,32 @@ def invite_member(*, tenant, email: str, role: str, invited_by=None) -> Invitati
         tenant=tenant, email=email, role=role, invited_by=invited_by
     )
 
+    nom_du_role = t.get(f"role_{invitation.role}", invitation.get_role_display())
     _send(
-        subject=f"Rejoignez l'équipe de {tenant.name}",
+        subject=t.dire("invitation_objet", salon=tenant.name),
         template="team_invitation",
         context={
             "salon": tenant,
             "invitation": invitation,
-            "role": invitation.get_role_display(),
-            "accept_url": f"{settings.APP_BASE_URL}/invitation?token={token}",
+            "role": nom_du_role,
+            "accept_url": adresse_app(f"/invitation?token={token}", langue),
             "invited_by": invited_by,
-            "intro": (
-                f"{tenant.name} vous invite à rejoindre son équipe "
-                "sur Beauty Salon."
-            ),
+            "pre": t.dire("invitation_pre", salon=tenant.name),
+            "intro": t.dire("invitation_intro", salon=tenant.name),
+            "texte_intro": t.dire("invitation_txt", salon=tenant.name),
+            "pied": t.dire("invitation_pied", salon=tenant.name),
             "details": grouper([
-                {"label": "Salon", "value": tenant.name},
-                {"label": "Rôle", "value": invitation.get_role_display(), "strong": True},
+                {"label": t["invitation_salon"], "value": tenant.name},
+                {"label": t["invitation_role"], "value": nom_du_role, "strong": True},
             ]
             + (
-                [{"label": "Invitée par", "value": invited_by.email}]
+                [{"label": t["invitation_par"], "value": invited_by.email}]
                 if invited_by
                 else []
             )),
         },
         to=email,
+        langue=langue,
     )
     return invitation
 
@@ -279,6 +312,7 @@ def accept_invitation(
     password: str | None = None,
     display_name: str = "",
     utilisateur_connecte=None,
+    langue: str = "fr",
 ) -> tuple[User, Invitation]:
     """Accepte une invitation, et ouvre la session du compte invite.
 
@@ -322,6 +356,8 @@ def accept_invitation(
             display_name=display_name.strip(),
             # Le lien est arrive dans cette boite : l'adresse est prouvee.
             email_verified_at=timezone.now(),
+            # La langue de la page ou l'invitation est acceptee.
+            locale=normaliser(langue),
         )
 
     membership, created = Membership.objects.get_or_create(
@@ -344,12 +380,15 @@ def accept_invitation(
 # ---------------------------------------------------------------------------
 
 
-def request_password_reset(email: str) -> None:
+def request_password_reset(email: str, langue: str | None = None) -> None:
     """Envoie un lien de reinitialisation, s'il existe un compte actif.
 
     L'appelant repond toujours la meme chose, que le compte existe ou non :
     une reponse differenciee transformerait ce formulaire en annuaire des
     adresses inscrites.
+
+    `langue` : celle de la page ou la demande a ete faite — la personne la
+    lit a l'instant. A defaut, celle retenue sur le compte.
     """
     user = User.objects.filter(email=email.strip().lower(), is_active=True).first()
     if user is None:
@@ -358,24 +397,25 @@ def request_password_reset(email: str) -> None:
 
     token = default_token_generator.make_token(user)
     uid = urlsafe_base64_encode(force_bytes(user.pk))
+    langue = normaliser(langue) if langue else du_compte(user)
+    t = textes(langue)
+    heures = settings.PASSWORD_RESET_TIMEOUT // 3600
 
     _send(
-        subject="Réinitialiser votre mot de passe Beauty Salon",
+        subject=t["reinit_objet"],
         template="password_reset",
         context={
             "user": user,
-            "reset_url": f"{settings.APP_BASE_URL}/mot-de-passe/nouveau?uid={uid}&token={token}",
-            "validity_hours": settings.PASSWORD_RESET_TIMEOUT // 3600,
-            "intro": (
-                "Vous avez demandé à réinitialiser le mot de passe de votre "
-                "compte Beauty Salon."
+            "reset_url": adresse_app(
+                f"/mot-de-passe/nouveau?uid={uid}&token={token}", langue
             ),
-            "validity_note": (
-                f"Ce lien est valable {settings.PASSWORD_RESET_TIMEOUT // 3600} "
-                "heures et ne fonctionne qu'une seule fois."
-            ),
+            "validity_hours": heures,
+            "pre": t.dire("reinit_pre", heures=heures),
+            "intro": t["reinit_intro"],
+            "validity_note": t.dire("reinit_validite", heures=heures),
         },
         to=user.email,
+        langue=langue,
     )
 
 

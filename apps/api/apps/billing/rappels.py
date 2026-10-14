@@ -135,9 +135,11 @@ def _rappeler(tenant: Tenant, maintenant: datetime) -> str | None:
         # Envoyer d'abord, inscrire ensuite : un serveur de courrier en panne
         # laisse le rappel a refaire au passage suivant, au lieu de le marquer
         # parti alors qu'il ne l'est pas.
-        destinataires = courriers.proprietaires(tenant.id)
-        nombre = courriers.envoyer(
-            courriers.rappel(abonnement, genre, maintenant), destinataires, abonnement.tenant
+        # Une version par langue : chaque proprietaire lit la sienne.
+        nombre = courriers.envoyer_par_langue(
+            lambda langue: courriers.rappel(abonnement, genre, maintenant, langue),
+            courriers.proprietaires_par_langue(tenant.id),
+            abonnement.tenant,
         )
         try:
             with transaction.atomic():

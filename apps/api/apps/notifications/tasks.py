@@ -25,6 +25,7 @@ from apps.notifications.email import send_email
 from apps.notifications.textes import Textes, textes
 from apps.scheduling.models import Booking
 from apps.tenants.models import Tenant
+from apps.translations.langue import adresse_app, par_langue
 from apps.translations.services import texte as traduction
 
 logger = logging.getLogger(__name__)
@@ -80,16 +81,11 @@ def send_booking_notifications(self, booking_id: str, tenant_id: str):
                 to=[email_du_rendez_vous(booking)],
                 salon=booking.tenant,
             )
-            _send(
-                subject=f"Nouvelle réservation - {booking.service_name}",
-                template="booking_notification_salon",
-                context={
-                    **context,
-                    "intro": "Une nouvelle cliente vient de réserver.",
-                    "awaiting_payment": booking.status
-                    == Booking.Status.PENDING_PAYMENT,
-                },
-                to=_salon_recipients(booking.tenant),
+            _ecrire_au_salon(
+                booking,
+                "booking_notification_salon",
+                objet=lambda t: t.dire("pro_resa_objet", prestation=booking.service_name),
+                awaiting_payment=booking.status == Booking.Status.PENDING_PAYMENT,
             )
     except Exception as exc:  # noqa: BLE001 - on retente, sans perdre la trace
         logger.exception("Echec de notification pour la reservation %s.", booking_id)
@@ -172,14 +168,16 @@ def email_du_rendez_vous(booking: Booking) -> str:
     return booking.contact_email or booking.customer.email
 
 
-def _booking_context(booking: Booking) -> dict:
-    """Tout ce dont un gabarit a besoin, dans la langue de la cliente."""
+def _booking_context(booking: Booking, langue: str | None = None) -> dict:
+    """Tout ce dont un gabarit a besoin, dans la langue de la cliente — ou
+    dans `langue`, pour un e-mail adresse au salon."""
     from apps.salons.models import SalonProfile
 
     # La langue retenue au moment de la reservation, et non celle du salon
     # aujourd'hui : c'est dans celle-la que la cliente a lu ce qu'elle
-    # acceptait.
-    t = textes(booking.language)
+    # acceptait. Un e-mail au salon, lui, parle la langue de son destinataire.
+    langue = langue or booking.language
+    t = textes(langue)
 
     local_start = booking.starts_at.astimezone(_tenant_timezone(booking.tenant))
 
@@ -196,10 +194,10 @@ def _booking_context(booking: Booking) -> dict:
     # serialiseur, il faut donc le demander.
     regles = (
         SimpleNamespace(
-            late_policy=traduction(profile, "late_policy", booking.language),
+            late_policy=traduction(profile, "late_policy", langue),
             late_tolerance_minutes=profile.late_tolerance_minutes,
             cancellation_policy=traduction(
-                profile, "cancellation_policy", booking.language
+                profile, "cancellation_policy", langue
             ),
             cancellation_deadline_hours=profile.cancellation_deadline_hours,
         )
@@ -211,7 +209,7 @@ def _booking_context(booking: Booking) -> dict:
 
     return {
         "t": t,
-        "langue": booking.language,
+        "langue": langue,
         "booking": booking,
         "salon": booking.tenant,
         "profile": regles,
@@ -227,9 +225,10 @@ def _booking_context(booking: Booking) -> dict:
         "site_url": site,
         "booking_url": f"{site}/reserver",
         # L'espace professionnel, pas le mini-site : ces liens ne partent
-        # qu'aux e-mails du salon.
-        "agenda_url": f"{settings.APP_BASE_URL}/dashboard/agenda",
-        "waitlist_url": f"{settings.APP_BASE_URL}/dashboard/liste-attente",
+        # qu'aux e-mails du salon. L'agenda s'ouvre sur ce rendez-vous-ci, et
+        # dans la langue du destinataire.
+        "agenda_url": adresse_app(f"/dashboard/agenda?rdv={booking.id}", langue),
+        "waitlist_url": adresse_app("/dashboard/liste-attente", langue),
         "maps_url": _maps_url(profile),
         "local_start": local_start,
         # Duree reelle du rendez-vous, options comprises : la duree de la
@@ -395,16 +394,39 @@ def _tenant_timezone(tenant):
     return ZoneInfo(tenant.timezone)
 
 
-def _salon_recipients(tenant) -> list[str]:
+def _salon_recipients_par_langue(tenant) -> dict[str, list[str]]:
+    """Les adresses de la direction du salon (proprietaire, gerante),
+    regroupees par la langue retenue sur chaque compte."""
     from apps.accounts.models import Membership
 
-    return list(
+    return par_langue(
         Membership.objects.filter(
             tenant=tenant,
             status=Membership.Status.ACTIVE,
             role__in=(Membership.Role.OWNER, Membership.Role.MANAGER),
-        ).values_list("user__email", flat=True)
+        ).values_list("user__email", "user__locale")
     )
+
+
+def _ecrire_au_salon(booking, template: str, *, objet, **extra) -> None:
+    """Un e-mail a la direction du salon, une fois par langue.
+
+    La proprietaire qui lit son espace en francais et la gerante qui le lit
+    en anglais recoivent chacune le leur. `objet` et chaque valeur de
+    `extra` peuvent etre des fonctions du catalogue `t`, pour les phrases
+    qui dependent de la langue.
+    """
+    for langue, adresses in _salon_recipients_par_langue(booking.tenant).items():
+        context = _booking_context(booking, langue)
+        t = context["t"]
+        context.update({cle: v(t) if callable(v) else v for cle, v in extra.items()})
+        # Pour la version texte : « 24/09/2026 à 14:30 », et d'ou vient le
+        # rendez-vous, dans la langue du destinataire.
+        context["when_label"] = t.dire(
+            "le_a", date=context["date_label"], heure=context["time_label"]
+        )
+        context["origine"] = t.get(f"source_{booking.source}", booking.get_source_display())
+        _send(subject=objet(t), template=template, context=context, to=adresses)
 
 
 # Les criteres notes, nommes dans l'e-mail d'invitation. Importes du modele
@@ -575,17 +597,13 @@ def send_deposit_proof_alert(self, booking_id: str, tenant_id: str):
                 logger.warning("Reservation %s introuvable.", booking_id)
                 return
 
-            _send(
-                subject=f"Acompte à vérifier — {booking.customer.full_name}",
-                template="deposit_proof_alert",
-                context={
-                    **_booking_context(booking),
-                    "intro": (
-                        "Une cliente a envoyé une preuve de versement "
-                        "pour son acompte."
-                    ),
-                },
-                to=_salon_recipients(booking.tenant),
+            cliente = booking.customer.full_name
+            _ecrire_au_salon(
+                booking,
+                "deposit_proof_alert",
+                objet=lambda t: t.dire("pro_acompte_objet", cliente=cliente),
+                pre=lambda t: t.dire("pro_acompte_pre", cliente=cliente),
+                intro_texte=lambda t: t.dire("pro_acompte_txt", cliente=cliente),
             )
     except Exception as exc:  # noqa: BLE001 - on retente, sans perdre la trace
         logger.exception("Echec d'alerte d'acompte pour %s.", booking_id)
@@ -769,14 +787,15 @@ def send_booking_cancelled(self, booking_id: str, tenant_id: str, by_salon: bool
             # Le salon aussi : une annulation libère un créneau qu'il peut
             # reproposer, et la liste d'attente n'existe que pour ça.
             if not by_salon:
-                _send(
-                    subject=f"Annulation — {booking.customer.full_name}",
-                    template="booking_cancelled_salon",
-                    context={
-                        **context,
-                        "intro": "Une cliente a annulé son rendez-vous.",
-                    },
-                    to=_salon_recipients(booking.tenant),
+                cliente = booking.customer.full_name
+                _ecrire_au_salon(
+                    booking,
+                    "booking_cancelled_salon",
+                    objet=lambda t: t.dire("pro_annule_objet", cliente=cliente),
+                    pre=lambda t: t.dire(
+                        "pro_annule_pre", cliente=cliente, date=context["date_label"]
+                    ),
+                    intro_texte=lambda t: t.dire("pro_annule_txt", cliente=cliente),
                 )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec d'avis d'annulation pour %s.", booking_id)

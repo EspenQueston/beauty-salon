@@ -1,14 +1,14 @@
 {% extends "emails/base_client.txt" %}
 
 {% block extra %}{% if booking.deposit_amount %}
-{{ t.acompte_demande }} : {{ deposit_label }}{% if deposit_hint %} ({{ deposit_hint }}){% endif %}
+{{ t.acompte_demande }}{{ t.deux_points }} {{ deposit_label }}{% if deposit_hint %} ({{ deposit_hint }}){% endif %}
 {% endif %}{% if profile.late_policy %}
 {{ late_title }}
 {{ profile.late_policy }}
 {% endif %}{% endblock %}
 
 {% block action %}{% if payment_url %}
-{{ t.regler_acompte }} :
+{{ t.regler_acompte }}{{ t.deux_points }}
 {{ payment_url }}
 {% endif %}
 {{ t.confirmation_pied }}

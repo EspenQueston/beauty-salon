@@ -19,7 +19,7 @@ courrier indésirable pour la plupart des filtres.
 {% endcomment %}{% autoescape off %}{{ salutation }}
 
 {% block intro %}{{ intro }}{% endblock %}
-{% for rangee in details %}{% for fait in rangee %}{{ fait.label }} : {{ fait.value }}
+{% for rangee in details %}{% for fait in rangee %}{{ fait.label }}{{ t.deux_points }} {{ fait.value }}
 {% endfor %}{% endfor %}{% block extra %}{% endblock %}
 {% block action %}{% endblock %}{{ t.a_bientot }}
 {{ salon.name }}

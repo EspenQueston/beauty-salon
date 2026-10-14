@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 
 from apps.common.permissions import HasTenantRole, IsTenantMember
 from apps.tenants.models import Tenant
+from apps.translations.langue import demandee, du_compte
 
 from . import journal, mfa_api, securite, tasks
 from .models import Invitation, Membership, User
@@ -159,7 +160,9 @@ class EmailVerifyResendView(APIView):
                 },
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
-        langue = str(request.data.get("lang", "fr"))[:2]
+        # La langue de la page qui demande le renvoi : celle que le mini-site
+        # passe explicitement, sinon celle de l'espace pro (en-tete).
+        langue = str(request.data.get("lang") or demandee(request))[:2]
         base = tasks.base_cliente(user, langue) if hasattr(user, "client_profile") else ""
         user_id = str(user.pk)
         transaction.on_commit(lambda: tasks.verification.delay(user_id, base, langue))
@@ -272,6 +275,7 @@ class SignupView(APIView):
                 # L'IP n'est gardee qu'en empreinte, pour rapprocher des
                 # inscriptions parrainees en serie.
                 ip=BaseThrottle().get_ident(request),
+                langue=demandee(request),
             )
         except SignupError as exc:
             return Response(
@@ -313,7 +317,8 @@ class PasswordResetRequestView(APIView):
         # l'envoi ont lieu hors de la requete, le temps de reponse est donc
         # le meme dans les deux cas. Voir `tasks.py`.
         email = serializer.validated_data["email"].strip().lower()
-        transaction.on_commit(lambda: tasks.reinitialisation.delay(email))
+        langue = demandee(request)
+        transaction.on_commit(lambda: tasks.reinitialisation.delay(email, langue))
 
         # Reponse identique que le compte existe ou non : sinon ce
         # formulaire deviendrait un annuaire des adresses inscrites.
@@ -351,7 +356,9 @@ class PasswordResetConfirmView(APIView):
         securite.noter_succes(user.email)
         journal.consigner("AUTH_PASSWORD_RESET", request=request, user=user)
         transaction.on_commit(
-            lambda: tasks.alerte_securite.delay(user.email, "mot_de_passe", nom=user.display_name)
+            lambda: tasks.alerte_securite.delay(
+                user.email, "mot_de_passe", nom=user.display_name, langue=du_compte(user)
+            )
         )
         return Response({"detail": "Mot de passe mis à jour."})
 
@@ -387,7 +394,9 @@ class PasswordChangeView(APIView):
         user = request.user
         journal.consigner("AUTH_PASSWORD_CHANGED", request=request, user=user)
         transaction.on_commit(
-            lambda: tasks.alerte_securite.delay(user.email, "mot_de_passe", nom=user.display_name)
+            lambda: tasks.alerte_securite.delay(
+                user.email, "mot_de_passe", nom=user.display_name, langue=du_compte(user)
+            )
         )
 
         return Response({"detail": "Mot de passe mis à jour."})
@@ -440,6 +449,7 @@ class AcceptInvitationView(APIView):
                 password=data.get("password") or None,
                 display_name=data.get("display_name", ""),
                 utilisateur_connecte=request.user,
+                langue=demandee(request),
             )
         except InvitationError as exc:
             return Response(
@@ -570,6 +580,7 @@ class InvitationViewSet(
                 email=payload.validated_data["email"],
                 role=payload.validated_data["role"],
                 invited_by=request.user,
+                langue=demandee(request),
             )
         except InvitationError as exc:
             return Response(

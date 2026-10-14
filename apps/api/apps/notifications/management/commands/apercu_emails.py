@@ -34,8 +34,9 @@ from django.template.loader import render_to_string
 from apps.notifications.details import grouper
 from apps.notifications.textes import textes
 
-#: Les messages adressés aux clientes suivent la langue ; ceux du salon et des
-#: comptes restent en français, et sont rendus une seule fois.
+#: Les messages adressés aux clientes suivent la langue de la réservation ;
+#: ceux du salon et des comptes, la langue de chaque compte. Tous sont rendus
+#: dans les deux langues.
 CLIENTE = [
     "booking_confirmation",
     "booking_reminder",
@@ -52,6 +53,7 @@ SALON = [
     "signup_welcome",
     "team_invitation",
     "password_reset",
+    "security_alert",
 ]
 
 MARQUE = "#B4436C"
@@ -67,20 +69,54 @@ ACCROCHES = {
     "review_request": "avis_comment",
 }
 
-SALON_ACCROCHES = {
-    "booking_notification_salon": "Une nouvelle cliente vient de reserver.",
-    "booking_cancelled_salon": "Une cliente a annule son rendez-vous.",
-    "deposit_proof_alert": "Une preuve de paiement attend votre verification.",
-    "signup_welcome": "Votre salon est cree. Voici ou le retrouver.",
-    "team_invitation": "Vous etes invitee a rejoindre une equipe.",
-    "password_reset": "Vous avez demande a reinitialiser votre mot de passe.",
-}
-
-
 def _accroche(nom: str, t, salon: str) -> str:
-    if nom in SALON_ACCROCHES:
-        return SALON_ACCROCHES[nom]
+    accroches_pro = {
+        "booking_notification_salon": t["pro_resa_intro"],
+        "booking_cancelled_salon": t["pro_annule_intro"],
+        "deposit_proof_alert": t["pro_acompte_intro"],
+        "signup_welcome": t.dire("bienvenue_intro", salon=salon),
+        "team_invitation": t.dire("invitation_intro", salon=salon),
+        "password_reset": t["reinit_intro"],
+        "security_alert": t["secu_mfa_active"],
+    }
+    if nom in accroches_pro:
+        return accroches_pro[nom]
     return t.dire(ACCROCHES.get(nom, "confirmation_intro"), salon=salon)
+
+
+def _contexte_pro(nom: str, t, salon: str, cliente: str) -> dict:
+    """Ce que les taches calculent pour les e-mails aux professionnels."""
+    pre = {
+        "deposit_proof_alert": t.dire("pro_acompte_pre", cliente=cliente),
+        "booking_cancelled_salon": t.dire("pro_annule_pre", cliente=cliente, date="14/10/2026"),
+        "team_invitation": t.dire("invitation_pre", salon=salon),
+        "password_reset": t.dire("reinit_pre", heures=24),
+    }
+    intro_texte = {
+        "deposit_proof_alert": t.dire("pro_acompte_txt", cliente=cliente),
+        "booking_cancelled_salon": t.dire("pro_annule_txt", cliente=cliente),
+    }
+    contexte = {
+        "when_label": t.dire("le_a", date="14/10/2026", heure="10:30"),
+        "origine": t["source_web"],
+        "role": t["role_manager"],
+        "texte_cree": t.dire("bienvenue_txt_cree", salon=salon),
+        "texte_adresse": t.dire("bienvenue_txt_adresse", adresse="blondrose.example.com"),
+        "texte_espace": t.dire("bienvenue_txt_espace", adresse="https://app.example.com"),
+        "texte_intro": t.dire("invitation_txt", salon=salon),
+        "validity_note": t.dire("reinit_validite", heures=24),
+        "aide": t["secu_aide"],
+        "salutation": t.dire("bonjour", prenom="Awa"),
+    }
+    if nom in pre:
+        contexte["pre"] = pre[nom]
+    if nom in intro_texte:
+        contexte["intro_texte"] = intro_texte[nom]
+    if nom == "team_invitation":
+        contexte["pied"] = t.dire("invitation_pied", salon=salon)
+    if nom == "security_alert":
+        contexte["subject"] = t["secu_mfa_active_objet"]
+    return contexte
 
 
 def _contexte(nom: str, langue: str) -> dict:
@@ -186,10 +222,11 @@ def _contexte(nom: str, langue: str) -> dict:
             else t.dire("pied_cliente", salon=salon.name)
         ),
         "name": "Awa",
+        **(_contexte_pro(nom, t, salon.name, cliente.full_name) if nom in SALON else {}),
     }
 
 
-def _abonnements() -> list[tuple[str, object]]:
+def _abonnements(langue: str = "fr") -> list[tuple[str, object]]:
     """Les e-mails d'abonnement, sur un salon et un paiement de démonstration.
 
     Les rappels lisent les tarifs configurés : ils ne sont rendus que si la
@@ -231,18 +268,20 @@ def _abonnements() -> list[tuple[str, object]]:
     prix = SimpleNamespace(plan=plan, currency="CNY", amount=Decimal("109"))
 
     apercus: list[tuple[str, object]] = [
-        ("paiement_recu", courriers.paiement_recu(demande)),
-        ("paiement_a_verifier", courriers.paiement_a_verifier(demande)),
-        ("paiement_valide", courriers.paiement_valide(demande)),
-        ("paiement_refuse", courriers.paiement_refuse(demande)),
-        ("prolongation", courriers.geste(abonnement, "prolongation")),
-        ("suspension", courriers.geste(abonnement, "suspension")),
-        ("tarif_modifie", courriers.tarif_modifie(prix, Decimal("99"), fin)),
+        ("paiement_recu", courriers.paiement_recu(demande, langue)),
+        ("paiement_valide", courriers.paiement_valide(demande, langue)),
+        ("paiement_refuse", courriers.paiement_refuse(demande, langue)),
+        ("prolongation", courriers.geste(abonnement, "prolongation", langue)),
+        ("suspension", courriers.geste(abonnement, "suspension", langue)),
+        ("tarif_modifie", courriers.tarif_modifie(prix, Decimal("99"), fin, langue)),
     ]
+    # Pour l'equipe de la plateforme : en francais seulement.
+    if langue == "fr":
+        apercus.insert(1, ("paiement_a_verifier", courriers.paiement_a_verifier(demande)))
     maintenant = datetime(2026, 10, 6, 9, 0, tzinfo=UTC)
     for genre in ("trial_3", "renewal_7", "grace", "closed"):
         try:
-            apercus.append((genre, courriers.rappel(abonnement, genre, maintenant)))
+            apercus.append((genre, courriers.rappel(abonnement, genre, maintenant, langue)))
         except Exception:  # noqa: BLE001 - base injoignable : pas de rappel
             continue
     return [(f"abonnement-{nom}", courrier.contexte(salon)) for nom, courrier in apercus]
@@ -258,8 +297,7 @@ class Command(BaseCommand):
         dossier = Path(options["dossier"])
         dossier.mkdir(parents=True, exist_ok=True)
 
-        a_rendre = [(langue, nom) for langue in ("fr", "en") for nom in CLIENTE]
-        a_rendre += [("fr", nom) for nom in SALON]
+        a_rendre = [(langue, nom) for langue in ("fr", "en") for nom in CLIENTE + SALON]
 
         rendus: list[tuple[str, str, str]] = []
         for langue, nom in a_rendre:
@@ -272,11 +310,12 @@ class Command(BaseCommand):
             fichier.write_text(html, encoding="utf-8")
             rendus.append((langue, nom, fichier.name))
 
-        for nom, contexte in _abonnements():
-            html = render_to_string("emails/abonnement.html", contexte)
-            fichier = dossier / f"fr-{nom}.html"
-            fichier.write_text(html, encoding="utf-8")
-            rendus.append(("fr", nom, fichier.name))
+        for langue in ("fr", "en"):
+            for nom, contexte in _abonnements(langue):
+                html = render_to_string("emails/abonnement.html", contexte)
+                fichier = dossier / f"{langue}-{nom}.html"
+                fichier.write_text(html, encoding="utf-8")
+                rendus.append((langue, nom, fichier.name))
 
         self._sommaire(dossier, rendus)
         self.stdout.write(self.style.SUCCESS(f"{len(rendus)} e-mail(s) rendus"))

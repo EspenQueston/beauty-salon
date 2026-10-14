@@ -1,7 +1,7 @@
 {% extends "emails/base_client.txt" %}
 
 {% block extra %}{% if reason %}
-{{ t.acompte_refuse_motif }} : {{ reason }}
+{{ t.acompte_refuse_motif }}{{ t.deux_points }} {{ reason }}
 {% endif %}{% endblock %}
 
 {% block action %}

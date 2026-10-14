@@ -1,7 +1,7 @@
 {% extends "emails/base_client.txt" %}
 
 {% block extra %}{% if booking.cancellation_reason %}
-{{ t.acompte_refuse_motif }} : {{ booking.cancellation_reason }}
+{{ t.acompte_refuse_motif }}{{ t.deux_points }} {{ booking.cancellation_reason }}
 {% endif %}{% if booking.deposit_paid %}
 {{ deposit_title }}
 {{ t.annule_acompte_suite }}

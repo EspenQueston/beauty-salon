@@ -72,6 +72,18 @@ function readCookie(name: string): string | null {
   return match ? decodeURIComponent(match[2]) : null;
 }
 
+/**
+ * La langue de la page, et non celle du navigateur : c'est elle qui décide
+ * de la langue des réponses du serveur (erreurs, fil d'activité) et de ce
+ * qu'il retient sur le compte — un salon qui s'inscrit depuis la page
+ * anglaise reçoit sa bienvenue en anglais, même sur un téléphone réglé en
+ * français.
+ */
+function langueDeLaPage(): Record<string, string> {
+  if (typeof document === "undefined" || !document.documentElement.lang) return {};
+  return { "Accept-Language": document.documentElement.lang };
+}
+
 /** Pose le cookie CSRF avant la premiere ecriture. */
 async function ensureCsrfToken(): Promise<string> {
   const existing = readCookie("csrftoken");
@@ -103,13 +115,8 @@ export async function dashboardFetch<T>(
   // Necessaire uniquement si le compte gere plusieurs salons ; le backend
   // verifie de toute facon que le membership existe.
   if (tenantId) headers["X-Tenant-Id"] = tenantId;
-  // La langue de la page, et non celle du navigateur : c'est elle qui décide
-  // de la langue des messages renvoyés par le serveur (erreurs, fil
-  // d'activité). Un salon qui lit l'espace en anglais sur un téléphone
-  // réglé en français doit recevoir ses erreurs en anglais.
-  if (typeof document !== "undefined" && document.documentElement.lang && !headers["Accept-Language"]) {
-    headers["Accept-Language"] = document.documentElement.lang;
-  }
+  // Voir `langueDeLaPage` ; un appelant peut imposer la sienne.
+  if (!headers["Accept-Language"]) Object.assign(headers, langueDeLaPage());
 
   const response = await fetch(`${browserApi()}${path}`, {
     ...init,
@@ -150,7 +157,7 @@ async function postAuth<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${browserApi()}${path}`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf, ...langueDeLaPage() },
     body: JSON.stringify(body),
   });
 
@@ -224,7 +231,7 @@ async function accountPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${browserApi()}/api/v1/account${path}`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf, ...langueDeLaPage() },
     body: JSON.stringify(body),
   });
 
@@ -360,6 +367,7 @@ export interface InvitationPreview {
 export async function fetchInvitation(token: string): Promise<InvitationPreview> {
   const response = await fetch(
     `${browserApi()}/api/v1/account/invitation?token=${encodeURIComponent(token)}`,
+    { headers: langueDeLaPage() },
   );
   const data = await response.json().catch(() => null);
   if (!response.ok) {
