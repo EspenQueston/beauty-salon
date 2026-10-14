@@ -31,6 +31,7 @@
  * réclame, donc qui ne limite rien.
  */
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -68,29 +69,8 @@ interface ServiceRow {
   active: boolean;
 }
 
-const KINDS: {
-  value: SalonResource["kind"];
-  label: string;
-  short: string;
-  hint: string;
-}[] = [
-  { value: "basin", label: "Bac à shampooing", short: "Bac", hint: "Lavage" },
-  {
-    value: "chair",
-    label: "Fauteuil",
-    short: "Fauteuil",
-    hint: "Poste de travail",
-  },
-  { value: "room", label: "Cabine", short: "Cabine", hint: "Espace fermé" },
-  {
-    value: "equipment",
-    label: "Matériel",
-    short: "Matériel",
-    hint: "Casque, vapeur…",
-  },
-];
-
-const KIND_LABELS = Object.fromEntries(KINDS.map((k) => [k.value, k.label]));
+/** Les types, dans l'ordre du menu ; libellés sous `pro.ressources.types`. */
+const KINDS: SalonResource["kind"][] = ["basin", "chair", "room", "equipment"];
 
 /** Plafond aligné sur le serveur : au-delà, c'est une faute de frappe. */
 const MAX_CAPACITY = 999;
@@ -102,6 +82,7 @@ export function Resources({
   tenantId: string;
   canEdit: boolean;
 }) {
+  const t = useTranslations("pro.ressources");
   const toast = useToast();
   const resources = useResource<Page<SalonResource>>(
     "/api/v1/resources/",
@@ -144,7 +125,7 @@ export function Resources({
           { method: "PATCH", body: JSON.stringify(changes) },
           tenantId,
         ),
-      { success: "Ressource mise à jour." },
+      { success: t("majOk") },
     );
     if (ok) resources.reload();
   }
@@ -152,11 +133,7 @@ export function Resources({
   async function remove(resource: SalonResource) {
     const used = byResource.get(resource.id)?.length ?? 0;
     if (used > 0) {
-      toast.error(
-        `« ${resource.name} » est réclamée par ${used} prestation${
-          used > 1 ? "s" : ""
-        }. Détachez-la d'abord.`,
-      );
+      toast.error(t("reclamee", { nom: resource.name, n: used }));
       return;
     }
 
@@ -167,7 +144,7 @@ export function Resources({
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `« ${resource.name} » supprimée.` },
+      { success: t("supprimee", { nom: resource.name }) },
     );
     if (ok) {
       resources.reload();
@@ -201,8 +178,8 @@ export function Resources({
             ),
       {
         success: existing
-          ? `« ${service.name} » ne mobilise plus ${resource.name}.`
-          : `« ${service.name} » mobilise ${resource.name}.`,
+          ? t("neMobilisePlus", { prestation: service.name, ressource: resource.name })
+          : t("mobilise", { prestation: service.name, ressource: resource.name }),
       },
     );
     if (ok) links.reload();
@@ -223,7 +200,7 @@ export function Resources({
           },
           tenantId,
         ),
-      { success: `« ${name} » ajoutée.` },
+      { success: t("ajoutee", { nom: name }) },
     );
     if (ok) {
       resources.reload();
@@ -237,25 +214,18 @@ export function Resources({
   return (
     <section>
       <div className="mb-4">
-        <SectionTitle>Ressources</SectionTitle>
-        <p className="-mt-2 text-sm text-muted">
-          Ce dont vous n&apos;avez qu&apos;un nombre limité. Une prestation qui
-          réclame un bac ne sera plus proposée quand tous vos bacs sont pris,
-          même si la coiffeuse est libre.
-        </p>
+        <SectionTitle>{t("titre")}</SectionTitle>
+        <p className="-mt-2 text-sm text-muted">{t("intro")}</p>
       </div>
 
       {resources.error && (
-        <ErrorState>Impossible de charger les ressources.</ErrorState>
+        <ErrorState>{t("erreur")}</ErrorState>
       )}
       {loading && <Skeleton rows={2} />}
 
       {resources.data !== null && list.length === 0 && !creating && (
         <Card>
-          <p className="text-sm text-muted">
-            Aucune ressource déclarée. Vos créneaux ne dépendent
-            aujourd&apos;hui que de la disponibilité des prestataires.
-          </p>
+          <p className="text-sm text-muted">{t("vide")}</p>
         </Card>
       )}
 
@@ -295,7 +265,7 @@ export function Resources({
               onClick={() => setCreating(true)}
               icon={<Icon name="plus" className="size-4" />}
             >
-              Ajouter une ressource
+              {t("ajouter")}
             </GhostButton>
           )}
         </div>
@@ -338,6 +308,7 @@ function ResourceRow({
   onRemove: () => void;
   onToggleService: (service: ServiceRow) => void;
 }) {
+  const t = useTranslations("pro.ressources");
   const [capacity, setCapacity] = useState(String(resource.capacity));
   const linkedIds = new Set(links.map((link) => link.service));
 
@@ -366,7 +337,7 @@ function ResourceRow({
           >
             {resource.name}
           </p>
-          <p className="text-xs text-subtle">{KIND_LABELS[resource.kind]}</p>
+          <p className="text-xs text-subtle">{t(`types.${resource.kind}`)}</p>
         </div>
 
         {/* Quantité : un pas-à-pas, pas un champ libre. On passe de 2 à 3
@@ -376,7 +347,7 @@ function ResourceRow({
             type="button"
             disabled={!canEdit || resource.capacity <= 1}
             onClick={() => commit(resource.capacity - 1)}
-            aria-label={`Retirer un ${resource.name}`}
+            aria-label={t("moins", { nom: resource.name })}
             className="flex size-8 items-center justify-center rounded-lg border border-line text-muted transition hover:text-ink disabled:opacity-40"
           >
             −
@@ -387,14 +358,14 @@ function ResourceRow({
             onBlur={() => commit(clamp(capacity))}
             disabled={!canEdit}
             inputMode="numeric"
-            aria-label={`Quantité de ${resource.name}`}
+            aria-label={t("quantiteDe", { nom: resource.name })}
             className="tabular w-12 rounded-lg border border-line bg-surface py-1.5 text-center text-sm text-ink"
           />
           <button
             type="button"
             disabled={!canEdit || resource.capacity >= MAX_CAPACITY}
             onClick={() => commit(resource.capacity + 1)}
-            aria-label={`Ajouter un ${resource.name}`}
+            aria-label={t("plus", { nom: resource.name })}
             className="flex size-8 items-center justify-center rounded-lg border border-line text-muted transition hover:text-ink disabled:opacity-40"
           >
             +
@@ -417,7 +388,7 @@ function ResourceRow({
           </ul>
         ) : (
           <p className="text-xs text-muted">
-            Aucune prestation ne la réclame — elle ne limite donc aucun créneau.
+            {t("libre")}
           </p>
         )}
 
@@ -429,7 +400,7 @@ function ResourceRow({
               aria-expanded={expanded}
               className="text-xs font-medium text-salon underline-offset-2 hover:underline"
             >
-              {expanded ? "Terminer" : "Choisir les prestations"}
+              {expanded ? t("terminer") : t("choisir")}
             </button>
             <span aria-hidden className="text-subtle">
               ·
@@ -439,7 +410,7 @@ function ResourceRow({
               onClick={() => onPatch({ active: !resource.active })}
               className="text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
             >
-              {resource.active ? "Suspendre" : "Réactiver"}
+              {resource.active ? t("suspendre") : t("reactiver")}
             </button>
             <span aria-hidden className="text-subtle">
               ·
@@ -449,7 +420,7 @@ function ResourceRow({
               onClick={onRemove}
               className="text-xs text-danger underline-offset-2 hover:underline"
             >
-              Supprimer
+              {t("supprimer")}
             </button>
           </div>
         )}
@@ -462,7 +433,7 @@ function ResourceRow({
         <div className="border-t border-line bg-surface-muted/50 p-3">
           {services.length === 0 ? (
             <p className="text-xs text-muted">
-              Créez d&apos;abord une prestation.
+              {t("creezPrestation")}
             </p>
           ) : (
             <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-3">
@@ -510,6 +481,7 @@ function NewResource({
   onCancel: () => void;
   onCreate: (name: string, kind: string, capacity: string) => Promise<boolean>;
 }) {
+  const t = useTranslations("pro.ressources");
   const [name, setName] = useState("");
   const [kind, setKind] = useState<SalonResource["kind"]>("basin");
   const [capacity, setCapacity] = useState("1");
@@ -548,8 +520,8 @@ function NewResource({
           value={name}
           onChange={(event) => setName(event.target.value)}
           maxLength={120}
-          placeholder="Bac à shampooing"
-          aria-label="Nom de la ressource"
+          placeholder={t("types.basin")}
+          aria-label={t("nom")}
           className={inputClass}
         />
         <select
@@ -557,12 +529,12 @@ function NewResource({
           onChange={(event) =>
             setKind(event.target.value as SalonResource["kind"])
           }
-          aria-label="Type de ressource"
+          aria-label={t("type")}
           className={inputClass}
         >
           {KINDS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
+            <option key={option} value={option}>
+              {t(`types.${option}`)}
             </option>
           ))}
         </select>
@@ -570,7 +542,7 @@ function NewResource({
           value={capacity}
           onChange={(event) => setCapacity(event.target.value)}
           inputMode="numeric"
-          aria-label="Quantité disponible"
+          aria-label={t("quantite")}
           className={`${inputClass} tabular text-center`}
         />
       </div>
@@ -582,14 +554,14 @@ function NewResource({
           disabled={!name.trim()}
           onClick={(event) => void submit(event)}
         >
-          Ajouter
+          {t("bouton")}
         </Button>
         <button
           type="button"
           onClick={onCancel}
           className="rounded-lg px-2 py-2 text-sm text-muted transition hover:text-ink"
         >
-          Annuler
+          {t("annuler")}
         </button>
       </div>
     </div>
@@ -618,6 +590,7 @@ export function ServiceResources({
   serviceId: string;
   canEdit: boolean;
 }) {
+  const t = useTranslations("pro.ressources");
   const toast = useToast();
   const resources = useResource<Page<SalonResource>>(
     "/api/v1/resources/",
@@ -659,8 +632,8 @@ export function ServiceResources({
             ),
       {
         success: existing
-          ? `« ${resource.name} » n'est plus requise.`
-          : `« ${resource.name} » est maintenant requise.`,
+          ? t("plusRequise", { nom: resource.name })
+          : t("requise", { nom: resource.name }),
       },
     );
     if (ok) links.reload();
@@ -668,10 +641,8 @@ export function ServiceResources({
 
   return (
     <div className="rounded-xl border border-line bg-surface-muted/40 p-3 sm:p-4">
-      <p className="mb-1 text-sm font-medium text-ink">Ressources mobilisées</p>
-      <p className="mb-3 text-xs text-muted">
-        Une unité par rendez-vous. Quand tout est pris, le créneau disparaît.
-      </p>
+      <p className="mb-1 text-sm font-medium text-ink">{t("mobilisees")}</p>
+      <p className="mb-3 text-xs text-muted">{t("mobiliseesAide")}</p>
 
       <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-3">
         {all.map((resource) => {
@@ -693,8 +664,7 @@ export function ServiceResources({
                   {resource.name}
                 </span>
                 <span className="tabular text-xs text-subtle">
-                  {resource.capacity} disponible
-                  {resource.capacity > 1 ? "s" : ""}
+                  {t("disponibles", { n: resource.capacity })}
                 </span>
               </button>
             </li>
