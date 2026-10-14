@@ -26,11 +26,12 @@ import {
 import { Lien as Link } from "@/features/ui/Lien";
 import { decouper } from "@/i18n/langues";
 import { salonUrl } from "@/lib/site";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 
 import {
   DashboardError,
+  dashboardFetch,
   fetchSession,
   logout,
   renvoyerVerification,
@@ -39,6 +40,7 @@ import {
 } from "@/lib/dashboard";
 import { ToastProvider, useToast } from "@/features/ui/Toast";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
+import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
 import { BeautySalonBrand, BeautySalonSymbol } from "@/features/ui/BeautySalonBrand";
 
 import { AccesProvider, AccessBanner, UpgradeButton, useAcces } from "./AccessBanner";
@@ -263,6 +265,27 @@ function ShellContent({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [reloadToken]);
+
+  /*
+    La langue de l'espace, retenue sur le compte.
+
+    Les notifications, les e-mails au salon et les rappels d'abonnement
+    partent d'une tâche, sans page ouverte pour dire la langue : c'est
+    celle du compte qui décide. On la pose ici, chaque fois que l'espace
+    s'ouvre dans une autre langue que celle retenue — le choix fait dans
+    les réglages d'affichage suffit, rien d'autre à régler.
+  */
+  const langue = useLocale();
+  const langueRetenue = user?.locale;
+  useEffect(() => {
+    if (!langueRetenue || langueRetenue === langue) return;
+    dashboardFetch("/api/v1/auth/langue", {
+      method: "POST",
+      body: JSON.stringify({ langue }),
+    }).catch(() => {
+      /* Rien de grave : on réessaiera à la prochaine ouverture. */
+    });
+  }, [langue, langueRetenue]);
 
   if (loading) {
     return (
@@ -828,6 +851,15 @@ function TopBar({
           {/* L'action d'abonnement du moment — choisir, passer à l'annuel,
               régler — à portée de clic depuis n'importe quel écran. */}
           <UpgradeButton />
+
+          {/* La langue, à côté du thème : deux réglages d'affichage qu'on
+              change sans quitter l'écran. Sur téléphone, la barre n'a pas
+              la place — le choix reste dans les réglages d'affichage. */}
+          <SelecteurLangue
+            className="hidden border-line bg-surface sm:inline-flex"
+            classeActive="salon-gradient text-white shadow-sm"
+            classeInactive="text-muted hover:text-ink"
+          />
 
           <ThemeToggle />
 

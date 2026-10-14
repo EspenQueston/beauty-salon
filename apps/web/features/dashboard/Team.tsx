@@ -296,7 +296,7 @@ function WithoutAccount({
   if (orphans.length === 0) return null;
 
   return (
-    <div className="mt-5 rounded-xl border border-line bg-surface-muted/50 p-3.5">
+    <div className="mb-5 mt-5 rounded-xl border border-line bg-surface-muted/50 p-3.5">
       <p className="text-sm text-ink">
         {t.rich("titre", {
           n: orphans.length,

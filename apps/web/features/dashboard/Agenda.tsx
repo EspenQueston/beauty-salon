@@ -563,7 +563,11 @@ export function Agenda() {
       {bookings === null && !error && <Skeleton rows={4} />}
 
       {bookings?.length === 0 && (
-        <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
+        // Une marge sous l'encart : la semaine affichée juste en dessous
+        // venait s'y coller.
+        <div className="mb-5">
+          <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
+        </div>
       )}
 
       {/*

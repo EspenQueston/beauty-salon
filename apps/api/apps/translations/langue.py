@@ -47,3 +47,16 @@ def table_pour(request, tenant_id) -> dict[tuple[str, str, str], str]:
     from .services import table_du_salon
 
     return table_du_salon(tenant_id, langue)
+
+
+def du_compte(user) -> str:
+    """La langue dans laquelle ecrire a ce compte, hors de toute requete.
+
+    Les notifications, les e-mails au salon, les rappels d'abonnement partent
+    d'une tache : il n'y a plus d'en-tete a lire. C'est la langue que la
+    personne a choisie dans son espace, retenue sur son compte
+    (`User.locale`), qui decide. Une valeur inconnue — un compte cree avant,
+    une saisie d'administration — vaut le francais.
+    """
+    valeur = (getattr(user, "locale", "") or "").strip().lower()[:2]
+    return valeur if valeur in LANGUES else LANGUE_SOURCE

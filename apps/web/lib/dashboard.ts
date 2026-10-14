@@ -33,6 +33,8 @@ export interface SessionUser {
   is_platform_admin: boolean;
   /** L'adresse a été prouvée par un clic sur le lien reçu. */
   email_verified?: boolean;
+  /** Langue retenue pour écrire à ce compte (notifications, e-mails). */
+  locale?: string;
   /** Double authentification active sur ce compte. */
   mfa_enabled?: boolean;
   /** Après une connexion par code de secours : combien il en reste. */
@@ -101,6 +103,13 @@ export async function dashboardFetch<T>(
   // Necessaire uniquement si le compte gere plusieurs salons ; le backend
   // verifie de toute facon que le membership existe.
   if (tenantId) headers["X-Tenant-Id"] = tenantId;
+  // La langue de la page, et non celle du navigateur : c'est elle qui décide
+  // de la langue des messages renvoyés par le serveur (erreurs, fil
+  // d'activité). Un salon qui lit l'espace en anglais sur un téléphone
+  // réglé en français doit recevoir ses erreurs en anglais.
+  if (typeof document !== "undefined" && document.documentElement.lang && !headers["Accept-Language"]) {
+    headers["Accept-Language"] = document.documentElement.lang;
+  }
 
   const response = await fetch(`${browserApi()}${path}`, {
     ...init,

@@ -33,6 +33,7 @@ from .views import (
     PasswordResetConfirmView,
     PasswordResetRequestView,
     PublicInvitationView,
+    LangueView,
     SessionView,
     SignupView,
     SlugAvailabilityView,
@@ -45,6 +46,7 @@ urlpatterns = [
     path("login", LoginView.as_view(), name="login"),
     path("logout", LogoutView.as_view(), name="logout"),
     path("session", SessionView.as_view(), name="session"),
+    path("langue", LangueView.as_view(), name="langue"),
     path("password/change", PasswordChangeView.as_view(), name="password-change"),
     path("email/verify/resend", EmailVerifyResendView.as_view(), name="email-verify-resend"),
     # Double authentification : le code a la connexion, puis les reglages.

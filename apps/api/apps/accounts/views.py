@@ -175,6 +175,32 @@ class SessionView(APIView):
         return Response(UserSerializer(request.user).data)
 
 
+class LangueView(APIView):
+    """La langue dans laquelle l'espace ecrit a ce compte.
+
+    Posee par l'espace pro chaque fois qu'il s'ouvre dans une autre langue
+    que celle retenue : les notifications, les e-mails au salon et les
+    rappels d'abonnement partent ensuite dans celle-ci, sans que personne ait
+    a la regler deux fois.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from apps.translations.langue import LANGUES
+
+        langue = str(request.data.get("langue", "")).strip().lower()[:2]
+        if langue not in LANGUES:
+            return Response(
+                {"detail": "Langue non proposée.", "code": "langue_inconnue"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if request.user.locale != langue:
+            request.user.locale = langue
+            request.user.save(update_fields=["locale", "updated_at"])
+        return Response({"langue": langue})
+
+
 # ---------------------------------------------------------------------------
 # Inscription d'un salon
 # ---------------------------------------------------------------------------
