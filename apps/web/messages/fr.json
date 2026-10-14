@@ -2478,6 +2478,93 @@
         "montant": "Montant",
         "part": "Part"
       }
+    },
+    "domaine": {
+      "titre": "Domaine personnalisé",
+      "description": "Votre mini-site sur votre propre nom de domaine — www.monsalon.com plutôt qu'une adresse Beauty Salon.",
+      "reserve": {
+        "titre": "Réservé au propriétaire",
+        "corps": "Relier un domaine engage l'adresse publique du salon : c'est le propriétaire qui s'en charge."
+      },
+      "ajoute": "Domaine ajouté. Créez maintenant les deux enregistrements DNS.",
+      "ajoutImpossible": "Ajout impossible.",
+      "ajouter": {
+        "titre": "Ajouter un domaine",
+        "detail": "Un domaine que vous possédez déjà, acheté chez un registraire (OVH, GoDaddy, Namecheap, Alibaba Cloud…).",
+        "champ": "Domaine",
+        "exemple": "www.monsalon.com",
+        "bouton": "Ajouter"
+      },
+      "aucun": "Aucun domaine pour l'instant. Votre mini-site reste joignable à son adresse Beauty Salon.",
+      "carte": {
+        "relieOk": "{domaine} est relié à votre mini-site.",
+        "verificationImpossible": "Vérification impossible.",
+        "retire": "Domaine retiré.",
+        "retraitImpossible": "Retrait impossible.",
+        "statuts": {
+          "pause": "En pause",
+          "relie": "Relié",
+          "attente": "En attente du DNS"
+        },
+        "enPause": "Relié, mais servi seulement avec l'offre Pro : les visites arrivent sur votre adresse Beauty Salon.",
+        "enLigne": "Vos clientes y trouvent votre mini-site, en HTTPS.",
+        "derniereVerification": "Dernière vérification le {date}.",
+        "creez": "Créez les deux enregistrements ci-dessous, puis vérifiez.",
+        "ouvrir": "Ouvrir",
+        "registraire": "Chez votre registraire",
+        "prouver": "Prouver que le domaine est à vous",
+        "amener": "Amener le domaine ici",
+        "confirmer": "Retirer {domaine} ?",
+        "annuler": "Annuler",
+        "retirer": "Retirer",
+        "verifier": "Vérifier"
+      },
+      "dns": {
+        "type": "Type",
+        "nom": "Nom",
+        "valeur": "Valeur",
+        "valeurInconnue": "Adresse du serveur : demandez-la à l'équipe",
+        "copier": "Copier {terme}",
+        "copie": "{terme} copié.",
+        "copieImpossible": "Copie impossible : sélectionnez le texte à la main."
+      },
+      "aide": {
+        "titre": "Bon à savoir",
+        "p1": "Le domaine doit déjà vous appartenir : Beauty Salon ne l'achète pas pour vous.",
+        "p2": "Un sous-domaine (www.monsalon.com) se relie par un CNAME ; le domaine nu (monsalon.com) par un enregistrement A.",
+        "p3": "Le DNS met de quelques minutes à quelques heures à se propager. Vérifiez à nouveau plus tard si besoin.",
+        "p4": "Le certificat HTTPS est créé automatiquement à la première visite.",
+        "p5": "Votre adresse Beauty Salon reste active, et reprend le relais si Pro s'arrête."
+      }
+    },
+    "offrePro": {
+      "faitPartie": "{fonction} fait partie de l'offre Pro",
+      "fermee": "Cette fonction est momentanément fermée par l'équipe Beauty Salon.",
+      "reglagesGardes": "Vos réglages sont gardés : ils reprennent dès que Pro est actif.",
+      "passer": "Passer à Pro",
+      "parlezEn": "Parlez-en au propriétaire du salon."
+    },
+    "fonctionsPro": {
+      "custom_domain": {
+        "nom": "Domaine personnalisé",
+        "resume": "Votre mini-site sur votre propre nom de domaine."
+      },
+      "customization": {
+        "nom": "Apparence avancée",
+        "resume": "Polices, menu, ordre des sections, accroche et bouton."
+      },
+      "whatsapp_assistant": {
+        "nom": "Assistant IA WhatsApp",
+        "resume": "Réponses automatiques à vos clientes sur votre numéro WhatsApp."
+      },
+      "platform_assistant": {
+        "nom": "Assistant IA de l'espace pro",
+        "resume": "Répond à vos questions sur votre agenda et votre salon."
+      },
+      "customer_assistant": {
+        "nom": "Assistant IA 24 h/24",
+        "resume": "Réponses automatiques à vos clientes sur le mini-site, jour et nuit."
+      }
     }
   },
   "theme": {

@@ -2478,6 +2478,93 @@
         "montant": "Amount",
         "part": "Share"
       }
+    },
+    "domaine": {
+      "titre": "Custom domain",
+      "description": "Your mini-site on your own domain name — www.mysalon.com rather than a Beauty Salon address.",
+      "reserve": {
+        "titre": "For the owner only",
+        "corps": "Connecting a domain changes the salon's public address: the owner takes care of it."
+      },
+      "ajoute": "Domain added. Now create the two DNS records.",
+      "ajoutImpossible": "Could not add the domain.",
+      "ajouter": {
+        "titre": "Add a domain",
+        "detail": "A domain you already own, bought from a registrar (OVH, GoDaddy, Namecheap, Alibaba Cloud…).",
+        "champ": "Domain",
+        "exemple": "www.mysalon.com",
+        "bouton": "Add"
+      },
+      "aucun": "No domain yet. Your mini-site stays reachable at its Beauty Salon address.",
+      "carte": {
+        "relieOk": "{domaine} is now connected to your mini-site.",
+        "verificationImpossible": "Could not verify.",
+        "retire": "Domain removed.",
+        "retraitImpossible": "Could not remove.",
+        "statuts": {
+          "pause": "Paused",
+          "relie": "Connected",
+          "attente": "Waiting for DNS"
+        },
+        "enPause": "Connected, but only served with the Pro plan: visits go to your Beauty Salon address.",
+        "enLigne": "Your clients find your mini-site there, over HTTPS.",
+        "derniereVerification": "Last checked on {date}.",
+        "creez": "Create the two records below, then verify.",
+        "ouvrir": "Open",
+        "registraire": "At your registrar",
+        "prouver": "Prove the domain is yours",
+        "amener": "Point the domain here",
+        "confirmer": "Remove {domaine}?",
+        "annuler": "Cancel",
+        "retirer": "Remove",
+        "verifier": "Verify"
+      },
+      "dns": {
+        "type": "Type",
+        "nom": "Name",
+        "valeur": "Value",
+        "valeurInconnue": "Server address: ask the team",
+        "copier": "Copy {terme}",
+        "copie": "{terme} copied.",
+        "copieImpossible": "Could not copy: select the text by hand."
+      },
+      "aide": {
+        "titre": "Good to know",
+        "p1": "You must already own the domain: Beauty Salon doesn't buy it for you.",
+        "p2": "A subdomain (www.mysalon.com) is connected with a CNAME; the bare domain (mysalon.com) with an A record.",
+        "p3": "DNS takes from a few minutes to a few hours to propagate. Check again later if needed.",
+        "p4": "The HTTPS certificate is created automatically on the first visit.",
+        "p5": "Your Beauty Salon address stays active, and takes over again if Pro stops."
+      }
+    },
+    "offrePro": {
+      "faitPartie": "{fonction} is part of the Pro plan",
+      "fermee": "This feature is temporarily closed by the Beauty Salon team.",
+      "reglagesGardes": "Your settings are kept: they resume as soon as Pro is active.",
+      "passer": "Upgrade to Pro",
+      "parlezEn": "Talk to the salon owner about it."
+    },
+    "fonctionsPro": {
+      "custom_domain": {
+        "nom": "Custom domain",
+        "resume": "Your mini-site on your own domain name."
+      },
+      "customization": {
+        "nom": "Advanced appearance",
+        "resume": "Fonts, menu, section order, tagline and button."
+      },
+      "whatsapp_assistant": {
+        "nom": "WhatsApp AI assistant",
+        "resume": "Automatic replies to your clients on your WhatsApp number."
+      },
+      "platform_assistant": {
+        "nom": "Pro space AI assistant",
+        "resume": "Answers your questions about your calendar and your salon."
+      },
+      "customer_assistant": {
+        "nom": "24/7 AI assistant",
+        "resume": "Automatic replies to your clients on the mini-site, day and night."
+      }
     }
   },
   "theme": {

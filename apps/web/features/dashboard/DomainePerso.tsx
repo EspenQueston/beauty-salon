@@ -15,6 +15,7 @@
  * vérification se relance d'un geste.
  */
 
+import { useTranslations } from "next-intl";
 import { useState, type FormEvent } from "react";
 
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
@@ -32,8 +33,8 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
-import { dateLongue } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 import { EnteteCarte, VerrouPro, useFonction } from "./Pro";
 import { useResource } from "./useResource";
@@ -57,6 +58,7 @@ interface Domaine {
 }
 
 export function DomainePerso() {
+  const t = useTranslations("pro.domaine");
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const proprietaire = membership.role === "owner";
@@ -73,11 +75,8 @@ export function DomainePerso() {
   if (!proprietaire) {
     return (
       <section>
-        <PageHeader title="Domaine personnalisé" />
-        <EmptyState title="Réservé au propriétaire">
-          Relier un domaine engage l&apos;adresse publique du salon : c&apos;est le
-          propriétaire qui s&apos;en charge.
-        </EmptyState>
+        <PageHeader title={t("titre")} />
+        <EmptyState title={t("reserve.titre")}>{t("reserve.corps")}</EmptyState>
       </section>
     );
   }
@@ -95,10 +94,10 @@ export function DomainePerso() {
         tenantId,
       );
       setSaisie("");
-      toast.success("Domaine ajouté. Créez maintenant les deux enregistrements DNS.");
+      toast.success(t("ajoute"));
       domaines.reload();
     } catch (caught) {
-      setErreur(caught instanceof DashboardError ? caught.message : "Ajout impossible.");
+      setErreur(caught instanceof DashboardError ? caught.message : t("ajoutImpossible"));
     } finally {
       setEnvoi(false);
     }
@@ -109,8 +108,8 @@ export function DomainePerso() {
   return (
     <section>
       <PageHeader
-        title="Domaine personnalisé"
-        description="Votre mini-site sur votre propre nom de domaine — www.monsalon.com plutôt qu'une adresse Beauty Salon."
+        title={t("titre")}
+        description={t("description")}
       />
 
       {ouvert === false && <VerrouPro fonction="custom_domain" />}
@@ -120,16 +119,16 @@ export function DomainePerso() {
           <Card padded={false} className="p-4 sm:p-5">
             <EnteteCarte
               icone="globe"
-              titre="Ajouter un domaine"
-              detail="Un domaine que vous possédez déjà, acheté chez un registraire (OVH, GoDaddy, Namecheap, Alibaba Cloud…)."
+              titre={t("ajouter.titre")}
+              detail={t("ajouter.detail")}
             />
             <form onSubmit={ajouter} className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-start">
-              <Field label="Domaine" className="min-w-0 flex-1" error={erreur ?? undefined}>
+              <Field label={t("ajouter.champ")} className="min-w-0 flex-1" error={erreur ?? undefined}>
                 <input
                   className={inputClass}
                   value={saisie}
                   onChange={(event) => setSaisie(event.target.value)}
-                  placeholder="www.monsalon.com"
+                  placeholder={t("ajouter.exemple")}
                   autoComplete="off"
                   autoCapitalize="none"
                   spellCheck={false}
@@ -144,7 +143,7 @@ export function DomainePerso() {
                 disabled={ouvert === false || !saisie.trim()}
                 className="sm:mt-7"
               >
-                Ajouter
+                {t("ajouter.bouton")}
               </Button>
             </form>
           </Card>
@@ -153,8 +152,7 @@ export function DomainePerso() {
           {domaines.data === null && !domaines.error && <Skeleton rows={2} />}
           {domaines.data !== null && liste.length === 0 && (
             <p className="rounded-2xl border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-muted sm:text-sm">
-              Aucun domaine pour l&apos;instant. Votre mini-site reste joignable à son
-              adresse Beauty Salon.
+              {t("aucun")}
             </p>
           )}
 
@@ -186,6 +184,8 @@ function CarteDomaine({
   ouvert: boolean;
   onChange: () => void;
 }) {
+  const t = useTranslations("pro.domaine.carte");
+  const { dateLongue } = useFormats();
   const toast = useToast();
   const [verification, setVerification] = useState(false);
   const [retrait, setRetrait] = useState(false);
@@ -201,10 +201,10 @@ function CarteDomaine({
         { method: "POST" },
         tenantId,
       );
-      toast.success(`${domaine.hostname} est relié à votre mini-site.`);
+      toast.success(t("relieOk", { domaine: domaine.hostname }));
       onChange();
     } catch (caught) {
-      setMessage(caught instanceof DashboardError ? caught.message : "Vérification impossible.");
+      setMessage(caught instanceof DashboardError ? caught.message : t("verificationImpossible"));
       onChange();
     } finally {
       setVerification(false);
@@ -215,20 +215,20 @@ function CarteDomaine({
     setRetrait(true);
     try {
       await dashboardFetch(`/api/v1/domaines/${domaine.id}`, { method: "DELETE" }, tenantId);
-      toast.success("Domaine retiré.");
+      toast.success(t("retire"));
       onChange();
     } catch (caught) {
-      toast.error(caught instanceof DashboardError ? caught.message : "Retrait impossible.");
+      toast.error(caught instanceof DashboardError ? caught.message : t("retraitImpossible"));
       setRetrait(false);
     }
   }
 
   const statut = domaine.en_pause ? (
-    <Badge tone="warning">En pause</Badge>
+    <Badge tone="warning">{t("statuts.pause")}</Badge>
   ) : domaine.relie ? (
-    <Badge tone="success">Relié</Badge>
+    <Badge tone="success">{t("statuts.relie")}</Badge>
   ) : (
-    <Badge tone="info">En attente du DNS</Badge>
+    <Badge tone="info">{t("statuts.attente")}</Badge>
   );
   const erreur = message ?? (domaine.relie ? "" : domaine.derniere_erreur);
 
@@ -245,11 +245,11 @@ function CarteDomaine({
           <p className="mt-0.5 text-[11.5px] text-muted sm:text-xs">
             {domaine.relie
               ? domaine.en_pause
-                ? "Relié, mais servi seulement avec l'offre Pro : les visites arrivent sur votre adresse Beauty Salon."
-                : `Vos clientes y trouvent votre mini-site, en HTTPS.`
+                ? t("enPause")
+                : t("enLigne")
               : domaine.verifie_le
-                ? `Dernière vérification le ${dateLongue.format(new Date(domaine.verifie_le))}.`
-                : "Créez les deux enregistrements ci-dessous, puis vérifiez."}
+                ? t("derniereVerification", { date: dateLongue.format(new Date(domaine.verifie_le)) })
+                : t("creez")}
           </p>
         </div>
         {domaine.relie && !domaine.en_pause && (
@@ -259,7 +259,7 @@ function CarteDomaine({
             rel="noreferrer noopener"
             className="inline-flex items-center gap-1 text-sm font-medium text-salon hover:underline"
           >
-            Ouvrir <Icon name="external" className="size-3.5" />
+            {t("ouvrir")} <Icon name="external" className="size-3.5" />
           </a>
         )}
       </div>
@@ -267,17 +267,17 @@ function CarteDomaine({
       {!domaine.relie && (
         <div className="border-t border-line bg-surface-muted/50 p-4 sm:p-5">
           <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-wide text-subtle">
-            Chez votre registraire
+            {t("registraire")}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             <LigneDns
               etape={1}
-              titre="Prouver que le domaine est à vous"
+              titre={t("prouver")}
               enregistrement={domaine.consignes.txt}
             />
             <LigneDns
               etape={2}
-              titre="Amener le domaine ici"
+              titre={t("amener")}
               enregistrement={domaine.consignes.routage}
             />
           </div>
@@ -293,19 +293,19 @@ function CarteDomaine({
         {confirmer ? (
           <>
             <span className="mr-auto text-[12px] text-muted sm:text-sm">
-              Retirer {domaine.hostname} ?
+              {t("confirmer", { domaine: domaine.hostname })}
             </span>
             <GhostButton type="button" onClick={() => setConfirmer(false)}>
-              Annuler
+              {t("annuler")}
             </GhostButton>
             <DangerButton type="button" pending={retrait} onClick={retirer}>
-              Retirer
+              {t("retirer")}
             </DangerButton>
           </>
         ) : (
           <>
             <GhostButton type="button" onClick={() => setConfirmer(true)}>
-              Retirer
+              {t("retirer")}
             </GhostButton>
             {!domaine.relie && (
               <Button
@@ -315,7 +315,7 @@ function CarteDomaine({
                 onClick={verifier}
                 icon={<Icon name="check" className="size-4" />}
               >
-                Vérifier
+                {t("verifier")}
               </Button>
             )}
           </>
@@ -334,6 +334,7 @@ function LigneDns({
   titre: string;
   enregistrement: Enregistrement;
 }) {
+  const t = useTranslations("pro.domaine.dns");
   return (
     <div className="min-w-0 rounded-xl border border-line bg-surface p-3">
       <p className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink sm:text-sm">
@@ -343,11 +344,11 @@ function LigneDns({
         {titre}
       </p>
       <dl className="mt-2 space-y-1.5">
-        <Valeur terme="Type" valeur={enregistrement.type} />
-        <Valeur terme="Nom" valeur={enregistrement.nom} copiable />
+        <Valeur terme={t("type")} valeur={enregistrement.type} />
+        <Valeur terme={t("nom")} valeur={enregistrement.nom} copiable />
         <Valeur
-          terme="Valeur"
-          valeur={enregistrement.valeur || "Adresse du serveur : demandez-la à l'équipe"}
+          terme={t("valeur")}
+          valeur={enregistrement.valeur || t("valeurInconnue")}
           copiable={Boolean(enregistrement.valeur)}
         />
       </dl>
@@ -364,6 +365,7 @@ function Valeur({
   valeur: string;
   copiable?: boolean;
 }) {
+  const t = useTranslations("pro.domaine.dns");
   const toast = useToast();
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -376,13 +378,13 @@ function Valeur({
       {copiable && (
         <button
           type="button"
-          aria-label={`Copier ${terme.toLowerCase()}`}
+          aria-label={t("copier", { terme: terme.toLowerCase() })}
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(valeur);
-              toast.success(`${terme} copié.`);
+              toast.success(t("copie", { terme }));
             } catch {
-              toast.error("Copie impossible : sélectionnez le texte à la main.");
+              toast.error(t("copieImpossible"));
             }
           }}
           className="shrink-0 rounded-md p-1 text-muted transition hover:bg-surface-hover hover:text-ink"
@@ -395,16 +397,11 @@ function Valeur({
 }
 
 function Aide() {
-  const points = [
-    "Le domaine doit déjà vous appartenir : Beauty Salon ne l'achète pas pour vous.",
-    "Un sous-domaine (www.monsalon.com) se relie par un CNAME ; le domaine nu (monsalon.com) par un enregistrement A.",
-    "Le DNS met de quelques minutes à quelques heures à se propager. Vérifiez à nouveau plus tard si besoin.",
-    "Le certificat HTTPS est créé automatiquement à la première visite.",
-    "Votre adresse Beauty Salon reste active, et reprend le relais si Pro s'arrête.",
-  ];
+  const t = useTranslations("pro.domaine.aide");
+  const points = [t("p1"), t("p2"), t("p3"), t("p4"), t("p5")];
   return (
     <Card padded={false} className="p-4 sm:p-5">
-      <p className="text-[13px] font-semibold text-ink sm:text-sm">Bon à savoir</p>
+      <p className="text-[13px] font-semibold text-ink sm:text-sm">{t("titre")}</p>
       <ul className="mt-2 space-y-2">
         {points.map((point) => (
           <li key={point} className="flex gap-2 text-[12px] leading-relaxed text-muted sm:text-[13px]">

@@ -12,10 +12,11 @@
 // Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
 // passerait par une redirection.
 import { Lien as Link } from "@/features/ui/Lien";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { useAcces } from "./AccessBanner";
-import { FONCTIONS_PRO, type FonctionPro } from "./abonnement";
+import { type FonctionPro } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
 import { Icon } from "./icons";
 
@@ -33,6 +34,8 @@ export function VerrouPro({
   fonction: FonctionPro;
   children?: ReactNode;
 }) {
+  const t = useTranslations("pro.offrePro");
+  const f = useTranslations("pro.fonctionsPro");
   const { membership } = useDashboard();
   const { acces } = useAcces();
   const proprietaire = membership.role === "owner";
@@ -50,13 +53,12 @@ export function VerrouPro({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-semibold sm:text-base">
-            {FONCTIONS_PRO[fonction].nom} fait partie de l&apos;offre Pro
+            {t("faitPartie", { fonction: f(`${fonction}.nom`) })}
           </p>
           <p className="mt-0.5 text-[12.5px] leading-relaxed opacity-75 sm:text-sm">
             {enPause
-              ? "Cette fonction est momentanément fermée par l'équipe Beauty Salon."
-              : (children ??
-                `${FONCTIONS_PRO[fonction].resume} Vos réglages sont gardés : ils reprennent dès que Pro est actif.`)}
+              ? t("fermee")
+              : (children ?? `${f(`${fonction}.resume`)} ${t("reglagesGardes")}`)}
           </p>
         </div>
         {!enPause &&
@@ -66,10 +68,10 @@ export function VerrouPro({
               className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:brightness-95 sm:w-auto"
             >
               <Icon name="crown" className="size-4" />
-              Passer à Pro
+              {t("passer")}
             </Link>
           ) : (
-            <span className="text-xs opacity-75">Parlez-en au propriétaire du salon.</span>
+            <span className="text-xs opacity-75">{t("parlezEn")}</span>
           ))}
       </div>
     </div>
