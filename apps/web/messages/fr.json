@@ -2780,6 +2780,64 @@
     },
     "profilNav": {
       "sections": "Sections du profil"
+    },
+    "identite": {
+      "ongletTitre": "Identité · {salon}",
+      "ok": "Vos informations sont à jour.",
+      "titre": "Identité",
+      "description": "Le nom de votre salon, et comment vous joindre.",
+      "votreSalon": "Votre salon",
+      "nomSalon": "Nom du salon",
+      "nomSalonAide": "Il apparaît en haut de votre mini-site, dans vos e-mails et sur vos factures.",
+      "adresseMiniSite": "Adresse de votre mini-site",
+      "adresseCopiee": "Adresse copiée.",
+      "copieImpossible": "Copie impossible sur ce navigateur.",
+      "copier": "Copier",
+      "ouvrir": "Ouvrir",
+      "adresseFixe": "Cette adresse ne change pas : elle est peut-être déjà imprimée ou partagée. Écrivez-nous si vous devez vraiment en changer.",
+      "vous": "Vous",
+      "votreNom": "Votre nom",
+      "votreNomAide": "Il apparaît sur votre fiche de prestataire.",
+      "telephone": "Téléphone",
+      "telephoneAide": "Pour que l'équipe Beauty Salon vous joigne.",
+      "email": "Adresse e-mail",
+      "emailAide": "C'est aussi votre identifiant de connexion.",
+      "motDePasse": "Mot de passe actuel",
+      "motDePasseAide": "Pour confirmer le changement d'identifiant. Votre ancienne adresse sera prévenue.",
+      "enregistrer": "Enregistrer",
+      "lectureSeule": "Seule la propriétaire du salon peut modifier ces informations."
+    },
+    "devise": {
+      "apercuImpossible": "Aperçu impossible pour le moment.",
+      "ok": "Vos tarifs sont désormais en {devise}.",
+      "titre": "Devise",
+      "chargement": "Chargement…",
+      "actuelle": "Vos tarifs, vos acomptes et votre boutique sont en <gras>{devise}</gras>. C'est aussi la devise affichée par défaut sur votre mini-site.",
+      "decalage": "Votre salon est déclaré en <gras>{pays}</gras>, où l'on facture habituellement en <gras>{devise}</gras>. Choisissez-la ci-dessous si c'est une erreur — ou gardez la vôtre si c'est voulu.",
+      "votre": "Votre devise",
+      "selectionnee": "Sélectionnée",
+      "basculer": "Basculer",
+      "lectureTaux": "Lecture du taux du jour…",
+      "passer": "Passer de {de} à {vers}",
+      "exemple": "<fort>{nom}</fort> : <chiffre>{avant}</chiffre> {de} devient <resultat>{apres}</resultat> {vers}",
+      "taux": "Taux du jour : 1 {vers} = <chiffre>{inverse}</chiffre> {de}",
+      "lignes": {
+        "prestations": "prestations",
+        "options": "options",
+        "articles": "articles",
+        "zones": "zones"
+      },
+      "historique": "Vos rendez-vous passés et vos écritures comptables gardent leur devise d'origine : ce qui a été encaissé en {de} reste en {de}.",
+      "convertir": "Convertir en {vers}",
+      "annuler": "Annuler",
+      "devises": {
+        "XAF": "Franc CFA",
+        "XOF": "Franc CFA BCEAO",
+        "CDF": "Franc congolais",
+        "CNY": "Yuan",
+        "USD": "Dollar américain",
+        "EUR": "Euro"
+      }
     }
   },
   "theme": {

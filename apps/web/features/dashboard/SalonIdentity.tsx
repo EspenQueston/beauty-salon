@@ -29,6 +29,7 @@
  * l'ancien. Le glisser ici en ferait une case parmi d'autres.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -58,6 +59,7 @@ interface Identity {
 }
 
 export function SalonIdentityScreen() {
+  const t = useTranslations("pro.identite");
   const { membership, reload: reloadSession } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -85,8 +87,8 @@ export function SalonIdentityScreen() {
   // Le titre de l'onglet suit le nom du salon : après un renommage, laisser
   // l'ancien dans la barre d'onglets donne l'impression que rien n'a pris.
   useEffect(() => {
-    if (data?.salon_name) document.title = `Identité · ${data.salon_name}`;
-  }, [data?.salon_name]);
+    if (data?.salon_name) document.title = t("ongletTitre", { salon: data.salon_name });
+  }, [data?.salon_name, t]);
 
   if (error) return <ErrorState>{error}</ErrorState>;
   if (!form) return <Skeleton rows={5} />;
@@ -119,7 +121,7 @@ export function SalonIdentityScreen() {
           },
           tenantId,
         ),
-      { success: "Vos informations sont à jour." },
+      { success: t("ok") },
     );
     setSaving(false);
 
@@ -135,8 +137,8 @@ export function SalonIdentityScreen() {
   return (
     <>
       <PageHeader
-        title="Identité"
-        description="Le nom de votre salon, et comment vous joindre."
+        title={t("titre")}
+        description={t("description")}
       />
 
       <form onSubmit={save} className="space-y-5">
@@ -144,12 +146,12 @@ export function SalonIdentityScreen() {
         <Card>
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-ink">
             <Icon name="store" className="size-4 text-salon" />
-            Votre salon
+            {t("votreSalon")}
           </h2>
 
           <Field
-            label="Nom du salon"
-            hint="Il apparaît en haut de votre mini-site, dans vos e-mails et sur vos factures."
+            label={t("nomSalon")}
+            hint={t("nomSalonAide")}
           >
             <input
               value={form.salon_name}
@@ -170,7 +172,7 @@ export function SalonIdentityScreen() {
           */}
           <div className="mt-4">
             <p className="mb-1.5 text-sm font-medium text-ink">
-              Adresse de votre mini-site
+              {t("adresseMiniSite")}
             </p>
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-muted px-3 py-2.5">
               <code className="min-w-0 flex-1 truncate text-sm text-muted">
@@ -181,14 +183,12 @@ export function SalonIdentityScreen() {
                 onClick={() => {
                   navigator.clipboard
                     ?.writeText(form.site_url)
-                    .then(() => toast.info("Adresse copiée."))
-                    .catch(() =>
-                      toast.info("Copie impossible sur ce navigateur."),
-                    );
+                    .then(() => toast.info(t("adresseCopiee")))
+                    .catch(() => toast.info(t("copieImpossible")));
                 }}
                 className="shrink-0 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-hover"
               >
-                Copier
+                {t("copier")}
               </button>
               <a
                 href={form.site_url}
@@ -196,12 +196,11 @@ export function SalonIdentityScreen() {
                 rel="noreferrer"
                 className="shrink-0 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-hover"
               >
-                Ouvrir
+                {t("ouvrir")}
               </a>
             </div>
             <p className="mt-1.5 text-xs text-subtle">
-              Cette adresse ne change pas : elle est peut-être déjà imprimée ou
-              partagée. Écrivez-nous si vous devez vraiment en changer.
+              {t("adresseFixe")}
             </p>
           </div>
         </Card>
@@ -210,7 +209,7 @@ export function SalonIdentityScreen() {
         <Card>
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-ink">
             <Icon name="users" className="size-4 text-salon" />
-            Vous
+            {t("vous")}
           </h2>
 
           {/* Deux colonnes dès le téléphone : ce sont des champs courts, et
@@ -219,8 +218,8 @@ export function SalonIdentityScreen() {
               international y tient mal sur 160 px. */}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
-              label="Votre nom"
-              hint="Il apparaît sur votre fiche de prestataire."
+              label={t("votreNom")}
+              hint={t("votreNomAide")}
             >
               <input
                 value={form.owner_name}
@@ -232,8 +231,8 @@ export function SalonIdentityScreen() {
             </Field>
 
             <Field
-              label="Téléphone"
-              hint="Pour que l'équipe Beauty Salon vous joigne."
+              label={t("telephone")}
+              hint={t("telephoneAide")}
             >
               <input
                 type="tel"
@@ -247,8 +246,8 @@ export function SalonIdentityScreen() {
             </Field>
 
             <Field
-              label="Adresse e-mail"
-              hint="C'est aussi votre identifiant de connexion."
+              label={t("email")}
+              hint={t("emailAide")}
               className="sm:col-span-2"
             >
               <input
@@ -263,8 +262,8 @@ export function SalonIdentityScreen() {
 
             {adresseChangee && canEdit && (
               <Field
-                label="Mot de passe actuel"
-                hint="Pour confirmer le changement d'identifiant. Votre ancienne adresse sera prévenue."
+                label={t("motDePasse")}
+                hint={t("motDePasseAide")}
                 className="sm:col-span-2"
               >
                 <input
@@ -283,12 +282,12 @@ export function SalonIdentityScreen() {
         {canEdit ? (
           <div className="flex justify-end">
             <Button type="submit" pending={saving}>
-              Enregistrer
+              {t("enregistrer")}
             </Button>
           </div>
         ) : (
           <p className="text-sm text-muted">
-            Seule la propriétaire du salon peut modifier ces informations.
+            {t("lectureSeule")}
           </p>
         )}
       </form>

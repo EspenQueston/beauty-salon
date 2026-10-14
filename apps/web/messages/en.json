@@ -2780,6 +2780,64 @@
     },
     "profilNav": {
       "sections": "Profile sections"
+    },
+    "identite": {
+      "ongletTitre": "Identity · {salon}",
+      "ok": "Your details are up to date.",
+      "titre": "Identity",
+      "description": "Your salon's name, and how to reach you.",
+      "votreSalon": "Your salon",
+      "nomSalon": "Salon name",
+      "nomSalonAide": "Shown at the top of your mini-site, in your emails and on your invoices.",
+      "adresseMiniSite": "Your mini-site address",
+      "adresseCopiee": "Address copied.",
+      "copieImpossible": "Copying isn't possible in this browser.",
+      "copier": "Copy",
+      "ouvrir": "Open",
+      "adresseFixe": "This address doesn't change: it may already be printed or shared. Write to us if you really need to change it.",
+      "vous": "You",
+      "votreNom": "Your name",
+      "votreNomAide": "Shown on your staff profile.",
+      "telephone": "Phone",
+      "telephoneAide": "So the Beauty Salon team can reach you.",
+      "email": "Email address",
+      "emailAide": "It's also your sign-in identifier.",
+      "motDePasse": "Current password",
+      "motDePasseAide": "To confirm the change of identifier. Your old address will be notified.",
+      "enregistrer": "Save",
+      "lectureSeule": "Only the salon owner can change these details."
+    },
+    "devise": {
+      "apercuImpossible": "Preview unavailable at the moment.",
+      "ok": "Your prices are now in {devise}.",
+      "titre": "Currency",
+      "chargement": "Loading…",
+      "actuelle": "Your prices, deposits and shop are in <gras>{devise}</gras>. It's also the default currency shown on your mini-site.",
+      "decalage": "Your salon is registered in <gras>{pays}</gras>, where prices are usually in <gras>{devise}</gras>. Choose it below if this is a mistake — or keep yours if it's intentional.",
+      "votre": "Your currency",
+      "selectionnee": "Selected",
+      "basculer": "Switch",
+      "lectureTaux": "Reading today's rate…",
+      "passer": "Switch from {de} to {vers}",
+      "exemple": "<fort>{nom}</fort>: <chiffre>{avant}</chiffre> {de} becomes <resultat>{apres}</resultat> {vers}",
+      "taux": "Today's rate: 1 {vers} = <chiffre>{inverse}</chiffre> {de}",
+      "lignes": {
+        "prestations": "services",
+        "options": "options",
+        "articles": "items",
+        "zones": "areas"
+      },
+      "historique": "Your past appointments and accounting entries keep their original currency: what was collected in {de} stays in {de}.",
+      "convertir": "Convert to {vers}",
+      "annuler": "Cancel",
+      "devises": {
+        "XAF": "CFA franc",
+        "XOF": "CFA franc (BCEAO)",
+        "CDF": "Congolese franc",
+        "CNY": "Yuan",
+        "USD": "US dollar",
+        "EUR": "Euro"
+      }
     }
   },
   "theme": {
