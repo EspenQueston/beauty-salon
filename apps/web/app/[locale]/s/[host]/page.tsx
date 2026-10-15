@@ -45,6 +45,27 @@ const SECTIONS_ACCUEIL: SectionAccueil[] = [
 type Props = { params: Promise<{ host: string }> };
 
 /**
+ * Une bande teintée sur toute la largeur de la page.
+ *
+ * La teinte est calculée depuis la couleur du salon, pas fixée : un salon
+ * émeraude obtient une bande émeraude, et le mode sombre suit tout seul
+ * puisque `--site-ground` y est déjà inversé. Deux bandes qui se suivent
+ * restent séparées par la marge du haut, sur le fond de la page.
+ */
+function BandeTeintee({ children }: { children: ReactNode }) {
+  return (
+    <section
+      className="mt-16 border-y border-[var(--site-line)] py-12 sm:mt-20 sm:py-20"
+      style={{
+        background: "color-mix(in srgb, var(--salon-primary) 7%, var(--site-ground))",
+      }}
+    >
+      <div className="mx-auto max-w-5xl px-4">{children}</div>
+    </section>
+  );
+}
+
+/**
  * Accueil du mini-site.
  *
  * Une vitrine, pas un catalogue : chaque section montre assez pour donner
@@ -295,23 +316,15 @@ export default async function SalonHome({ params }: Props) {
         salon émeraude obtient une bande émeraude, et le mode sombre suit
         tout seul puisque `--site-ground` y est déjà inversé.
       */}
-      <section
-        className="mt-20 border-y border-[var(--site-line)] py-14 sm:py-20"
-        style={{
-          background:
-            "color-mix(in srgb, var(--salon-primary) 7%, var(--site-ground))",
-        }}
-      >
-        <div className="mx-auto max-w-5xl px-4">
-          <Reveal>
-            <SectionTitle
-              eyebrow={t("titresAccueil.etapesSurtitre")}
-              title={t("titresAccueil.etapesTitre")}
-            />
-          </Reveal>
-          <HowItWorks salon={salon} />
-        </div>
-      </section>
+      <BandeTeintee>
+        <Reveal>
+          <SectionTitle
+            eyebrow={t("titresAccueil.etapesSurtitre")}
+            title={t("titresAccueil.etapesTitre")}
+          />
+        </Reveal>
+        <HowItWorks salon={salon} />
+      </BandeTeintee>
       </>
     ),
     realisations: (
@@ -364,23 +377,24 @@ export default async function SalonHome({ params }: Props) {
         )}
     </div>
   ),
-    avis: (
-    <div className="mx-auto max-w-5xl px-4">
-        {reviews.results.length > 0 && (
-          <Reveal as="section" className="pt-20">
-            <SectionTitle
-              eyebrow={t("titresAccueil.avisSurtitre")}
-              title={t("titresAccueil.avisTitre")}
-            />
-            <ReviewList
-              reviews={reviews.results.slice(0, 4)}
-              rating={{ average: reviews.average, count: reviews.count }}
-              timeZone={salon.timezone}
-            />
-          </Reveal>
-        )}
-    </div>
-  ),
+    // La parole des clientes, sur la meme bande teintee que « Comment ca se
+    // passe » : deux sections qui ne montrent pas le catalogue du salon,
+    // et que le changement de fond distingue d'un coup d'oeil.
+    avis: reviews.results.length > 0 ? (
+      <BandeTeintee>
+        <Reveal>
+          <SectionTitle
+            eyebrow={t("titresAccueil.avisSurtitre")}
+            title={t("titresAccueil.avisTitre")}
+          />
+        </Reveal>
+        <ReviewList
+          reviews={reviews.results.slice(0, 4)}
+          rating={{ average: reviews.average, count: reviews.count }}
+          timeZone={salon.timezone}
+        />
+      </BandeTeintee>
+    ) : null,
     infos: (
     <div className="mx-auto max-w-5xl px-4">
         <Reveal as="section" className="pt-20">

@@ -552,7 +552,9 @@
       "versClair": "Switch to light mode",
       "sombre": "Dark mode",
       "clair": "Light mode"
-    }
+    },
+    "avisLireSuite": "Read more",
+    "avisReduire": "Show less"
   },
   "reservation": {
     "retour": "Back",

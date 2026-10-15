@@ -552,7 +552,9 @@
       "versClair": "Passer en mode clair",
       "sombre": "Mode sombre",
       "clair": "Mode clair"
-    }
+    },
+    "avisLireSuite": "Lire la suite",
+    "avisReduire": "Réduire"
   },
   "reservation": {
     "retour": "Retour",
