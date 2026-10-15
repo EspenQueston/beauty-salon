@@ -517,6 +517,14 @@ KKIAPAY_LIVE_PRIVATE_KEY = env("KKIAPAY_LIVE_PRIVATE_KEY", default="")
 KKIAPAY_LIVE_SECRET_KEY = env("KKIAPAY_LIVE_SECRET_KEY", default="")
 KKIAPAY_LIVE_WEBHOOK_SECRET = env("KKIAPAY_LIVE_WEBHOOK_SECRET", default="")
 
+# Factures PDF : l'emetteur imprime en tete. Les mentions legales (raison
+# sociale, adresse, numero d'immatriculation...) s'ajoutent ici, une par
+# ligne separee par « | », sans toucher au code.
+INVOICE_ISSUER_NAME = env("INVOICE_ISSUER_NAME", default="Beauty Salon")
+INVOICE_ISSUER_DETAILS = tuple(
+    ligne.strip() for ligne in env("INVOICE_ISSUER_DETAILS", default="").split("|") if ligne.strip()
+)
+
 # SASPAY : les pays africains que KKIAPAY ne couvre pas (voir
 # apps/billing/saspay.py). Une cle secrete par environnement, jamais exposee
 # au navigateur ; le secret de signature des webhooks se copie depuis le

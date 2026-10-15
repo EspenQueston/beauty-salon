@@ -27,7 +27,7 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
-import { PALETTES } from "@/features/site/palettes";
+import { PALETTES, couleursDuTheme } from "@/features/site/palettes";
 import { Icon } from "./icons";
 import { ContrastMeter } from "./ContrastMeter";
 import { MediaPicker, type PickableMedia } from "./MediaPicker";
@@ -53,7 +53,7 @@ interface Profile {
   social_links: Record<string, string>;
   wechat_id: string;
   wechat_qr: string | null;
-  theme_config: { primary?: string; accent?: string; surface?: string };
+  theme_config: { primary?: string; accent?: string; surface?: string; dark?: string };
   about_title: string;
   about_content: string;
   about_image: string | null;
@@ -433,14 +433,12 @@ export function SalonProfileScreen() {
                   <button
                     key={palette.name}
                     type="button"
-                    onClick={() =>
-                      set("theme_config", {
-                        ...theme,
-                        primary: palette.primary,
-                        accent: palette.accent,
-                        surface: palette.surface,
-                      })
-                    }
+                    onClick={() => {
+                      // Le fond sombre d'un ancien ensemble ne survit pas au suivant.
+                      const { dark: _ancien, ...reste } = theme;
+                      void _ancien;
+                      set("theme_config", { ...reste, ...couleursDuTheme(palette) });
+                    }}
                     aria-pressed={active}
                     className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
                       active

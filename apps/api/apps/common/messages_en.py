@@ -432,6 +432,7 @@ EXACTS: dict[str, str] = {
     "Ce salon est momentanément indisponible.": "This salon is temporarily unavailable.",
     "Ce salon n'est pas encore en ligne.": "This salon is not online yet.",
     "Le thème doit être un objet.": "The theme must be an object.",
+    "Couleur invalide.": "Invalid colour.",
     "Image introuvable dans vos médias.": "Image not found in your media.",
     # --- agenda, reservations ----------------------------------------------
     "La date de fin précède la date de début.": "The end date is before the start date.",

@@ -100,7 +100,7 @@ class SignupSerializer(serializers.Serializer):
     )
 
     def validate_theme_config(self, value):
-        allowed = {"primary", "accent", "surface"}
+        allowed = {"primary", "accent", "surface", "dark"}
         unknown = set(value) - allowed
         if unknown:
             raise serializers.ValidationError(

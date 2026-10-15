@@ -15,6 +15,7 @@
  * thème du produit n'a rien à dire sur la vitrine d'un commerce.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useSyncExternalStore } from "react";
 
 import { SalonIcon } from "./icons";
@@ -74,15 +75,14 @@ export function SiteModeToggle({
   );
 
   const next: Mode = mode === "dark" ? "light" : "dark";
+  const t = useTranslations("salon.mode");
 
   return (
     <button
       type="button"
       onClick={() => apply(slug, next)}
-      aria-label={
-        next === "dark" ? "Passer en mode sombre" : "Passer en mode clair"
-      }
-      title={next === "dark" ? "Mode sombre" : "Mode clair"}
+      aria-label={next === "dark" ? t("versSombre") : t("versClair")}
+      title={next === "dark" ? t("sombre") : t("clair")}
       className={`inline-flex size-9 items-center justify-center rounded-lg border transition ${className}`}
     >
       {/* L'icône montre le mode *actuel*, pas la destination : c'est la

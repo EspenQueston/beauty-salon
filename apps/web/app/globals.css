@@ -486,8 +486,9 @@ body {
 .salon-site[data-mode="dark"] {
   color-scheme: dark;
 
-  --site-ground: color-mix(in srgb, var(--salon-primary) 12%, #0b0b0f);
-  --site-surface: color-mix(in srgb, var(--salon-primary) 8%, #16161b);
+  /* Un ensemble a fond franc (noir) l'impose ; sinon, la teinte du salon. */
+  --site-ground: var(--salon-dark, color-mix(in srgb, var(--salon-primary) 12%, #0b0b0f));
+  --site-surface: var(--salon-dark-surface, color-mix(in srgb, var(--salon-primary) 8%, #16161b));
   --site-line: rgb(255 255 255 / 0.12);
   --site-ink: #f4f4f7;
   --site-muted: #adadba;

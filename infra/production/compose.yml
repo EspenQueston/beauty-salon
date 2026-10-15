@@ -85,6 +85,9 @@ x-environnement-django: &environnement-django
   KKIAPAY_LIVE_PRIVATE_KEY: ${KKIAPAY_LIVE_PRIVATE_KEY:-}
   KKIAPAY_LIVE_SECRET_KEY: ${KKIAPAY_LIVE_SECRET_KEY:-}
   KKIAPAY_LIVE_WEBHOOK_SECRET: ${KKIAPAY_LIVE_WEBHOOK_SECRET:-}
+  # Factures PDF : émetteur et mentions légales (lignes séparées par « | »).
+  INVOICE_ISSUER_NAME: ${INVOICE_ISSUER_NAME:-Beauty Salon}
+  INVOICE_ISSUER_DETAILS: ${INVOICE_ISSUER_DETAILS:-}
   # Abonnements SASPAY : pays africains hors KKIAPAY, environnements séparés.
   SASPAY_ENABLED: ${SASPAY_ENABLED:-False}
   SASPAY_SANDBOX: ${SASPAY_SANDBOX:-True}

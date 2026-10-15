@@ -131,6 +131,8 @@ export interface ThemeConfig {
   primary?: string;
   accent?: string;
   surface?: string;
+  /** Fond du mode sombre, quand l'ensemble de couleurs en impose un (noir). */
+  dark?: string;
   font?: string;
   radius?: string;
 }

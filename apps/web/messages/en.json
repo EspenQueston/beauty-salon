@@ -250,7 +250,9 @@
       "cacao": "Cocoa",
       "corail": "Coral",
       "prune": "Plum",
-      "encreMenthe": "Ink and mint"
+      "encreMenthe": "Ink and mint",
+      "jauneNuit": "Yellow and midnight blue",
+      "mauve": "Mauve"
     }
   },
   "salon": {
@@ -544,7 +546,13 @@
       "ctaReserver": "Book now"
     },
     "compteConnecte": "My account — signed in ({nom})",
-    "seConnecterCompte": "Sign in to my account"
+    "seConnecterCompte": "Sign in to my account",
+    "mode": {
+      "versSombre": "Switch to dark mode",
+      "versClair": "Switch to light mode",
+      "sombre": "Dark mode",
+      "clair": "Light mode"
+    }
   },
   "reservation": {
     "retour": "Back",
@@ -1447,7 +1455,8 @@
         "aucun": "No free slot that day. Try another day in the strip.",
         "deplacerA": "Move to {heure}",
         "choisir": "Choose a slot",
-        "annuler": "Cancel"
+        "annuler": "Cancel",
+        "bouton": "Reschedule"
       },
       "annuler": "Cancel",
       "vide": {
@@ -3345,7 +3354,13 @@
         "aucuneFacture": "An invoice is issued for every validated payment.",
         "enRetard": "Overdue",
         "regleeLe": "Paid on {date}",
-        "emiseLe": "Issued on {date}"
+        "emiseLe": "Issued on {date}",
+        "titre": "Payments and invoices",
+        "sousTitre": "Your declared payments and the invoices issued for each validated payment.",
+        "telecharger": "PDF",
+        "telechargement": "Preparing…",
+        "telechargerAria": "Download invoice {numero} as PDF",
+        "erreurPdf": "Download failed. Try again in a moment."
       },
       "questions": {
         "titre": "Frequently asked questions",

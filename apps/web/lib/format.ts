@@ -1,4 +1,4 @@
-import { adjustForContrast } from "./contrast";
+import { adjustForContrast, parseHex, toHex } from "./contrast";
 import type { PublicService, ThemeConfig } from "./types";
 
 const LOCALE = "fr-FR";
@@ -143,6 +143,12 @@ export function themeToCssVars(theme: ThemeConfig): Record<string, string> {
   if (isSafeColor(theme.primary)) vars["--salon-primary"] = theme.primary!;
   if (isSafeColor(theme.accent)) vars["--salon-accent"] = theme.accent!;
   if (isSafeColor(theme.surface)) vars["--salon-surface"] = theme.surface!;
+  // Un fond franc pour le mode sombre (noir) : le sol de la page, et des
+  // cartes a peine plus claires pour qu'elles se detachent.
+  if (isSafeColor(theme.dark)) {
+    vars["--salon-dark"] = theme.dark!;
+    vars["--salon-dark-surface"] = eclaircir(theme.dark!, 0.075);
+  }
   if (theme.radius && /^[0-9.]+(px|rem|em)$/.test(theme.radius)) {
     vars["--salon-radius"] = theme.radius;
   }
@@ -190,6 +196,14 @@ const PRIMAIRE_PAR_DEFAUT = "#b4436c";
  */
 function encreSurFondClair(marque: string, fond: string): string {
   return adjustForContrast(marque, fond, 4.5) ?? marque;
+}
+
+/** Une couleur melangee a du blanc, dans la proportion donnee (0 a 1). */
+function eclaircir(couleur: string, part: number): string {
+  const rgb = parseHex(couleur);
+  if (!rgb) return couleur;
+  const mele = (v: number) => Math.round(v + (255 - v) * part);
+  return toHex({ r: mele(rgb.r), g: mele(rgb.g), b: mele(rgb.b) });
 }
 
 function isSafeColor(value?: string): boolean {

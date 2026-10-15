@@ -51,6 +51,8 @@ import {
 import { Lien as Link } from "@/features/ui/Lien";
 
 import { DashboardError, dashboardFetch } from "@/lib/dashboard";
+import { browserApi } from "@/lib/api";
+import { langueDeLaPage } from "@/lib/langue-page";
 import {
   Badge,
   Button,
@@ -451,6 +453,7 @@ export function Billing() {
         erreurDemandes={paiements.error}
         factures={factures.data}
         erreurFactures={factures.error}
+        tenantId={tenantId}
       />
 
       <Questions />
@@ -1695,11 +1698,13 @@ function Suivi({
   erreurDemandes,
   factures: page,
   erreurFactures,
+  tenantId,
 }: {
   demandes: PaymentRequest[] | null;
   erreurDemandes: string | null;
   factures: Page<Invoice> | null;
   erreurFactures: string | null;
+  tenantId: string;
 }) {
   const s = useTranslations("pro.abonnement.suivi");
   const [onglet, setOnglet] = useState<"paiements" | "factures">("paiements");
@@ -1710,50 +1715,77 @@ function Suivi({
     { cle: "factures" as const, texte: s("factures"), nombre: factures.length },
   ];
 
+  // Toute la largeur, comme les autres sections de la page : une carte, son
+  // en-tete et ses onglets, puis des lignes. Sur telephone, un fil en deux
+  // colonnes de cartes compactes.
   return (
-    <div className="mb-8">
-      <div
-        role="tablist"
-        aria-label={s("aria")}
-        className="mb-3 inline-flex rounded-xl border border-line bg-surface-muted p-1"
-      >
-        {onglets.map((item) => (
-          <button
-            key={item.cle}
-            type="button"
-            role="tab"
-            aria-selected={onglet === item.cle}
-            onClick={() => setOnglet(item.cle)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition sm:px-4 sm:text-sm ${
-              onglet === item.cle ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"
-            }`}
+    <section className="mb-8" aria-label={s("aria")}>
+      <Card padded={false} className="overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-line px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+          <div className="min-w-0">
+            <h2 className="text-[15px] font-semibold text-ink sm:text-base">{s("titre")}</h2>
+            <p className="mt-0.5 text-[11.5px] text-muted sm:text-[13px]">{s("sousTitre")}</p>
+          </div>
+          <div
+            role="tablist"
+            aria-label={s("aria")}
+            className="grid w-full grid-cols-2 rounded-xl border border-line bg-surface-muted p-1 sm:inline-grid sm:w-auto"
           >
-            {item.texte}
-            {item.nombre > 0 && (
-              <span className="tabular rounded-full bg-surface-muted px-1.5 text-[11px] text-muted">
-                {item.nombre}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+            {onglets.map((item) => (
+              <button
+                key={item.cle}
+                type="button"
+                role="tab"
+                aria-selected={onglet === item.cle}
+                onClick={() => setOnglet(item.cle)}
+                className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition sm:px-4 sm:text-sm ${
+                  onglet === item.cle ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"
+                }`}
+              >
+                {item.texte}
+                <span
+                  className={`tabular min-w-5 rounded-full px-1.5 text-[11px] ${
+                    onglet === item.cle ? "bg-salon-soft text-salon" : "bg-surface text-muted"
+                  }`}
+                >
+                  {item.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {onglet === "paiements" ? (
-        <Historique demandes={demandes} erreur={erreurDemandes} />
-      ) : (
-        <Factures factures={factures} chargees={page !== null} erreur={erreurFactures} />
-      )}
-    </div>
+        <div className="p-2.5 sm:p-0">
+          {onglet === "paiements" ? (
+            <Historique demandes={demandes} erreur={erreurDemandes} />
+          ) : (
+            <Factures
+              factures={factures}
+              chargees={page !== null}
+              erreur={erreurFactures}
+              tenantId={tenantId}
+            />
+          )}
+        </div>
+      </Card>
+    </section>
   );
 }
 
 function Vide({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-2xl border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-muted sm:text-sm">
+    <p className="m-0 rounded-xl border border-dashed border-line-strong px-4 py-6 text-center text-[13px] text-muted sm:m-5 sm:text-sm">
       {children}
     </p>
   );
 }
+
+/**
+ * Une ligne du suivi : carte compacte sur telephone (deux par rangee),
+ * ligne en colonnes sur grand ecran. Les memes elements, places autrement.
+ */
+const LIGNE =
+  "min-w-0 rounded-xl border border-line bg-surface p-2.5 transition sm:grid sm:items-center sm:gap-4 sm:rounded-none sm:border-0 sm:border-b sm:border-line sm:bg-transparent sm:px-5 sm:py-3.5 sm:last:border-b-0 sm:hover:bg-surface-hover";
 
 function Historique({
   demandes,
@@ -1765,125 +1797,182 @@ function Historique({
   const t = useTranslations("pro.abonnement");
   const s = useTranslations("pro.abonnement.suivi");
   const { dateLongue, montant } = useFormats();
-  if (erreur) return <ErrorState>{s("erreurHistorique")}</ErrorState>;
-  if (demandes === null) return <Skeleton rows={2} />;
+  if (erreur) return <div className="sm:p-5"><ErrorState>{s("erreurHistorique")}</ErrorState></div>;
+  if (demandes === null) return <div className="sm:p-5"><Skeleton rows={2} /></div>;
   if (demandes.length === 0) return <Vide>{s("aucunPaiement")}</Vide>;
 
   return (
-    <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3">
+    <ul className="grid grid-cols-2 gap-2 sm:block">
       {demandes.map((demande) => {
         const ton = DEMANDE[demande.status] ?? "neutral";
         return (
-          <li key={demande.id} className="min-w-0">
-            <Card padded={false} className="h-full p-3 sm:p-4">
-              <div className="flex flex-wrap items-center justify-between gap-1.5">
-                <span className="tabular text-sm font-semibold text-ink sm:text-base">
-                  {montant(demande.amount, demande.currency)}
-                </span>
-                <Badge tone={ton}>
-                  {demande.status in DEMANDE
-                    ? t(`statutDemande.${demande.status}`)
-                    : demande.status_label}
-                </Badge>
-              </div>
-              <p className="mt-1 truncate text-[11.5px] text-muted sm:text-xs">
-                {nomPlan(t, demande.plan)} · {demande.method_label}
-              </p>
-              {Number(demande.remise_montant) > 0 && (
-                <p className="mt-1 truncate text-[10.5px] font-medium text-success sm:text-xs">
-                  {s("parrainage", {
-                    pct: Number(demande.remise_pourcentage),
-                    montant: montant(demande.remise_montant, demande.currency),
-                  })}
-                </p>
-              )}
-              <p className="mt-0.5 truncate font-mono text-[10.5px] text-subtle sm:text-[11px]">
+          <li
+            key={demande.id}
+            className={`${LIGNE} sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.6fr)_auto]`}
+          >
+            <span className="tabular block text-[13px] font-semibold text-ink sm:text-base">
+              {montant(demande.amount, demande.currency)}
+            </span>
+            <span className="mt-0.5 block min-w-0 sm:mt-0">
+              <span className="block truncate text-[11px] text-muted sm:text-[13px] sm:text-ink">
+                {nomPlan(t, demande.plan)}
+              </span>
+              <span className="block truncate text-[10.5px] text-subtle sm:text-xs">
+                {demande.method_label}
+              </span>
+            </span>
+            <span className="mt-1 block min-w-0 sm:mt-0">
+              <span className="block truncate font-mono text-[10px] text-subtle sm:text-[11.5px] sm:text-muted">
                 {demande.reference}
-              </p>
-              <p className="mt-1.5 text-[10.5px] text-subtle sm:text-xs">
+              </span>
+              <span className="block text-[10px] text-subtle sm:text-xs">
                 {dateLongue.format(new Date(demande.created_at))}
-              </p>
-
+              </span>
+            </span>
+            <span className="mt-1.5 block min-w-0 sm:mt-0">
               {demande.status === "approved" && demande.period_start && demande.period_end && (
-                <p className="mt-2 rounded-lg bg-success-bg px-2 py-1.5 text-[10.5px] text-success sm:text-xs">
+                <span className="block rounded-md bg-success-bg px-1.5 py-1 text-[10px] leading-snug text-success sm:inline-block sm:px-2 sm:text-xs">
                   {s("periode", {
                     debut: dateLongue.format(new Date(demande.period_start)),
                     fin: dateLongue.format(new Date(demande.period_end)),
                   })}
-                </p>
+                </span>
               )}
               {demande.status === "rejected" && demande.rejection_reason && (
-                <p className="mt-2 rounded-lg bg-danger-bg px-2 py-1.5 text-[10.5px] text-danger sm:text-xs">
+                <span className="block rounded-md bg-danger-bg px-1.5 py-1 text-[10px] leading-snug text-danger sm:inline-block sm:px-2 sm:text-xs">
                   {demande.rejection_reason}
-                </p>
+                </span>
+              )}
+              {Number(demande.remise_montant) > 0 && (
+                <span className="mt-1 block truncate text-[10px] font-medium text-success sm:text-xs">
+                  {s("parrainage", {
+                    pct: Number(demande.remise_pourcentage),
+                    montant: montant(demande.remise_montant, demande.currency),
+                  })}
+                </span>
               )}
               {demande.proof_url && (
                 <a
                   href={demande.proof_url}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-salon hover:underline sm:text-xs"
+                  className="mt-1 inline-flex items-center gap-1 text-[10.5px] font-medium text-salon hover:underline sm:text-xs"
                 >
                   <Icon name="image" className="size-3.5" />
                   {s("capture")}
                 </a>
               )}
-            </Card>
+            </span>
+            <span className="mt-2 block sm:mt-0 sm:justify-self-end">
+              <Badge tone={ton}>
+                {demande.status in DEMANDE
+                  ? t(`statutDemande.${demande.status}`)
+                  : demande.status_label}
+              </Badge>
+            </span>
           </li>
         );
       })}
     </ul>
   );
+}
+
+/** Telecharge le PDF d'une facture, dans la langue de la page. */
+async function telechargerFacture(tenantId: string, facture: Invoice) {
+  const reponse = await fetch(`${browserApi()}/api/v1/invoices/${facture.id}/pdf/`, {
+    credentials: "include",
+    headers: { "X-Tenant-Id": tenantId, ...langueDeLaPage() },
+  });
+  if (!reponse.ok) throw new Error(String(reponse.status));
+  const blob = await reponse.blob();
+  const url = URL.createObjectURL(blob);
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download =
+    reponse.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] ??
+    `${facture.number}.pdf`;
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 function Factures({
   factures,
   chargees,
   erreur,
+  tenantId,
 }: {
   factures: Invoice[];
   chargees: boolean;
   erreur: string | null;
+  tenantId: string;
 }) {
   const t = useTranslations("pro.abonnement");
   const s = useTranslations("pro.abonnement.suivi");
   const { dateLongue, montant } = useFormats();
-  if (erreur) return <ErrorState>{s("erreurFactures")}</ErrorState>;
-  if (!chargees) return <Skeleton rows={2} />;
+  const toast = useToast();
+  const [encours, setEncours] = useState<string | null>(null);
+  if (erreur) return <div className="sm:p-5"><ErrorState>{s("erreurFactures")}</ErrorState></div>;
+  if (!chargees) return <div className="sm:p-5"><Skeleton rows={2} /></div>;
   if (factures.length === 0) return <Vide>{s("aucuneFacture")}</Vide>;
 
+  async function telecharger(facture: Invoice) {
+    setEncours(facture.id);
+    try {
+      await telechargerFacture(tenantId, facture);
+    } catch {
+      toast.error(s("erreurPdf"));
+    } finally {
+      setEncours(null);
+    }
+  }
+
   return (
-    <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3">
+    <ul className="grid grid-cols-2 gap-2 sm:block">
       {factures.map((facture) => {
         const retard = facture.is_overdue && facture.status === "issued";
         const ton = FACTURE[facture.status];
         return (
-          <li key={facture.id} className="min-w-0">
-            <Card padded={false} className="h-full p-3 sm:p-4">
-              <div className="flex flex-wrap items-center justify-between gap-1.5">
-                <span className="tabular text-sm font-semibold text-ink sm:text-base">
-                  {montant(facture.amount, facture.currency)}
-                </span>
-                <Badge tone={retard ? "danger" : (ton ?? "neutral")}>
-                  {retard
-                    ? s("enRetard")
-                    : ton
-                      ? t(`statutFacture.${facture.status}`)
-                      : facture.status}
-                </Badge>
-              </div>
-              <p className="tabular mt-1 truncate text-[11.5px] font-medium text-ink sm:text-xs">
+          <li
+            key={facture.id}
+            className={`${LIGNE} sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)_auto_auto]`}
+          >
+            <span className="block min-w-0">
+              <span className="tabular block truncate text-[12.5px] font-semibold text-ink sm:text-sm">
                 {facture.number}
-              </p>
-              <p className="mt-0.5 line-clamp-2 text-[10.5px] text-muted sm:text-xs">
-                {facture.label}
-              </p>
-              <p className="mt-1.5 text-[10.5px] text-subtle sm:text-xs">
+              </span>
+              <span className="block text-[10px] text-subtle sm:text-xs">
                 {facture.paid_at
                   ? s("regleeLe", { date: dateLongue.format(new Date(facture.paid_at)) })
                   : s("emiseLe", { date: dateLongue.format(new Date(facture.issued_at)) })}
-              </p>
-            </Card>
+              </span>
+            </span>
+            <span className="mt-0.5 line-clamp-2 block text-[10.5px] text-muted sm:mt-0 sm:text-[13px]">
+              {facture.label}
+            </span>
+            <span className="tabular mt-1 block text-[13px] font-semibold text-ink sm:mt-0 sm:text-base">
+              {montant(facture.amount, facture.currency)}
+            </span>
+            <span className="mt-1.5 block sm:mt-0">
+              <Badge tone={retard ? "danger" : (ton ?? "neutral")}>
+                {retard
+                  ? s("enRetard")
+                  : ton
+                    ? t(`statutFacture.${facture.status}`)
+                    : facture.status}
+              </Badge>
+            </span>
+            <button
+              type="button"
+              onClick={() => void telecharger(facture)}
+              disabled={encours === facture.id}
+              aria-label={s("telechargerAria", { numero: facture.number })}
+              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[11.5px] font-semibold text-salon transition hover:border-salon hover:bg-salon-soft disabled:opacity-60 sm:mt-0 sm:w-auto sm:px-3 sm:text-[13px]"
+            >
+              <Icon name={encours === facture.id ? "clock" : "download"} className="size-3.5 sm:size-4" />
+              {encours === facture.id ? s("telechargement") : s("telecharger")}
+            </button>
           </li>
         );
       })}
@@ -1891,11 +1980,6 @@ function Factures({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Les questions qu'on se pose avant de payer
-// ---------------------------------------------------------------------------
-
-/** Les questions, sous `pro.abonnement.questions` (`q` et `r`). */
 const QUESTIONS = ["debut", "annuel", "versPro", "versStandard", "retard", "rappel"];
 
 function Questions() {

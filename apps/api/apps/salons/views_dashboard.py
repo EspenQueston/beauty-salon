@@ -1,5 +1,7 @@
 """Configuration du salon par son equipe."""
 
+import re
+
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,7 +18,7 @@ EVERYONE = (*MANAGERS, Membership.Role.RECEPTIONIST, Membership.Role.STAFF)
 # Cles de theme acceptees. La liste est fermee : le salon choisit son
 # apparence, il ne redefinit pas la structure du produit, et un JSON libre
 # finirait injecte tel quel dans le CSS du mini-site.
-THEME_KEYS = {"primary", "accent", "surface", "font", "radius"}
+THEME_KEYS = {"primary", "accent", "surface", "dark", "font", "radius"}
 
 
 class ThemeConfigField(serializers.JSONField):
@@ -29,6 +31,13 @@ class ThemeConfigField(serializers.JSONField):
             raise serializers.ValidationError(
                 f"Clés de thème inconnues : {', '.join(sorted(unknown))}."
             )
+        # Le fond sombre entre tel quel dans le CSS du mini-site : un code
+        # hexadecimal, rien d'autre.
+        sombre = data.get("dark")
+        if sombre is not None and not (
+            isinstance(sombre, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", sombre)
+        ):
+            raise serializers.ValidationError("Couleur invalide.")
         return data
 
 

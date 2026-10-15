@@ -795,7 +795,7 @@ export function Agenda() {
                             icon={<Icon name="calendar" className="size-4" />}
                             onClick={() => setMoving(booking)}
                           >
-                            {t("deplacer")}
+                            {t("deplacer.bouton")}
                           </GhostButton>
                         )}
                         {!["cancelled", "completed"].includes(

@@ -1,4 +1,20 @@
-/** Palette unique pour l'aperçu, l'inscription et l'espace salon. */
+/**
+ * Les ensembles de couleurs proposés : aperçu, inscription, espace salon.
+ *
+ * `surface` est le fond du mode clair ; `dark`, quand il est donné, celui
+ * du mode sombre. Sans `dark`, le mode sombre se déduit de la couleur
+ * principale poussée vers le noir (voir `.salon-site[data-mode="dark"]`).
+ * Les deux derniers ensembles ont un fond franc : blanc le jour, noir la nuit.
+ */
+export interface Palette {
+  cle: string;
+  name: string;
+  primary: string;
+  accent: string;
+  surface: string;
+  dark?: string;
+}
+
 export const PALETTES = [
   { cle: "rose", name: "Rose poudré", primary: "#B4436C", accent: "#F7D9E1", surface: "#FCF7F9" },
   { cle: "orNuit", name: "Or et nuit", primary: "#1F2937", accent: "#E9C46A", surface: "#FBF8F1" },
@@ -10,7 +26,25 @@ export const PALETTES = [
   { cle: "corail", name: "Corail", primary: "#C2410C", accent: "#FDDCC8", surface: "#FFF8F4" },
   { cle: "prune", name: "Prune", primary: "#86198F", accent: "#F3D5F5", surface: "#FDF6FE" },
   { cle: "encreMenthe", name: "Encre et menthe", primary: "#134E4A", accent: "#B9E7DC", surface: "#F2FAF8" },
-] as const;
+  { cle: "jauneNuit", name: "Jaune et bleu nuit", primary: "#14254D", accent: "#F7C948", surface: "#FFFFFF", dark: "#000000" },
+  { cle: "mauve", name: "Mauve", primary: "#8A4F9E", accent: "#EBDCF3", surface: "#FFFFFF", dark: "#000000" },
+] as const satisfies readonly Palette[];
+
+/** Le fond du mode sombre d'un ensemble, s'il en impose un. */
+export function fondSombre(palette: Palette): string | undefined {
+  return palette.dark;
+}
+
+/** Les couleurs d'un ensemble, telles qu'elles s'enregistrent dans le thème. */
+export function couleursDuTheme(palette: Palette): { primary: string; accent: string; surface: string; dark?: string } {
+  const sombre = fondSombre(palette);
+  return {
+    primary: palette.primary,
+    accent: palette.accent,
+    surface: palette.surface,
+    ...(sombre ? { dark: sombre } : {}),
+  };
+}
 
 export type PaletteCle = (typeof PALETTES)[number]["cle"];
 

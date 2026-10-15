@@ -15,6 +15,7 @@ from decimal import Decimal
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -315,4 +316,26 @@ class InvoiceViewSet(_ProprietaireSeulement, mixins.ListModelMixin, viewsets.Gen
     pagination_class = None
 
     def get_queryset(self):
-        return Invoice.objects.select_related("subscription")
+        return Invoice.objects.select_related("subscription", "tenant")
+
+    @action(detail=True, methods=["get"])
+    def pdf(self, request, pk=None):
+        """La facture en PDF, dans la langue de la page qui la demande.
+
+        La lecture passe par `get_queryset` : sous RLS, une facture d'un autre
+        salon n'existe tout simplement pas (404).
+        """
+        from django.http import HttpResponse
+        from django.utils import translation
+
+        from .facture_pdf import generer, nom_de_fichier
+
+        facture = self.get_object()
+        langue = translation.get_language() or "fr"
+        reponse = HttpResponse(generer(facture, langue), content_type="application/pdf")
+        reponse["Content-Disposition"] = f'attachment; filename="{nom_de_fichier(facture, langue)}"'
+        # Sans cet en-tete, le navigateur ne laisse pas le JavaScript lire le
+        # nom du fichier sur une reponse venue d'un autre hote.
+        reponse["Access-Control-Expose-Headers"] = "Content-Disposition"
+        reponse["Cache-Control"] = "private, no-store"
+        return reponse

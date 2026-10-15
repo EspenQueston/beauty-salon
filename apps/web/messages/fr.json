@@ -250,7 +250,9 @@
       "cacao": "Cacao",
       "corail": "Corail",
       "prune": "Prune",
-      "encreMenthe": "Encre et menthe"
+      "encreMenthe": "Encre et menthe",
+      "jauneNuit": "Jaune et bleu nuit",
+      "mauve": "Mauve"
     }
   },
   "salon": {
@@ -544,7 +546,13 @@
       "ctaReserver": "Réserver maintenant"
     },
     "compteConnecte": "Mon espace — connectée ({nom})",
-    "seConnecterCompte": "Se connecter à mon espace"
+    "seConnecterCompte": "Se connecter à mon espace",
+    "mode": {
+      "versSombre": "Passer en mode sombre",
+      "versClair": "Passer en mode clair",
+      "sombre": "Mode sombre",
+      "clair": "Mode clair"
+    }
   },
   "reservation": {
     "retour": "Retour",
@@ -1447,7 +1455,8 @@
         "aucun": "Aucun créneau libre ce jour-là. Essayez un autre jour du ruban.",
         "deplacerA": "Déplacer à {heure}",
         "choisir": "Choisissez un créneau",
-        "annuler": "Annuler"
+        "annuler": "Annuler",
+        "bouton": "Déplacer"
       },
       "annuler": "Annuler",
       "vide": {
@@ -3345,7 +3354,13 @@
         "aucuneFacture": "Une facture est émise à chaque paiement validé.",
         "enRetard": "En retard",
         "regleeLe": "Réglée le {date}",
-        "emiseLe": "Émise le {date}"
+        "emiseLe": "Émise le {date}",
+        "titre": "Paiements et factures",
+        "sousTitre": "Vos règlements déclarés et les factures émises à chaque paiement validé.",
+        "telecharger": "PDF",
+        "telechargement": "Préparation…",
+        "telechargerAria": "Télécharger la facture {numero} en PDF",
+        "erreurPdf": "Téléchargement impossible. Réessayez dans un instant."
       },
       "questions": {
         "titre": "Questions fréquentes",

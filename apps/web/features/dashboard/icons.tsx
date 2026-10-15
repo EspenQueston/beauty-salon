@@ -21,6 +21,7 @@ export type IconName =
   | "team"
   | "store"
   | "receipt"
+  | "download"
   | "external"
   | "menu"
   | "plus"
@@ -201,6 +202,13 @@ export const PATHS: Record<IconName, ReactNode> = {
       <path d="M4 9.5V20h16V9.5" />
       <path d="M3 9.5 5 4h14l2 5.5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" />
       <path d="M10 20v-5h4v5" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 4v11" />
+      <path d="m7 10.5 5 5 5-5" />
+      <path d="M5 20h14" />
     </>
   ),
   receipt: (

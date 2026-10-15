@@ -53,7 +53,7 @@ import { Acquis, ForceMotDePasse, Parcours } from "./Parcours";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { guessCountry } from "@/lib/locale";
 import { useToast } from "@/features/ui/Toast";
-import { PALETTES, paletteDepuisCouleurs } from "@/features/site/palettes";
+import { PALETTES, couleursDuTheme, paletteDepuisCouleurs } from "@/features/site/palettes";
 import { useLocale, useTranslations } from "next-intl";
 import { professionalUrl } from "@/lib/site";
 import { trackSignupStarted } from "@/features/site/metrics";
@@ -537,11 +537,7 @@ export function SignupForm() {
           timezone_name: place.tz,
           currency: place.currency,
           accepts_terms: true,
-          theme_config: {
-            primary: couleurs.primary,
-            accent: couleurs.accent,
-            surface: couleurs.surface,
-          },
+          theme_config: couleursDuTheme(couleurs),
         });
         toast.success(
           t("cree", { salon: result.tenant.name }),
