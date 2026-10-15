@@ -1088,7 +1088,8 @@
         "platform_assistant": "Professional space assistant",
         "customer_assistant": "Client assistant"
       },
-      "details": "View features"
+      "details": "View features",
+      "saspay": "SASPAY is offered here to pay the salon subscription, by Mobile Money or card. It does not handle clients’ payments to the salon."
     },
     "trust": {
       "title": "Their experience, in their words.",
@@ -2850,7 +2851,16 @@
         "CDF": "Congolese franc",
         "CNY": "Yuan",
         "USD": "US dollar",
-        "EUR": "Euro"
+        "EUR": "Euro",
+        "GHS": "Ghanaian cedi",
+        "GNF": "Guinean franc",
+        "KES": "Kenyan shilling",
+        "MWK": "Malawian kwacha",
+        "NGN": "Nigerian naira",
+        "RWF": "Rwandan franc",
+        "TZS": "Tanzanian shilling",
+        "UGX": "Ugandan shilling",
+        "ZMW": "Zambian kwacha"
       }
     },
     "apparence": {
@@ -3232,7 +3242,8 @@
         "moyen": "Method",
         "reference": "Reference",
         "mois": "{n, plural, one {# month} other {# months}}",
-        "declare": "Submitted on {date}. Only one payment can be pending at a time."
+        "declare": "Submitted on {date}. Only one payment can be pending at a time.",
+        "saspay": "SASPAY is confirming your payment with the server. Your period opens as soon as it is confirmed; if you did not finish paying, resume below."
       },
       "groupes": {
         "standard": "Standard",
@@ -3352,6 +3363,18 @@
           "r": "Yes, by email: a week before, three days before and the day before (a month before for the yearly plan), then at each step of your payment."
         }
       }
+    },
+    "saspay": {
+      "payer": "Pay with SASPAY",
+      "redirection": "Opening the payment page…",
+      "securise": "You pay on SASPAY’s secure page (Mobile Money or card). The subscription is activated after server confirmation.",
+      "indisponible": "Payment is not available right now.",
+      "reprendre": "Resume payment",
+      "verifier": "I have paid: check",
+      "verification": "Checking the payment…",
+      "confirme": "Payment confirmed. Your subscription is extended.",
+      "pasEncore": "SASPAY has not confirmed the payment yet. If you just approved it on your phone, wait a moment: your period will open by itself, with no new payment.",
+      "erreur": "The check did not go through. Try again in a moment; do not pay twice."
     }
   },
   "theme": {

@@ -36,6 +36,7 @@ from apps.billing.views import (
     SubscriptionView,
 )
 from apps.billing.views_kkiapay import KkiapayView, KkiapayConfirmationView, KkiapayWebhookView
+from apps.billing.views_saspay import SaspayConfirmationView, SaspayView, SaspayWebhookView
 from apps.common.home import HomeMetricView, HomeSessionView, HomeView
 from apps.catalog.views import (
     ResourceViewSet,
@@ -246,6 +247,9 @@ urlpatterns = [
     path("billing/kkiapay", KkiapayView.as_view(), name="kkiapay-preparer"),
     path("billing/kkiapay/confirm", KkiapayConfirmationView.as_view(), name="kkiapay-confirmer"),
     path("webhooks/kkiapay/<str:environnement>", KkiapayWebhookView.as_view(), name="kkiapay-webhook"),
+    path("billing/saspay", SaspayView.as_view(), name="saspay-preparer"),
+    path("billing/saspay/confirm", SaspayConfirmationView.as_view(), name="saspay-confirmer"),
+    path("webhooks/saspay/<str:environnement>", SaspayWebhookView.as_view(), name="saspay-webhook"),
     path("parrainage/clients", ParrainageClientsSalonView.as_view(), name="parrainage-clients"),
     # Offre Pro : domaine personnalise (demander, verifier, retirer).
     # Offre Pro : assistants IA.

@@ -1,6 +1,7 @@
 "use client";
 
 import { KkiapayButton } from "./KkiapayButton";
+import { SaspayButton, SaspayEnAttente } from "./SaspayButton";
 
 /**
  * Abonnement du salon : l'état, le choix d'une offre, le règlement.
@@ -115,7 +116,7 @@ interface PaymentRequest {
   montant_catalogue: string | null;
   remise_pourcentage: string;
   remise_montant: string;
-  method_kind: "wechat" | "alipay" | "mobile_money" | "kkiapay";
+  method_kind: "wechat" | "alipay" | "mobile_money" | "kkiapay" | "saspay";
   method_kind_label: string;
   method_label: string;
   method_account_number: string;
@@ -150,7 +151,7 @@ interface Subscription {
 
 interface Moyen {
   id: string;
-  kind: "wechat" | "alipay" | "mobile_money" | "kkiapay";
+  kind: "wechat" | "alipay" | "mobile_money" | "kkiapay" | "saspay";
   kind_label: string;
   libelle: string;
   account_number: string;
@@ -392,7 +393,14 @@ export function Billing() {
           )}
 
           {subscription.demande_en_attente ? (
-            <PaiementEnAttente demande={subscription.demande_en_attente} />
+            <PaiementEnAttente
+              demande={subscription.demande_en_attente}
+              tenantId={tenantId}
+              onConfirme={() => {
+                relire();
+                signalerAbonnement();
+              }}
+            />
           ) : (
             <>
               {proEnVente &&
@@ -893,7 +901,15 @@ function PasserALAnnuel({
 // Un paiement attend d'être vérifié
 // ---------------------------------------------------------------------------
 
-function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
+function PaiementEnAttente({
+  demande,
+  tenantId,
+  onConfirme,
+}: {
+  demande: PaymentRequest;
+  tenantId: string;
+  onConfirme: () => void;
+}) {
   const t = useTranslations("pro.abonnement");
   const a = useTranslations("pro.abonnement.attente");
   const { dateLongue, montant, pourcent } = useFormats();
@@ -910,7 +926,11 @@ function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
             {a("titre")}
           </p>
           <p className="mt-1 text-[12.5px] leading-relaxed text-muted sm:text-sm">
-            {demande.method_kind === "kkiapay" ? a("kkiapay") : a("manuel")}
+            {demande.method_kind === "kkiapay"
+              ? a("kkiapay")
+              : demande.method_kind === "saspay"
+                ? a("saspay")
+                : a("manuel")}
           </p>
         </div>
       </div>
@@ -935,6 +955,9 @@ function PaiementEnAttente({ demande }: { demande: PaymentRequest }) {
       <p className="mt-3 text-[11px] text-subtle sm:text-xs">
         {a("declare", { date: dateLongue.format(new Date(demande.created_at)) })}
       </p>
+      {demande.method_kind === "saspay" && (
+        <SaspayEnAttente tenantId={tenantId} demande={demande.id} onConfirme={onConfirme} />
+      )}
     </Card>
   );
 }
@@ -1249,7 +1272,10 @@ function Commande({
                     : "border-line bg-surface text-ink hover:bg-surface-hover"
                 }`}
               >
-                <Icon name={item.kind === "mobile_money" ? "phone" : "scan"} className="size-4 shrink-0" />
+                <Icon
+                  name={item.kind === "mobile_money" || item.kind === "saspay" ? "phone" : "scan"}
+                  className="size-4 shrink-0"
+                />
                 <span className="truncate">{item.libelle}</span>
               </button>
             ))}
@@ -1259,11 +1285,14 @@ function Commande({
         {moyen && plan && moyen.kind === "kkiapay" ? (
           <KkiapayButton tenantId={tenantId} choix={{ plan: plan.code, country: pays.code,
             currency: devise.code, method: moyen.id, montant_attendu: aVerser }} onConfirme={onEnvoye} />
+        ) : moyen && plan && moyen.kind === "saspay" ? (
+          <SaspayButton tenantId={tenantId} choix={{ plan: plan.code, country: pays.code,
+            currency: devise.code, method: moyen.id, montant_attendu: aVerser }} />
         ) : moyen && plan && <PanneauMoyen moyen={moyen} somme={somme} />}
       </div>
 
       {/* 3. La déclaration */}
-      {moyen?.kind !== "kkiapay" && <div>
+      {moyen?.kind !== "kkiapay" && moyen?.kind !== "saspay" && <div>
         <Etape numero={3} titre={c("etape3")} />
         <Card padded={false}>
           <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">

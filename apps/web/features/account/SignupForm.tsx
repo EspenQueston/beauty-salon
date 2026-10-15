@@ -80,6 +80,18 @@ const COUNTRIES = [
   { code: "TG", label: "Togo", tz: "Africa/Lome", currency: "XOF" },
   { code: "SN", label: "Sénégal", tz: "Africa/Dakar", currency: "XOF" },
   { code: "NE", label: "Niger", tz: "Africa/Niamey", currency: "XOF" },
+  // Les pays où l'abonnement se règle par SASPAY (hors KKIAPAY).
+  { code: "CM", label: "Cameroun", tz: "Africa/Douala", currency: "XAF" },
+  { code: "GH", label: "Ghana", tz: "Africa/Accra", currency: "GHS" },
+  { code: "GN", label: "Guinée", tz: "Africa/Conakry", currency: "GNF" },
+  { code: "KE", label: "Kenya", tz: "Africa/Nairobi", currency: "KES" },
+  { code: "ML", label: "Mali", tz: "Africa/Bamako", currency: "XOF" },
+  { code: "MW", label: "Malawi", tz: "Africa/Blantyre", currency: "MWK" },
+  { code: "NG", label: "Nigeria", tz: "Africa/Lagos", currency: "NGN" },
+  { code: "RW", label: "Rwanda", tz: "Africa/Kigali", currency: "RWF" },
+  { code: "TZ", label: "Tanzanie", tz: "Africa/Dar_es_Salaam", currency: "TZS" },
+  { code: "UG", label: "Ouganda", tz: "Africa/Kampala", currency: "UGX" },
+  { code: "ZM", label: "Zambie", tz: "Africa/Lusaka", currency: "ZMW" },
 ];
 
 const schema = z.object({
@@ -720,11 +732,14 @@ export function SignupForm() {
 
             <Field label={t("pays")} className="mb-1 mt-4">
               <select {...register("country")} className={inputClass}>
-                {COUNTRIES.map((entry) => (
-                  <option key={entry.code} value={entry.code}>
-                    {nomPays(entry.code, entry.label)}
-                  </option>
-                ))}
+                {/* Vingt pays : rangés par leur nom, dans la langue de la page. */}
+                {COUNTRIES.map((entry) => ({ ...entry, nom: nomPays(entry.code, entry.label) }))
+                  .sort((a, b) => a.nom.localeCompare(b.nom, langue))
+                  .map((entry) => (
+                    <option key={entry.code} value={entry.code}>
+                      {entry.nom}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Acquis actif ton="neutre">

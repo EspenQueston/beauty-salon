@@ -272,6 +272,32 @@ EXACTS: dict[str, str] = {
     ),
     "Un paiement est déjà en cours de vérification.": "A payment is already being checked.",
     "Paiement introuvable.": "Payment not found.",
+    # --- SASPAY ---------------------------------------------------------------
+    "Utilisez le paiement SASPAY intégré.": "Use the built-in SASPAY payment.",
+    "Ce paiement nécessite une vérification serveur SASPAY.": (
+        "This payment needs a SASPAY server check."
+    ),
+    "Cet environnement SASPAY n'est pas actif.": "This SASPAY environment is not active.",
+    "Configurez un tarif sans centimes pour cette devise.": (
+        "Set a price without cents for this currency."
+    ),
+    "Montant SASPAY invalide.": "Invalid SASPAY amount.",
+    "Référence SASPAY invalide.": "Invalid SASPAY reference.",
+    "Réponse SASPAY invalide.": "Invalid SASPAY response.",
+    "SASPAY accepte la devise du pays ou le dollar américain (carte).": (
+        "SASPAY accepts the country's currency or US dollars (card)."
+    ),
+    "SASPAY n'est pas configuré.": "SASPAY is not set up.",
+    "SASPAY n'est pas disponible dans le pays de ce salon.": (
+        "SASPAY is not available in this salon's country."
+    ),
+    "Un paiement SASPAY est déjà en cours.": "A SASPAY payment is already in progress.",
+    "La vérification SASPAY est indisponible. Réessayez.": (
+        "SASPAY verification is unavailable. Try again."
+    ),
+    "SASPAY est momentanément indisponible. Réessayez dans un instant.": (
+        "SASPAY is temporarily unavailable. Try again in a moment."
+    ),
     "Transaction déjà utilisée.": "Transaction already used.",
     # --- espace cliente ---------------------------------------------------------
     "Un compte existe déjà avec cette adresse. Connectez-vous.": (

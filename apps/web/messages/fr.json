@@ -1088,7 +1088,8 @@
         "platform_assistant": "Assistant dans l’espace pro",
         "customer_assistant": "Assistant pour les clients"
       },
-      "details": "Voir les fonctions"
+      "details": "Voir les fonctions",
+      "saspay": "SASPAY est proposé ici pour payer l’abonnement du salon, par Mobile Money ou par carte. Il ne concerne pas les paiements des clients au salon."
     },
     "trust": {
       "title": "Ils partagent leur expérience.",
@@ -2850,7 +2851,16 @@
         "CDF": "Franc congolais",
         "CNY": "Yuan",
         "USD": "Dollar américain",
-        "EUR": "Euro"
+        "EUR": "Euro",
+        "GHS": "Cedi ghanéen",
+        "GNF": "Franc guinéen",
+        "KES": "Shilling kényan",
+        "MWK": "Kwacha malawien",
+        "NGN": "Naira nigérian",
+        "RWF": "Franc rwandais",
+        "TZS": "Shilling tanzanien",
+        "UGX": "Shilling ougandais",
+        "ZMW": "Kwacha zambien"
       }
     },
     "apparence": {
@@ -3232,7 +3242,8 @@
         "moyen": "Moyen",
         "reference": "Référence",
         "mois": "{n} mois",
-        "declare": "Déclaré le {date}. Un seul paiement peut attendre à la fois."
+        "declare": "Déclaré le {date}. Un seul paiement peut attendre à la fois.",
+        "saspay": "SASPAY confirme votre paiement auprès du serveur. Votre période s’ouvre dès cette confirmation ; si vous n’avez pas terminé le paiement, reprenez-le ci-dessous."
       },
       "groupes": {
         "standard": "Standard",
@@ -3352,6 +3363,18 @@
           "r": "Oui, par e-mail : une semaine avant, trois jours avant et la veille (un mois avant pour l'offre annuelle), puis à chaque étape de votre paiement."
         }
       }
+    },
+    "saspay": {
+      "payer": "Payer avec SASPAY",
+      "redirection": "Ouverture de la page de paiement…",
+      "securise": "Vous payez sur la page sécurisée de SASPAY (Mobile Money ou carte). L’abonnement s’active après confirmation du serveur.",
+      "indisponible": "Le paiement n’est pas disponible pour le moment.",
+      "reprendre": "Reprendre le paiement",
+      "verifier": "J’ai payé : vérifier",
+      "verification": "Vérification du paiement…",
+      "confirme": "Paiement confirmé. Votre abonnement est prolongé.",
+      "pasEncore": "Le paiement n’est pas encore confirmé par SASPAY. Si vous venez de valider sur votre téléphone, patientez quelques instants : votre période s’ouvrira d’elle-même, sans nouveau paiement.",
+      "erreur": "La vérification n’a pas abouti. Réessayez dans un instant ; ne payez pas une seconde fois."
     }
   },
   "theme": {

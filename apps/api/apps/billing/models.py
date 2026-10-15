@@ -32,6 +32,16 @@ DEVISES_ABONNEMENT = [
     ("CDF", _("Franc congolais (CDF)")),
     ("XAF", _("Franc CFA (XAF)")),
     ("XOF", _("Franc CFA BCEAO (XOF)")),
+    # Les devises des pays reglés par SASPAY.
+    ("GHS", _("Cedi ghanéen (GHS)")),
+    ("GNF", _("Franc guinéen (GNF)")),
+    ("KES", _("Shilling kényan (KES)")),
+    ("MWK", _("Kwacha malawien (MWK)")),
+    ("NGN", _("Naira nigérian (NGN)")),
+    ("RWF", _("Franc rwandais (RWF)")),
+    ("TZS", _("Shilling tanzanien (TZS)")),
+    ("UGX", _("Shilling ougandais (UGX)")),
+    ("ZMW", _("Kwacha zambien (ZMW)")),
 ]
 
 
@@ -351,8 +361,12 @@ class PlatformPaymentMethod(UUIDModel, TimeStampedModel):
         ALIPAY = "alipay", _("Alipay")
         MOBILE_MONEY = "mobile_money", _("Mobile Money")
         KKIAPAY = "kkiapay", _("KKIAPAY")
+        SASPAY = "saspay", _("SASPAY")
 
     QR_KINDS = (Kind.WECHAT, Kind.ALIPAY)
+    # Reglés par une integration : le serveur verifie le paiement aupres du
+    # fournisseur, aucun administrateur ne l'approuve a la main.
+    INTEGRES = (Kind.KKIAPAY, Kind.SASPAY)
 
     kind = models.CharField(_("moyen"), max_length=20, choices=Kind.choices)
     provider_name = models.CharField(
@@ -406,6 +420,15 @@ class PlatformPaymentMethod(UUIDModel, TimeStampedModel):
                 manques.append("KKIAPAY : pays pris en charge et devise XOF obligatoires")
             if not disponible():
                 manques.append("KKIAPAY : paramètres serveur incomplets ou désactivés")
+        if self.kind == self.Kind.SASPAY:
+            from . import saspay
+
+            if self.currency not in saspay.devises_acceptees(self.country):
+                manques.append(
+                    "SASPAY : pays non couvert ou devise différente de celle du pays (ou USD)"
+                )
+            if not saspay.disponible():
+                manques.append("SASPAY : paramètres serveur incomplets ou désactivés")
         if self.kind in self.QR_KINDS and not self.qr_image:
             manques.append(str(_("QR code manquant")))
         if self.kind == self.Kind.MOBILE_MONEY:
@@ -611,6 +634,55 @@ class KkiapayIntent(UUIDModel, TimeStampedModel):
 
     def __str__(self):
         return f"KKIAPAY — {self.tenant or 'salon supprimé'} — {self.get_statut_display()}"
+
+
+class SaspayIntent(UUIDModel, TimeStampedModel):
+    """Un paiement d'abonnement ouvert chez SASPAY.
+
+    Index plateforme, comme `KkiapayIntent` : les webhooks arrivent sans
+    salon, et toute lecture faite pour un salon filtre sur `tenant`.
+    `session_id` est la session de paiement hebergee chez SASPAY ;
+    `transaction_id`, la transaction qui l'a reglee, une fois confirmee.
+    """
+
+    tenant = models.ForeignKey("tenants.Tenant", on_delete=models.SET_NULL, null=True, blank=True)
+    demande = models.OneToOneField(
+        SubscriptionPaymentRequest, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    sandbox = models.BooleanField()
+    session_id = models.CharField(max_length=64, blank=True)
+    checkout_url = models.URLField(max_length=500, blank=True)
+    transaction_id = models.CharField(max_length=100, blank=True)
+    statut = models.CharField(
+        max_length=12,
+        default="en_attente",
+        choices=[
+            ("en_attente", "En attente"),
+            ("confirme", "Confirmé"),
+            ("expire", "Expiré"),
+            ("annule", "Annulé"),
+        ],
+    )
+    expire_le = models.DateTimeField()
+
+    class Meta:
+        verbose_name = "paiement SASPAY"
+        verbose_name_plural = "paiements SASPAY"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sandbox", "session_id"],
+                condition=~Q(session_id=""),
+                name="saspay_session_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["sandbox", "transaction_id"],
+                condition=~Q(transaction_id=""),
+                name="saspay_transaction_unique",
+            ),
+        ]
+
+    def __str__(self):
+        return f"SASPAY — {self.tenant or 'salon supprimé'} — {self.get_statut_display()}"
 
 
 class SubscriptionEvent(TenantOwnedModel):

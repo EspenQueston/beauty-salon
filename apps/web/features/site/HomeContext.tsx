@@ -10,7 +10,7 @@ export interface HomeCatalogue {
   trial_days: number;
   referred_trial_days: number;
   supported_countries: {code: string; name: string}[];
-  countries: {code: string; name: string; currencies: {code: string; kkiapay: boolean; plans: {code: string; group: string; months: number; amount: string; max_staff: number | null}[]}[]}[];
+  countries: {code: string; name: string; currencies: {code: string; kkiapay: boolean; saspay?: boolean; plans: {code: string; group: string; months: number; amount: string; max_staff: number | null}[]}[]}[];
   pro_features: string[];
   references: {salon: string; slug: string; country: string; author: string; quote: string; portrait: string; showcase: boolean}[];
   support: {email: string; whatsapp: string};

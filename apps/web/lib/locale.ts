@@ -15,12 +15,32 @@
  * un piège ; une valeur par défaut qui s'annonce est un service.
  */
 
-export type CountryCode = "CG" | "CD" | "CN";
+export type CountryCode =
+  | "CG" | "CD" | "CN"
+  | "BJ" | "BF" | "CI" | "TG" | "SN" | "NE"
+  | "CM" | "GH" | "GN" | "KE" | "ML" | "MW" | "NG" | "RW" | "TZ" | "UG" | "ZM";
 
 const BY_TIMEZONE: Record<string, CountryCode> = {
   "Africa/Brazzaville": "CG",
   "Africa/Kinshasa": "CD",
   "Africa/Lubumbashi": "CD",
+  "Africa/Porto-Novo": "BJ",
+  "Africa/Ouagadougou": "BF",
+  "Africa/Abidjan": "CI",
+  "Africa/Lome": "TG",
+  "Africa/Dakar": "SN",
+  "Africa/Niamey": "NE",
+  "Africa/Douala": "CM",
+  "Africa/Accra": "GH",
+  "Africa/Conakry": "GN",
+  "Africa/Nairobi": "KE",
+  "Africa/Bamako": "ML",
+  "Africa/Blantyre": "MW",
+  "Africa/Lagos": "NG",
+  "Africa/Kigali": "RW",
+  "Africa/Dar_es_Salaam": "TZ",
+  "Africa/Kampala": "UG",
+  "Africa/Lusaka": "ZM",
   "Asia/Shanghai": "CN",
   "Asia/Chongqing": "CN",
   "Asia/Harbin": "CN",

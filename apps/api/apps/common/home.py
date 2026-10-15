@@ -66,6 +66,9 @@ class HomeView(APIView):
                             "kkiapay": any(
                                 method.kind == "kkiapay" for method in currency["moyens"]
                             ),
+                            "saspay": any(
+                                method.kind == "saspay" for method in currency["moyens"]
+                            ),
                         }
                         for currency in country["devises"]
                     ],

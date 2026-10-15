@@ -30,6 +30,19 @@ class Tenant(UUIDModel, TimeStampedModel):
         TOGO = "TG", _("Togo")
         SENEGAL = "SN", _("Sénégal")
         NIGER = "NE", _("Niger")
+        # Pays reglés par SASPAY (Mobile Money), que KKIAPAY ne couvre pas.
+        # Voir apps/billing/saspay.py.
+        CAMEROON = "CM", _("Cameroun")
+        GHANA = "GH", _("Ghana")
+        GUINEA = "GN", _("Guinée")
+        KENYA = "KE", _("Kenya")
+        MALI = "ML", _("Mali")
+        MALAWI = "MW", _("Malawi")
+        NIGERIA = "NG", _("Nigeria")
+        RWANDA = "RW", _("Rwanda")
+        TANZANIA = "TZ", _("Tanzanie")
+        UGANDA = "UG", _("Ouganda")
+        ZAMBIA = "ZM", _("Zambie")
 
     class Currency(models.TextChoices):
         XAF = "XAF", _("Franc CFA")
@@ -38,6 +51,15 @@ class Tenant(UUIDModel, TimeStampedModel):
         CNY = "CNY", _("Yuan")
         USD = "USD", _("Dollar américain")
         EUR = "EUR", _("Euro")
+        GHS = "GHS", _("Cedi ghanéen")
+        GNF = "GNF", _("Franc guinéen")
+        KES = "KES", _("Shilling kényan")
+        MWK = "MWK", _("Kwacha malawien")
+        NGN = "NGN", _("Naira nigérian")
+        RWF = "RWF", _("Franc rwandais")
+        TZS = "TZS", _("Shilling tanzanien")
+        UGX = "UGX", _("Shilling ougandais")
+        ZMW = "ZMW", _("Kwacha zambien")
 
     name = models.CharField(_("nom"), max_length=120)
     # Sert de sous-domaine par defaut : <slug>.PLATFORM_DOMAIN

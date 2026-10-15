@@ -92,7 +92,10 @@ function court(code: string): string {
 }
 
 /** Les devises connues (`Tenant.Currency`) et les compteurs de l'aperçu. */
-const DEVISES = ["XAF", "XOF", "CDF", "CNY", "USD", "EUR"];
+const DEVISES = [
+  "XAF", "XOF", "CDF", "CNY", "USD", "EUR",
+  "GHS", "GNF", "KES", "MWK", "NGN", "RWF", "TZS", "UGX", "ZMW",
+];
 const LIGNES = ["prestations", "options", "articles", "zones"];
 
 export function CurrencySwitch({

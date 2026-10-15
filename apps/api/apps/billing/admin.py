@@ -33,7 +33,7 @@ from django.views.decorators.http import require_POST
 from apps.common.admin import ADMIN_DB, TenantScopedAdmin, TenantScopedTabularInline
 from apps.common.db import bypass_tenant_context, tenant_context
 
-from . import admin_kkiapay, services  # noqa: F401
+from . import admin_kkiapay, admin_saspay, services  # noqa: F401
 from .models import (
     Invoice,
     Plan,

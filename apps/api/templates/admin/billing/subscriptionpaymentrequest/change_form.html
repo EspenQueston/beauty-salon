@@ -19,7 +19,9 @@
     {% else %}<span class="pill pill--danger">{{ original.get_status_display }}</span>{% endif %}
   </h2>
   <p class="paiement-decision__aide">
-    {% if original.method_kind == "kkiapay" %}
+    {% if original.method_kind == "saspay" %}
+    La confirmation SASPAY est automatique, après vérification de la session, du montant et de la devise auprès de l’API SASPAY. Le compte marchand de la plateforme encaisse l’abonnement.
+    {% elif original.method_kind == "kkiapay" %}
     La confirmation KKIAPAY est automatique, après vérification du montant, de la devise et de la transaction côté serveur. Le compte marchand de la plateforme encaisse l’abonnement.
     {% else %}
     Vérifiez sur le compte crédité qu'un versement de ce montant, avec cette référence, a bien été reçu.
@@ -43,7 +45,9 @@
   </div>
 
   {% if original.status == "pending" %}
-    {% if original.method_kind == "kkiapay" %}
+    {% if original.method_kind == "saspay" %}
+      <p class="paiement-decision__aide">En attente de confirmation de SASPAY. L’abonnement ne s’ouvre qu’après vérification auprès de son API (retour du salon, webhook signé ou vérification périodique). Consultez les <a href="{% url 'admin:billing_saspayintent_changelist' %}">paiements SASPAY</a> pour le suivi.</p>
+    {% elif original.method_kind == "kkiapay" %}
       <p class="paiement-decision__aide">En attente de confirmation du fournisseur. Aucun abonnement ni récompense n’est ouvert sur la seule base du widget. Consultez les <a href="{% url 'admin:billing_kkiapayintent_changelist' %}">intentions KKIAPAY</a> pour le suivi.</p>
     {% elif peut_verifier %}
       {% if apercu_periode %}

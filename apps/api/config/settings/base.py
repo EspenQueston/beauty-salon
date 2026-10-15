@@ -404,6 +404,7 @@ REST_FRAMEWORK = {
         # la fois ; dix envois par heure couvrent les corrections apres refus.
         "subscription_payment": "10/hour",
         "kkiapay_webhook": "1200/hour",
+        "saspay_webhook": "1200/hour",
         # Verification DNS d'un domaine personnalise : chaque essai interroge des
         # serveurs externes. Vingt par heure couvrent l'attente de la propagation.
         "domain_check": "20/hour",
@@ -515,3 +516,21 @@ KKIAPAY_LIVE_PUBLIC_KEY = env("KKIAPAY_LIVE_PUBLIC_KEY", default="")
 KKIAPAY_LIVE_PRIVATE_KEY = env("KKIAPAY_LIVE_PRIVATE_KEY", default="")
 KKIAPAY_LIVE_SECRET_KEY = env("KKIAPAY_LIVE_SECRET_KEY", default="")
 KKIAPAY_LIVE_WEBHOOK_SECRET = env("KKIAPAY_LIVE_WEBHOOK_SECRET", default="")
+
+# SASPAY : les pays africains que KKIAPAY ne couvre pas (voir
+# apps/billing/saspay.py). Une cle secrete par environnement, jamais exposee
+# au navigateur ; le secret de signature des webhooks se copie depuis le
+# tableau de bord SASPAY a la creation du point de reception.
+SASPAY_ENABLED = env.bool("SASPAY_ENABLED", default=False)
+SASPAY_SANDBOX = env.bool("SASPAY_SANDBOX", default=True)
+SASPAY_ALLOWED_COUNTRIES = tuple(
+    env.list(
+        "SASPAY_ALLOWED_COUNTRIES",
+        default=["CG", "CD", "CM", "GH", "GN", "KE", "ML", "MW", "NG", "RW", "TZ", "UG", "ZM"],
+    )
+)
+SASPAY_API_URL = env("SASPAY_API_URL", default="https://api.saspay.me/api/v1")
+SASPAY_TEST_SECRET_KEY = env("SASPAY_TEST_SECRET_KEY", default="")
+SASPAY_TEST_WEBHOOK_SECRET = env("SASPAY_TEST_WEBHOOK_SECRET", default="")
+SASPAY_LIVE_SECRET_KEY = env("SASPAY_LIVE_SECRET_KEY", default="")
+SASPAY_LIVE_WEBHOOK_SECRET = env("SASPAY_LIVE_WEBHOOK_SECRET", default="")

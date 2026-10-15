@@ -76,5 +76,6 @@ export function Pricing() {
     </div>
     {data && !country && <p className="mt-2 text-sm text-muted">{t("noCountryPrice")}</p>}
     {currency?.kkiapay && <p className="mt-3 rounded-xl bg-salon-soft p-3 text-sm text-salon-ink">{t("kkiapay")}</p>}
+    {currency?.saspay && <p className="mt-3 rounded-xl bg-salon-soft p-3 text-sm text-salon-ink">{t("saspay")}</p>}
   </div>;
 }

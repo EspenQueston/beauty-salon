@@ -22,6 +22,10 @@ def entretenir():
         )
     ):
         kkiapay.expirer(iid)
+    # SASPAY : paiements en attente reverifies aupres de l'API, abandons clos.
+    from apps.billing import saspay
+
+    saspay.entretenir()
     paiements = (
         Remise.objects.using("admin")
         .filter(statut="reservee", demande__isnull=False)

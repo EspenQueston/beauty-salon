@@ -58,7 +58,10 @@ OPEN_ER_API = "https://open.er-api.com/v6/latest/{source}"
 TIMEOUT = 8
 
 # Toutes les devises que la plateforme sait afficher : demandees d'un coup.
-DEVISES = ("XAF", "CNY", "CDF", "EUR", "USD")
+DEVISES = (
+    "XAF", "XOF", "CNY", "CDF", "EUR", "USD",
+    "GHS", "GNF", "KES", "MWK", "NGN", "RWF", "TZS", "UGX", "ZMW",
+)
 
 # Douze heures. Assez court pour qu'un taux ne devienne jamais absurde,
 # assez long pour qu'une journee de travail ne consomme qu'un appel.

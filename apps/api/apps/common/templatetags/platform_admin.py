@@ -64,6 +64,12 @@ def programmes_panel(context):
             "Configuration et suivi des paiements d’abonnement.",
         ),
         (
+            "billing.view_saspayintent",
+            "billing_saspayintent",
+            "SASPAY",
+            "Pays africains hors KKIAPAY : configuration et suivi des paiements.",
+        ),
+        (
             "parrainage.view_evenementparrainage",
             "parrainage_evenementparrainage",
             "Journal du parrainage",

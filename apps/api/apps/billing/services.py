@@ -445,6 +445,8 @@ def soumettre_paiement(
     moyen = PlatformPaymentMethod.objects.filter(pk=moyen_id).first()
     if moyen and moyen.kind == PlatformPaymentMethod.Kind.KKIAPAY and not integration:
         raise PaiementRefuse("Utilisez le paiement KKIAPAY intégré.", "integration_requise")
+    if moyen and moyen.kind == PlatformPaymentMethod.Kind.SASPAY and not integration:
+        raise PaiementRefuse("Utilisez le paiement SASPAY intégré.", "integration_requise")
     if (
         moyen is None
         or not moyen.est_utilisable
@@ -601,7 +603,9 @@ def soumettre_paiement(
             ) from erreur
         raise
 
-    if demande.method_kind != PlatformPaymentMethod.Kind.KKIAPAY:
+    # Un paiement par integration se confirme seul : personne n'a rien a
+    # verifier, et le salon ne doit pas lire « en cours de verification ».
+    if demande.method_kind not in PlatformPaymentMethod.INTEGRES:
         _prevenir_apres_validation("paiement_abonnement_a_verifier", demande)
         _ecrire_apres_validation("paiement_recu", demande.tenant_id, demande.id)
         _ecrire_apres_validation("paiement_a_verifier", demande.tenant_id, demande.id)
@@ -658,6 +662,10 @@ def approuver_paiement(
         if demande.method_kind == PlatformPaymentMethod.Kind.KKIAPAY and not integration:
             raise PaiementRefuse(
                 "Ce paiement nécessite une vérification serveur KKIAPAY.", "integration_requise"
+            )
+        if demande.method_kind == PlatformPaymentMethod.Kind.SASPAY and not integration:
+            raise PaiementRefuse(
+                "Ce paiement nécessite une vérification serveur SASPAY.", "integration_requise"
             )
 
         from apps.parrainage.services import reservation_expiree
