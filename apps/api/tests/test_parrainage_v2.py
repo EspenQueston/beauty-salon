@@ -457,6 +457,34 @@ def test_kkiapay_reponse_serveur_incorrecte_n_active_rien(
         assert not Invoice.objects.exists()
 
 
+def test_kkiapay_succes_pas_encore_reflete_puis_confirme(
+    api_client, salon_a, kki_config, monkeypatch
+):
+    """Le widget annonce le succès avant l'API (constaté sur le sandbox) :
+    une transaction encore en attente n'est pas un refus, et la confirmation
+    suivante aboutit — même avec `"currency": null`, comme le sandbox répond."""
+    i, _ = kki_config
+    reponse = {"transactionId": "TX001", "status": "PENDING", "amount": 15000,
+               "currency": None, "partnerId": i["id"]}
+    monkeypatch.setattr(kkiapay, "verifier_transaction", lambda *a: reponse)
+    with pytest.raises(billing.PaiementRefuse) as exc:
+        kkiapay.confirmer(i["id"], "TX001")
+    assert exc.value.code == "paiement_en_cours"
+    # Le webhook signé arrivé trop tôt fait redemander KKIAPAY (503), sans refus.
+    payload = {"event": "transaction.success", "transactionId": "TX001", "partnerId": i["id"]}
+    r = api_client.post("/api/v1/webhooks/kkiapay/test", payload, format="json",
+                        HTTP_X_KKIAPAY_SECRET="test-WEBHOOK_SECRET")
+    assert r.status_code == 503, r.content
+    with as_tenant(salon_a.tenant):
+        assert SubscriptionPaymentRequest.objects.get().status == "pending"
+
+    reponse["status"] = "SUCCESS"
+    assert kkiapay.confirmer(i["id"], "TX001")["confirme"] is True
+    with as_tenant(salon_a.tenant):
+        assert SubscriptionPaymentRequest.objects.get().status == "approved"
+        assert Invoice.objects.count() == 1
+
+
 def test_kkiapay_confirmation_rejouee_et_webhook_signee(
     api_client, salon_a, kki_config, monkeypatch
 ):

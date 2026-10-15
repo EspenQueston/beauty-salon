@@ -403,6 +403,12 @@ REST_FRAMEWORK = {
         # Declaration d'un paiement d'abonnement. Une seule peut attendre a
         # la fois ; dix envois par heure couvrent les corrections apres refus.
         "subscription_payment": "10/hour",
+        # Confirmation d'un paiement KKIAPAY ou SASPAY deja ouvert : le
+        # navigateur redemande tant que le prestataire n'a pas fini (jusqu'a
+        # neuf fois pour un seul paiement). Sous le quota precedent, un salon
+        # qui venait de payer se retrouvait bloque une heure. Chaque appel ne
+        # fait que verifier aupres du prestataire, sans rien creer.
+        "payment_confirmation": "120/hour",
         "kkiapay_webhook": "1200/hour",
         "saspay_webhook": "1200/hour",
         # Verification DNS d'un domaine personnalise : chaque essai interroge des

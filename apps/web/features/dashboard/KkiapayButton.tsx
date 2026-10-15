@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { useKKiaPay } from "kkiapay-react";
-import { dashboardFetch } from "@/lib/dashboard";
+import { DashboardError, dashboardFetch } from "@/lib/dashboard";
 import { Button, ErrorState } from "@/features/ui";
 import { messageKkiapayRejete } from "./kkiapayMessage.mjs";
 
@@ -55,10 +55,24 @@ function Paiement({ tenantId, choix, demande, onConfirme }: Props) {
       if (!intention.current) return;
       setVerification(true);
       setError(null);
+      const corps = JSON.stringify({ intention: intention.current.id, transaction_id: data.transactionId });
       try {
-        await dashboardFetch("/api/v1/billing/kkiapay/confirm", { method: "POST",
-          body: JSON.stringify({ intention: intention.current.id, transaction_id: data.transactionId }) }, tenantId);
-        onConfirme();
+        // Le widget annonce le succès avant que l'API KKIAPAY ne le reflète :
+        // le serveur répond « paiement_en_cours » et l'on redemande, environ
+        // 45 s au total. Au-delà, le webhook prend le relais.
+        for (let essai = 0; ; essai++) {
+          try {
+            await dashboardFetch("/api/v1/billing/kkiapay/confirm",
+              { method: "POST", body: corps }, tenantId);
+            onConfirme();
+            return;
+          } catch (e) {
+            const code = e instanceof DashboardError ? e.code : "";
+            const provisoire = code === "paiement_en_cours" || code === "verification_indisponible";
+            if (!provisoire || essai >= 8) throw e;
+            await new Promise((fin) => setTimeout(fin, 1500 + essai * 750));
+          }
+        }
       } catch {
         setError(t("enCours"));
       } finally { setVerification(false); }

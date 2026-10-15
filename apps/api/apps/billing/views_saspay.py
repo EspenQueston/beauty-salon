@@ -57,7 +57,7 @@ class SaspayView(_ProprietaireSeulement, APIView):
 
 
 class SaspayConfirmationView(_ProprietaireSeulement, APIView):
-    throttle_scope = "subscription_payment"
+    throttle_scope = "payment_confirmation"
 
     def post(self, request):
         s = ConfirmationSerializer(data=request.data)

@@ -50,7 +50,7 @@ class KkiapayView(_ProprietaireSeulement, APIView):
 
 
 class KkiapayConfirmationView(_ProprietaireSeulement, APIView):
-    throttle_scope = "subscription_payment"
+    throttle_scope = "payment_confirmation"
 
     def post(self, request):
         s = ConfirmationSerializer(data=request.data)
@@ -103,9 +103,9 @@ class KkiapayWebhookView(APIView):
         try:
             return Response(kkiapay.confirmer(i.pk, tx, charge_signee=request.data))
         except PaiementRefuse as exc:
-            # 503 provoque une nouvelle tentative fournisseur si son API est en panne.
-            return Response(
-                {"code": exc.code}, status=503 if exc.code == "verification_indisponible" else 409
-            )
+            # 503 provoque une nouvelle tentative fournisseur si son API est en
+            # panne, ou si elle ne reflète pas encore le succès qu'elle annonce.
+            a_retenter = exc.code in ("verification_indisponible", "paiement_en_cours")
+            return Response({"code": exc.code}, status=503 if a_retenter else 409)
         except IntegrityError:
             return Response({"code": "transaction_deja_utilisee"}, status=409)

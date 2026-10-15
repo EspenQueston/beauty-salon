@@ -21,6 +21,9 @@ from .models import KkiapayIntent, SubscriptionPaymentRequest
 from .services import PaiementRefuse
 
 PAYS_DOCUMENTES = {"BJ", "BF", "CI", "TG", "SN", "NE"}
+# Statuts définitifs d'une transaction qui n'a pas abouti ; tout autre statut
+# que « SUCCESS » est un paiement encore en cours.
+STATUTS_ECHEC = {"FAILED", "INSUFFICIENT_FUND", "CANCELLED", "EXPIRED", "REVERTED"}
 
 
 def credentials(sandbox=None):
@@ -149,6 +152,14 @@ def confirmer(intent_id, transaction_id, *, charge_signee=None):
     if not disponible() or i.sandbox != settings.KKIAPAY_SANDBOX:
         raise PaiementRefuse("Cet environnement KKIAPAY n’est pas actif.", "environnement_inactif")
     resultat = verifier_transaction(transaction_id, i.sandbox)
+    # Le widget annonce le succès avant que l'API privée ne le reflète :
+    # vérifiée à la même seconde, la transaction est encore en attente.
+    # Constaté sur le sandbox le 15/10/2026 — « SUCCESS » quelques secondes
+    # plus tard. Ce n'est pas un refus : le navigateur redemande.
+    if resultat.get("status") not in ("SUCCESS", *STATUTS_ECHEC):
+        raise PaiementRefuse(
+            "Le paiement est encore en cours de traitement chez KKIAPAY.", "paiement_en_cours"
+        )
     # Le montant et le statut viennent toujours de l'API privée. L'association
     # doit venir de cette réponse OU d'un webhook authentifié, jamais du navigateur.
     liaison = resultat.get("partnerId") or (charge_signee or {}).get("partnerId")
@@ -160,8 +171,10 @@ def confirmer(intent_id, transaction_id, *, charge_signee=None):
         raise PaiementRefuse("Transaction non associée à ce paiement.", "association_invalide")
     if resultat.get("status") != "SUCCESS":
         raise PaiementRefuse("Le paiement n’est pas confirmé par KKIAPAY.", "paiement_non_confirme")
-    # XOF est l'unique devise documentée ; une autre devise explicite est refusée.
-    if resultat.get("currency", "XOF") != "XOF" or not montant.is_finite():
+    # XOF est l'unique devise documentée ; une autre devise explicite est
+    # refusée. L'API répond `"currency": null` (sandbox, 15/10/2026) : une
+    # devise absente, pas une autre devise.
+    if (resultat.get("currency") or "XOF") != "XOF" or not montant.is_finite():
         raise PaiementRefuse("Devise KKIAPAY incompatible.", "devise_incompatible")
     with transaction.atomic(), bypass_tenant_context(), tenant_context(i.tenant_id):
         i = KkiapayIntent.objects.select_for_update().get(pk=i.pk)
