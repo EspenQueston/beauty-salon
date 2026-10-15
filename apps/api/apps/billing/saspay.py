@@ -169,6 +169,14 @@ def _appel(methode: str, chemin: str, sandbox: bool, *, json=None, echec: Paieme
         raise echec from exc
     if not isinstance(donnees, dict):
         raise PaiementRefuse("Réponse SASPAY invalide.", "verification_invalide")
+    # L'API enveloppe chaque réponse : {"success": true, "data": {…}, "code": 200}.
+    # Constaté en direct le 16/10/2026 — la documentation montre l'objet nu.
+    # Sans ce déballage, chaque paiement réel finissait en « réponse invalide ».
+    if "success" in donnees and "data" in donnees:
+        if donnees["success"] is not True or not isinstance(donnees["data"], dict):
+            logger.warning("SASPAY %s %s : refus %s", methode, chemin, donnees.get("code"))
+            raise echec
+        return donnees["data"]
     return donnees
 
 

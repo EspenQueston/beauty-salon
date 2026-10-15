@@ -52,6 +52,7 @@ class FauxSaspay:
     def __init__(self):
         self.appels = []
         self.panne = False
+        self.refus = False
         self.statut = {"status": "PENDING", "transaction_status": None}
         self.session = {"amount": "15000.00", "currency": "XAF"}
 
@@ -59,6 +60,8 @@ class FauxSaspay:
         self.appels.append((methode, url, json, headers))
         if self.panne:
             raise saspay.httpx.ConnectError("injoignable")
+        if self.refus:
+            return Reponse({"detail": "Requête refusée."}, succes=False)
         chemin = url.split("/api/v1", 1)[1]
         if methode == "POST" and chemin == "/checkout-sessions/":
             corps = {
@@ -89,8 +92,11 @@ class FauxSaspay:
 
 
 class Reponse:
-    def __init__(self, corps):
-        self.corps = corps
+    """Une réponse de l'API, dans l'enveloppe qu'elle utilise réellement :
+    `{"success": true, "data": {…}, "code": 200}` (constaté en direct)."""
+
+    def __init__(self, corps, succes=True):
+        self.corps = {"success": succes, "data": corps, "code": 200 if succes else 400}
 
     def raise_for_status(self):
         pass
@@ -223,7 +229,10 @@ def test_un_second_clic_reprend_la_meme_session(salon_a, config, api):
     assert len([a for a in api.appels if a[0] == "POST"]) == 1
 
 
-def test_saspay_muet_ne_laisse_aucune_demande(settings, salon_a, offres, api):
+@pytest.mark.parametrize("mode", ["panne", "refus"])
+def test_saspay_muet_ne_laisse_aucune_demande(settings, salon_a, offres, api, mode):
+    """Une API injoignable, ou qui répond `{"success": false}` dans son
+    enveloppe : aucun paiement n'est laissé ouvert à moitié."""
     settings.DEBUG = True
     settings.SASPAY_ENABLED = True
     settings.SASPAY_TEST_SECRET_KEY = "sk_test_cle"
@@ -233,7 +242,7 @@ def test_saspay_muet_ne_laisse_aucune_demande(settings, salon_a, offres, api):
     abonnement_de(salon_a)
     PlanPrice.objects.create(plan=offres["mensuel"], currency="KES", amount=1500)
     moyen = PlatformPaymentMethod.objects.create(kind="saspay", country="KE", currency="KES")
-    api.panne = True
+    setattr(api, mode, True)
 
     with as_tenant(salon_a.tenant), pytest.raises(billing.PaiementRefuse) as exc:
         saspay.preparer(
