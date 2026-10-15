@@ -155,6 +155,7 @@ EXACTS: dict[str, str] = {
     "Transaction non associée à ce paiement.": "Transaction not linked to this payment.",
     "Le paiement n'est pas confirmé par KKIAPAY.": "The payment is not confirmed by KKIAPAY.",
     "Le paiement est encore en cours de traitement chez KKIAPAY.": "KKIAPAY is still processing the payment.",
+    "Ce moyen de paiement n'est pas proposé dans votre pays.": "This payment method is not available in your country.",
     "Devise KKIAPAY incompatible.": "Incompatible KKIAPAY currency.",
     "La vérification KKIAPAY est indisponible. Réessayez.": (
         "KKIAPAY verification is unavailable. Try again."

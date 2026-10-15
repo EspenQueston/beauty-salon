@@ -54,6 +54,7 @@ import { CheckInButton, CheckInPanel } from "./CheckIn";
 import { ReschedulePanel } from "./Reschedule";
 import { useDashboard } from "./DashboardShell";
 import { useFormats } from "./formats";
+import { nomDuMoyen } from "./moyens";
 
 /**
  * Les trois listes de « ce qui attend un geste ».
@@ -1115,11 +1116,18 @@ function ProofPanel({
   onReject: (booking: Booking, reason: string) => void;
 }) {
   const t = useTranslations("pro.agenda.preuve");
+  const tMoyens = useTranslations("pro.encaissement");
   const { region } = useFormats();
   const proof = booking.deposit_proof;
   const [refusing, setRefusing] = useState(false);
   const [reason, setReason] = useState("");
-  const [amount, setAmount] = useState(booking.deposit_amount);
+  // « 9600 », pas « 9600.00 » : sans centimes quand le montant est entier —
+  // et il l'est toujours en franc CFA, guinéen ou rwandais.
+  const [amount, setAmount] = useState(() =>
+    Number.isInteger(Number(booking.deposit_amount))
+      ? String(Number(booking.deposit_amount))
+      : booking.deposit_amount,
+  );
 
   if (!proof) return null;
 
@@ -1171,7 +1179,9 @@ function ProofPanel({
         {proof.channel
           ? t("ditAvoirPayePar", {
               nom: booking.customer_name,
-              moyen: proof.channel === "wechat" ? "WeChat Pay" : "Alipay",
+              // Mobile Money, Orange, Airtel, virement : plus seulement WeChat ou
+              // Alipay — une preuve Mobile Money s'affichait « Alipay ».
+              moyen: nomDuMoyen(proof.channel, tMoyens("virement")),
             })
           : t("ditAvoirPaye", { nom: booking.customer_name })}{" "}
         {t("retrouvez")}

@@ -136,13 +136,23 @@ class PaymentRefused(Exception):
 
 
 def channels_for(tenant_id) -> list[PaymentChannel]:
-    """Moyens d'encaissement reellement affichables pour ce salon."""
+    """Moyens d'encaissement reellement affichables pour ce salon.
+
+    Actifs, renseignes, et existant dans le pays du salon (`moyens.py`) : un
+    QR Alipay reste chez un salon qui a quitte la Chine, mais n'est plus
+    montre a ses clientes.
+    """
+    from apps.tenants.models import Tenant
+
+    from .moyens import propose
+
+    pays = Tenant.objects.filter(pk=tenant_id).values_list("country", flat=True).first() or ""
     return [
         channel
         for channel in PaymentChannel.objects.filter(active=True).select_related(
             "qr_image"
         )
-        if channel.usable
+        if channel.usable and propose(channel.kind, pays)
     ]
 
 

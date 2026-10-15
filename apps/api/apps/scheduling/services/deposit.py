@@ -59,8 +59,10 @@ from __future__ import annotations
 from decimal import ROUND_DOWN, Decimal
 
 # Monnaies dont l'usage courant ignore les centimes. Un acompte de 137,40 XAF
-# ne se paie pas : il n'existe pas de piece pour cela.
-WHOLE_UNIT_CURRENCIES = {"XAF", "XOF", "CDF"}
+# ne se paie pas : il n'existe pas de piece pour cela. Le franc guineen, le
+# franc rwandais et le shilling ougandais n'ont meme pas de subdivision
+# (ISO 4217) : un Mobile Money y refuse 0,50.
+WHOLE_UNIT_CURRENCIES = {"XAF", "XOF", "CDF", "GNF", "RWF", "UGX"}
 
 
 def compute_deposit(

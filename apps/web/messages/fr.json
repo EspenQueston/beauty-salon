@@ -777,7 +777,8 @@
       "imageTropGrande": "Cette image dépasse 15 Mo.",
       "changerCapture": "Changer la capture",
       "choisirCapture": "Choisir une capture d'écran",
-      "envoyerPreuve": "J'ai payé, envoyer la preuve"
+      "envoyerPreuve": "J'ai payé, envoyer la preuve",
+      "envoyerPar": "Envoyez l’acompte par {channel} :"
     },
     "creneauGardeEncore": "Créneau gardé encore",
     "total": "Total",
@@ -1057,7 +1058,11 @@
       "subtitle": "Consultez les tarifs publiés pour votre pays et votre devise, puis choisissez votre rythme de paiement.",
       "country": "Votre pays",
       "currency": "Devise",
-      "canal": { "mobileMoney": "Mobile Money", "carte": "Carte", "mobileMoneyCarte": "Mobile Money ou carte" },
+      "canal": {
+        "mobileMoney": "Mobile Money",
+        "carte": "Carte",
+        "mobileMoneyCarte": "Mobile Money ou carte"
+      },
       "period": "Période de paiement",
       "monthly": "Mensuel",
       "yearly": "Annuel",
@@ -2745,8 +2750,8 @@
       "enregistre": "Enregistré.",
       "retire": "{moyen} retiré.",
       "titre": "Encaisser les acomptes",
-      "intro": "Publiez le QR code de votre compte : vos clientes régleront leur acompte dessus avant de venir. L'argent arrive directement chez vous — nous ne le touchons jamais.",
-      "sansQr": "Sans QR code, vos clientes réservent sans rien régler et vous encaissez sur place, comme aujourd'hui.",
+      "intro": "Publiez le QR code ou le numéro de votre compte : vos clientes régleront leur acompte dessus avant de venir. L’argent arrive directement chez vous — nous ne le touchons jamais.",
+      "sansQr": "Sans moyen publié, vos clientes réservent sans rien régler et vous encaissez sur place, comme aujourd’hui.",
       "ajouter": "Ajouter {moyen}",
       "propose": "Proposé",
       "qrManquant": "QR manquant",
@@ -2759,7 +2764,18 @@
       "precisionExemple": "« Mettez votre nom en commentaire »",
       "suspendre": "Suspendre",
       "reactiver": "Réactiver",
-      "supprimer": "Supprimer"
+      "supprimer": "Supprimer",
+      "virement": "Virement bancaire",
+      "ajouteNumero": "Moyen ajouté. Indiquez votre numéro.",
+      "numeroManquant": "Numéro manquant",
+      "qrFacultatif": "QR code (facultatif)",
+      "titulaire": "Titulaire du compte",
+      "titulaireExemple": "Le nom que la cliente voit en envoyant",
+      "numero": "Numéro et consignes",
+      "numeroExemple": "06 123 45 67 — indiquez votre nom en motif",
+      "coordonnees": "Coordonnées bancaires",
+      "coordonneesExemple": "Banque, IBAN ou RIB, et le motif à indiquer",
+      "horsPays": "Hors de votre pays"
     },
     "contraste": {
       "paires": {
@@ -3287,7 +3303,11 @@
         "etape1": "Votre offre",
         "pays": "Pays",
         "devise": "Devise",
-        "canal": { "mobileMoney": "Mobile Money", "carte": "Carte", "mobileMoneyCarte": "Mobile Money ou carte" },
+        "canal": {
+          "mobileMoney": "Mobile Money",
+          "carte": "Carte",
+          "mobileMoneyCarte": "Mobile Money ou carte"
+        },
         "gamme": "Gamme",
         "offre": "Offre",
         "remise": "<gras>Parrainage : −{pct} %</gras> sur ce paiement ({n, plural, one {# remise} other {# remises}}). {n, plural, one {Elle est utilisée à la validation, rendue si le paiement est refusé.} other {Elles sont utilisées à la validation, rendues si le paiement est refusé.}}",

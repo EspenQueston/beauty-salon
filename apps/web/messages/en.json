@@ -777,7 +777,8 @@
       "imageTropGrande": "This image is over 15 MB.",
       "changerCapture": "Change the screenshot",
       "choisirCapture": "Choose a screenshot",
-      "envoyerPreuve": "I have paid, send the proof"
+      "envoyerPreuve": "I have paid, send the proof",
+      "envoyerPar": "Send the deposit with {channel}:"
     },
     "creneauGardeEncore": "Slot held for another",
     "total": "Total",
@@ -1057,7 +1058,11 @@
       "subtitle": "See the published prices for your country and currency, then choose your payment period.",
       "country": "Your country",
       "currency": "Currency",
-      "canal": { "mobileMoney": "Mobile Money", "carte": "Card", "mobileMoneyCarte": "Mobile Money or card" },
+      "canal": {
+        "mobileMoney": "Mobile Money",
+        "carte": "Card",
+        "mobileMoneyCarte": "Mobile Money or card"
+      },
       "period": "Payment period",
       "monthly": "Monthly",
       "yearly": "Annual",
@@ -2745,8 +2750,8 @@
       "enregistre": "Saved.",
       "retire": "{moyen} removed.",
       "titre": "Collect deposits",
-      "intro": "Publish your account's QR code: your clients will pay their deposit with it before coming. The money goes straight to you — we never touch it.",
-      "sansQr": "Without a QR code, your clients book without paying anything and you collect payment on site, as you do today.",
+      "intro": "Publish your account’s QR code or number: clients pay their deposit there before coming. The money goes straight to you — we never touch it.",
+      "sansQr": "With no method published, clients book without paying anything and you collect on site, as today.",
       "ajouter": "Add {moyen}",
       "propose": "Offered",
       "qrManquant": "QR missing",
@@ -2759,7 +2764,18 @@
       "precisionExemple": "“Put your name in the comment”",
       "suspendre": "Pause",
       "reactiver": "Resume",
-      "supprimer": "Delete"
+      "supprimer": "Delete",
+      "virement": "Bank transfer",
+      "ajouteNumero": "Method added. Enter your number.",
+      "numeroManquant": "Number missing",
+      "qrFacultatif": "QR code (optional)",
+      "titulaire": "Account holder",
+      "titulaireExemple": "The name your client sees when sending",
+      "numero": "Number and instructions",
+      "numeroExemple": "06 123 45 67 — put your name as the reference",
+      "coordonnees": "Bank details",
+      "coordonneesExemple": "Bank, IBAN or account number, and the reference to use",
+      "horsPays": "Not in your country"
     },
     "contraste": {
       "paires": {
@@ -3287,7 +3303,11 @@
         "etape1": "Your plan",
         "pays": "Country",
         "devise": "Currency",
-        "canal": { "mobileMoney": "Mobile Money", "carte": "Card", "mobileMoneyCarte": "Mobile Money or card" },
+        "canal": {
+          "mobileMoney": "Mobile Money",
+          "carte": "Card",
+          "mobileMoneyCarte": "Mobile Money or card"
+        },
         "gamme": "Range",
         "offre": "Plan",
         "remise": "<gras>Referral: −{pct}%</gras> on this payment ({n, plural, one {# discount} other {# discounts}}). {n, plural, one {It is used on validation, and returned if the payment is rejected.} other {They are used on validation, and returned if the payment is rejected.}}",

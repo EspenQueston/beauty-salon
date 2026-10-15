@@ -122,7 +122,7 @@ def test_even_at_one_hundred_percent_travel_stays_out():
     assert due == euros("770")  # 450 + 80 + 240, sans les 75 de trajet
 
 
-@pytest.mark.parametrize("currency", ["XAF", "XOF", "CDF"])
+@pytest.mark.parametrize("currency", ["XAF", "XOF", "CDF", "GNF", "RWF", "UGX"])
 def test_currencies_without_cents_are_rounded_down(currency):
     """Un acompte a 137,40 XAF ne se paie pas : la piece n'existe pas.
 

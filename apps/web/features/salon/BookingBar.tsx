@@ -34,8 +34,11 @@ export function BookingBar({ salon }: { salon: PublicSalon }) {
   }, []);
 
   // Sans le prefixe de langue : `/en/reserver` est aussi la page de
-  // reservation.
-  if (decouper(pathname).reste.startsWith("/reserver")) return null;
+  // reservation. Ni sur la page de l'acompte, ni sur celle du rendez-vous :
+  // la cliente y est au milieu d'une reservation, et la barre recouvrait
+  // sur telephone le bouton « J'ai payé, envoyer la preuve ».
+  const page = decouper(pathname).reste;
+  if (["/reserver", "/paiement", "/rendez-vous"].some((p) => page.startsWith(p))) return null;
 
   const whatsapp = whatsappHref(salon.whatsapp_number);
 

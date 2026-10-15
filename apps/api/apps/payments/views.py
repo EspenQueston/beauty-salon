@@ -2,6 +2,7 @@
 
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,8 +16,11 @@ from apps.translations.booking import public_booking_labels
 from apps.translations.langue import table_pour
 from apps.translations.serializers import Traduit
 
+from apps.tenants.models import Tenant
+
 from . import services
 from .models import DepositProof, PaymentChannel
+from .moyens import moyens_du_pays, propose
 from .tokens import (
     booking_from_cancel,
     booking_from_status,
@@ -42,6 +46,9 @@ class PaymentChannelSerializer(Traduit, serializers.ModelSerializer):
     kind_label = serializers.CharField(source="get_kind_display", read_only=True)
     qr_url = serializers.SerializerMethodField()
     usable = serializers.BooleanField(read_only=True)
+    # Faux pour un moyen qui n'existe pas dans le pays du salon (il a changé
+    # de pays) : gardé, mais plus proposé aux clientes.
+    propose = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentChannel
@@ -56,7 +63,26 @@ class PaymentChannelSerializer(Traduit, serializers.ModelSerializer):
             "active",
             "position",
             "usable",
+            "propose",
         )
+
+    def _pays(self) -> str:
+        if "pays" not in self.context:
+            request = self.context.get("request")
+            tenant_id = getattr(request, "tenant_id", None)
+            self.context["pays"] = (
+                Tenant.objects.filter(pk=tenant_id).values_list("country", flat=True).first()
+                or ""
+            )
+        return self.context["pays"]
+
+    def get_propose(self, channel) -> bool:
+        return propose(channel.kind, self._pays())
+
+    def validate_kind(self, kind):
+        if (self.instance is None or self.instance.kind != kind) and not propose(kind, self._pays()):
+            raise serializers.ValidationError("Ce moyen de paiement n’est pas proposé dans votre pays.")
+        return kind
 
     def get_qr_url(self, channel) -> str:
         if not channel.qr_image_id or not channel.qr_image:
@@ -73,6 +99,17 @@ class PaymentChannelViewSet(TenantModelViewSet):
     required_roles = MANAGERS
     safe_roles = EVERYONE
     pagination_class = None  # un salon a deux ou trois moyens, pas cent
+
+    @action(detail=False, methods=["get"])
+    def disponibles(self, request):
+        """Les moyens qu'un salon de ce pays peut publier, dans l'ordre."""
+        pays = Tenant.objects.filter(pk=request.tenant_id).values_list("country", flat=True).first()
+        return Response(
+            [
+                {"kind": kind, "label": str(PaymentChannel.Kind(kind).label)}
+                for kind in moyens_du_pays(pays or "")
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------

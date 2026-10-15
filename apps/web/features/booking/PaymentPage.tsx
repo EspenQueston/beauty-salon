@@ -404,6 +404,18 @@ function QrPanel({ channel, single }: { channel: Channel; single: boolean }) {
             {t("paiement.scannerAvec", { channel: channel.kind_label })}
           </p>
         </>
+      ) : channel.instructions ? (
+        // Mobile Money, virement : un numéro à composer, pas de code à
+        // scanner. Le numéro est l'information principale — en grand, et
+        // sélectionnable d'un geste pour le copier.
+        <>
+          <p className="text-sm text-[var(--site-muted)]">
+            {t("paiement.envoyerPar", { channel: channel.kind_label })}
+          </p>
+          <p className="mx-auto mt-2 w-fit select-all whitespace-pre-line rounded-xl bg-[var(--site-ground)] px-4 py-2.5 text-lg font-semibold tracking-wide text-[var(--site-ink)] ring-1 ring-[var(--site-line)] [overflow-wrap:anywhere] sm:text-xl">
+            {channel.instructions}
+          </p>
+        </>
       ) : (
         <p className="text-sm text-[var(--site-muted)]">
           {t("paiement.sansQr", { channel: channel.kind_label })}
@@ -415,7 +427,7 @@ function QrPanel({ channel, single }: { channel: Channel; single: boolean }) {
           {channel.account_name}
         </p>
       )}
-      {channel.instructions && (
+      {channel.instructions && channel.qr_url && (
         <p className="mt-1 text-sm text-[var(--site-muted)]">
           {channel.instructions}
         </p>
