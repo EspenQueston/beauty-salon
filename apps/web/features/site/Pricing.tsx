@@ -39,13 +39,14 @@ export function Pricing() {
 
   return <div className="mt-6">
     <Reveal variant="cinema" className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-surface p-3 sm:p-4">
-      <label className="min-w-0 flex-1 text-sm font-medium text-ink">{t("country")}
+      {/* Pleine largeur sur téléphone : « Congo-Brazzaville » ou « XAF · Mobile Money » ne se coupent pas. */}
+      <label className="w-full min-w-0 text-sm font-medium text-ink sm:w-auto sm:flex-1">{t("country")}
         <select aria-label={t("country")} value={selectedCountry} onChange={event=>{setCountry(event.target.value);setCurrency("")}} className="mt-2 w-full min-w-0 rounded-xl border border-line bg-bg px-3 py-2.5">
           {(data?.supported_countries??[{code:"CG",name:"Congo-Brazzaville"}]).map(item=><option key={item.code} value={item.code}>{t.has(`countries.${item.code}`)?t(`countries.${item.code}`):item.name}</option>)}
         </select>
       </label>
-      {currency && <label className="text-sm font-medium text-ink">{t("currency")}
-        <select aria-label={t("currency")} value={currency.code} onChange={event=>setCurrency(event.target.value)} className="mt-2 block rounded-xl border border-line bg-bg px-3 py-2.5">
+      {currency && <label className="w-full text-sm font-medium text-ink sm:w-auto">{t("currency")}
+        <select aria-label={t("currency")} value={currency.code} onChange={event=>setCurrency(event.target.value)} className="mt-2 block w-full rounded-xl border border-line bg-bg px-3 py-2.5 sm:w-auto">
           {country?.currencies.map(item=><option key={item.code} value={item.code}>{item.code}{item.channel?` · ${t(`canal.${CLE_CANAL[item.channel]}`)}`:""}</option>)}
         </select>
       </label>}
