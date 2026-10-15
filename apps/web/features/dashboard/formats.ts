@@ -36,14 +36,23 @@ export function formatsPour(langue: string) {
     pourcent(valeur: number | string, signe = ""): string {
       return region.startsWith("fr") ? `${signe}${valeur}\u00a0%` : `${signe}${valeur}%`;
     },
-    /** Un montant, sans décimales inutiles : « 99 CNY », pas « 99,00 CNY ». */
+    /**
+     * Un montant, sans décimales inutiles : « 99 CNY », pas « 99,00 CNY ».
+     *
+     * Et jamais plus de décimales que la devise n'en a : le franc CFA, guinéen,
+     * rwandais ou ougandais n'ont pas de centimes. « soit 29 166,67 FCFA/mois »
+     * annonçait une fraction qu'aucun salon ne peut payer.
+     */
     montant(valeur: string | number, devise: string): string {
       const nombre = Number(valeur);
+      const decimales =
+        new Intl.NumberFormat(region, { style: "currency", currency: devise }).resolvedOptions()
+          .maximumFractionDigits ?? 2;
       return new Intl.NumberFormat(region, {
         style: "currency",
         currency: devise,
-        minimumFractionDigits: Number.isInteger(nombre) ? 0 : 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: Number.isInteger(nombre) ? 0 : decimales,
+        maximumFractionDigits: decimales,
       }).format(nombre);
     },
   };

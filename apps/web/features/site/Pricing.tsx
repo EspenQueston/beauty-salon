@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { CreateSalonLink, useHome } from "./HomeContext";
 import { Reveal } from "@/features/ui/Reveal";
+import { countryFromTimezone } from "@/lib/locale";
 
 const wideScreen = () => window.matchMedia("(min-width: 640px)").matches;
 const subscribeScreen = (update: () => void) => {
@@ -12,6 +13,8 @@ const subscribeScreen = (update: () => void) => {
   return () => query.removeEventListener("change", update);
 };
 const serverScreen = () => false;
+const noSubscription = () => () => {};
+const serverCountry = () => null;
 
 export function Pricing() {
   const t = useTranslations("conversion.pricing");
@@ -22,7 +25,13 @@ export function Pricing() {
   const [months,setMonths] = useState(1);
   const desktop = useSyncExternalStore(subscribeScreen, wideScreen, serverScreen);
   const [expanded,setExpanded] = useState<Record<string,boolean>>({});
-  const selectedCountry = countryCode || data?.countries[0]?.code || data?.supported_countries[0]?.code || "CG";
+  // Le pays du visiteur (deviné par son fuseau, sans permission) s'il a des
+  // tarifs ; sinon la Chine, où sont la plupart des salons ; sinon le premier
+  // pays tarifé. Le choix reste visible et modifiable juste au-dessus.
+  const guess = useSyncExternalStore(noSubscription, countryFromTimezone, serverCountry);
+  const priced = data?.countries ?? [];
+  const defaultCountry = priced.find(item=>item.code===guess)?.code ?? priced.find(item=>item.code==="CN")?.code ?? priced[0]?.code;
+  const selectedCountry = countryCode || defaultCountry || data?.supported_countries[0]?.code || "CG";
   const country = data?.countries.find(item=>item.code===selectedCountry);
   const currency = country?.currencies.find(item=>item.code===currencyCode) ?? country?.currencies[0];
   const format = (amount:string) => new Intl.NumberFormat(locale,{maximumFractionDigits:2}).format(Number(amount));
@@ -36,7 +45,7 @@ export function Pricing() {
       </label>
       {currency && <label className="text-sm font-medium text-ink">{t("currency")}
         <select aria-label={t("currency")} value={currency.code} onChange={event=>setCurrency(event.target.value)} className="mt-2 block rounded-xl border border-line bg-bg px-3 py-2.5">
-          {country?.currencies.map(item=><option key={item.code}>{item.code}</option>)}
+          {country?.currencies.map(item=><option key={item.code} value={item.code}>{item.code}{item.saspay?` · ${t(item.code==="USD"?"canal.carte":"canal.mobileMoney")}`:""}</option>)}
         </select>
       </label>}
       <div className="grid w-full grid-cols-2 gap-1 rounded-xl bg-surface-muted p-1 sm:w-auto" role="group" aria-label={t("period")}>

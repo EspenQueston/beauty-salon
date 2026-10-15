@@ -386,7 +386,33 @@ def catalogue_de_paiement() -> list[dict]:
                 }
             )
         if devises:
+            # La devise du pays d'abord, l'USD (la carte) ensuite : un salon
+            # de Douala voit ses prix en XAF, pas en dollars, avant tout choix.
+            devises.sort(key=lambda devise: devise["code"] == "USD")
             pays.append({"code": code_pays, "nom": str(nom_pays), "devises": devises})
+    return pays
+
+
+def catalogue_du_salon(pays_du_salon: str) -> list[dict]:
+    """Le catalogue tel qu'un salon peut réellement le payer.
+
+    KKIAPAY et SASPAY ne règlent que le pays du salon (le serveur refuse
+    tout autre pays). Ailleurs, ils sont retirés : un salon en Chine ne se
+    voit pas proposer le Cameroun pour aboutir à un refus. Les moyens déclarés
+    à la main (WeChat, Alipay, Mobile Money manuel) restent proposés partout.
+    """
+    pays = []
+    for entree in catalogue_de_paiement():
+        if entree["code"] == pays_du_salon:
+            pays.append(entree)
+            continue
+        devises = []
+        for devise in entree["devises"]:
+            moyens = [m for m in devise["moyens"] if m.kind not in PlatformPaymentMethod.INTEGRES]
+            if moyens:
+                devises.append({**devise, "moyens": moyens})
+        if devises:
+            pays.append({**entree, "devises": devises})
     return pays
 
 

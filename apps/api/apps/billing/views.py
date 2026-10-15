@@ -170,7 +170,7 @@ class OffresView(_ProprietaireSeulement, APIView):
             return str(parrainage.calculer(montant, code_devise, remises).montant)
 
         pays = []
-        for entree in services.catalogue_de_paiement():
+        for entree in services.catalogue_du_salon(getattr(tenant, "country", "")):
             pays.append(
                 {
                     "code": entree["code"],

@@ -1170,7 +1170,14 @@ function Commande({
             {pays.devises.length > 1 && (
               <Pastilles
                 libelle={c("devise")}
-                options={pays.devises.map((item) => ({ valeur: item.code, texte: item.code }))}
+                options={pays.devises.map((item) => ({
+                  valeur: item.code,
+                  // Avec SASPAY, la devise dit aussi comment payer : la devise
+                  // du pays par Mobile Money, l'USD par carte.
+                  texte: item.moyens.some((m) => m.kind === "saspay")
+                    ? `${item.code} · ${c(item.code === "USD" ? "canal.carte" : "canal.mobileMoney")}`
+                    : item.code,
+                }))}
                 valeur={devise.code}
                 onChange={(valeur) => {
                   setChoixDevise(valeur);
@@ -1456,6 +1463,26 @@ function Pastilles({
   valeur: string;
   onChange: (valeur: string) => void;
 }) {
+  // Au-delà de cinq choix, une rangée de pastilles devient un mur sur
+  // téléphone : une liste déroulante tient sur une ligne.
+  if (options.length > 5) {
+    return (
+      <label className="flex min-w-0 items-center gap-2 text-xs text-subtle">
+        {libelle}
+        <select
+          value={valeur}
+          onChange={(event) => onChange(event.target.value)}
+          className="min-w-0 max-w-[14rem] rounded-full border border-line bg-surface py-1.5 pl-3 pr-8 text-xs font-medium text-ink sm:text-[13px]"
+        >
+          {options.map((option) => (
+            <option key={option.valeur} value={option.valeur}>
+              {option.texte}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
   return (
     <div role="radiogroup" aria-label={libelle} className="flex flex-wrap items-center gap-1.5">
       <span className="mr-1 text-xs text-subtle">{libelle}</span>

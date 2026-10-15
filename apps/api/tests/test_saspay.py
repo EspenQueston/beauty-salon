@@ -163,6 +163,9 @@ def test_ferme_sans_cles_et_en_mode_test_hors_debug(settings):
     settings.SASPAY_ENABLED = True
     settings.SASPAY_SANDBOX = True
     settings.DEBUG = True
+    # Sans clés, quelles que soient celles du `.env` de la machine.
+    settings.SASPAY_TEST_SECRET_KEY = ""
+    settings.SASPAY_TEST_WEBHOOK_SECRET = ""
     assert not saspay.disponible()
     settings.SASPAY_TEST_SECRET_KEY = "sk_test_cle"
     settings.SASPAY_TEST_WEBHOOK_SECRET = SECRET

@@ -52,7 +52,18 @@ const BY_TIMEZONE: Record<string, CountryCode> = {
 export const DEFAULT_COUNTRY: CountryCode = "CG";
 
 export function guessCountry(): CountryCode {
-  if (typeof Intl === "undefined") return DEFAULT_COUNTRY;
+  return countryFromTimezone() ?? DEFAULT_COUNTRY;
+}
+
+/**
+ * Le pays que le fuseau désigne vraiment, ou `null`.
+ *
+ * Sans repli : là où `guessCountry` doit remplir un champ quoi qu'il arrive,
+ * la grille tarifaire de l'accueil préfère ne rien supposer — un visiteur à
+ * Paris n'a pas à voir les prix du Congo en dollars.
+ */
+export function countryFromTimezone(): CountryCode | null {
+  if (typeof Intl === "undefined") return null;
 
   try {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -62,8 +73,8 @@ export function guessCountry(): CountryCode {
     if (zone?.startsWith("Asia/")) return "CN";
     if (zone?.startsWith("Africa/")) return DEFAULT_COUNTRY;
   } catch {
-    // Intl indisponible ou fuseau illisible : la valeur par défaut fait
-    // aussi bien qu'une supposition hasardeuse.
+    // Intl indisponible ou fuseau illisible : aucune supposition plutôt
+    // qu'une supposition hasardeuse.
   }
-  return DEFAULT_COUNTRY;
+  return null;
 }
