@@ -59,9 +59,12 @@ from .services import PaiementRefuse
 
 logger = logging.getLogger(__name__)
 
-#: Les pays ou SASPAY a des reseaux Mobile Money, et leur devise (catalogue
-#: SASPAY, hors pays KKIAPAY).
+#: Les pays ou SASPAY a des reseaux Mobile Money, et leur devise, hors pays
+#: KKIAPAY. Source : le catalogue reel du compte (`GET /networks/`, lu le
+#: 16/10/2026), plus complet que la page publique de la documentation — qui
+#: ne cite pas le Congo-Brazzaville, ou Airtel et MTN sont pourtant actifs.
 MOBILE_MONEY = {
+    "CG": "XAF",
     "CD": "CDF",
     "CM": "XAF",
     "GH": "GHS",
@@ -75,11 +78,12 @@ MOBILE_MONEY = {
     "UG": "UGX",
     "ZM": "ZMW",
 }
-#: Les pays reglés par carte seulement (en USD) : pas de reseau Mobile Money.
-CARTE_SEULEMENT = {"CG"}
-PAYS_COUVERTS = set(MOBILE_MONEY) | CARTE_SEULEMENT
+PAYS_COUVERTS = set(MOBILE_MONEY)
 #: La carte bancaire passe par un reseau global de SASPAY, en dollars.
 DEVISE_CARTE = "USD"
+#: Les pays ou l'USD se paie aussi par Mobile Money : en RDC, Airtel, Orange
+#: et Vodacom ont des portefeuilles en dollars (`*_cd_usd`).
+MOBILE_MONEY_USD = {"CD"}
 #: Les devises sans centimes : un Mobile Money ne debite pas 0,50 franc.
 SANS_DECIMALES = {"XOF", "XAF", "GNF", "RWF", "UGX"}
 #: Ecart toleré entre l'horodatage d'un webhook et notre horloge.
@@ -122,11 +126,22 @@ def pays_autorises() -> set[str]:
 
 
 def devises_acceptees(pays: str) -> set[str]:
-    """La devise du pays (si SASPAY y a du Mobile Money) et l'USD par carte."""
+    """La devise du pays (Mobile Money) et l'USD (carte)."""
     if pays not in pays_autorises():
         return set()
-    locale = MOBILE_MONEY.get(pays)
-    return {DEVISE_CARTE, locale} if locale else {DEVISE_CARTE}
+    return {MOBILE_MONEY[pays], DEVISE_CARTE}
+
+
+def canal(pays: str, devise: str) -> str:
+    """Comment se paie `devise` dans `pays` : ce que la page annonce au salon.
+
+    « mobile_money » (la devise du pays), « carte » (l'USD), ou
+    « mobile_money_carte » (l'USD en RDC, que les portefeuilles en dollars
+    acceptent aussi).
+    """
+    if devise != DEVISE_CARTE:
+        return "mobile_money"
+    return "mobile_money_carte" if pays in MOBILE_MONEY_USD else "carte"
 
 
 # ---------------------------------------------------------------------------
@@ -270,8 +285,9 @@ def preparer(tenant_id, user, donnees) -> dict:
         "metadata": {"intention": str(intention.pk), "salon": str(tenant_id)},
         "expires_at": intention.expire_le.isoformat(),
     }
-    if d.currency != DEVISE_CARTE:
-        # Preselectionne les reseaux du pays ; en USD (carte), aucun pays.
+    if canal(tenant.country, d.currency) != "carte":
+        # Preselectionne les reseaux du pays (et, en RDC, ses portefeuilles
+        # en dollars) ; en USD par carte, aucun pays.
         corps["country"] = tenant.country
     session = _appel(
         "POST",

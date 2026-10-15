@@ -20,7 +20,7 @@ from apps.billing.models import Invoice, Plan, PlanPrice, PlatformPaymentMethod,
 from conftest import as_tenant
 from tests.test_abonnements import ADMIN, abonnement_de, medias_temporaires, moyens, offres
 from tests.test_parrainage_v2 import politique_b
-from tests.test_saspay import SESSION, FauxSaspay
+from tests.test_saspay import FauxSaspay
 
 FIXTURES = (medias_temporaires, moyens, offres, politique_b)
 pytestmark = ADMIN
@@ -67,8 +67,7 @@ def kkiapay_ouvert(settings):
 # SASPAY : les 13 pays, devise du pays et USD
 # ---------------------------------------------------------------------------
 
-# Chaque pays dans sa devise Mobile Money, et en USD (carte) ; le Congo-
-# Brazzaville en USD seulement.
+# Chaque pays dans sa devise Mobile Money, et en USD (carte).
 CAS_SASPAY = [
     (pays, devise)
     for pays in SASPAY
@@ -91,8 +90,9 @@ def test_saspay_ouvre_et_confirme_un_paiement(salon_a, offres, saspay_ouvert, pa
 
     _, _, corps, _ = saspay_ouvert.appels[0]
     assert corps["currency"] == devise and corps["amount"] == f"{MONTANT}.00"
-    # La carte (USD) ne preselectionne aucun pays ; le Mobile Money, le sien.
-    assert corps.get("country") == (None if devise == "USD" else pays)
+    # La carte (USD) ne preselectionne aucun pays ; le Mobile Money, le sien
+    # (et en RDC l'USD aussi, payable par portefeuille en dollars).
+    assert corps.get("country") == (None if saspay.canal(pays, devise) == "carte" else pays)
 
     saspay_ouvert.statut = {"status": "PAID", "transaction_status": "SUCCESS"}
     saspay_ouvert.session = {"amount": f"{MONTANT}.00", "currency": devise}
@@ -100,7 +100,6 @@ def test_saspay_ouvre_et_confirme_un_paiement(salon_a, offres, saspay_ouvert, pa
     with as_tenant(salon_a.tenant):
         assert SubscriptionPaymentRequest.objects.get().status == "approved"
         assert Invoice.objects.get().currency == devise
-    assert SESSION  # la session simulee est bien celle qui a ete verifiee
 
 
 @pytest.mark.parametrize("pays", KKIAPAY)
@@ -172,7 +171,7 @@ def test_le_catalogue_propose_chaque_pays_avec_son_prestataire(offres, saspay_ou
     for pays in KKIAPAY:
         PlatformPaymentMethod.objects.create(kind="kkiapay", country=pays, currency="XOF")
     for pays in SASPAY:
-        for devise in ({saspay.MOBILE_MONEY[pays], "USD"} if pays in saspay.MOBILE_MONEY else {"USD"}):
+        for devise in {saspay.MOBILE_MONEY[pays], "USD"}:
             PlatformPaymentMethod.objects.create(kind="saspay", country=pays, currency=devise)
     for devise in {"XOF", "USD", *saspay.MOBILE_MONEY.values()}:
         PlanPrice.objects.update_or_create(plan=mensuel, currency=devise, defaults={"amount": MONTANT, "active": True})
@@ -184,6 +183,6 @@ def test_le_catalogue_propose_chaque_pays_avec_son_prestataire(offres, saspay_ou
         assert genres == {"kkiapay"}, pays
     for pays in SASPAY:
         devises = {d["code"]: {m.kind for m in d["moyens"]} for d in catalogue[pays]["devises"]}
-        attendu = {saspay.MOBILE_MONEY[pays], "USD"} if pays in saspay.MOBILE_MONEY else {"USD"}
+        attendu = {saspay.MOBILE_MONEY[pays], "USD"}
         assert set(devises) == attendu, pays
         assert all(g == {"saspay"} for g in devises.values()), pays

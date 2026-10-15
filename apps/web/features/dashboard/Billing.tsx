@@ -78,6 +78,7 @@ import {
   type MonteeEnGamme,
 } from "./abonnement";
 import { useDashboard } from "./DashboardShell";
+import { CLE_CANAL, type Canal } from "@/lib/format";
 import { useFormats } from "./formats";
 import { Icon } from "./icons";
 import { rows, useResource, type Page } from "./useResource";
@@ -183,6 +184,7 @@ interface Economie {
 interface Devise {
   code: string;
   nom: string;
+  canal: Canal;
   plans: OffrePlan[];
   economie: Economie | null;
   economies?: Partial<Record<Groupe, Economie | null>>;
@@ -1172,11 +1174,9 @@ function Commande({
                 libelle={c("devise")}
                 options={pays.devises.map((item) => ({
                   valeur: item.code,
-                  // Avec SASPAY, la devise dit aussi comment payer : la devise
-                  // du pays par Mobile Money, l'USD par carte.
-                  texte: item.moyens.some((m) => m.kind === "saspay")
-                    ? `${item.code} · ${c(item.code === "USD" ? "canal.carte" : "canal.mobileMoney")}`
-                    : item.code,
+                  // Avec SASPAY, la devise dit aussi comment payer (décidé par
+                  // le serveur) : Mobile Money, carte, ou les deux.
+                  texte: item.canal ? `${item.code} · ${c(`canal.${CLE_CANAL[item.canal]}`)}` : item.code,
                 }))}
                 valeur={devise.code}
                 onChange={(valeur) => {

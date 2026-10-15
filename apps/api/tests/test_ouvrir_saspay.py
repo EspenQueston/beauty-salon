@@ -4,7 +4,7 @@
     moins chère que douze mois, et reste à ±10 % du prix chinois converti ;
   - l'aperçu n'écrit rien ;
   - appliquée, chaque pays SASPAY apparaît au catalogue avec ses devises
-    (Mobile Money + USD ; Congo-Brazzaville en USD seul), et lui seul ;
+    (Mobile Money dans la devise du pays + USD), et lui seul ;
   - rejouée, elle ne crée rien de plus et ne touche jamais un tarif existant.
 """
 
@@ -90,10 +90,12 @@ def test_appliquee_chaque_pays_saspay_est_au_catalogue(offres, saspay_actif):
     lancer("--appliquer")
     catalogue = {p["code"]: p for p in billing.catalogue_de_paiement()}
     for pays in saspay.PAYS_COUVERTS:
-        attendu = {saspay.MOBILE_MONEY[pays], "USD"} if pays in saspay.MOBILE_MONEY else {"USD"}
+        attendu = {saspay.MOBILE_MONEY[pays], "USD"}
         devises = {d["code"]: {m.kind for m in d["moyens"]} for d in catalogue[pays]["devises"]}
         assert set(devises) == attendu, pays
         assert all(genres == {"saspay"} for genres in devises.values()), pays
+        canaux = {d["code"]: d["canal"] for d in catalogue[pays]["devises"]}
+        assert canaux == {d: saspay.canal(pays, d) for d in attendu}, pays
     # Les quatre offres, dans chaque devise, aux montants de la grille.
     for devise, montants in GRILLE.items():
         for code, montant in zip(OFFRES, montants, strict=True):
@@ -109,7 +111,7 @@ def test_rejouee_elle_ne_cree_rien_et_ne_touche_aucun_tarif(offres, saspay_actif
     prix_apres_un = PlanPrice.objects.count()
 
     texte = lancer("--appliquer")
-    assert PlatformPaymentMethod.objects.filter(kind="saspay").count() == moyens_apres_un == 25
+    assert PlatformPaymentMethod.objects.filter(kind="saspay").count() == moyens_apres_un == 26
     assert PlanPrice.objects.count() == prix_apres_un
     assert PlanPrice.objects.get(plan=mensuel, currency="XAF").amount == Decimal("12345")
     assert "conservé" in texte

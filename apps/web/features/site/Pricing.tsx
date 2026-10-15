@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { CreateSalonLink, useHome } from "./HomeContext";
 import { Reveal } from "@/features/ui/Reveal";
+import { CLE_CANAL } from "@/lib/format";
 import { countryFromTimezone } from "@/lib/locale";
 
 const wideScreen = () => window.matchMedia("(min-width: 640px)").matches;
@@ -45,7 +46,7 @@ export function Pricing() {
       </label>
       {currency && <label className="text-sm font-medium text-ink">{t("currency")}
         <select aria-label={t("currency")} value={currency.code} onChange={event=>setCurrency(event.target.value)} className="mt-2 block rounded-xl border border-line bg-bg px-3 py-2.5">
-          {country?.currencies.map(item=><option key={item.code} value={item.code}>{item.code}{item.saspay?` · ${t(item.code==="USD"?"canal.carte":"canal.mobileMoney")}`:""}</option>)}
+          {country?.currencies.map(item=><option key={item.code} value={item.code}>{item.code}{item.channel?` · ${t(`canal.${CLE_CANAL[item.channel]}`)}`:""}</option>)}
         </select>
       </label>}
       <div className="grid w-full grid-cols-2 gap-1 rounded-xl bg-surface-muted p-1 sm:w-auto" role="group" aria-label={t("period")}>

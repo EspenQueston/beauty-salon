@@ -3,7 +3,7 @@
 Ce que ces tests tiennent :
 
   - SASPAY et KKIAPAY ne se recouvrent jamais ; chaque pays SASPAY accepte
-    sa devise Mobile Money et l'USD (carte), le Congo-Brazzaville l'USD seul ;
+    sa devise Mobile Money et l'USD (carte) — le Congo-Brazzaville en XAF ;
   - fermé tant que les clés manquent, et jamais en mode test hors DEBUG ;
   - le paiement ne s'active que sur la parole de l'API SASPAY — session
     payée, transaction réussie, montant, devise et session concordants —
@@ -152,7 +152,7 @@ def test_saspay_et_kkiapay_ne_se_recouvrent_pas():
 
 @pytest.mark.parametrize(
     "pays, devises",
-    [("KE", {"KES", "USD"}), ("CM", {"XAF", "USD"}), ("ML", {"XOF", "USD"}), ("CG", {"USD"}),
+    [("KE", {"KES", "USD"}), ("CM", {"XAF", "USD"}), ("ML", {"XOF", "USD"}), ("CG", {"XAF", "USD"}),
      ("BJ", set()), ("CN", set())],
 )
 def test_chaque_pays_a_ses_devises(pays, devises):
@@ -181,6 +181,18 @@ def test_un_moyen_saspay_mal_regle_n_est_pas_propose(config):
     assert hors_pays.problemes()
     assert mauvaise_devise.problemes()
     assert not carte.problemes()
+    assert not PlatformPaymentMethod(kind="saspay", country="CG", currency="XAF").problemes()
+
+
+@pytest.mark.parametrize(
+    "pays, devise, attendu",
+    [("CM", "XAF", "mobile_money"), ("CG", "XAF", "mobile_money"), ("CM", "USD", "carte"),
+     ("CD", "CDF", "mobile_money"), ("CD", "USD", "mobile_money_carte")],
+)
+def test_le_canal_de_chaque_devise(pays, devise, attendu):
+    """L'USD se paie par carte, sauf en RDC où les portefeuilles en dollars
+    l'acceptent aussi (réseaux `*_cd_usd` du catalogue SASPAY)."""
+    assert saspay.canal(pays, devise) == attendu
 
 
 # ---------------------------------------------------------------------------

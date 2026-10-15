@@ -179,6 +179,7 @@ class OffresView(_ProprietaireSeulement, APIView):
                         {
                             "code": devise["code"],
                             "nom": devise["nom"],
+                            "canal": devise["canal"],
                             "plans": [
                                 {
                                     "code": offre["plan"].code,

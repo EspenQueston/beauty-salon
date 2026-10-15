@@ -4,6 +4,20 @@ import type { PublicService, ThemeConfig } from "./types";
 const LOCALE = "fr-FR";
 
 /**
+ * Comment une devise se paie avec SASPAY, tel que le serveur le décide :
+ * Mobile Money (la devise du pays), carte (l'USD), ou les deux (l'USD en
+ * RDC). Vide pour les autres moyens.
+ */
+export type Canal = "mobile_money" | "carte" | "mobile_money_carte" | "";
+
+/** La clé de traduction de chaque canal (`…canal.<clé>`). */
+export const CLE_CANAL = {
+  mobile_money: "mobileMoney",
+  carte: "carte",
+  mobile_money_carte: "mobileMoneyCarte",
+} as const;
+
+/**
  * Les montants XAF et CDF n'ont pas de decimales dans l'usage courant :
  * afficher « 25 000 FCFA » plutot que « 25 000,00 » evite de faire passer
  * un tarif simple pour un devis comptable.

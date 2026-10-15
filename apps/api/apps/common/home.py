@@ -69,6 +69,8 @@ class HomeView(APIView):
                             "saspay": any(
                                 method.kind == "saspay" for method in currency["moyens"]
                             ),
+                            # « mobile_money », « carte », « mobile_money_carte » ou vide.
+                            "channel": currency["canal"],
                         }
                         for currency in country["devises"]
                     ],

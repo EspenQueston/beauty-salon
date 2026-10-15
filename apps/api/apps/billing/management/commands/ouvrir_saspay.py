@@ -46,8 +46,7 @@ OFFRES = (Plan.Code.MONTHLY, Plan.Code.YEARLY, Plan.Code.PRO_MONTHLY, Plan.Code.
 
 def devises_du_pays(pays: str) -> list[str]:
     """Mobile Money dans la devise du pays d'abord, puis la carte en USD."""
-    locale = saspay.MOBILE_MONEY.get(pays)
-    return [locale, saspay.DEVISE_CARTE] if locale else [saspay.DEVISE_CARTE]
+    return [saspay.MOBILE_MONEY[pays], saspay.DEVISE_CARTE]
 
 
 class Command(BaseCommand):
@@ -126,7 +125,7 @@ class Command(BaseCommand):
                             active=True,
                             position=position,
                         )
-                    canal = "carte" if devise == saspay.DEVISE_CARTE else "Mobile Money"
+                    canal = saspay.canal(code_pays, devise).replace("_", " ")
                     self.stdout.write(f"  + {code_pays} {devise} ({canal})")
 
             if not appliquer:

@@ -351,6 +351,8 @@ def catalogue_de_paiement() -> list[dict]:
     aucun moyen, ou un moyen sans tarif, laisserait le salon au milieu du
     parcours.
     """
+    from . import saspay  # saspay importe ce module
+
     offres = offres_payantes()
     prix = {
         (p.plan_id, p.currency): p.amount
@@ -383,6 +385,11 @@ def catalogue_de_paiement() -> list[dict]:
                     "economie": economies.get(Plan.Groupe.STANDARD),
                     "economies": economies,
                     "moyens": disponibles,
+                    # Avec SASPAY, la devise dit aussi comment payer (Mobile
+                    # Money, carte, ou les deux) ; vide pour les autres moyens.
+                    "canal": saspay.canal(code_pays, code_devise)
+                    if any(m.kind == PlatformPaymentMethod.Kind.SASPAY for m in disponibles)
+                    else "",
                 }
             )
         if devises:
