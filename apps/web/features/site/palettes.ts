@@ -26,7 +26,10 @@ export const PALETTES = [
   { cle: "corail", name: "Corail", primary: "#C2410C", accent: "#FDDCC8", surface: "#FFF8F4" },
   { cle: "prune", name: "Prune", primary: "#86198F", accent: "#F3D5F5", surface: "#FDF6FE" },
   { cle: "encreMenthe", name: "Encre et menthe", primary: "#134E4A", accent: "#B9E7DC", surface: "#F2FAF8" },
-  { cle: "jauneNuit", name: "Jaune et bleu nuit", primary: "#14254D", accent: "#F7C948", surface: "#FFFFFF", dark: "#000000" },
+  // Le cyan #14DBF3 en couleur lumineuse (degrades, pastilles) ; un cyan
+  // profond de la meme famille porte les boutons et le texte, ou le blanc
+  // doit rester lisible (4,9:1 sur blanc).
+  { cle: "cyanLagon", name: "Cyan lagon", primary: "#077C8F", accent: "#14DBF3", surface: "#FFFFFF", dark: "#000000" },
   { cle: "mauve", name: "Mauve", primary: "#8A4F9E", accent: "#EBDCF3", surface: "#FFFFFF", dark: "#000000" },
 ] as const satisfies readonly Palette[];
 
