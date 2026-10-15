@@ -62,7 +62,8 @@ export function SupportedCountries() {
   const t=useTranslations("conversion.pricing");
   const motion=useTranslations("site");
   const [paused,setPaused]=useState(false);
-  const countries=(data?.supported_countries??[{code:"CG"},{code:"CD"},{code:"CN"},{code:"BJ"},{code:"BF"},{code:"CI"},{code:"TG"},{code:"SN"},{code:"NE"}]).map(item=>t(`countries.${item.code}`));
+  // Un pays ajouté côté serveur sans nom dans le catalogue garde le nom envoyé par l'API.
+  const countries=(data?.supported_countries??[{code:"CG",name:"Congo-Brazzaville"}]).map(item=>t.has(`countries.${item.code}`)?t(`countries.${item.code}`):item.name);
   return <div className="country-flow relative overflow-hidden border-y border-[var(--home-section-border)] bg-[var(--home-ton-nuance)] py-3">
     <p className="sr-only">{t("availableIn")} {countries.join(", ")}</p>
     <div aria-hidden className="country-flow-track items-center" data-arretee={paused?"":undefined}>

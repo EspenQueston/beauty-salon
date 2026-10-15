@@ -31,7 +31,7 @@ export function Pricing() {
     <Reveal variant="cinema" className="flex flex-wrap items-end gap-3 rounded-2xl border border-line bg-surface p-3 sm:p-4">
       <label className="min-w-0 flex-1 text-sm font-medium text-ink">{t("country")}
         <select aria-label={t("country")} value={selectedCountry} onChange={event=>{setCountry(event.target.value);setCurrency("")}} className="mt-2 w-full min-w-0 rounded-xl border border-line bg-bg px-3 py-2.5">
-          {(data?.supported_countries??[{code:"CG",name:"Congo-Brazzaville"}]).map(item=><option key={item.code} value={item.code}>{t(`countries.${item.code}`)}</option>)}
+          {(data?.supported_countries??[{code:"CG",name:"Congo-Brazzaville"}]).map(item=><option key={item.code} value={item.code}>{t.has(`countries.${item.code}`)?t(`countries.${item.code}`):item.name}</option>)}
         </select>
       </label>
       {currency && <label className="text-sm font-medium text-ink">{t("currency")}

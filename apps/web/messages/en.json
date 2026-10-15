@@ -1074,7 +1074,18 @@
         "CI": "Côte d’Ivoire",
         "TG": "Togo",
         "SN": "Senegal",
-        "NE": "Niger"
+        "NE": "Niger",
+        "CM": "Cameroon",
+        "GH": "Ghana",
+        "GN": "Guinea",
+        "KE": "Kenya",
+        "ML": "Mali",
+        "MW": "Malawi",
+        "NG": "Nigeria",
+        "RW": "Rwanda",
+        "TZ": "Tanzania",
+        "UG": "Uganda",
+        "ZM": "Zambia"
       },
       "features": {
         "site": "Mini-site with your name",
