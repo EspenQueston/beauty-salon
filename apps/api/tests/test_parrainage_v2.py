@@ -595,15 +595,16 @@ def test_kkiapay_intention_expiree_et_verification_http(kki_config, salon_a, mon
     monkeypatch.setattr(
         kkiapay.httpx, "post", lambda url, **kw: calls.append((url, kw)) or Response()
     )
+    # Echeance passee mais paiement encore en attente : un succes verifie
+    # par l'API privee s'applique — le montant est celui fige a la demande
+    # (audit du 16/10/2026, C-03 : avant, le salon etait debite sans abonnement).
     KkiapayIntent.objects.filter(pk=i["id"]).update(expire_le=timezone.now() - timedelta(seconds=1))
-    with pytest.raises(billing.PaiementRefuse) as exc:
-        kkiapay.confirmer(i["id"], "TX001")
-    assert exc.value.code == "intention_expiree"
+    assert kkiapay.confirmer(i["id"], "TX001")["confirme"] is True
     assert calls[0][0] == "https://api-sandbox.kkiapay.me/api/v1/transactions/status"
     assert calls[0][1]["headers"]["X-PRIVATE-KEY"] == "test-PRIVATE_KEY"
-    kkiapay.expirer(i["id"])
+    kkiapay.expirer(i["id"])  # deja confirme : rien a expirer
     with as_tenant(salon_a.tenant):
-        assert SubscriptionPaymentRequest.objects.get().status == "rejected"
+        assert SubscriptionPaymentRequest.objects.get().status == "approved"
 
 
 def test_a_deux_reservations_simultanees_une_seule_reduction(salon_a, monkeypatch):

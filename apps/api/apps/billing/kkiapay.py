@@ -142,8 +142,6 @@ def presentation(i, d):
 
 
 def confirmer(intent_id, transaction_id, *, charge_signee=None):
-    from . import services
-
     if not transaction_id or len(transaction_id) > 100:
         raise PaiementRefuse("Référence KKIAPAY invalide.", "reference_invalide")
     i = KkiapayIntent.objects.get(pk=intent_id)
@@ -151,6 +149,12 @@ def confirmer(intent_id, transaction_id, *, charge_signee=None):
         raise PaiementRefuse("Ce paiement a été archivé.", "paiement_archive")
     if not disponible() or i.sandbox != settings.KKIAPAY_SANDBOX:
         raise PaiementRefuse("Cet environnement KKIAPAY n’est pas actif.", "environnement_inactif")
+    # La transaction annoncee est retenue, non verifiee : sans elle, un
+    # paiement dont le webhook ne vient jamais ne pouvait plus etre demande
+    # a KKIAPAY avant d'expirer (audit du 16/10/2026, C-03).
+    KkiapayIntent.objects.filter(pk=i.pk, statut="en_attente", transaction_annoncee="").update(
+        transaction_annoncee=transaction_id
+    )
     resultat = verifier_transaction(transaction_id, i.sandbox)
     # Le widget annonce le succès avant que l'API privée ne le reflète :
     # vérifiée à la même seconde, la transaction est encore en attente.
@@ -163,14 +167,38 @@ def confirmer(intent_id, transaction_id, *, charge_signee=None):
     # Le montant et le statut viennent toujours de l'API privée. L'association
     # doit venir de cette réponse OU d'un webhook authentifié, jamais du navigateur.
     liaison = resultat.get("partnerId") or (charge_signee or {}).get("partnerId")
-    try:
-        montant = Decimal(str(resultat.get("amount")))
-    except InvalidOperation as exc:
-        raise PaiementRefuse("Montant KKIAPAY invalide.", "montant_invalide") from exc
     if resultat.get("transactionId") != transaction_id or liaison != str(i.pk):
         raise PaiementRefuse("Transaction non associée à ce paiement.", "association_invalide")
     if resultat.get("status") != "SUCCESS":
         raise PaiementRefuse("Le paiement n’est pas confirmé par KKIAPAY.", "paiement_non_confirme")
+
+    # KKIAPAY dit avoir encaisse pour ce paiement. A partir d'ici, tout refus
+    # local laisse un salon debite sans abonnement : il ouvre un dossier
+    # « a regulariser » (audit du 16/10/2026, C-03).
+    try:
+        return _appliquer(i, resultat, transaction_id)
+    except PaiementRefuse as exc:
+        from . import regularisation
+
+        regularisation.signaler(
+            "kkiapay",
+            i,
+            {"intention_expiree": "succes_apres_expiration"}.get(exc.code, exc.code),
+            transaction_id=transaction_id,
+            montant=resultat.get("amount"),
+            devise=str(resultat.get("currency") or "XOF"),
+            detail=str(exc),
+        )
+        raise
+
+
+def _appliquer(i, resultat, transaction_id):
+    from . import services
+
+    try:
+        montant = Decimal(str(resultat.get("amount")))
+    except InvalidOperation as exc:
+        raise PaiementRefuse("Montant KKIAPAY invalide.", "montant_invalide") from exc
     # XOF est l'unique devise documentée ; une autre devise explicite est
     # refusée. L'API répond `"currency": null` (sandbox, 15/10/2026) : une
     # devise absente, pas une autre devise.
@@ -189,7 +217,10 @@ def confirmer(intent_id, transaction_id, *, charge_signee=None):
                     "Ce paiement est déjà associé à une autre transaction.", "association_invalide"
                 )
             return {"confirme": True, "paiement": str(d.pk)}
-        if i.statut != "en_attente" or i.expire_le <= timezone.now():
+        # Encore en attente : un succes verifie s'applique, meme apres
+        # l'echeance — le montant est celui fige a la demande. Seul un
+        # paiement deja clos (expire, annule) est refuse... et regularise.
+        if i.statut != "en_attente":
             raise PaiementRefuse(
                 "Cette intention de paiement a expiré. Contactez le support.", "intention_expiree"
             )
@@ -212,22 +243,40 @@ def secret_valide(secret, sandbox):
     )
 
 
-@transaction.atomic
 def expirer(intent_id):
+    """Clot un paiement abandonne — apres avoir demande a KKIAPAY.
+
+    Si le navigateur a annonce une transaction, KKIAPAY est interroge
+    d'abord : reussie, elle est appliquee ; encore en cours, ou KKIAPAY
+    injoignable, on n'expire pas (l'entretien suivant recommencera). Avant,
+    un paiement dont le webhook n'etait jamais venu etait refuse sans
+    question (audit du 16/10/2026, C-03).
+    """
     from . import services
 
-    i = KkiapayIntent.objects.select_for_update().get(pk=intent_id)
+    i = KkiapayIntent.objects.get(pk=intent_id)
     if i.statut != "en_attente" or i.expire_le > timezone.now():
         return
-    if not i.tenant_id or not i.demande_id:
+    if i.tenant_id and i.demande_id and i.transaction_annoncee and disponible():
+        try:
+            if confirmer(i.pk, i.transaction_annoncee)["confirme"]:
+                return
+        except PaiementRefuse as exc:
+            if exc.code in ("verification_indisponible", "paiement_en_cours"):
+                return
+    with transaction.atomic():
+        i = KkiapayIntent.objects.select_for_update().get(pk=intent_id)
+        if i.statut != "en_attente":
+            return
+        if not i.tenant_id or not i.demande_id:
+            i.statut = "expire"
+            i.save(update_fields=["statut", "updated_at"])
+            return
+        with bypass_tenant_context(), tenant_context(i.tenant_id):
+            d = SubscriptionPaymentRequest.objects.get(pk=i.demande_id)
+            if d.status == "pending":
+                services.refuser_paiement(
+                    d.pk, administrateur=None, motif="Paiement KKIAPAY abandonné ou expiré"
+                )
         i.statut = "expire"
         i.save(update_fields=["statut", "updated_at"])
-        return
-    with bypass_tenant_context(), tenant_context(i.tenant_id):
-        d = SubscriptionPaymentRequest.objects.get(pk=i.demande_id)
-        if d.status == "pending":
-            services.refuser_paiement(
-                d.pk, administrateur=None, motif="Paiement KKIAPAY abandonné ou expiré"
-            )
-    i.statut = "expire"
-    i.save(update_fields=["statut"])

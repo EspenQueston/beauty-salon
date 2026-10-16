@@ -22,9 +22,11 @@ from .mfa_api import (
     MfaSetupView,
     MfaStatusView,
     MfaVerifyView,
+    ReauthView,
 )
 from .views import (
     AcceptInvitationView,
+    AutresSessionsView,
     EmailVerifyResendView,
     EmailVerifyView,
     LangueView,
@@ -56,6 +58,8 @@ urlpatterns = [
     path("mfa/confirm", MfaConfirmView.as_view(), name="mfa-confirm"),
     path("mfa/disable", MfaDisableView.as_view(), name="mfa-disable"),
     path("mfa/recovery-codes", MfaRecoveryCodesView.as_view(), name="mfa-recovery-codes"),
+    path("reauth", ReauthView.as_view(), name="reauth"),
+    path("sessions/autres", AutresSessionsView.as_view(), name="autres-sessions"),
 ]
 
 # Routes ouvertes, sous /api/v1/account/

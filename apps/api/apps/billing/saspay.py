@@ -341,8 +341,6 @@ def confirmer(intent_id) -> dict:
     telephone. Tout ce qui ne concorde pas (montant, devise, session) est
     refuse, et rien n'est active.
     """
-    from . import services
-
     i = SaspayIntent.objects.get(pk=intent_id)
     if not i.tenant_id or not i.demande_id:
         raise PaiementRefuse("Ce paiement a été archivé.", "paiement_archive")
@@ -362,8 +360,37 @@ def confirmer(intent_id) -> dict:
     if not transaction_id or len(transaction_id) > 100:
         raise PaiementRefuse("Référence SASPAY invalide.", "reference_invalide")
 
-    # Le montant et la devise viennent de la session elle-meme, chez SASPAY.
+    # SASPAY dit avoir encaisse. A partir d'ici, tout refus local laisse un
+    # salon debite sans abonnement : il ouvre un dossier « a regulariser »
+    # au lieu de finir dans un journal (audit du 16/10/2026, C-02).
     session = _verifier(f"/checkout-sessions/{i.session_id}/", i.sandbox)
+    try:
+        return _appliquer(i, etat, session, transaction_id)
+    except PaiementRefuse as exc:
+        if exc.code != "verification_indisponible":
+            from . import regularisation
+
+            regularisation.signaler(
+                "saspay",
+                i,
+                MOTIF_REGULARISATION.get(exc.code, exc.code),
+                transaction_id=transaction_id,
+                montant=session.get("amount"),
+                devise=str(session.get("currency") or ""),
+                detail=str(exc),
+            )
+        raise
+
+
+#: Le motif du dossier a regulariser, selon le refus local.
+MOTIF_REGULARISATION = {"intention_expiree": "succes_apres_expiration"}
+
+
+def _appliquer(i, etat, session, transaction_id) -> dict:
+    """Le succes est verifie chez SASPAY : comparer, puis prolonger l'abonnement."""
+    from . import services
+
+    # Le montant et la devise viennent de la session elle-meme, chez SASPAY.
     montant = _montant(session.get("amount"))
     metadonnees = session.get("metadata") or {}
     if str(session.get("id")) != i.session_id or (
@@ -415,14 +442,19 @@ def confirmer_en_attente(sandbox: bool, transaction_id: str = "") -> bool:
     de verification remonte : le webhook repond alors 503, et SASPAY
     retentera.
     """
-    if transaction_id and SaspayIntent.objects.filter(
-        sandbox=sandbox, transaction_id=transaction_id, statut="confirme"
-    ).exists():
+    if (
+        transaction_id
+        and SaspayIntent.objects.filter(
+            sandbox=sandbox, transaction_id=transaction_id, statut="confirme"
+        ).exists()
+    ):
         return True
     trouve = False
-    attente = SaspayIntent.objects.filter(
-        sandbox=sandbox, statut="en_attente"
-    ).exclude(session_id="").order_by("created_at")[:100]
+    attente = (
+        SaspayIntent.objects.filter(sandbox=sandbox, statut="en_attente")
+        .exclude(session_id="")
+        .order_by("created_at")[:100]
+    )
     for intention in attente:
         try:
             resultat = confirmer(intention.pk)
@@ -434,6 +466,26 @@ def confirmer_en_attente(sandbox: bool, transaction_id: str = "") -> bool:
         if resultat["confirme"]:
             intention.refresh_from_db(fields=["transaction_id"])
             trouve = trouve or intention.transaction_id == transaction_id
+    if transaction_id and not trouve:
+        # Un succes annonce qui ne correspond a aucun paiement en attente :
+        # peut-etre un paiement expire ici entre-temps. Les expirations
+        # recentes sont reverifiees ; un succes y ouvre un dossier a
+        # regulariser (audit du 16/10/2026, C-02).
+        recentes = (
+            SaspayIntent.objects.filter(
+                sandbox=sandbox,
+                statut="expire",
+                updated_at__gte=timezone.now() - timedelta(days=3),
+            )
+            .exclude(session_id="")
+            .order_by("-updated_at")[:20]
+        )
+        for intention in recentes:
+            try:
+                confirmer(intention.pk)
+            except PaiementRefuse as exc:
+                if exc.code == "verification_indisponible":
+                    raise
     return trouve
 
 

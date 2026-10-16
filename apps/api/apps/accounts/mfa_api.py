@@ -298,3 +298,55 @@ class MfaRecoveryCodesView(APIView):
         codes = _issue_recovery_codes(request.user)
         journal.consigner("AUTH_RECOVERY_CODES_REGENERATED", request=request, user=request.user)
         return Response({"codes": codes})
+
+
+# ---------------------------------------------------------------------------
+# Reauthentification : avant un geste sensible (voir reauth.py)
+# ---------------------------------------------------------------------------
+
+
+class ReauthView(APIView):
+    """Le mot de passe, ou un code de double authentification, ressaisi.
+
+    Freine comme une connexion : memes compteurs, meme blocage, meme
+    journal. Une session volee ne peut donc pas essayer des mots de passe
+    a volonte.
+    """
+
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "reauth"
+
+    def post(self, request):
+        from . import reauth
+
+        user = request.user
+        ip = _ip(request)
+        if securite.connexion_bloquee(user.email, ip):
+            return Response(
+                {
+                    "detail": "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
+                    "code": "too_many_attempts",
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        mot_de_passe = str(request.data.get("password", ""))[:256]
+        code = str(request.data.get("code", ""))[:32]
+        valide = bool(mot_de_passe) and user.check_password(mot_de_passe)
+        if not valide and code and active(user):
+            valide = _verifier_code(user, code) is not None
+        if not valide:
+            bloque = securite.noter_echec(user.email, ip)
+            journal.consigner("AUTH_LOGIN_FAILED", request=request, user=user, etape="reauth")
+            if bloque:
+                journal.consigner("AUTH_ACCOUNT_LOCKED", request=request, user=user, etape="reauth")
+                journal.alerter_plateforme(
+                    "Réauthentifications refusées en série",
+                    f"{user.email} : mots de passe faux depuis une session ouverte.",
+                )
+            return Response(
+                {"detail": "Mot de passe ou code incorrect.", "code": "invalid_credentials"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        securite.noter_succes(user.email)
+        reauth.marquer(request)
+        return Response({"ok": True, "duree": reauth.DUREE})

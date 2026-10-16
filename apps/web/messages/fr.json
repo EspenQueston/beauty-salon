@@ -2304,7 +2304,12 @@
         "titre": "Sessions",
         "duree": "Une session se ferme d'elle-même après <gras>3 jours</gras> sans activité, et au plus tard après 14 jours.",
         "motDePasse": "Changer votre mot de passe déconnecte tous vos autres appareils.",
-        "journal": "Chaque connexion et chaque changement sensible sont consignés par l'équipe Beauty Salon."
+        "journal": "Chaque connexion et chaque changement sensible sont consignés par l'équipe Beauty Salon.",
+        "fermer": "Déconnecter mes autres appareils",
+        "fermerAide": "Téléphone perdu, ordinateur partagé : toutes les autres sessions de votre compte sont fermées. Celle-ci reste ouverte.",
+        "confirmer": "Oui, les déconnecter",
+        "annuler": "Annuler",
+        "fermees": "Vos autres appareils ont été déconnectés."
       }
     },
     "parrainage": {
@@ -3425,6 +3430,17 @@
       "confirme": "Paiement confirmé. Votre abonnement est prolongé.",
       "pasEncore": "Le paiement n’est pas encore confirmé par SASPAY. Si vous venez de valider sur votre téléphone, patientez quelques instants : votre période s’ouvrira d’elle-même, sans nouveau paiement.",
       "erreur": "La vérification n’a pas abouti. Réessayez dans un instant ; ne payez pas une seconde fois."
+    },
+    "reauth": {
+      "titre": "Confirmez votre identité",
+      "pourquoi": "Ce changement modifie l’endroit où vos clientes envoient leurs acomptes. Par sécurité, confirmez qu’il s’agit bien de vous : la confirmation vaut dix minutes.",
+      "motDePasse": "Mot de passe",
+      "code": "Code de double authentification",
+      "parCode": "Utiliser plutôt un code de double authentification",
+      "parMotDePasse": "Utiliser plutôt mon mot de passe",
+      "confirmer": "Confirmer",
+      "annuler": "Annuler",
+      "erreur": "Confirmation impossible. Réessayez."
     }
   },
   "theme": {

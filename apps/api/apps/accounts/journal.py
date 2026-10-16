@@ -33,6 +33,7 @@ ACTIONS_SECURITE = (
     "auth.recovery_codes_regenerated",
     "auth.password_reset",
     "auth.password_changed",
+    "auth.other_sessions_closed",
     "auth.email_changed",
     "auth.email_verified",
     "auth.password_breached",

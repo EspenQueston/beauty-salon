@@ -114,3 +114,52 @@ def alerte_securite(
         },
         to=[email],
     )
+
+
+@shared_task(ignore_result=True)
+def alerte_encaissement(
+    tenant_id: str, operation: str, moyen: str, ancien: str, nouveau: str, auteur: str
+) -> None:
+    """Prevenir les proprietaires qu'un moyen d'encaissement a change (C-04).
+
+    A chaque proprietaire active, dans la langue de son compte — y compris
+    quand c'est elle qui a fait le changement : un acces vole agit sous son
+    nom, et c'est sa boite qui le revelera.
+    """
+    from apps.notifications.email import send_email
+    from apps.notifications.textes import textes
+    from apps.translations.langue import adresse_app, du_compte
+
+    from .models import Membership
+
+    proprietaires = (
+        Membership.objects.using("admin")
+        .filter(tenant_id=tenant_id, role=Membership.Role.OWNER, status=Membership.Status.ACTIVE)
+        .select_related("user", "tenant")
+    )
+    for m in proprietaires:
+        langue = du_compte(m.user)
+        t = textes(langue)
+        valeurs = {
+            "salon": m.tenant.name,
+            "moyen": moyen,
+            "auteur": auteur,
+            "ancien": ancien or "—",
+            "nouveau": nouveau or "—",
+        }
+        send_email(
+            subject=t.dire("secu_encaissement_objet", **valeurs),
+            template="security_alert",
+            context={
+                "t": t,
+                "langue": langue,
+                "nom": m.user.display_name,
+                "salutation": t.dire("bonjour", prenom=m.user.display_name)
+                if m.user.display_name
+                else t["pro_bonjour"],
+                "intro": t.dire(f"secu_encaissement_{operation}", **valeurs),
+                "aide": t["secu_aide"],
+                "reset_url": adresse_app("/mot-de-passe-oublie", langue),
+            },
+            to=[m.user.email],
+        )

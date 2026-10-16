@@ -260,6 +260,10 @@ PWNED_PASSWORDS_CHECK = env.bool("PWNED_PASSWORDS_CHECK", default=True)
 # apps/accounts/sessions.py.
 SESSION_IDLE_TIMEOUT = env.int("SESSION_IDLE_TIMEOUT", default=3 * 24 * 60 * 60)
 SESSION_IDLE_TIMEOUT_ADMIN = env.int("SESSION_IDLE_TIMEOUT_ADMIN", default=8 * 60 * 60)
+# Duree maximale d'une session, activite ou non : au-dela, nouvelle connexion
+# (audit du 16/10/2026, C-05 : le cookie de 14 jours etait repousse a chaque
+# activite, sans limite reelle).
+SESSION_ABSOLUTE_TIMEOUT = env.int("SESSION_ABSOLUTE_TIMEOUT", default=14 * 24 * 60 * 60)
 
 # ---------------------------------------------------------------------------
 # Cache et files d'attente
@@ -324,6 +328,12 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.parrainage.tasks.evaluer_parrainages",
         "schedule": crontab(minute="*/10"),
     },
+    # Rapprochement SASPAY / KKIAPAY avec ce qui est applique ici : une fois
+    # par jour, en lecture seule chez les prestataires (billing/rapprochement.py).
+    "payment-reconciliation": {
+        "task": "apps.billing.tasks.rapprocher_paiements",
+        "schedule": crontab(hour=4, minute=30),
+    },
 }
 
 # Interrupteur general du parrainage : a False, plus aucun code n'est
@@ -359,6 +369,9 @@ CORS_ALLOW_HEADERS = [
     "x-tenant-host",  # mini-site public : quel salon est demande
     "x-tenant-id",  # dashboard : quel salon parmi mes memberships
     "idempotency-key",
+    # Requete de fond (rafraichissement automatique) : ne compte pas comme
+    # activite pour l'expiration des sessions (accounts/sessions.py).
+    "x-activite",
 ]
 
 # ---------------------------------------------------------------------------
@@ -409,6 +422,9 @@ REST_FRAMEWORK = {
         # qui venait de payer se retrouvait bloque une heure. Chaque appel ne
         # fait que verifier aupres du prestataire, sans rien creer.
         "payment_confirmation": "120/hour",
+        # Reauthentification avant un geste sensible : en plus du blocage par
+        # adresse et par IP (accounts/securite.py), un plafond par compte.
+        "reauth": "20/hour",
         "kkiapay_webhook": "1200/hour",
         "saspay_webhook": "1200/hour",
         # Verification DNS d'un domaine personnalise : chaque essai interroge des

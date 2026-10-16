@@ -18,7 +18,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
-import { DashboardError, dashboardFetch } from "@/lib/dashboard";
+import { DE_FOND, DashboardError, dashboardFetch } from "@/lib/dashboard";
 import {
   Badge,
   Button,
@@ -361,7 +361,7 @@ function WhatsApp({
     if (!attendScan) return;
     let annule = false;
     const lire = () =>
-      dashboardFetch<{ qr: string } & Etat>("/api/v1/assistant/whatsapp", {}, tenantId)
+      dashboardFetch<{ qr: string } & Etat>("/api/v1/assistant/whatsapp", DE_FOND, tenantId)
         .then((reponse) => {
           if (annule) return;
           setQr(reponse.qr);

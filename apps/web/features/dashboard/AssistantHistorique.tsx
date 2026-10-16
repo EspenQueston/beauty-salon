@@ -413,7 +413,7 @@ export function HistoriqueConversations({ tenantId }: { tenantId: string }) {
   const liste = useResource<{ conversations: Fil[] }>(chemin, tenantId, {
     enabled: ouvert !== false,
   });
-  useRelecture(liste.reload, 15_000, ouvert !== false);
+  useRelecture(liste.reloadDeFond, 15_000, ouvert !== false);
 
   const fils = liste.data?.conversations ?? [];
 
@@ -584,7 +584,7 @@ function FilDeDiscussion({
   const t = useTranslations("pro.assistants.historique");
   const { heure, jourLong } = useFormatsFil();
   const fil = useResource<FilOuvert>(`/api/v1/assistant/conversations/${id}`, tenantId);
-  useRelecture(fil.reload, 10_000, true);
+  useRelecture(fil.reloadDeFond, 10_000, true);
   const bas = useRef<HTMLDivElement>(null);
   const nombre = fil.data?.messages.length ?? 0;
 

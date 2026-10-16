@@ -166,6 +166,19 @@ FR_PRO: dict[str, str] = {
         "L'adresse de connexion de votre compte a été remplacée par {adresse}. Ce "
         "message est envoyé à l'ancienne adresse."
     ),
+    "secu_encaissement_objet": "Moyen d'encaissement modifié — {salon}",
+    "secu_encaissement_creation": (
+        "{auteur} a ajouté {moyen} aux moyens d'encaissement des acomptes de {salon}. "
+        "Vos clientes paieront désormais à : {nouveau}."
+    ),
+    "secu_encaissement_modification": (
+        "{auteur} a modifié {moyen} pour {salon}. Avant : {ancien}. Désormais : "
+        "{nouveau}. Vos clientes enverront leurs acomptes à ces nouvelles coordonnées."
+    ),
+    "secu_encaissement_suppression": (
+        "{auteur} a retiré {moyen} des moyens d'encaissement de {salon} "
+        "(coordonnées retirées : {ancien})."
+    ),
     "secu_pas_vous": "Ce n'était pas vous ?",
     "secu_aide": (
         "Ce n'était pas vous ? Choisissez tout de suite un nouveau mot de passe "
@@ -317,6 +330,19 @@ EN_PRO: dict[str, str] = {
     "secu_adresse": (
         "The sign-in address of your account was replaced by {adresse}. This message "
         "is sent to the previous address."
+    ),
+    "secu_encaissement_objet": "Payment method changed — {salon}",
+    "secu_encaissement_creation": (
+        "{auteur} added {moyen} to the deposit payment methods of {salon}. Your "
+        "clients will now pay to: {nouveau}."
+    ),
+    "secu_encaissement_modification": (
+        "{auteur} changed {moyen} for {salon}. Before: {ancien}. Now: {nouveau}. "
+        "Your clients will send their deposits to these new details."
+    ),
+    "secu_encaissement_suppression": (
+        "{auteur} removed {moyen} from the deposit payment methods of {salon} "
+        "(removed details: {ancien})."
     ),
     "secu_pas_vous": "Wasn't you?",
     "secu_aide": (

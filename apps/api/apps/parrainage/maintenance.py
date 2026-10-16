@@ -11,7 +11,7 @@ from .models import RecompenseClient, Remise
 def entretenir():
     from apps.billing import kkiapay
     from apps.billing import services as billing
-    from apps.billing.models import KkiapayIntent, SubscriptionPaymentRequest
+    from apps.billing.models import KkiapayIntent, PlatformPaymentMethod, SubscriptionPaymentRequest
 
     from . import clients, services
 
@@ -35,6 +35,12 @@ def entretenir():
     for did, tid in list(paiements):
         with bypass_tenant_context(), tenant_context(tid):
             d = SubscriptionPaymentRequest.objects.select_for_update().get(pk=did)
+            # Un paiement KKIAPAY ou SASPAY a sa propre echeance, qui demande
+            # d'abord au prestataire s'il a ete regle (kkiapay/saspay.expirer).
+            # Le refuser ici, sur la seule fin de reservation, refusait un
+            # paiement peut-etre encaisse (audit du 16/10/2026, C-01).
+            if d.method_kind in PlatformPaymentMethod.INTEGRES:
+                continue
             if d.status == "pending" and services.reservation_expiree(d, maintenant):
                 billing.refuser_paiement(
                     d.pk,

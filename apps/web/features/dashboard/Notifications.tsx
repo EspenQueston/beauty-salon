@@ -59,7 +59,7 @@
 import { Lien as Link } from "@/features/ui/Lien";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { dashboardFetch } from "@/lib/dashboard";
+import { DE_FOND, dashboardFetch } from "@/lib/dashboard";
 import { useLocale, useTranslations } from "next-intl";
 import { useNow } from "@/lib/useNow";
 
@@ -153,12 +153,12 @@ export function Notifications({ tenantId }: { tenantId: string }) {
   const maintenant = useNow();
 
   const charger = useCallback(() => {
-    dashboardFetch<Boite>("/api/v1/notifications", {}, tenantId)
+    dashboardFetch<Boite>("/api/v1/notifications", DE_FOND, tenantId)
       .then(setBoite)
       .catch(() => undefined);
     dashboardFetch<{ attention: Attention }>(
       "/api/v1/overview?brief=1",
-      {},
+      DE_FOND,
       tenantId,
     )
       .then((reponse) => setAttention(reponse.attention))

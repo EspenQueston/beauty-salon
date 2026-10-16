@@ -2304,7 +2304,12 @@
         "titre": "Sessions",
         "duree": "A session closes by itself after <gras>3 days</gras> of inactivity, and after 14 days at the latest.",
         "motDePasse": "Changing your password signs out all your other devices.",
-        "journal": "Every sign-in and every sensitive change is logged by the Beauty Salon team."
+        "journal": "Every sign-in and every sensitive change is logged by the Beauty Salon team.",
+        "fermer": "Sign out my other devices",
+        "fermerAide": "Lost phone, shared computer: every other session of your account is closed. This one stays open.",
+        "confirmer": "Yes, sign them out",
+        "annuler": "Cancel",
+        "fermees": "Your other devices have been signed out."
       }
     },
     "parrainage": {
@@ -3425,6 +3430,17 @@
       "confirme": "Payment confirmed. Your subscription is extended.",
       "pasEncore": "SASPAY has not confirmed the payment yet. If you just approved it on your phone, wait a moment: your period will open by itself, with no new payment.",
       "erreur": "The check did not go through. Try again in a moment; do not pay twice."
+    },
+    "reauth": {
+      "titre": "Confirm your identity",
+      "pourquoi": "This change affects where your clients send their deposits. For security, confirm it is you: the confirmation lasts ten minutes.",
+      "motDePasse": "Password",
+      "code": "Two-factor authentication code",
+      "parCode": "Use a two-factor authentication code instead",
+      "parMotDePasse": "Use my password instead",
+      "confirmer": "Confirm",
+      "annuler": "Cancel",
+      "erreur": "Could not confirm. Try again."
     }
   },
   "theme": {

@@ -703,7 +703,13 @@ def approuver_paiement(
 
         from apps.parrainage.services import reservation_expiree
 
-        if reservation_expiree(demande):
+        # Un paiement confirme par le prestataire (KKIAPAY, SASPAY) a ete
+        # regle au montant fige a la reservation, quand la remise etait
+        # valable : le refuser parce que la confirmation arrive apres la fin
+        # de reservation laissait le salon debite sans abonnement (audit du
+        # 16/10/2026, C-01). Seule une declaration manuelle, verifiee plus
+        # tard par un humain, reste tenue par le delai.
+        if not integration and reservation_expiree(demande):
             raise PaiementRefuse(
                 "La réservation de la remise a expiré. Préparez un nouveau paiement.",
                 "remise_expiree",

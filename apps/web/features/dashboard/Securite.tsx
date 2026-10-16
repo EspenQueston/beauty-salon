@@ -467,6 +467,22 @@ function MotDePasse() {
 
 function Sessions() {
   const t = useTranslations("pro.securite.sessions");
+  const toast = useToast();
+  const [confirmer, setConfirmer] = useState(false);
+  const [occupe, setOccupe] = useState(false);
+
+  // Téléphone perdu, ordinateur partagé : fermer toutes les autres sessions
+  // sans changer de mot de passe (audit du 16/10/2026, C-10).
+  async function fermerLesAutres() {
+    setOccupe(true);
+    const ok = await toast.run(
+      () => dashboardFetch("/api/v1/auth/sessions/autres", { method: "POST" }),
+      { success: t("fermees") },
+    );
+    setOccupe(false);
+    if (ok) setConfirmer(false);
+  }
+
   return (
     <Card>
       <Titre icone="clock">{t("titre")}</Titre>
@@ -475,6 +491,23 @@ function Sessions() {
         <li>{t("motDePasse")}</li>
         <li>{t("journal")}</li>
       </ul>
+      <div className="mt-4 border-t border-line pt-4">
+        <p className="text-[13px] leading-relaxed text-muted sm:text-sm">{t("fermerAide")}</p>
+        {confirmer ? (
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:flex">
+            <Button type="button" pending={occupe} onClick={() => void fermerLesAutres()}>
+              {t("confirmer")}
+            </Button>
+            <GhostButton type="button" onClick={() => setConfirmer(false)} disabled={occupe}>
+              {t("annuler")}
+            </GhostButton>
+          </div>
+        ) : (
+          <GhostButton type="button" onClick={() => setConfirmer(true)} className="mt-3 w-full sm:w-auto">
+            {t("fermer")}
+          </GhostButton>
+        )}
+      </div>
     </Card>
   );
 }

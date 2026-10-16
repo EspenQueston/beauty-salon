@@ -43,6 +43,14 @@ export interface SessionUser {
   memberships: Membership[];
 }
 
+/**
+ * Une requête de fond : rafraîchissement automatique, sans geste de
+ * l'utilisatrice. Le serveur ne la compte pas comme une activité — un onglet
+ * laissé ouvert ne garde plus la session en vie indéfiniment (audit du
+ * 16/10/2026, C-05).
+ */
+export const DE_FOND: RequestInit = { headers: { "X-Activite": "fond" } };
+
 export class DashboardError extends Error {
   constructor(
     readonly status: number,

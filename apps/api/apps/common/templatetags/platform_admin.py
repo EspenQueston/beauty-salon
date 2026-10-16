@@ -70,6 +70,12 @@ def programmes_panel(context):
             "Pays africains hors KKIAPAY : configuration et suivi des paiements.",
         ),
         (
+            "billing.view_paiementaregulariser",
+            "billing_paiementaregulariser",
+            "Paiements à régulariser",
+            "Encaissés chez le prestataire, non appliqués ici : à trancher.",
+        ),
+        (
             "parrainage.view_evenementparrainage",
             "parrainage_evenementparrainage",
             "Journal du parrainage",

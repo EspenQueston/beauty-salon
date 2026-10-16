@@ -21,6 +21,14 @@ def run_billing_cycle():
 
 
 @shared_task
+def rapprocher_paiements():
+    """Rapprochement quotidien avec SASPAY et KKIAPAY (audit 16/10/2026, C-11)."""
+    from .rapprochement import rapprocher
+
+    return rapprocher()
+
+
+@shared_task
 def envoyer_rappels_abonnement():
     """Rappels de fin d'essai, d'echeance, de grace et de fermeture.
 

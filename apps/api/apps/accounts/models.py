@@ -67,6 +67,11 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
     # recu par e-mail (voir `verification.py`), jamais sur la seule forme
     # de l'adresse. Remise a vide quand l'adresse change.
     email_verified_at = models.DateTimeField(_("e-mail vérifié le"), null=True, blank=True)
+    # Augmentee par « Déconnecter mes autres appareils » : elle entre dans
+    # l'empreinte des sessions, qui ne correspond alors plus pour aucune
+    # session ouverte (audit du 16/10/2026, C-10). A zero, l'empreinte est
+    # celle de Django, inchangee : aucune session n'a ete fermee par l'ajout.
+    generation_sessions = models.PositiveIntegerField(default=0, editable=False)
 
     objects = UserManager()
 
@@ -83,6 +88,18 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel, TimeStampedModel):
     @property
     def email_verified(self) -> bool:
         return self.email_verified_at is not None
+
+    def _get_session_auth_hash(self, secret=None):
+        if not self.generation_sessions:
+            return super()._get_session_auth_hash(secret=secret)
+        from django.utils.crypto import salted_hmac
+
+        return salted_hmac(
+            "django.contrib.auth.models.AbstractBaseUser.get_session_auth_hash",
+            f"{self.password}:{self.generation_sessions}",
+            secret=secret,
+            algorithm="sha256",
+        ).hexdigest()
 
 
 class Membership(UUIDModel, TimeStampedModel):

@@ -49,6 +49,17 @@ class AuditLog(UUIDModel, TimeStampedModel):
             "billing.settings_changed",
             _("Tarifs ou moyens de règlement modifiés"),
         )
+        # Ou arrive l'argent des acomptes : chaque changement, avant et apres
+        # (audit du 16/10/2026, C-04).
+        PAYMENT_CHANNEL_CHANGED = (
+            "payment_channel.changed",
+            _("Moyen d'encaissement des acomptes modifié"),
+        )
+        # Paiement encaisse chez le prestataire mais non applique (C-02, C-03).
+        PAYMENT_TO_RECONCILE = (
+            "payment.to_reconcile",
+            _("Paiement à régulariser"),
+        )
         DOMAIN_CLAIMED = "domain.claimed", _("Domaine personnalisé demandé")
         DOMAIN_CONNECTED = "domain.connected", _("Domaine personnalisé relié")
         DOMAIN_REMOVED = "domain.removed", _("Domaine personnalisé retiré")
@@ -80,6 +91,10 @@ class AuditLog(UUIDModel, TimeStampedModel):
         )
         AUTH_PASSWORD_RESET = "auth.password_reset", _("Mot de passe réinitialisé")
         AUTH_PASSWORD_CHANGED = "auth.password_changed", _("Mot de passe changé")
+        AUTH_OTHER_SESSIONS_CLOSED = (
+            "auth.other_sessions_closed",
+            _("Autres appareils déconnectés"),
+        )
         AUTH_EMAIL_CHANGED = "auth.email_changed", _("Adresse e-mail changée")
         AUTH_EMAIL_VERIFIED = "auth.email_verified", _("Adresse e-mail vérifiée")
         AUTH_PASSWORD_BREACHED = (

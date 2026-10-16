@@ -1,14 +1,14 @@
 """Les moyens d'encaissement des acomptes, selon le pays du salon.
 
-  - chaque pays reçoit les moyens qui y existent : WeChat Pay et Alipay en
-    Chine ; Mobile Money, Orange ou Airtel là où l'opérateur est présent, et
-    virement, en Afrique ;
-  - le serveur refuse de créer un moyen d'un autre pays ;
-  - un moyen d'un autre pays (le salon a déménagé) est gardé mais n'est plus
-    proposé aux clientes : sans autre moyen, la réservation ne passe plus par
-    la page de paiement ;
-  - à Douala comme à Brazzaville, un acompte par Mobile Money va jusqu'au bout :
-    page de paiement en XAF entiers, preuve, acceptation par le salon.
+- chaque pays reçoit les moyens qui y existent : WeChat Pay et Alipay en
+  Chine ; Mobile Money, Orange ou Airtel là où l'opérateur est présent, et
+  virement, en Afrique ;
+- le serveur refuse de créer un moyen d'un autre pays ;
+- un moyen d'un autre pays (le salon a déménagé) est gardé mais n'est plus
+  proposé aux clientes : sans autre moyen, la réservation ne passe plus par
+  la page de paiement ;
+- à Douala comme à Brazzaville, un acompte par Mobile Money va jusqu'au bout :
+  page de paiement en XAF entiers, preuve, acceptation par le salon.
 """
 
 from decimal import Decimal
@@ -50,7 +50,8 @@ def test_chaque_pays_recoit_ses_moyens(pays, attendus):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "pays, attendus", [("CM", ["mobile_money", "orange_money", "bank"]), ("CN", ["wechat", "alipay"])]
+    "pays, attendus",
+    [("CM", ["mobile_money", "orange_money", "bank"]), ("CN", ["wechat", "alipay"])],
 )
 def test_le_tableau_de_bord_lit_les_moyens_du_pays(api_client, salon_a, pays, attendus):
     placer(salon_a, pays)
@@ -127,7 +128,11 @@ def test_un_acompte_mobile_money_en_afrique_de_bout_en_bout(api_client, salon_a,
 
     preuve = api_client.post(
         "/api/v1/public/payment/proof",
-        {"token": cree.data["payment_token"], "channel": operateur, "reference": "MP241016.1234.A5"},
+        {
+            "token": cree.data["payment_token"],
+            "channel": operateur,
+            "reference": "MP241016.1234.A5",
+        },
         format="json",
         headers=HOST,
     )
@@ -138,7 +143,9 @@ def test_un_acompte_mobile_money_en_afrique_de_bout_en_bout(api_client, salon_a,
         booking = Booking.objects.get(pk=cree.data["id"])
         assert booking.status == Booking.Status.REQUESTED
     ok = api_client.post(
-        f"/api/v1/bookings/{booking.pk}/accept/", {}, format="json",
+        f"/api/v1/bookings/{booking.pk}/accept/",
+        {},
+        format="json",
         HTTP_X_TENANT_ID=str(salon_a.tenant.pk),
     )
     assert ok.status_code == 200, ok.content

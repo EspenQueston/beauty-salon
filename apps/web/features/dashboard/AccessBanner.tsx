@@ -39,7 +39,7 @@ import {
 // passerait par une redirection.
 import { Lien as Link } from "@/features/ui/Lien";
 
-import { dashboardFetch } from "@/lib/dashboard";
+import { DE_FOND, dashboardFetch } from "@/lib/dashboard";
 import {
   ABONNEMENT_CHANGE,
   joursAvant,
@@ -83,7 +83,7 @@ export function AccesProvider({
 
   useEffect(() => {
     let cancelled = false;
-    dashboardFetch<AccesSalon>("/api/v1/subscription/acces", {}, tenantId)
+    dashboardFetch<AccesSalon>("/api/v1/subscription/acces", DE_FOND, tenantId)
       .then((data) => {
         if (cancelled) return;
         setAcces(data);

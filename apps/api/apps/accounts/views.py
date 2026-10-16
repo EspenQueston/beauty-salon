@@ -370,6 +370,28 @@ class PasswordResetConfirmView(APIView):
             return None
 
 
+class AutresSessionsView(APIView):
+    """« Déconnecter mes autres appareils » (audit du 16/10/2026, C-10).
+
+    Toutes les sessions du compte sont fermees, sauf celle-ci : l'empreinte
+    de session change (`User.generation_sessions`), aucune autre ne
+    correspond plus. Avant, seul un changement de mot de passe le faisait.
+    """
+
+    permission_classes = [IsAuthenticated]
+    throttle_scope = "reauth"
+
+    def post(self, request):
+        from django.db.models import F
+
+        user = request.user
+        User.objects.filter(pk=user.pk).update(generation_sessions=F("generation_sessions") + 1)
+        user.refresh_from_db(fields=["generation_sessions"])
+        update_session_auth_hash(request, user)
+        journal.consigner("AUTH_OTHER_SESSIONS_CLOSED", request=request, user=user)
+        return Response({"detail": "Vos autres appareils ont été déconnectés."})
+
+
 class PasswordChangeView(APIView):
     permission_classes = [IsAuthenticated]
 

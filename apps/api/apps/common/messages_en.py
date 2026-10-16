@@ -156,6 +156,10 @@ EXACTS: dict[str, str] = {
     "Le paiement n'est pas confirmé par KKIAPAY.": "The payment is not confirmed by KKIAPAY.",
     "Le paiement est encore en cours de traitement chez KKIAPAY.": "KKIAPAY is still processing the payment.",
     "Ce moyen de paiement n'est pas proposé dans votre pays.": "This payment method is not available in your country.",
+    "Confirmez votre identité pour modifier un moyen d'encaissement.": "Confirm your identity to change a payment method.",
+    "Mot de passe ou code incorrect.": "Incorrect password or code.",
+    "Vos autres appareils ont été déconnectés.": "Your other devices have been signed out.",
+    "Ce moyen de paiement n'est pas proposé par le salon.": "The salon does not offer this payment method.",
     "Devise KKIAPAY incompatible.": "Incompatible KKIAPAY currency.",
     "La vérification KKIAPAY est indisponible. Réessayez.": (
         "KKIAPAY verification is unavailable. Try again."

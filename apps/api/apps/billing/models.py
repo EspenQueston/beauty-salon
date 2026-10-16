@@ -609,6 +609,10 @@ class KkiapayIntent(UUIDModel, TimeStampedModel):
     )
     sandbox = models.BooleanField()
     transaction_id = models.CharField(max_length=100, blank=True)
+    # La transaction que le navigateur a annoncee, pas encore verifiee.
+    # Elle permet de demander a KKIAPAY avant d'expirer un paiement dont le
+    # webhook n'est jamais venu (audit du 16/10/2026, C-03).
+    transaction_annoncee = models.CharField(max_length=100, blank=True)
     statut = models.CharField(
         max_length=12,
         default="en_attente",
@@ -683,6 +687,65 @@ class SaspayIntent(UUIDModel, TimeStampedModel):
 
     def __str__(self):
         return f"SASPAY — {self.tenant or 'salon supprimé'} — {self.get_statut_display()}"
+
+
+class PaiementARegulariser(UUIDModel, TimeStampedModel):
+    """Un paiement encaisse chez le prestataire que la plateforme n'a pas applique.
+
+    Audit du 16/10/2026 (C-02, C-03, C-11) : un succes arrive apres
+    l'expiration locale, un montant qui ne concorde pas, un ecart trouve au
+    rapprochement — l'argent est parti, l'abonnement n'a pas suivi. Rien
+    n'est applique automatiquement : l'equipe plateforme tranche (prolonger
+    a la main, rembourser chez le prestataire), avec ce dossier sous les yeux.
+
+    Un cas par transaction et par motif : un webhook rejoue ne le duplique pas.
+    """
+
+    class Statut(models.TextChoices):
+        A_TRAITER = "a_traiter", _("À traiter")
+        TRAITE = "traite", _("Traité")
+
+    prestataire = models.CharField(
+        _("prestataire"), max_length=12, choices=[("saspay", "SASPAY"), ("kkiapay", "KKIAPAY")]
+    )
+    tenant = models.ForeignKey(
+        "tenants.Tenant", on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("salon")
+    )
+    demande = models.ForeignKey(
+        SubscriptionPaymentRequest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="regularisations",
+        verbose_name=_("demande de paiement"),
+    )
+    intention = models.CharField(_("intention"), max_length=64, blank=True)
+    transaction_id = models.CharField(_("transaction"), max_length=100, blank=True)
+    montant = models.DecimalField(
+        _("montant"), max_digits=12, decimal_places=2, null=True, blank=True
+    )
+    devise = models.CharField(_("devise"), max_length=3, blank=True)
+    motif = models.CharField(_("motif"), max_length=40)
+    detail = models.TextField(_("détail"), blank=True)
+    statut = models.CharField(
+        _("statut"), max_length=10, choices=Statut.choices, default=Statut.A_TRAITER
+    )
+    traite_le = models.DateTimeField(_("traité le"), null=True, blank=True)
+    note = models.TextField(_("décision"), blank=True)
+
+    class Meta:
+        verbose_name = _("paiement à régulariser")
+        verbose_name_plural = _("paiements à régulariser")
+        ordering = ("statut", "-created_at")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["prestataire", "intention", "motif"],
+                name="une_regularisation_par_intention_et_motif",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.get_prestataire_display()} — {self.motif} — {self.tenant or '—'}"
 
 
 class SubscriptionEvent(TenantOwnedModel):

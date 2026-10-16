@@ -10,9 +10,9 @@
  */
 
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { dashboardFetch } from "@/lib/dashboard";
+import { DE_FOND, dashboardFetch } from "@/lib/dashboard";
 
 interface Options {
   /** Ne charge rien tant que la condition est fausse (permissions, onglet). */
@@ -32,12 +32,20 @@ export function useResource<T>(
   const [token, setToken] = useState(0);
 
   const reload = useCallback(() => setToken((value) => value + 1), []);
+  // Le rechargement d'une relecture automatique : requête de fond (voir DE_FOND).
+  const fond = useRef(false);
+  const reloadDeFond = useCallback(() => {
+    fond.current = true;
+    setToken((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
 
-    dashboardFetch<T>(path, {}, tenantId)
+    const init = fond.current ? DE_FOND : {};
+    fond.current = false;
+    dashboardFetch<T>(path, init, tenantId)
       .then((result) => {
         if (cancelled) return;
         setData(result);
@@ -52,7 +60,7 @@ export function useResource<T>(
     };
   }, [path, tenantId, token, enabled]);
 
-  return { data, error, reload };
+  return { data, error, reload, reloadDeFond };
 }
 
 /** Reponse paginee de l'API, ou liste nue quand la pagination est desactivee. */

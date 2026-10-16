@@ -284,8 +284,14 @@ export function Billing() {
     enabled: isOwner,
   });
 
-  const { reload: reloadPaiements } = paiements;
-  const { reload: reloadFactures } = factures;
+  const { reload: reloadPaiements, reloadDeFond: paiementsDeFond } = paiements;
+  const { reload: reloadFactures, reloadDeFond: facturesDeFond } = factures;
+  // La relecture automatique, pendant qu'un paiement attend : de fond.
+  const relireDeFond = useCallback(() => {
+    setMaintenant(Date.now());
+    paiementsDeFond();
+    facturesDeFond();
+  }, [paiementsDeFond, facturesDeFond]);
   const relire = useCallback(() => {
     setToken((value) => value + 1);
     setMaintenant(Date.now());
@@ -338,14 +344,14 @@ export function Billing() {
     document.addEventListener("visibilitychange", auRetour);
     window.addEventListener(ABONNEMENT_CHANGE, relire);
     const horloge = window.setInterval(() => setMaintenant(Date.now()), HORLOGE_MS);
-    const minuterie = enAttente ? window.setInterval(relire, RELECTURE_MS) : undefined;
+    const minuterie = enAttente ? window.setInterval(relireDeFond, RELECTURE_MS) : undefined;
     return () => {
       document.removeEventListener("visibilitychange", auRetour);
       window.removeEventListener(ABONNEMENT_CHANGE, relire);
       window.clearInterval(horloge);
       if (minuterie) window.clearInterval(minuterie);
     };
-  }, [isOwner, enAttente, relire]);
+  }, [isOwner, enAttente, relire, relireDeFond]);
 
   // Arriver par « Passer à l'annuel » (barre du haut, e-mail) : on descend
   // jusqu'aux offres une fois la page chargée.

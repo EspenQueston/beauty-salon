@@ -33,6 +33,7 @@ import { useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
 import { nomDuMoyen, parNumero } from "./moyens";
+import { useReauth } from "./Reauth";
 import {
   Badge,
   Card,
@@ -72,6 +73,9 @@ export function PaymentChannels({
 }) {
   const t = useTranslations("pro.encaissement");
   const toast = useToast();
+  // Toute modification d'un moyen exige une identité confirmée de moins de
+  // dix minutes (le serveur le refuse sinon) : voir Reauth.tsx.
+  const { avecReauth, fenetre } = useReauth();
   const libelle = (kind: string) => nomDuMoyen(kind, t("virement"));
   const channels = useResource<Page<Channel>>(
     "/api/v1/payment-channels/",
@@ -90,14 +94,14 @@ export function PaymentChannels({
   async function create(kind: string) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(
+        avecReauth(() => dashboardFetch(
           "/api/v1/payment-channels/",
           {
             method: "POST",
             body: JSON.stringify({ kind, position: list.length }),
           },
           tenantId,
-        ),
+        )),
       { success: t(parNumero(kind) ? "ajouteNumero" : "ajoute") },
     );
     if (ok) channels.reload();
@@ -106,11 +110,11 @@ export function PaymentChannels({
   async function patch(channel: Channel, changes: Partial<Channel>) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(
+        avecReauth(() => dashboardFetch(
           `/api/v1/payment-channels/${channel.id}/`,
           { method: "PATCH", body: JSON.stringify(changes) },
           tenantId,
-        ),
+        )),
       { success: t("enregistre") },
     );
     if (ok) channels.reload();
@@ -119,11 +123,11 @@ export function PaymentChannels({
   async function remove(channel: Channel) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(
+        avecReauth(() => dashboardFetch(
           `/api/v1/payment-channels/${channel.id}/`,
           { method: "DELETE" },
           tenantId,
-        ),
+        )),
       { success: t("retire", { moyen: libelle(channel.kind) }) },
     );
     if (ok) channels.reload();
@@ -131,6 +135,7 @@ export function PaymentChannels({
 
   return (
     <Card id="encaissement">
+      {fenetre}
       <SectionTitle>{t("titre")}</SectionTitle>
       <p className="-mt-2 mb-4 text-sm text-muted">{t("intro")}</p>
 
