@@ -58,6 +58,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { preload } from "react-dom";
 
 import { Relief } from "@/features/ui/Relief";
 
@@ -196,6 +197,12 @@ export function Film() {
   // L'affiche, elle, suit le thème dès le premier pixel (`.film-affiche`).
   const mode = useSyncExternalStore(suivreLeMode, modeAffiche, () => "sombre" as Mode);
   const MOMENTS = FILMS[mode].moments;
+  // L'affiche est le plus grand élément du haut de page sur téléphone. En
+  // fond CSS, le navigateur ne la découvrait qu'après avoir appliqué les
+  // feuilles de style ; annoncée dans le <head>, elle part avec elles. Celle
+  // du thème sombre, le thème par défaut : une visiteuse qui a choisi le
+  // clair revient, et a déjà la sienne en cache.
+  preload("/film/affiche.webp", { as: "image", type: "image/webp", fetchPriority: "high" });
 
   const [demarre, setDemarre] = useState(false);
   const [muet, setMuet] = useState(true);
