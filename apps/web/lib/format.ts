@@ -22,7 +22,9 @@ export const CLE_CANAL = {
  * afficher « 25 000 FCFA » plutot que « 25 000,00 » evite de faire passer
  * un tarif simple pour un devis comptable.
  */
-// GNF, RWF et UGX n'ont pas de subdivision (ISO 4217).
+// GNF, RWF et UGX n'ont pas de subdivision (ISO 4217). La même liste que le
+// serveur (`apps/api/apps/common/devises.py`), plus le yen : un test vérifie
+// qu'elles concordent (audit du 16/10/2026, C-07).
 const ZERO_DECIMAL = new Set(["XAF", "XOF", "CDF", "JPY", "GNF", "RWF", "UGX"]);
 
 export function formatPrice(amount: string | number, currency: string, locale = LOCALE): string {

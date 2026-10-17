@@ -153,6 +153,17 @@ export function Reveal({
       return;
     }
 
+    // Déjà à l'écran quand la page s'hydrate (le haut de page) : le contenu
+    // est là depuis le HTML, on ne le cache pas pour le refaire apparaître.
+    // Sur téléphone, ce masquage-réapparition arrivait après le chargement
+    // des scripts — un éclair, et le plus grand élément de la page compté
+    // comme affiché une seconde plus tard.
+    const r = element.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) {
+      element.dataset.visible = "true";
+      return;
+    }
+
     try {
       return watch(element);
     } catch {

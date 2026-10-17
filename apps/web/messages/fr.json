@@ -204,7 +204,7 @@
       "creer": "Créer mon salon"
     },
     "film": {
-      "telecharger": "Télécharger le film (3 Mo)",
+      "telecharger": "Télécharger le film ({poids, number} Mo)",
       "lancer": "Lancer le film de présentation, 29 secondes, avec le son",
       "lancerMuet": "Lire le film de présentation sans le son",
       "activer": "Activer le son",
@@ -213,7 +213,13 @@
         "demandes": "Les demandes arrivent",
         "promesse": "Réservez. Coiffez. Encaissez.",
         "outils": "Les trois outils",
-        "double": "Zéro double réservation"
+        "double": "Zéro double réservation",
+        "accumulent": "Les demandes s’accumulent",
+        "miniSite": "Un mini-site à votre nom",
+        "reservent": "Réservé à toute heure",
+        "acompte": "L’acompte et sa preuve",
+        "agenda": "Tout dans votre agenda",
+        "essai": "14 jours d’essai"
       },
       "originalSound": "musique originale",
       "previous": "Chapitre précédent",

@@ -52,6 +52,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.common.db import bypass_tenant_context, tenant_context
+from apps.common.devises import SANS_DECIMALES as _SANS_DECIMALES
 
 from .kkiapay import PAYS_DOCUMENTES as PAYS_KKIAPAY
 from .models import SaspayIntent, SubscriptionPaymentRequest
@@ -85,7 +86,8 @@ DEVISE_CARTE = "USD"
 #: et Vodacom ont des portefeuilles en dollars (`*_cd_usd`).
 MOBILE_MONEY_USD = {"CD"}
 #: Les devises sans centimes : un Mobile Money ne debite pas 0,50 franc.
-SANS_DECIMALES = {"XOF", "XAF", "GNF", "RWF", "UGX"}
+#: La liste commune a toute la plateforme (audit du 16/10/2026, C-07).
+SANS_DECIMALES = _SANS_DECIMALES
 #: Ecart toleré entre l'horodatage d'un webhook et notre horloge.
 TOLERANCE_WEBHOOK = 300
 DELAI_HTTP = 15

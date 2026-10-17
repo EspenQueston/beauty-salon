@@ -412,3 +412,37 @@ def test_controle_isolation_et_falsifications(api_client, salon_a, salon_b, conf
         assert r.status_code == 200
     with as_tenant(salon_a.tenant):
         assert Invoice.objects.count() == 1
+
+
+# ---------------------------------------------------------------------------
+# C-09 — l'espace pro ne repond qu'a l'espace pro ; CORS limite a l'API
+# ---------------------------------------------------------------------------
+
+
+def test_C09_un_mini_site_ne_peut_pas_appeler_l_espace_pro(api_client, salon_a, settings):
+    domaine = settings.PLATFORM_DOMAIN
+    login(api_client, salon_a.owner)
+    tete = {"HTTP_X_TENANT_ID": str(salon_a.tenant.pk)}
+    url = "/api/v1/payment-channels/"
+    mini_site = {"HTTP_ORIGIN": f"https://{salon_a.tenant.slug}.{domaine}"}
+
+    # Depuis un mini-site, avec la session d'une gerante : refuse.
+    r = api_client.get(url, **tete, **mini_site)
+    assert r.status_code == 403 and r.json()["code"] == "origine_refusee"
+    r = api_client.post(url, {"kind": "wechat"}, format="json", **tete, **mini_site)
+    assert r.status_code == 403
+    # Depuis l'espace pro, ou sans Origin (meme origine, serveur) : accepte.
+    assert api_client.get(url, **tete, HTTP_ORIGIN=f"https://app.{domaine}").status_code == 200
+    assert api_client.get(url, **tete).status_code == 200
+    # Les routes du mini-site restent ouvertes au mini-site.
+    r = api_client.get("/api/v1/csrf", **mini_site)
+    assert r.status_code == 200
+    assert api_client.get("/api/v1/auth/session", **mini_site).status_code == 200
+
+
+def test_C09_le_cors_ne_couvre_plus_l_administration(client, settings):
+    origine = f"https://salon.{settings.PLATFORM_DOMAIN}"
+    api = client.get("/api/v1/csrf", HTTP_ORIGIN=origine)
+    assert api.headers.get("Access-Control-Allow-Origin") == origine
+    admin = client.get(f"/{settings.ADMIN_PATH}", HTTP_ORIGIN=origine)
+    assert "Access-Control-Allow-Origin" not in admin.headers

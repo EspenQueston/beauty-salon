@@ -165,7 +165,7 @@ export function Installer({ nom: nomFourni }: { nom?: string }) {
       <div className="flex items-start gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/icones/beauty-salon-symbol.png"
+          src="/icones/symbole-96.png"
           alt=""
           width={40}
           height={40}

@@ -204,7 +204,7 @@
       "creer": "Create my salon"
     },
     "film": {
-      "telecharger": "Download the film (3 MB)",
+      "telecharger": "Download the film ({poids, number} MB)",
       "lancer": "Play the 29-second presentation film, with sound",
       "lancerMuet": "Play the presentation film without sound",
       "activer": "Turn on sound",
@@ -213,7 +213,13 @@
         "demandes": "Requests coming in",
         "promesse": "Get booked. Do the work. Get paid.",
         "outils": "The three tools",
-        "double": "No double bookings"
+        "double": "No double bookings",
+        "accumulent": "Requests pile up",
+        "miniSite": "A mini-site in your name",
+        "reservent": "Booked at any hour",
+        "acompte": "Deposits with proof",
+        "agenda": "All in your calendar",
+        "essai": "14-day free trial"
       },
       "originalSound": "original music",
       "previous": "Previous chapter",

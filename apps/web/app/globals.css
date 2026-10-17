@@ -3034,3 +3034,39 @@ body {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * L'affiche du film d'accueil (features/site/Film.tsx).
+ *
+ * Un fond CSS plutôt que l'attribut `poster` : le thème est connu ici avant
+ * React (`data-theme`, posé par le script de démarrage), et une seule des deux
+ * images est téléchargée — celle du thème affiché. En mode clair, l'affiche
+ * du second film, tourné sur fond blanc et rose.
+ * ------------------------------------------------------------------------- */
+.film-affiche {
+  background: #0e0e12 center / cover no-repeat url("/film/affiche.jpg");
+  background-image: image-set(
+    url("/film/affiche.webp") type("image/webp"),
+    url("/film/affiche.jpg") type("image/jpeg")
+  );
+}
+
+:root[data-theme="light"] .film-affiche {
+  background-color: #fdf1f5;
+  background-image: url("/film/affiche-clair.jpg");
+  background-image: image-set(
+    url("/film/affiche-clair.webp") type("image/webp"),
+    url("/film/affiche-clair.jpg") type("image/jpeg")
+  );
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .film-affiche {
+    background-color: #fdf1f5;
+    background-image: url("/film/affiche-clair.jpg");
+    background-image: image-set(
+      url("/film/affiche-clair.webp") type("image/webp"),
+      url("/film/affiche-clair.jpg") type("image/jpeg")
+    );
+  }
+}

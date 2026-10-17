@@ -115,6 +115,9 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    # Les routes de l'espace pro ne repondent qu'a l'espace pro, jamais a un
+    # mini-site (voir apps/common/origines.py). Juste apres CORS.
+    "apps.common.origines.OrigineEspaceProMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -357,6 +360,10 @@ CSRF_COOKIE_SAMESITE = "Lax"
 _DOMAIN_RE = re.escape(PLATFORM_DOMAIN)
 
 CORS_ALLOW_CREDENTIALS = True
+# Le CORS ne vaut que pour l'API : l'administration Django et les routes
+# internes ne sont jamais lisibles depuis un autre sous-domaine, meme avec la
+# session (audit du 16/10/2026, C-09).
+CORS_URLS_REGEX = r"^/api/.*$"
 CORS_ALLOWED_ORIGIN_REGEXES = [rf"^https?://([a-z0-9-]+\.)*{_DOMAIN_RE}(:\d+)?$"]
 CORS_ALLOW_HEADERS = [
     "accept",

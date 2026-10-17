@@ -1,3 +1,4 @@
+import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -136,7 +137,9 @@ export default async function SiteLayout({ children, params }: Props) {
     `if(v!=="light"&&v!=="dark"){v="dark"}` +
     `document.currentScript.parentElement.dataset.mode=v}catch(e){}})()`;
 
+  // Le catalogue complet : la racine n'envoie que celui de la page d'accueil.
   return (
+    <NextIntlClientProvider>
     <div
       style={
         {
@@ -209,5 +212,6 @@ export default async function SiteLayout({ children, params }: Props) {
         <Installer nom={salon.name} />
       </div>
     </div>
+    </NextIntlClientProvider>
   );
 }

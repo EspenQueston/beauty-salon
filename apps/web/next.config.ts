@@ -53,6 +53,25 @@ const EN_PRODUCTION = process.env.NODE_ENV === "production";
 */
 const CLAIR = EN_PRODUCTION ? "" : " http:";
 
+/*
+  Ou la page a le droit d'envoyer des donnees : la plateforme et son API,
+  rien d'autre (audit du 16/10/2026, C-09).
+
+  `connect-src https:` laissait un script injecte expedier ce qu'il lisait
+  vers n'importe quel serveur. Les seuls appels de la page vont a l'API
+  (`NEXT_PUBLIC_API_URL`, `https://api.<domaine>` en production) ; le widget
+  KKIAPAY vit dans son propre cadre, autorise par prudence. En
+  developpement, l'API repond sur `http://<hote>:8001` : `http:` reste ouvert.
+*/
+function origineApi(): string {
+  try {
+    return process.env.NEXT_PUBLIC_API_URL ? ` ${new URL(process.env.NEXT_PUBLIC_API_URL).origin}` : "";
+  } catch {
+    return "";
+  }
+}
+const CONNEXIONS = `'self'${origineApi()} https://*.kkiapay.me${CLAIR}`;
+
 const CSP = [
   "default-src 'self'",
   // 'unsafe-inline' : voir le commentaire ci-dessus. 'unsafe-eval' est
@@ -67,7 +86,7 @@ const CSP = [
   // `https:` couvre les medias du salon et les illustrations d'ambiance.
   `img-src 'self' data: blob: https:${CLAIR}`,
   `media-src 'self' blob: https:${CLAIR}`,
-  `connect-src 'self' https:${CLAIR}`,
+  `connect-src ${CONNEXIONS}`,
   "frame-src 'self' https://widget-v3.kkiapay.me",
   "frame-ancestors 'none'",
   "base-uri 'self'",

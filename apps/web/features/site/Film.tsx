@@ -50,18 +50,120 @@
  */
 
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { Relief } from "@/features/ui/Relief";
 
-/** Ce que le film montre, dans l'ordre. Sert de légende et de sommaire. */
-const MOMENTS = [
-  /* L'horodatage ne se traduit pas ; le repère, si. */
-  { t: "00:00", cle: "demandes" },
-  { t: "00:07", cle: "promesse" },
-  { t: "00:11", cle: "outils" },
-  { t: "00:24", cle: "double" },
-];
+/*
+ * ---------------------------------------------------------------------------
+ * Deux films, un par thème
+ * ---------------------------------------------------------------------------
+ *
+ * En mode sombre, le film d'origine, sur fond noir. En mode clair, le second
+ * film, tourné sur fond blanc et rose : le film sombre au milieu d'une page
+ * claire faisait un trou noir dans le haut de page. Chacun a ses chapitres —
+ * ils décrivent ce qu'on voit, et les deux films ne montrent pas la même chose
+ * au même moment.
+ *
+ * Deux définitions par film, choisies au moment de charger : 720p pour un
+ * écran qui l'affiche vraiment (cadre × densité de pixels), 540p sinon, ou sur
+ * une connexion lente. Toutes pèsent moins de la moitié de l'ancien fichier
+ * 1080p (3 Mo), sans différence visible sur ces images d'interface.
+ */
+type Mode = "clair" | "sombre";
+
+const FILMS: Record<Mode, { base: string; moments: { t: string; cle: string }[] }> = {
+  sombre: {
+    base: "/film/sombre",
+    moments: [
+      /* L'horodatage ne se traduit pas ; le repère, si. */
+      { t: "00:00", cle: "demandes" },
+      { t: "00:07", cle: "promesse" },
+      { t: "00:11", cle: "outils" },
+      { t: "00:24", cle: "double" },
+    ],
+  },
+  clair: {
+    base: "/film/clair",
+    moments: [
+      { t: "00:00", cle: "accumulent" },
+      { t: "00:03", cle: "miniSite" },
+      { t: "00:06", cle: "reservent" },
+      { t: "00:10", cle: "acompte" },
+      { t: "00:14", cle: "agenda" },
+      { t: "00:23", cle: "essai" },
+    ],
+  },
+};
+
+/** Le thème réellement affiché : choix de la personne, sinon celui de l'appareil. */
+function modeAffiche(): Mode {
+  const choix = document.documentElement.dataset.theme;
+  if (choix === "light") return "clair";
+  if (choix === "dark") return "sombre";
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "clair" : "sombre";
+}
+
+function suivreLeMode(rappel: () => void) {
+  const observateur = new MutationObserver(rappel);
+  observateur.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  const media = window.matchMedia("(prefers-color-scheme: light)");
+  media.addEventListener("change", rappel);
+  return () => {
+    observateur.disconnect();
+    media.removeEventListener("change", rappel);
+  };
+}
+
+/*
+ * Le film attend que la page ait fini de charger, et que le navigateur
+ * souffle, avant de télécharger quoi que ce soit.
+ *
+ * Il est dans le haut de page : l'observateur le voyait à l'écran dès le
+ * premier rendu, et son mégaoctet partait en même temps que les polices et
+ * les scripts — sur un téléphone en 4G, c'est lui qui retardait l'affichage
+ * de tout le reste. Un clic sur « lecture » n'attend pas, lui.
+ */
+function apresLeChargement(rappel: () => void): () => void {
+  let annule = false;
+  let minuteur: ReturnType<typeof setTimeout> | undefined;
+  const lancer = () => {
+    if (annule) return;
+    const fenetre = window as Window & {
+      requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number;
+    };
+    if (fenetre.requestIdleCallback) fenetre.requestIdleCallback(() => !annule && rappel(), { timeout: 2500 });
+    // Safari n'a pas `requestIdleCallback` : un court délai après `load`.
+    else minuteur = setTimeout(() => !annule && rappel(), 600);
+  };
+  if (document.readyState === "complete") lancer();
+  else window.addEventListener("load", lancer, { once: true });
+  return () => {
+    annule = true;
+    if (minuteur) clearTimeout(minuteur);
+    window.removeEventListener("load", lancer);
+  };
+}
+
+/** 720p si l'écran l'affiche et que la connexion le permet ; 540p sinon. */
+function definition(cadre: HTMLElement | null): 540 | 720 {
+  const lien = (
+    navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
+  ).connection;
+  if (lien?.saveData || lien?.effectiveType === "3g") return 540;
+  const largeur = (cadre?.clientWidth || window.innerWidth) * (window.devicePixelRatio || 1);
+  return largeur > 900 ? 720 : 540;
+}
 
 /** La lecture automatique est-elle acceptable ici et maintenant ? */
 function departAutomatiquePermis() {
@@ -90,6 +192,10 @@ export function Film() {
   const t = useTranslations("site");
   const video = useRef<HTMLVideoElement>(null);
   const cadre = useRef<HTMLDivElement>(null);
+  // Côté serveur, le thème n'est pas connu : sombre, celui par défaut.
+  // L'affiche, elle, suit le thème dès le premier pixel (`.film-affiche`).
+  const mode = useSyncExternalStore(suivreLeMode, modeAffiche, () => "sombre" as Mode);
+  const MOMENTS = FILMS[mode].moments;
 
   const [demarre, setDemarre] = useState(false);
   const [muet, setMuet] = useState(true);
@@ -114,6 +220,35 @@ export function Film() {
     muetRef.current = muet;
   }, [muet]);
 
+  /*
+   * La source, posée à la main et non dans le JSX : elle dépend de l'écran et
+   * du thème, inconnus côté serveur, et un `src` différent entre le serveur
+   * et le navigateur casserait l'hydratation. Elle est posée juste avant toute
+   * lecture ou mise en mémoire tampon.
+   */
+  const assurerSource = useCallback(() => {
+    const noeud = video.current;
+    if (!noeud) return;
+    const voulue = `${FILMS[modeAffiche()].base}-${definition(cadre.current)}.mp4`;
+    if (!noeud.src.endsWith(voulue)) noeud.src = voulue;
+  }, []);
+
+  // Changer de thème change de film : on revient à l'affiche, sans rien
+  // relancer à la place de la personne.
+  const modePrecedent = useRef(mode);
+  useLayoutEffect(() => {
+    if (modePrecedent.current === mode) return;
+    modePrecedent.current = mode;
+    const noeud = video.current;
+    if (!noeud) return;
+    if (!noeud.paused) pauseTechnique.current = true;
+    noeud.pause();
+    noeud.removeAttribute("src");
+    noeud.load();
+    setDemarre(false);
+    setPosition(0);
+  }, [mode]);
+
   /** Lance la lecture, avec ou sans son, et note ce que le navigateur répond. */
   const lancer = useCallback((avecSon: boolean) => {
     const noeud = video.current;
@@ -122,6 +257,7 @@ export function Film() {
     // `muted` est posé sur l'élément et non par une propriété JSX : React ne
     // rend pas cet attribut côté serveur, et la valeur doit être juste avant
     // l'appel à `play()`, sinon le navigateur refuse la lecture.
+    assurerSource();
     noeud.muted = !avecSon;
     muetRef.current = !avecSon;
     setMuet(!avecSon);
@@ -151,7 +287,7 @@ export function Film() {
         );
       },
     );
-  }, []);
+  }, [assurerSource]);
 
   /*
    * « Voir le film », dans le haut de page, mène ici par une ancre.
@@ -178,21 +314,33 @@ export function Film() {
     if (!bloc || !noeud) return;
     if (typeof IntersectionObserver === "undefined") return;
     const automatique = departAutomatiquePermis();
+    let prechargement: IntersectionObserver | undefined;
+    let lecture: IntersectionObserver | undefined;
+    const masquer = () => {
+      if (document.hidden && !noeud.paused) {
+        pauseTechnique.current = true;
+        noeud.pause();
+      }
+    };
+    document.addEventListener("visibilitychange", masquer);
+
+    const annulerAttente = apresLeChargement(() => {
 
     // Premier observateur : mise en mémoire tampon un peu avant que la
     // section n'arrive, pour que l'image parte sans temps mort. Il se retire
     // dès qu'il a servi.
-    const prechargement = new IntersectionObserver(
+    prechargement = new IntersectionObserver(
       (entrees) => {
         if (!automatique || !entrees.some((e) => e.isIntersecting)) return;
         // `load()` réinitialise l'élément : sur une vidéo déjà partie il la
         // coupe et la ramène à zéro. Le cas arrive quand on entre par
         // l'ancre, où la lecture précède ce déclenchement.
         if (noeud.readyState === 0 && noeud.paused) {
+          assurerSource();
           noeud.preload = "auto";
           noeud.load();
         }
-        prechargement.disconnect();
+        prechargement?.disconnect();
       },
       { rootMargin: "700px 0px" },
     );
@@ -200,11 +348,12 @@ export function Film() {
 
     // Second observateur : il vit tant que la page vit, puisqu'il sert aussi
     // à mettre en pause quand la section sort du champ.
-    const lecture = new IntersectionObserver(
+    lecture = new IntersectionObserver(
       (entrees) => {
         for (const entree of entrees) {
           if (entree.isIntersecting) {
             if (automatique && noeud.paused && !noeud.ended && !pauseVoulue.current && !document.hidden) {
+              assurerSource();
               noeud.muted = muetRef.current;
               void noeud.play().then(
                 () => setDemarre(true),
@@ -224,21 +373,15 @@ export function Film() {
       { threshold: 0.45 },
     );
     lecture.observe(bloc);
-
-    const masquer = () => {
-      if (document.hidden && !noeud.paused) {
-        pauseTechnique.current = true;
-        noeud.pause();
-      }
-    };
-    document.addEventListener("visibilitychange", masquer);
+    });
 
     return () => {
-      prechargement.disconnect();
-      lecture.disconnect();
+      annulerAttente();
+      prechargement?.disconnect();
+      lecture?.disconnect();
       document.removeEventListener("visibilitychange", masquer);
     };
-  }, []);
+  }, [assurerSource]);
 
   /* ------------------------------------------------- pauses de la personne */
   /*
@@ -289,8 +432,6 @@ export function Film() {
         <video
           ref={video}
           className="block aspect-video w-full"
-          src="/film/beauty-salon.mp4"
-          poster="/film/affiche.jpg"
           preload="none"
           playsInline
           muted={muet}
@@ -313,8 +454,14 @@ export function Film() {
             aucune information qui ne soit ailleurs dans la page.
           */}
           {t("filmSecours")}{" "}
-          <a href="/film/beauty-salon.mp4">{t("film.telecharger")}</a>
+          <a href={`${FILMS[mode].base}-720.mp4`}>
+            {t("film.telecharger", { poids: mode === "clair" ? 1.3 : 0.8 })}
+          </a>
         </video>
+
+        {/* L'affiche : un fond CSS qui suit le thème avant même React — une
+            seule image téléchargée —, posé sur l'image tant que rien ne joue. */}
+        {!demarre && <div aria-hidden className="film-affiche absolute inset-0" />}
 
         {/* La couche de départ : elle reste tant que rien ne joue — au premier
             affichage, après un refus du navigateur, et à la fin du film. */}

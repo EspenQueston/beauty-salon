@@ -29,7 +29,7 @@ import re
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
@@ -43,7 +43,6 @@ POURCENTAGE = Decimal("10")
 # Sans chiffres ni lettres ambigus (0/O, 1/I/L) : un code se recopie.
 ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 LONGUEUR_CODE = 10
-DEVISES_SANS_DECIMALES = {"XAF", "XOF", "CDF"}
 
 
 class CodeInconnu(ValueError):
@@ -224,8 +223,9 @@ def expirer(maintenant=None) -> int:
 
 
 def arrondir(montant: Decimal, devise: str) -> Decimal:
-    pas = Decimal("1") if devise in DEVISES_SANS_DECIMALES else Decimal("0.01")
-    return montant.quantize(pas, rounding=ROUND_HALF_UP)
+    from apps.common.devises import arrondir as arrondir_devise
+
+    return arrondir_devise(montant, devise)
 
 
 @dataclass

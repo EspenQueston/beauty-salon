@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 
 import { estLangue, LANGUE_PAR_DEFAUT, LANGUES } from "@/i18n/langues";
+import { messagesDe, SECTIONS_ACCUEIL } from "@/i18n/messages";
 
 import "../globals.css";
 import { InlineScript } from "../InlineScript";
@@ -43,11 +44,15 @@ const metadata: Metadata = {
   // Installée sur l'écran d'accueil, l'application doit avoir une icône qui
   // ne soit pas une capture de la page. Les tailles couvrent Android (192,
   // 512), iOS (180) et le masque circulaire d'Android (`maskable`).
+  // Des fichiers à la taille affichée : l'original de 1 254 px (622 Ko)
+  // servait d'icône d'onglet et d'écran d'accueil, téléchargé à chaque visite
+  // — 63 % du poids de la page d'accueil sur iPhone.
   icons: {
     icon: [
-      { url: "/icones/beauty-salon-symbol.png", sizes: "1254x1254", type: "image/png" },
+      { url: "/icones/symbole-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icones/symbole-48.png", sizes: "48x48", type: "image/png" },
     ],
-    apple: [{ url: "/icones/beauty-salon-symbol.png", sizes: "1254x1254" }],
+    apple: [{ url: "/icones/symbole-180.png", sizes: "180x180" }],
   },
   appleWebApp: {
     // iOS ignore le manifeste : ces trois balises sont sa seule façon de
@@ -153,7 +158,12 @@ export default async function RootLayout({
           lèverait au premier `useTranslations`. Il est posé à la racine
           parce que ces composants sont dispersés dans les trois surfaces.
         */}
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        {/* Seulement les sections de la page d'accueil : l'espace pro, les
+            mini-sites et la page hors ligne reprennent le catalogue complet dans
+            leur propre fournisseur (voir i18n/messages.ts). */}
+        <NextIntlClientProvider messages={await messagesDe(SECTIONS_ACCUEIL)}>
+          {children}
+        </NextIntlClientProvider>
         <ServiceWorker />
       </body>
     </html>

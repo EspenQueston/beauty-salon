@@ -39,8 +39,12 @@ const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
 const RESERVED = new Set(["www", "api", "admin", "static", "media", "mail"]);
 
 /** Les icônes de la plateforme, servies depuis `public/`. */
+// Aux tailles demandées par les systèmes : l'original de 1 254 px pesait
+// 622 Ko, téléchargés à chaque visite pour une icône de 32 px.
 const ICONES: NonNullable<MetadataRoute.Manifest["icons"]> = [
-  { src: "/icones/beauty-salon-symbol.png", sizes: "1254x1254", type: "image/png", purpose: "any" },
+  { src: "/icones/symbole-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+  { src: "/icones/symbole-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+  { src: "/icones/symbole-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
 ];
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
