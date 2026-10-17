@@ -32,6 +32,7 @@
  */
 
 import type { MediaAsset } from "@/lib/types";
+import { photo, TAILLES } from "./images";
 
 export function SalonLogo({
   logo,
@@ -69,7 +70,7 @@ export function SalonLogo({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={logo.url}
+        {...photo(logo, TAILLES.vignette)}
         alt={logo.alt_text || name}
         className="size-full object-contain mix-blend-multiply"
       />

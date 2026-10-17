@@ -27,6 +27,7 @@
  * sur iPhone.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 /** L'événement d'Android, absent des types du DOM. */
@@ -76,7 +77,13 @@ function dejaInstallee(): boolean {
   );
 }
 
-export function Installer({ nom }: { nom: string }) {
+/**
+ * `nom` : ce qu'on installe — le nom du salon sur son mini-site. Absent,
+ * c'est l'espace pro, nommé dans la langue de la page.
+ */
+export function Installer({ nom: nomFourni }: { nom?: string }) {
+  const t = useTranslations("commun.installer");
+  const nom = nomFourni ?? t("votreEspace");
   const [invite, setInvite] = useState<InvitePWA | null>(null);
   const [ios, setIos] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -145,7 +152,7 @@ export function Installer({ nom }: { nom: string }) {
   return (
     <div
       role="dialog"
-      aria-label={`Installer ${nom}`}
+      aria-label={t("titre", { nom })}
       /*
         Posé au-dessus de la barre de réservation, pas devant la page.
 
@@ -158,25 +165,19 @@ export function Installer({ nom }: { nom: string }) {
       <div className="flex items-start gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/icones/192.png"
+          src="/icones/symbole-96.png"
           alt=""
           width={40}
           height={40}
           className="size-10 shrink-0 rounded-xl"
         />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-ink">
-            Installer {nom}
-          </p>
+          <p className="text-sm font-semibold text-ink">{t("titre", { nom })}</p>
           <p className="mt-1 text-[0.8rem] leading-relaxed text-muted">
             {ios ? (
-              <>
-                Touchez <strong>Partager</strong>, puis{" "}
-                <strong>Sur l&apos;écran d&apos;accueil</strong>. Vous
-                l&apos;ouvrirez ensuite comme une application.
-              </>
+              t.rich("ios", { gras: (texte) => <strong>{texte}</strong> })
             ) : (
-              "Un accès direct depuis votre écran d'accueil, et vos pages restent lisibles même sans réseau."
+              t("autre")
             )}
           </p>
         </div>
@@ -188,7 +189,7 @@ export function Installer({ nom }: { nom: string }) {
           onClick={refuser}
           className="rounded-full px-3 py-1.5 text-sm font-medium text-muted transition hover:text-ink"
         >
-          {ios ? "J'ai compris" : "Plus tard"}
+          {ios ? t("compris") : t("plusTard")}
         </button>
         {!ios && (
           <button
@@ -196,7 +197,7 @@ export function Installer({ nom }: { nom: string }) {
             onClick={accepter}
             className="rounded-full bg-ink px-4 py-1.5 text-sm font-semibold text-bg transition hover:opacity-90"
           >
-            Installer
+            {t("installer")}
           </button>
         )}
       </div>

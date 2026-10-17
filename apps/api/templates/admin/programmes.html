@@ -1,0 +1,8 @@
+{% if liens %}
+<section class="programmes" aria-labelledby="programmes-titre">
+  <h2 id="programmes-titre">Parrainage et paiements</h2>
+  <div class="programmes-grid">
+    {% for lien in liens %}<a class="programmes-carte" href="{{ lien.url }}"><strong>{{ lien.titre }}</strong><span>{{ lien.aide }}</span></a>{% endfor %}
+  </div>
+</section>
+{% endif %}

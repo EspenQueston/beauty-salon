@@ -166,3 +166,55 @@ def test_la_double_authentification_reste_exigee(monkeypatch):
     reglages = charger(monkeypatch)
 
     assert reglages.PLATFORM_ADMIN_MFA_REQUIRED is True
+
+
+# ---------------------------------------------------------------------------
+# Derriere le proxy, dans les conteneurs
+# ---------------------------------------------------------------------------
+#
+# Ces reglages ne servent a rien en developpement, ou tout tourne sur la
+# meme machine. Ils decident en production si les pages s'affichent.
+
+
+def test_les_noms_internes_s_ajoutent_au_domaine(monkeypatch):
+    """Le serveur Next appelle `http://api:8000` : sans ce nom, Django
+    repondrait 400 a chaque rendu de mini-site."""
+    reglages = charger(
+        monkeypatch,
+        PLATFORM_DOMAIN="mon-salon.cg",
+        DJANGO_INTERNAL_HOSTS="api,127.0.0.1",
+    )
+
+    assert reglages.ALLOWED_HOSTS == [".mon-salon.cg", "mon-salon.cg", "api", "127.0.0.1"]
+
+
+def test_les_medias_ont_une_adresse_absolue(monkeypatch):
+    """Relative, l'adresse d'une photo prendrait l'hote de la requete — celui
+    du reseau interne quand c'est le serveur Next qui demande."""
+    reglages = charger(monkeypatch, PLATFORM_DOMAIN="mon-salon.cg")
+
+    assert reglages.MEDIA_URL == "https://api.mon-salon.cg/media/"
+
+
+def test_les_liens_des_emails_sont_en_https_et_sans_port(monkeypatch):
+    reglages = charger(monkeypatch, PLATFORM_DOMAIN="mon-salon.cg")
+
+    assert reglages.APP_BASE_URL == "https://app.mon-salon.cg"
+    assert reglages.SITE_BASE_URL == "https://mon-salon.cg"
+
+
+def test_seules_les_routes_internes_echappent_a_la_redirection(monkeypatch):
+    """La sonde de sante et la question de Caddy arrivent en clair ; tout le
+    reste doit toujours etre renvoye vers HTTPS."""
+    import re
+
+    reglages = charger(monkeypatch)
+
+    def exemptee(chemin: str) -> bool:
+        return any(re.search(motif, chemin) for motif in reglages.SECURE_REDIRECT_EXEMPT)
+
+    assert exemptee("health")
+    assert exemptee("interne/certificat")
+    assert not exemptee("api/v1/public/salon")
+    assert not exemptee("admin/")
+    assert not exemptee("api/v1/interne/certificat")

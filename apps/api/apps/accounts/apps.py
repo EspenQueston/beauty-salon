@@ -11,3 +11,7 @@ class AccountsConfig(AppConfig):
 
     name = "apps.accounts"
     verbose_name = "Comptes et accès"
+
+    def ready(self):
+        # La connexion vaut reauthentification (voir reauth.py).
+        from . import reauth, sessions  # noqa: F401

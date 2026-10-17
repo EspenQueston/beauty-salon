@@ -53,7 +53,9 @@ export function PageHeader({
   return (
     <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          {title}
+        </h1>
         {description && (
           <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted">
             {description}
@@ -95,7 +97,13 @@ const BASE =
   "inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium " +
   "transition disabled:cursor-not-allowed disabled:opacity-55";
 
-export function Button({ pending, icon, children, className = "", ...props }: ButtonProps) {
+export function Button({
+  pending,
+  icon,
+  children,
+  className = "",
+  ...props
+}: ButtonProps) {
   return (
     <button
       {...props}
@@ -149,7 +157,15 @@ export function DangerButton({
 function Spinner() {
   return (
     <svg viewBox="0 0 24 24" className="size-4 animate-spin" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" fill="none" opacity="0.25" />
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        fill="none"
+        opacity="0.25"
+      />
       <path
         d="M21 12a9 9 0 0 0-9-9"
         stroke="currentColor"
@@ -186,9 +202,13 @@ export function Field({
     <label className={`block ${className}`}>
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
       {children}
-      {hint && !error && <span className="mt-1.5 block text-xs text-muted">{hint}</span>}
+      {hint && !error && (
+        <span className="mt-1.5 block text-xs text-muted">{hint}</span>
+      )}
       {error && (
-        <span className="mt-1.5 block text-xs font-medium text-danger">{error}</span>
+        <span className="mt-1.5 block text-xs font-medium text-danger">
+          {error}
+        </span>
       )}
     </label>
   );
@@ -234,7 +254,8 @@ export function Toggle({
 // États
 // ---------------------------------------------------------------------------
 
-type BadgeTone = "neutral" | "success" | "warning" | "danger" | "info" | "salon";
+type BadgeTone =
+  "neutral" | "success" | "warning" | "danger" | "info" | "salon";
 
 const BADGE_TONES: Record<BadgeTone, string> = {
   neutral: "bg-surface-muted text-muted",

@@ -136,13 +136,23 @@ class PaymentRefused(Exception):
 
 
 def channels_for(tenant_id) -> list[PaymentChannel]:
-    """Moyens d'encaissement reellement affichables pour ce salon."""
+    """Moyens d'encaissement reellement affichables pour ce salon.
+
+    Actifs, renseignes, et existant dans le pays du salon (`moyens.py`) : un
+    QR Alipay reste chez un salon qui a quitte la Chine, mais n'est plus
+    montre a ses clientes.
+    """
+    from apps.tenants.models import Tenant
+
+    from .moyens import propose
+
+    pays = Tenant.objects.filter(pk=tenant_id).values_list("country", flat=True).first() or ""
     return [
         channel
         for channel in PaymentChannel.objects.filter(active=True).select_related(
             "qr_image"
         )
-        if channel.usable
+        if channel.usable and propose(channel.kind, pays)
     ]
 
 
@@ -207,9 +217,11 @@ def submit_proof(
 
     # Le salon est prevenu tout de suite : un acompte verse sans que personne
     # ne regarde, c'est une cliente qui attend devant un telephone muet.
+    from apps.notifications import evenements
     from apps.notifications.tasks import send_deposit_proof_alert
 
     send_deposit_proof_alert.delay(str(booking.id), str(booking.tenant_id))
+    evenements.acompte_a_verifier(booking)
 
     return proof
 
@@ -403,6 +415,14 @@ def expirer(booking, now=None) -> bool:
     from apps.store.services import give_back_stock
 
     give_back_stock(booking)
+
+    # Apres l'UPDATE conditionnel, donc une seule fois : deux onglets
+    # ouverts sur la page de suivi franchissent tous deux le test de
+    # delai, mais un seul gagne l'ecriture. Prevenir plus haut aurait
+    # fait sonner le telephone du salon deux fois pour un creneau.
+    from apps.notifications import evenements
+
+    evenements.acompte_expire(booking)
     return True
 
 

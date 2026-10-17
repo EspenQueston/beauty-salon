@@ -27,8 +27,10 @@
  * distingue mal le rouge du vert lit exactement la même page.
  */
 
+import { useTranslations } from "next-intl";
 import { useId, type ReactNode } from "react";
 
+import { useFormats } from "./formats";
 import { Icon, type IconName } from "./icons";
 
 /* --------------------------------------------------------------------------
@@ -175,10 +177,12 @@ export function StatCard({
  * survit au thème sombre comme à l'impression en noir et blanc.
  */
 function EvolutionLine({ percent, against, good, unit = "%" }: Evolution) {
+  const t = useTranslations("pro.finances.evolution");
+  const { region } = useFormats();
   if (percent === null) {
     return (
       <p className="truncate text-[0.68rem] text-subtle sm:text-xs">
-        Rien à comparer sur {against}
+        {t("rien", { periode: against })}
       </p>
     );
   }
@@ -204,12 +208,12 @@ function EvolutionLine({ percent, against, good, unit = "%" }: Evolution) {
       >
         <span aria-hidden>{flat ? "=" : rising ? "↑" : "↓"}</span>{" "}
         {flat
-          ? "stable"
-          : `${rising ? "+" : "−"}${Math.abs(percent).toLocaleString("fr-FR", {
+          ? t("stable")
+          : `${rising ? "+" : "−"}${Math.abs(percent).toLocaleString(region, {
               maximumFractionDigits: 1,
-            })} ${unit}`}
+            })} ${unit === "pts" ? t("points") : unit}`}
       </span>
-      <span>vs {against}</span>
+      <span>{t("vs", { periode: against })}</span>
     </p>
   );
 }
@@ -391,7 +395,9 @@ export function GradientLine({
   const y = (value: number) =>
     PAD.top + PLOT_H - ((value - min) / span) * PLOT_H;
 
-  const line = values.map((value, index) => `${x(index)},${y(value)}`).join(" ");
+  const line = values
+    .map((value, index) => `${x(index)},${y(value)}`)
+    .join(" ");
 
   return (
     <svg
@@ -466,6 +472,7 @@ export function ShareTable({
   rows: ShareRow[];
   empty: string;
 }) {
+  const t = useTranslations("pro.finances.tableau");
   if (rows.length === 0) {
     return <p className="px-1 py-6 text-sm text-muted">{empty}</p>;
   }
@@ -477,13 +484,13 @@ export function ShareTable({
       <thead>
         <tr className="border-b border-line text-left">
           <th className="pb-2 pr-2 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-subtle">
-            Poste
+            {t("poste")}
           </th>
           <th className="pb-2 pl-2 text-right text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-subtle">
-            Montant
+            {t("montant")}
           </th>
           <th className="hidden w-[38%] pb-2 pl-4 text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-subtle sm:table-cell">
-            Part
+            {t("part")}
           </th>
         </tr>
       </thead>
@@ -528,6 +535,7 @@ export function ShareTable({
 }
 
 function Bar({ share }: { share: number }) {
+  const { region, pourcent } = useFormats();
   const width = Math.max(Math.min(share, 100), 1.5);
   return (
     <span className="flex items-center gap-2">
@@ -541,7 +549,7 @@ function Bar({ share }: { share: number }) {
         />
       </span>
       <span className="tabular w-9 shrink-0 text-right text-[0.7rem] text-subtle">
-        {share.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} %
+        {pourcent(share.toLocaleString(region, { maximumFractionDigits: 0 }))}
       </span>
     </span>
   );

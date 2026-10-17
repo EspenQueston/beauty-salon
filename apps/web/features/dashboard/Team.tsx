@@ -7,6 +7,7 @@
  * réceptionniste imposerait de passer par l'administration de la plateforme.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -44,30 +45,22 @@ interface Invitation {
   invited_by_name: string | null;
 }
 
-const ROLES = [
-  { value: "staff", label: "Prestataire", hint: "Voit uniquement son propre agenda." },
-  { value: "receptionist", label: "Réceptionniste", hint: "Gère les rendez-vous et les clientes." },
-  { value: "manager", label: "Gérant", hint: "Gère aussi le catalogue et l'équipe." },
-  { value: "owner", label: "Propriétaire", hint: "Accès complet, facturation comprise." },
-];
+/** Libellés et aides sous `pro.equipe.roles`. */
+const ROLES = ["staff", "receptionist", "manager", "owner"];
 
-const ROLE_LABELS = Object.fromEntries(ROLES.map((r) => [r.value, r.label]));
-
-const INVITATION_TONES: Record<string, "warning" | "success" | "neutral" | "danger"> = {
+const INVITATION_TONES: Record<
+  string,
+  "warning" | "success" | "neutral" | "danger"
+> = {
   pending: "warning",
   accepted: "success",
   revoked: "neutral",
   expired: "danger",
 };
 
-const INVITATION_LABELS: Record<string, string> = {
-  pending: "En attente",
-  accepted: "Acceptée",
-  revoked: "Annulée",
-  expired: "Expirée",
-};
 
 export function Team() {
+  const t = useTranslations("pro.equipe");
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -77,13 +70,16 @@ export function Team() {
 
   // Les prestataires sans compte : ils expliquent l'écart entre cette liste
   // et celle des Prestataires, que rien ne rapprochait jusqu'ici.
-  const staff = useResource<Page<{ id: string; name: string; has_access: boolean }>>(
-    "/api/v1/staff-members/",
+  const staff = useResource<
+    Page<{ id: string; name: string; has_access: boolean }>
+  >("/api/v1/staff-members/", tenantId);
+  const invitations = useResource<Page<Invitation>>(
+    "/api/v1/invitations/",
     tenantId,
+    {
+      enabled: canManage,
+    },
   );
-  const invitations = useResource<Page<Invitation>>("/api/v1/invitations/", tenantId, {
-    enabled: canManage,
-  });
 
   async function revoke(invitation: Invitation) {
     const ok = await toast.run(
@@ -93,7 +89,7 @@ export function Team() {
           { method: "POST" },
           tenantId,
         ),
-      { success: `Invitation de ${invitation.email} annulée.` },
+      { success: t("invitationAnnulee", { email: invitation.email }) },
     );
     if (ok) invitations.reload();
   }
@@ -101,18 +97,22 @@ export function Team() {
   return (
     <section>
       <PageHeader
-        title="Équipe"
-        description="Qui a accès à cet espace, et avec quels droits. Réaliser des prestations ne demande pas de compte : ces deux listes ne se recouvrent pas forcément."
+        title={t("titre")}
+        description={t("description")}
       />
 
-      {members.error && <ErrorState>Impossible de charger l’équipe.</ErrorState>}
+      {members.error && (
+        <ErrorState>{t("erreur")}</ErrorState>
+      )}
 
       <WithoutAccount staff={rows(staff.data)} />
 
-      {canManage && <InviteForm tenantId={tenantId} onInvited={invitations.reload} />}
+      {canManage && (
+        <InviteForm tenantId={tenantId} onInvited={invitations.reload} />
+      )}
 
       <div className="mt-7">
-        <SectionTitle>Membres</SectionTitle>
+        <SectionTitle>{t("membres")}</SectionTitle>
         {members.data === null && !members.error && <Skeleton rows={2} />}
 
         <ul className="space-y-2.5">
@@ -130,9 +130,11 @@ export function Team() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge tone={member.role === "owner" ? "salon" : "neutral"}>
-                      {ROLE_LABELS[member.role] ?? member.role}
+                      {ROLES.includes(member.role) ? t(`roles.${member.role}.libelle`) : member.role}
                     </Badge>
-                    {member.status !== "active" && <Badge tone="warning">{member.status}</Badge>}
+                    {member.status !== "active" && (
+                      <Badge tone="warning">{member.status}</Badge>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -143,13 +145,10 @@ export function Team() {
 
       {canManage && (
         <div className="mt-8">
-          <SectionTitle>Invitations</SectionTitle>
+          <SectionTitle>{t("invitations")}</SectionTitle>
 
           {rows(invitations.data).length === 0 && invitations.data !== null && (
-            <EmptyState title="Aucune invitation en cours">
-              Les personnes invitées apparaîtront ici jusqu&apos;à ce
-              qu&apos;elles rejoignent l&apos;équipe.
-            </EmptyState>
+            <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
           )}
 
           <ul className="space-y-2.5">
@@ -160,19 +159,28 @@ export function Team() {
                     <div className="min-w-0">
                       <p className="font-medium text-ink">{invitation.email}</p>
                       <p className="mt-0.5 text-sm text-muted">
-                        {ROLE_LABELS[invitation.role] ?? invitation.role}
+                        {ROLES.includes(invitation.role)
+                          ? t(`roles.${invitation.role}.libelle`)
+                          : invitation.role}
                         {invitation.invited_by_name &&
-                          ` · invitée par ${invitation.invited_by_name}`}
+                          ` · ${t("inviteePar", { nom: invitation.invited_by_name })}`}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Badge tone={INVITATION_TONES[invitation.status] ?? "neutral"}>
-                        {INVITATION_LABELS[invitation.status] ?? invitation.status}
+                      <Badge
+                        tone={INVITATION_TONES[invitation.status] ?? "neutral"}
+                      >
+                        {invitation.status in INVITATION_TONES
+                          ? t(`statuts.${invitation.status}`)
+                          : invitation.status}
                       </Badge>
                       {invitation.status === "pending" && (
-                        <DangerButton type="button" onClick={() => revoke(invitation)}>
-                          Annuler
+                        <DangerButton
+                          type="button"
+                          onClick={() => revoke(invitation)}
+                        >
+                          {t("annuler")}
                         </DangerButton>
                       )}
                     </div>
@@ -186,7 +194,7 @@ export function Team() {
 
       {!canManage && (
         <p className="mt-6 text-sm text-muted">
-          Seuls le propriétaire et le gérant peuvent inviter de nouvelles personnes.
+          {t("lectureSeule")}
         </p>
       )}
     </section>
@@ -200,12 +208,11 @@ function InviteForm({
   tenantId: string;
   onInvited: () => void;
 }) {
+  const t = useTranslations("pro.equipe");
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("staff");
   const [pending, setPending] = useState(false);
-
-  const selected = ROLES.find((r) => r.value === role);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -218,7 +225,9 @@ function InviteForm({
           { method: "POST", body: JSON.stringify({ email, role }) },
           tenantId,
         ),
-      { success: `Invitation envoyée à ${email}. Le lien est valable 7 jours.` },
+      {
+        success: t("invitationEnvoyee", { email }),
+      },
     );
 
     setPending(false);
@@ -230,36 +239,36 @@ function InviteForm({
 
   return (
     <Card>
-      <SectionTitle>Inviter quelqu&apos;un</SectionTitle>
+      <SectionTitle>{t("inviter")}</SectionTitle>
 
       <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
-        <Field label="E-mail" className="min-w-[16rem] flex-1">
+        <Field label={t("email")} className="min-w-[16rem] flex-1">
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="prenom@exemple.com"
+            placeholder={t("emailExemple")}
             required
             className={inputClass}
           />
         </Field>
 
-        <Field label="Rôle" hint={selected?.hint} className="min-w-[12rem]">
+        <Field label={t("role")} hint={t(`roles.${role}.aide`)} className="min-w-[12rem]">
           <select
             value={role}
             onChange={(event) => setRole(event.target.value)}
             className={inputClass}
           >
             {ROLES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+              <option key={option} value={option}>
+                {t(`roles.${option}.libelle`)}
               </option>
             ))}
           </select>
         </Field>
 
         <Button type="submit" pending={pending} className="mb-0.5">
-          Envoyer l&apos;invitation
+          {t("envoyer")}
         </Button>
       </form>
     </Card>
@@ -282,25 +291,22 @@ function WithoutAccount({
 }: {
   staff: { id: string; name: string; has_access: boolean }[];
 }) {
+  const t = useTranslations("pro.equipe.sansCompte");
   const orphans = staff.filter((member) => !member.has_access);
   if (orphans.length === 0) return null;
 
   return (
-    <div className="mt-5 rounded-xl border border-line bg-surface-muted/50 p-3.5">
+    <div className="mb-5 mt-5 rounded-xl border border-line bg-surface-muted/50 p-3.5">
       <p className="text-sm text-ink">
-        <span className="font-medium">
-          {orphans.length} prestataire{orphans.length > 1 ? "s" : ""}
-        </span>{" "}
-        {orphans.length > 1 ? "n'ont" : "n'a"} pas de compte :{" "}
+        {t.rich("titre", {
+          n: orphans.length,
+          gras: (texte) => <span className="font-medium">{texte}</span>,
+        })}{" "}
         <span className="text-muted">
           {orphans.map((member) => member.name).join(", ")}
         </span>
       </p>
-      <p className="mt-1 text-xs text-muted">
-        {orphans.length > 1 ? "Elles apparaissent" : "Elle apparaît"} à
-        l&apos;agenda et à la réservation sans se connecter. Invitez-{orphans.length > 1 ? "les" : "la"}{" "}
-        ci-dessus seulement si {orphans.length > 1 ? "elles doivent" : "elle doit"} ouvrir cet espace.
-      </p>
+      <p className="mt-1 text-xs text-muted">{t("aide", { n: orphans.length })}</p>
     </div>
   );
 }

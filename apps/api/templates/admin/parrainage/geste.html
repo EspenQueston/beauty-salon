@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+  Page intermediaire d'une correction de parrainage : valider, invalider,
+  annuler une remise. Elle rappelle sur quoi l'on agit et exige un motif,
+  qui part dans le journal d'audit.
+{% endcomment %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  › <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  › <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  › {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="paiement-decision">
+  <h2>{{ title }}</h2>
+  <p class="paiement-decision__aide">{{ aide }}</p>
+  <ul>
+    {% for objet in objets %}
+      <li><strong>{{ objet.libelle }}</strong></li>
+    {% endfor %}
+  </ul>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for objet in objets %}
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ objet.pk }}">
+    {% endfor %}
+    <input type="hidden" name="action" value="{{ action }}">
+    <input type="hidden" name="confirmer" value="1">
+    <fieldset class="module aligned">
+      {{ form.as_div }}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" value="Confirmer" class="default">
+      <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

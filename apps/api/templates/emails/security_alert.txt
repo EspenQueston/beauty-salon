@@ -1,0 +1,9 @@
+{% autoescape off %}{{ salutation }}
+
+{{ intro }}
+
+{{ aide }}
+{{ reset_url }}
+
+{{ t.pro_signature }}
+{% endautoescape %}

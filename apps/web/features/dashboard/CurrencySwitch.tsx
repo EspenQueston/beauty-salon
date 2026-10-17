@@ -45,11 +45,13 @@
  * que le salon change de devise. C'est le salon qui facture.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
 import { Button, Card, GhostButton, SectionTitle } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 
 interface Choix {
@@ -76,12 +78,6 @@ interface Etat {
   preview?: Apercu;
 }
 
-const PAYS: Record<string, string> = {
-  CG: "Congo-Brazzaville",
-  CD: "République démocratique du Congo",
-  CN: "Chine",
-};
-
 /** Le symbole qu'on lit sur un prix, plus court que le nom. */
 const COURT: Record<string, string> = {
   XAF: "FCFA",
@@ -95,6 +91,13 @@ function court(code: string): string {
   return COURT[code] ?? code;
 }
 
+/** Les devises connues (`Tenant.Currency`) et les compteurs de l'aperçu. */
+const DEVISES = [
+  "XAF", "XOF", "CDF", "CNY", "USD", "EUR",
+  "GHS", "GNF", "KES", "MWK", "NGN", "RWF", "TZS", "UGX", "ZMW",
+];
+const LIGNES = ["prestations", "options", "articles", "zones"];
+
 export function CurrencySwitch({
   tenantId,
   canEdit,
@@ -105,8 +108,23 @@ export function CurrencySwitch({
   /** Rappelé après une bascule : les prix affichés ailleurs ont changé. */
   onChanged: () => void;
 }) {
+  const t = useTranslations("pro.devise");
+  const { region } = useFormats();
   const toast = useToast();
   const [etat, setEtat] = useState<Etat | null>(null);
+
+  /** Le nom d'une devise dans la langue de l'espace ; le serveur l'écrit en français. */
+  const nomDevise = (choix: Choix | undefined, code: string) =>
+    DEVISES.includes(code) ? t(`devises.${code}`) : (choix?.label ?? code);
+
+  /** Le pays, nommé par le navigateur dans la langue de l'espace. */
+  const nomPays = (code: string) => {
+    try {
+      return new Intl.DisplayNames([region], { type: "region" }).of(code) ?? code;
+    } catch {
+      return code;
+    }
+  };
   const [apercu, setApercu] = useState<Apercu | null>(null);
   const [occupe, setOccupe] = useState(false);
 
@@ -142,7 +160,7 @@ export function CurrencySwitch({
       toast.error(
         erreur instanceof Error && erreur.message
           ? erreur.message
-          : "Aperçu impossible pour le moment.",
+          : t("apercuImpossible"),
       );
     } finally {
       setOccupe(false);
@@ -160,7 +178,7 @@ export function CurrencySwitch({
           { method: "POST", body: JSON.stringify({ currency: apercu.vers }) },
           tenantId,
         ),
-      { success: `Vos tarifs sont désormais en ${court(apercu.vers)}.` },
+      { success: t("ok", { devise: court(apercu.vers) }) },
     );
 
     setOccupe(false);
@@ -176,8 +194,8 @@ export function CurrencySwitch({
   if (!etat) {
     return (
       <Card id="devise">
-        <SectionTitle>Devise</SectionTitle>
-        <p className="text-sm text-muted">Chargement…</p>
+        <SectionTitle>{t("titre")}</SectionTitle>
+        <p className="text-sm text-muted">{t("chargement")}</p>
       </Card>
     );
   }
@@ -186,12 +204,13 @@ export function CurrencySwitch({
 
   return (
     <Card id="devise">
-      <SectionTitle>Devise</SectionTitle>
+      <SectionTitle>{t("titre")}</SectionTitle>
 
       <p className="text-sm text-muted">
-        Vos tarifs, vos acomptes et votre boutique sont en{" "}
-        <strong className="text-ink">{actuelle?.label ?? etat.currency}</strong>
-        . C&apos;est aussi la devise affichée par défaut sur votre mini-site.
+        {t.rich("actuelle", {
+          devise: nomDevise(actuelle, etat.currency),
+          gras: (texte) => <strong className="text-ink">{texte}</strong>,
+        })}
       </p>
 
       {/*
@@ -207,14 +226,14 @@ export function CurrencySwitch({
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
           <Icon name="bell" className="mt-0.5 size-4 shrink-0" />
           <span>
-            Votre salon est déclaré en{" "}
-            <strong>{PAYS[etat.country] ?? etat.country}</strong>, où l&apos;on
-            facture habituellement en{" "}
-            <strong>
-              {etat.choices.find((c) => c.value === etat.expected)?.label}
-            </strong>
-            . Choisissez-la ci-dessous si c&apos;est une erreur — ou gardez la
-            vôtre si c&apos;est voulu.
+            {t.rich("decalage", {
+              pays: nomPays(etat.country),
+              devise: nomDevise(
+                etat.choices.find((c) => c.value === etat.expected),
+                etat.expected,
+              ),
+              gras: (texte) => <strong>{texte}</strong>,
+            })}
           </span>
         </p>
       )}
@@ -249,14 +268,14 @@ export function CurrencySwitch({
             >
               <span className="flex w-full items-center justify-between gap-2">
                 <span className="truncate text-sm font-medium text-ink">
-                  {choix.label}
+                  {nomDevise(choix, choix.value)}
                 </span>
                 <span className="tabular shrink-0 text-xs text-muted">
                   {court(choix.value)}
                 </span>
               </span>
               <span className="text-[0.7rem] text-muted">
-                {sienne ? "Votre devise" : visee ? "Sélectionnée" : "Basculer"}
+                {sienne ? t("votre") : visee ? t("selectionnee") : t("basculer")}
               </span>
             </button>
           );
@@ -264,13 +283,13 @@ export function CurrencySwitch({
       </div>
 
       {occupe && !apercu && (
-        <p className="mt-4 text-sm text-muted">Lecture du taux du jour…</p>
+        <p className="mt-4 text-sm text-muted">{t("lectureTaux")}</p>
       )}
 
       {apercu && (
         <div className="mt-5 rounded-xl border border-line p-4">
           <p className="text-sm font-medium text-ink">
-            Passer de {court(apercu.de)} à {court(apercu.vers)}
+            {t("passer", { de: court(apercu.de), vers: court(apercu.vers) })}
           </p>
 
           {/*
@@ -280,26 +299,37 @@ export function CurrencySwitch({
           */}
           {apercu.exemple && (
             <p className="mt-2 text-sm text-muted">
-              <span className="text-ink">{apercu.exemple.nom}</span> :{" "}
-              <span className="tabular">{apercu.exemple.avant}</span>{" "}
-              {court(apercu.de)} devient{" "}
-              <span className="tabular font-semibold text-ink">
-                {apercu.exemple.apres}
-              </span>{" "}
-              {court(apercu.vers)}
+              {t.rich("exemple", {
+                nom: apercu.exemple.nom,
+                avant: apercu.exemple.avant,
+                apres: apercu.exemple.apres,
+                de: court(apercu.de),
+                vers: court(apercu.vers),
+                fort: (texte) => <span className="text-ink">{texte}</span>,
+                chiffre: (texte) => <span className="tabular">{texte}</span>,
+                resultat: (texte) => (
+                  <span className="tabular font-semibold text-ink">{texte}</span>
+                ),
+              })}
             </p>
           )}
 
           <p className="mt-1 text-xs text-muted">
-            Taux du jour : 1 {court(apercu.vers)} ={" "}
-            <span className="tabular">{apercu.inverse}</span> {court(apercu.de)}
+            {t.rich("taux", {
+              vers: court(apercu.vers),
+              de: court(apercu.de),
+              inverse: apercu.inverse,
+              chiffre: (texte) => <span className="tabular">{texte}</span>,
+            })}
           </p>
 
           {/* Deux colonnes sur téléphone : quatre compteurs courts. */}
           <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {Object.entries(apercu.lignes).map(([nom, combien]) => (
               <div key={nom} className="rounded-lg bg-surface-muted px-3 py-2">
-                <dt className="text-xs capitalize text-muted">{nom}</dt>
+                <dt className="text-xs capitalize text-muted">
+                  {LIGNES.includes(nom) ? t(`lignes.${nom}`) : nom}
+                </dt>
                 <dd className="tabular text-lg font-semibold text-ink">
                   {combien}
                 </dd>
@@ -309,20 +339,16 @@ export function CurrencySwitch({
 
           <p className="mt-4 flex items-start gap-2 text-xs text-muted">
             <Icon name="receipt" className="mt-0.5 size-3.5 shrink-0" />
-            <span>
-              Vos rendez-vous passés et vos écritures comptables gardent leur
-              devise d&apos;origine : ce qui a été encaissé en {court(apercu.de)}{" "}
-              reste en {court(apercu.de)}.
-            </span>
+            <span>{t("historique", { de: court(apercu.de) })}</span>
           </p>
 
           {canEdit && (
             <div className="mt-4 flex flex-wrap gap-2">
               <Button type="button" onClick={basculer} pending={occupe}>
-                Convertir en {court(apercu.vers)}
+                {t("convertir", { vers: court(apercu.vers) })}
               </Button>
               <GhostButton type="button" onClick={() => setApercu(null)}>
-                Annuler
+                {t("annuler")}
               </GhostButton>
             </div>
           )}

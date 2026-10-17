@@ -48,6 +48,8 @@ class MediaAssetSerializer(serializers.ModelSerializer):
             "height",
             "position",
             "featured",
+            "service",
+            "staff_member",
             "created_at",
         )
         read_only_fields = ("content_type", "byte_size", "width", "height")
@@ -55,6 +57,24 @@ class MediaAssetSerializer(serializers.ModelSerializer):
 
     def get_url(self, asset) -> str:
         return media_url(asset, self.context.get("request"))
+
+    def _du_salon(self, objet):
+        """Une prestation ou une prestataire de ce salon, et d'aucun autre.
+
+        Les politiques RLS masquent deja les lignes des autres salons ; le
+        controle explicite garde la regle lisible et independante d'elles.
+        """
+        request = self.context.get("request")
+        tenant_id = getattr(request, "tenant_id", None)
+        if objet is not None and tenant_id is not None and str(objet.tenant_id) != str(tenant_id):
+            raise serializers.ValidationError("Introuvable dans ce salon.")
+        return objet
+
+    def validate_service(self, service):
+        return self._du_salon(service)
+
+    def validate_staff_member(self, membre):
+        return self._du_salon(membre)
 
     def validate_file(self, uploaded):
         """Le type declare par le navigateur ne suffit pas, mais il elimine

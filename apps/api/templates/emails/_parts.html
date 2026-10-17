@@ -3,10 +3,9 @@
 Fragments partagés par tous les e-mails.
 ===========================================================================
 
-Chacun est un `{% block %}` réutilisable via `{% include %}` avec `with`.
-Ils existent pour une raison simple : le CSS en ligne d'un e-mail est
-verbeux, et le recopier dans douze gabarits garantit qu'ils divergeront au
-premier ajustement.
+Chacun s'appelle par `{% include %}` avec `with part="…"`. Ils existent pour
+une raison simple : le CSS en ligne d'un e-mail est verbeux, et le recopier
+dans douze gabarits garantit qu'ils divergeront au premier ajustement.
 
 Tout ce qui suit tient sans image, sans police externe et sans requête
 média — les requêtes média ne sont qu'un supplément, jamais une condition.
@@ -16,7 +15,18 @@ média — les requêtes média ne sont qu'un supplément, jamais une condition.
   Titre du message.
 --------------------------------------------------------------------- {% endcomment %}
 {% if part == "title" %}
-<h1 class="h1 ink" style="margin:0 0 10px;font:600 22px/30px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">{{ text }}</h1>
+<h1 class="h1 ink" style="margin:0 0 8px;font:700 24px/32px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;letter-spacing:-.02em;">{{ text }}</h1>
+{% endif %}
+
+
+{% comment %} ---------------------------------------------------------------
+  Phrase d'accroche, sous le titre.
+
+  Plus grande que le corps et plus foncée qu'un paragraphe ordinaire : c'est
+  la ligne qui décide si la suite se lit. Une seule par message.
+--------------------------------------------------------------------- {% endcomment %}
+{% if part == "lead" %}
+<p class="lead muted" style="margin:0 0 20px;font:400 15px/23px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#55555f;">{{ text }}</p>
 {% endif %}
 
 
@@ -24,23 +34,35 @@ média — les requêtes média ne sont qu'un supplément, jamais une condition.
   Paragraphe courant.
 --------------------------------------------------------------------- {% endcomment %}
 {% if part == "text" %}
-<p class="muted" style="margin:0 0 14px;font:400 15px/23px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#55555f;">{{ text }}</p>
+<p class="muted" style="margin:0 0 14px;font:400 14px/22px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#55555f;">{{ text }}</p>
+{% endif %}
+
+
+{% comment %} ---------------------------------------------------------------
+  Un fait, dans une cellule de la grille.
+
+  Appelé par `_details.html`, jamais directement : c'est lui qui décide du
+  découpage en colonnes.
+--------------------------------------------------------------------- {% endcomment %}
+{% if part == "fact" %}
+<div class="etiq muted" style="font:600 11px/15px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#67676f;letter-spacing:.07em;text-transform:uppercase;">{{ label }}</div>
+<div class="val ink" style="margin-top:3px;font:{% if strong %}700{% else %}500{% endif %} 16px/22px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">{{ value }}</div>
 {% endif %}
 
 
 {% comment %} ---------------------------------------------------------------
   Montant mis en avant.
 
-  Un acompte ou un total se lit en diagonale : il mérite sa taille. C'est
-  le seul chiffre qu'on cherche en ouvrant le message.
+  Un acompte ou un total se lit en diagonale : il mérite sa taille. C'est le
+  seul chiffre qu'on cherche en ouvrant le message.
 --------------------------------------------------------------------- {% endcomment %}
 {% if part == "amount" %}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr>
-    <td class="soft line" style="background:#faf7f9;border:1px solid #ece7ea;border-radius:12px;padding:16px 18px;text-align:center;">
-      <div class="muted" style="font:600 11px/16px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#82828e;letter-spacing:.06em;text-transform:uppercase;">{{ label }}</div>
-      <div class="big ink" style="margin-top:4px;font:600 30px/38px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">{{ text }}</div>
-      {% if hint %}<div class="muted" style="margin-top:4px;font:400 13px/19px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#82828e;">{{ hint }}</div>{% endif %}
+    <td class="soft line cell" style="background:#faf8fa;border:1px solid #ebe6ea;border-radius:14px;padding:18px 20px;text-align:center;">
+      <div class="etiq muted" style="font:600 11px/16px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#67676f;letter-spacing:.07em;text-transform:uppercase;">{{ label }}</div>
+      <div class="big ink" style="margin-top:5px;font:700 32px/40px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;letter-spacing:-.02em;">{{ text }}</div>
+      {% if hint %}<div class="muted" style="margin-top:5px;font:400 13px/19px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#67676f;">{{ hint }}</div>{% endif %}
     </td>
   </tr>
 </table>
@@ -53,12 +75,16 @@ média — les requêtes média ne sont qu'un supplément, jamais une condition.
   Construit en tableau et non en `<a>` stylé : Outlook ignore le padding
   d'un lien en ligne, et le bouton se réduit alors au texte seul, sans zone
   cliquable autour. Le tableau, lui, se rend partout.
+
+  Sur téléphone la règle `.btn a { display:block }` l'étend sur toute la
+  largeur : une cible de 48 px de haut qui traverse l'écran se touche sans
+  viser, ce qu'un bouton de 140 px ne permet pas au pouce.
 --------------------------------------------------------------------- {% endcomment %}
 {% if part == "button" %}
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:4px 0 18px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="btn" style="margin:6px 0 18px;">
   <tr>
-    <td style="background:{{ color|default:'#B4436C' }};border-radius:10px;">
-      <a href="{{ url }}" style="display:inline-block;padding:13px 26px;font:600 15px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#ffffff;text-decoration:none;">{{ text }}</a>
+    <td bgcolor="{{ color|default:'#B4436C' }}" style="background:{{ color|default:'#B4436C' }};border-radius:12px;">
+      <a href="{{ url }}" style="display:inline-block;padding:15px 28px;font:700 15px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#ffffff;text-decoration:none;">{{ text }}</a>
     </td>
   </tr>
 </table>
@@ -66,16 +92,26 @@ média — les requêtes média ne sont qu'un supplément, jamais une condition.
 
 
 {% comment %} ---------------------------------------------------------------
+  Lien secondaire, sous un bouton.
+--------------------------------------------------------------------- {% endcomment %}
+{% if part == "link" %}
+<p style="margin:0 0 18px;font:600 14px/21px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <a href="{{ url }}" style="color:{{ color|default:'#B4436C' }};text-decoration:none;">{{ text }} &rarr;</a>
+</p>
+{% endif %}
+
+
+{% comment %} ---------------------------------------------------------------
   Avertissement.
 
-  Un filet coloré à gauche plutôt qu'un fond saturé : le fond ressort mal
-  en mode sombre, et certains clients le rendent en gris uni.
+  Un filet coloré à gauche plutôt qu'un fond saturé : le fond ressort mal en
+  mode sombre, et certains clients le rendent en gris uni.
 --------------------------------------------------------------------- {% endcomment %}
 {% if part == "notice" %}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr>
-    <td class="soft" style="background:#fdf6ec;border-left:4px solid #e0a020;border-radius:0 10px 10px 0;padding:13px 16px;">
-      <strong class="ink" style="display:block;font:600 14px/21px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">{{ title }}</strong>
+    <td class="soft cell" style="background:#fdf6ec;border-left:4px solid #e0a020;border-radius:0 12px 12px 0;padding:14px 16px;">
+      <strong class="ink" style="display:block;font:700 14px/21px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">{{ title }}</strong>
       {% if text %}<span class="muted" style="display:block;margin-top:3px;font:400 14px/21px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#55555f;">{{ text }}</span>{% endif %}
     </td>
   </tr>
@@ -87,10 +123,11 @@ média — les requêtes média ne sont qu'un supplément, jamais une condition.
   Séparateur.
 --------------------------------------------------------------------- {% endcomment %}
 {% if part == "rule" %}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0;">
-  <tr><td class="line" style="border-top:1px solid #ece7ea;font-size:0;line-height:0;">&nbsp;</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+  <tr><td class="line" style="border-top:1px solid #ebe6ea;font-size:0;line-height:0;">&nbsp;</td></tr>
 </table>
 {% endif %}
+
 
 {% comment %} ---------------------------------------------------------------
   Fiche de contact d'une cliente — e-mails du salon uniquement.
@@ -105,11 +142,17 @@ média — les requêtes média ne sont qu'un supplément, jamais une condition.
 {% if part == "contact" %}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr>
-    <td class="soft line" style="background:#faf7f9;border:1px solid #ece7ea;border-radius:12px;padding:14px 16px;">
-      <div class="ink" style="font:600 16px/22px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">{{ name }}</div>
+    <td class="soft line cell" style="background:#faf8fa;border:1px solid #ebe6ea;border-radius:14px;padding:16px 18px;">
+      {% comment %}
+        Le surtitre n apparait que si l appelant en fournit un : une fiche
+        seule dans un message n a rien a annoncer, et un bloc vide se lit
+        comme une variable oubliee — c est meme ce que verifie le banc.
+      {% endcomment %}
+      {% if label %}<div class="etiq muted" style="font:600 11px/15px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#67676f;letter-spacing:.07em;text-transform:uppercase;">{{ label }}</div>{% endif %}
+      <div class="ink" style="margin-top:3px;font:700 17px/24px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">{{ name }}</div>
       {% if phone %}
-      <div style="margin-top:6px;">
-        <a href="tel:{{ phone|cut:' ' }}" style="font:600 15px/22px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:{{ color|default:'#B4436C' }};text-decoration:none;">{{ phone }}</a>
+      <div style="margin-top:7px;">
+        <a href="tel:{{ phone|cut:' ' }}" style="font:700 16px/22px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:{{ color|default:'#B4436C' }};text-decoration:none;">{{ phone }}</a>
       </div>
       {% endif %}
       {% if email %}

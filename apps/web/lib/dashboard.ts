@@ -11,6 +11,7 @@
  */
 
 import { browserApi } from "./api";
+import { langueDeLaPage } from "./langue-page";
 
 export interface Membership {
   id: string;
@@ -31,8 +32,24 @@ export interface SessionUser {
   email: string;
   display_name: string;
   is_platform_admin: boolean;
+  /** L'adresse a été prouvée par un clic sur le lien reçu. */
+  email_verified?: boolean;
+  /** Langue retenue pour écrire à ce compte (notifications, e-mails). */
+  locale?: string;
+  /** Double authentification active sur ce compte. */
+  mfa_enabled?: boolean;
+  /** Après une connexion par code de secours : combien il en reste. */
+  codes_de_secours_restants?: number;
   memberships: Membership[];
 }
+
+/**
+ * Une requête de fond : rafraîchissement automatique, sans geste de
+ * l'utilisatrice. Le serveur ne la compte pas comme une activité — un onglet
+ * laissé ouvert ne garde plus la session en vie indéfiniment (audit du
+ * 16/10/2026, C-05).
+ */
+export const DE_FOND: RequestInit = { headers: { "X-Activite": "fond" } };
 
 export class DashboardError extends Error {
   constructor(
@@ -52,6 +69,12 @@ export class DashboardError extends Error {
     super(message);
   }
 }
+
+/**
+ * Événement de fenêtre : « l'abonnement a peut-être changé, relisez-le ».
+ * Émis ici sur un 402, et par la page Abonnement après une déclaration.
+ */
+export const ABONNEMENT_CHANGE = "beauty-salon:abonnement";
 
 function readCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
@@ -89,6 +112,8 @@ export async function dashboardFetch<T>(
   // Necessaire uniquement si le compte gere plusieurs salons ; le backend
   // verifie de toute facon que le membership existe.
   if (tenantId) headers["X-Tenant-Id"] = tenantId;
+  // Voir `langueDeLaPage` ; un appelant peut imposer la sienne.
+  if (!headers["Accept-Language"]) Object.assign(headers, langueDeLaPage());
 
   const response = await fetch(`${browserApi()}${path}`, {
     ...init,
@@ -100,6 +125,11 @@ export async function dashboardFetch<T>(
 
   const body = await response.json().catch(() => null);
   if (!response.ok) {
+    // 402 : l'abonnement a expiré entre deux chargements. La bannière de la
+    // coquille relit l'accès et le dit, quel que soit l'écran qui écrivait.
+    if (response.status === 402 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event(ABONNEMENT_CHANGE));
+    }
     throw new DashboardError(
       response.status,
       body?.code ?? "error",
@@ -113,25 +143,69 @@ export async function dashboardFetch<T>(
   return body as T;
 }
 
-export async function login(email: string, password: string): Promise<SessionUser> {
+/** Mot de passe juste, mais la double authentification attend un code. */
+export interface CodeRequis {
+  mfa_required: true;
+  detail: string;
+}
+
+async function postAuth<T>(path: string, body: unknown): Promise<T> {
   const csrf = await ensureCsrfToken();
-  const response = await fetch(`${browserApi()}/api/v1/auth/login`, {
+  const response = await fetch(`${browserApi()}${path}`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
-    body: JSON.stringify({ email, password }),
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf, ...langueDeLaPage() },
+    body: JSON.stringify(body),
   });
 
-  const body = await response.json().catch(() => null);
+  const data = await response.json().catch(() => null);
   if (!response.ok) {
     throw new DashboardError(
       response.status,
-      body?.code ?? "error",
-      body?.detail ?? "Connexion impossible.",
+      data?.code ?? "error",
+      data?.detail ?? "Connexion impossible.",
     );
   }
-  return body as SessionUser;
+  return data as T;
 }
+
+export function login(email: string, password: string): Promise<SessionUser | CodeRequis> {
+  return postAuth("/api/v1/auth/login", { email, password });
+}
+
+/** Le code de l'application d'authentification (ou un code de secours). */
+export function verifierCodeConnexion(code: string): Promise<SessionUser> {
+  return postAuth("/api/v1/auth/mfa/verify", { code });
+}
+
+export interface EtatMfa {
+  enabled: boolean;
+  codes_restants: number;
+}
+
+export const mfa = {
+  etat: () => dashboardFetch<EtatMfa>("/api/v1/auth/mfa"),
+  preparer: () =>
+    dashboardFetch<{ qr_svg: string; secret: string }>("/api/v1/auth/mfa/setup", {
+      method: "POST",
+      body: "{}",
+    }),
+  confirmer: (code: string, password: string) =>
+    dashboardFetch<{ enabled: true; codes: string[] }>("/api/v1/auth/mfa/confirm", {
+      method: "POST",
+      body: JSON.stringify({ code, password }),
+    }),
+  desactiver: (code: string, password: string) =>
+    dashboardFetch<{ enabled: false }>("/api/v1/auth/mfa/disable", {
+      method: "POST",
+      body: JSON.stringify({ code, password }),
+    }),
+  nouveauxCodes: (password: string) =>
+    dashboardFetch<{ codes: string[] }>("/api/v1/auth/mfa/recovery-codes", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+};
 
 export async function logout(): Promise<void> {
   await dashboardFetch("/api/v1/auth/logout", { method: "POST" });
@@ -154,7 +228,7 @@ async function accountPost<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${browserApi()}/api/v1/account${path}`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf, ...langueDeLaPage() },
     body: JSON.stringify(body),
   });
 
@@ -195,8 +269,10 @@ export interface SignupPayload {
   timezone_name: string;
   currency: string;
   accepts_terms: boolean;
-  /** Couleurs composées sur la page d'accueil, reprises telles quelles. */
-  theme_config?: Record<string, string>;
+  /** Palette obligatoire choisie pendant l'inscription. */
+  theme_config: Record<string, string>;
+  /** Code du parrain, facultatif. Un code inconnu fait refuser l'inscription. */
+  code_parrainage?: string;
 }
 
 /**
@@ -216,6 +292,33 @@ export interface SignupResult {
 
 export function signup(payload: SignupPayload): Promise<SignupResult> {
   return accountPost<SignupResult>("/signup", payload);
+}
+
+/** Le clic sur le lien de vérification d'adresse. */
+export function verifierAdresse(token: string): Promise<{ detail: string; verified: boolean }> {
+  return accountPost("/email/verify", { token });
+}
+
+/** Renvoyer le lien de vérification, depuis une session ouverte. */
+export function renvoyerVerification(): Promise<{ detail: string; verified: boolean }> {
+  return dashboardFetch("/api/v1/auth/email/verify/resend", { method: "POST", body: "{}" });
+}
+
+export interface CodeParrainageVerifie {
+  valide: boolean;
+  code?: string;
+  type?: "salon" | "utilisateur";
+  /** Nom du salon parrain ; vide pour une cliente, dont le nom reste privé. */
+  salon?: string;
+}
+
+/** Un code de parrainage existe-t-il ? Rien d'autre n'en sort. */
+export async function verifierCodeParrainage(code: string): Promise<CodeParrainageVerifie | null> {
+  const response = await fetch(
+    `${browserApi()}/api/v1/account/parrainage/${encodeURIComponent(code)}`,
+  );
+  if (!response.ok) return null;
+  return response.json();
 }
 
 export async function checkSlug(
@@ -261,6 +364,7 @@ export interface InvitationPreview {
 export async function fetchInvitation(token: string): Promise<InvitationPreview> {
   const response = await fetch(
     `${browserApi()}/api/v1/account/invitation?token=${encodeURIComponent(token)}`,
+    { headers: langueDeLaPage() },
   );
   const data = await response.json().catch(() => null);
   if (!response.ok) {

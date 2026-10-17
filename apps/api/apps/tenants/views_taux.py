@@ -68,7 +68,8 @@ class PublicRateView(APIView):
             return Response({"de": tenant.currency, "vers": cible, "taux": "1"})
 
         try:
-            facteur = taux(tenant.currency, cible)
+            # Aide a la lecture : un taux de la veille vaut mieux que rien.
+            facteur = taux(tenant.currency, cible, perime_accepte=True)
         except TauxIndisponible as exc:
             # 503 : la demande est bonne, c'est le service de taux qui ne
             # repond pas. L'ecran retombe alors sur la devise du salon, ce

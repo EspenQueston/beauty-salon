@@ -1,0 +1,49 @@
+{% extends "admin/base_site.html" %}
+{% comment %}
+  Page intermediaire d'un geste exceptionnel sur des abonnements :
+  prolonger, suspendre, reactiver.
+
+  Elle rappelle sur quels salons on agit et exige une justification, qui
+  part dans l'historique de l'abonnement et dans le journal d'audit. Le
+  formulaire renvoie a la meme action de la liste (champ `action` et cases
+  cochees), comme le fait la confirmation de suppression de Django.
+{% endcomment %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  › <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  › <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  › {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="paiement-decision">
+  <h2>{{ title }}</h2>
+  <p class="paiement-decision__aide">Salons concernés :</p>
+  <ul>
+    {% for abonnement in abonnements %}
+      <li><strong>{{ abonnement.tenant }}</strong> — {{ abonnement.get_status_display }},
+        couvert jusqu'au {{ abonnement.current_period_end|date:"d/m/Y" }}</li>
+    {% endfor %}
+  </ul>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for abonnement in abonnements %}
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ abonnement.pk }}">
+    {% endfor %}
+    <input type="hidden" name="action" value="{{ action }}">
+    <input type="hidden" name="confirmer" value="1">
+    <fieldset class="module aligned">
+      {{ form.as_div }}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" value="Confirmer" class="default">
+      <a href="{% url opts|admin_urlname:'changelist' %}" class="button cancel-link">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -29,6 +29,7 @@
  * s'arrête au milieu sans explication est pire que pas de parcours du tout.
  */
 
+import { useTranslations } from "next-intl";
 import type { ClientBooking } from "./types";
 import { SalonIcon, type SalonIconName } from "@/features/salon/icons";
 
@@ -51,8 +52,10 @@ const ORDER = [
 ] as const;
 
 export function Tracker({ booking }: { booking: ClientBooking }) {
+  const t = useTranslations("espace");
   // Sortie de route : rien à suivre, tout à expliquer.
-  if (booking.status === "cancelled" || booking.status === "no_show") return null;
+  if (booking.status === "cancelled" || booking.status === "no_show")
+    return null;
 
   const steps: Step[] = [];
 
@@ -63,48 +66,50 @@ export function Tracker({ booking }: { booking: ClientBooking }) {
       key: "pending_payment",
       label: "Acompte",
       icon: "calendar",
-      detail: "Réglez l'acompte pour que votre créneau soit tenu.",
+      detail: t("suivi.acompteCorps"),
     });
     steps.push({
       key: "requested",
-      label: "À valider",
+      label: t("suivi.aValider"),
       icon: "clock",
-      detail: "Le salon vérifie votre versement. Vous recevrez un e-mail.",
+      detail: t("suivi.aValiderCorps"),
     });
   } else {
     steps.push({
       key: "requested",
-      label: "Demandé",
+      label: t("suivi.demande"),
       icon: "clock",
-      detail: "Le salon vous confirme sous peu. Vous recevrez un e-mail.",
+      detail: t("suivi.demandeCorps"),
     });
   }
 
   steps.push(
     {
       key: "confirmed",
-      label: "Confirmé",
+      label: t("suivi.confirme"),
       icon: "check",
-      detail: "C'est réservé. Présentez votre code en arrivant au salon.",
+      detail: t("suivi.confirmeCorps"),
     },
     {
       key: "checked_in",
-      label: "Arrivée",
+      label: t("suivi.arrivee"),
       icon: "store",
-      detail: "Le salon vous a enregistrée. Bonne séance.",
+      detail: t("suivi.arriveeCorps"),
     },
     {
       key: "completed",
-      label: "Terminé",
+      label: t("suivi.termine"),
       icon: "sparkle",
-      detail: "C'est fait. Votre avis aiderait les prochaines clientes.",
+      detail: t("suivi.termineCorps"),
     },
   );
 
   const rank = ORDER.indexOf(booking.status as (typeof ORDER)[number]);
   const current = Math.max(
     0,
-    steps.findIndex((step) => ORDER.indexOf(step.key as (typeof ORDER)[number]) >= rank),
+    steps.findIndex(
+      (step) => ORDER.indexOf(step.key as (typeof ORDER)[number]) >= rank,
+    ),
   );
   const detail = steps[current]?.detail ?? "";
 

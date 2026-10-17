@@ -24,6 +24,8 @@
  * arguments : sans lui, l'ordre se devine, il ne se voit pas.
  */
 
+import { useTranslations } from "next-intl";
+
 import { SalonIcon, type SalonIconName } from "./icons";
 import { PrimaryLink } from "./ui";
 import type { PublicSalon } from "@/lib/types";
@@ -35,6 +37,7 @@ interface Step {
 }
 
 export function HowItWorks({ salon }: { salon: PublicSalon }) {
+  const t = useTranslations("salon.etapes");
   // Un acompte est demandé dès qu'une prestation en porte un. On ne l'annonce
   // pas « au cas où » : une cliente à qui l'on parle d'acompte alors qu'il n'y
   // en a pas referme la page.
@@ -44,20 +47,18 @@ export function HowItWorks({ salon }: { salon: PublicSalon }) {
 
   const steps: Step[] = [
     {
-      title: "Choisissez votre prestation",
-      body: "Le tarif et la durée sont affichés. Rien ne se décide sur cette première étape.",
+      title: t("choisirTitre"),
+      body: t("choisirCorps"),
       icon: "sparkle",
     },
     {
-      title: "Prenez un créneau libre",
-      body: "Seules les heures réellement disponibles apparaissent. Deux personnes ne peuvent pas prendre la même.",
+      title: t("creneauTitre"),
+      body: t("creneauCorps"),
       icon: "calendar",
     },
     {
-      title: asksDeposit ? "Réglez l'acompte" : "C'est réservé",
-      body: asksDeposit
-        ? "Scannez le QR du salon, envoyez votre capture. Le créneau vous est gardé pendant ce temps."
-        : "Vous recevez la confirmation par e-mail, avec votre code d'arrivée à montrer au salon.",
+      title: asksDeposit ? t("acompteTitre") : t("confirmeTitre"),
+      body: asksDeposit ? t("acompteCorps") : t("confirmeCorps"),
       icon: asksDeposit ? "star" : "check",
     },
   ];
@@ -110,7 +111,7 @@ export function HowItWorks({ salon }: { salon: PublicSalon }) {
 
       <div className="mt-6 flex justify-center">
         <PrimaryLink href="/reserver" icon="calendar" className="px-6 py-3">
-          Commencer ma réservation
+          {t("commencer")}
         </PrimaryLink>
       </div>
     </div>

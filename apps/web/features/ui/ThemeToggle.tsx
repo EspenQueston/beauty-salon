@@ -3,9 +3,9 @@
 /**
  * Bascule clair / sombre.
  *
- * Trois états, pas deux : **Système**, **Clair**, **Sombre**. Sans le
- * premier, on force un choix à quelqu'un qui a déjà réglé son téléphone en
- * sombre le soir — et on le lui force pour toujours.
+ * Trois états, pas deux : **Système**, **Clair**, **Sombre**. Le sombre est
+ * le défaut du produit, tant que rien n'a été choisi ; « Système » reste
+ * proposé à qui préfère suivre le réglage de son téléphone.
  *
  * Le choix est écrit dans `localStorage` et posé sur `<html>` en
  * `data-theme` ; c'est ce que lisent les feuilles de style. Le script inline
@@ -13,6 +13,7 @@
  * clignote en blanc avant de passer au sombre.
  */
 
+import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 
 export type ThemeChoice = "system" | "light" | "dark";
@@ -21,11 +22,6 @@ export const THEME_KEY = "beauty-salon-theme";
 
 const ORDER: ThemeChoice[] = ["system", "light", "dark"];
 
-const LABELS: Record<ThemeChoice, string> = {
-  system: "Thème du système",
-  light: "Thème clair",
-  dark: "Thème sombre",
-};
 
 // ---------------------------------------------------------------------------
 // Le thème est un état externe à React : il vit dans localStorage et sur
@@ -49,15 +45,16 @@ function subscribe(listener: () => void) {
 function snapshot(): ThemeChoice {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark" || stored === "system") return stored;
+    if (stored === "light" || stored === "dark" || stored === "system")
+      return stored;
   } catch {
-    // Navigation privée, stockage refusé : on retombe sur le système.
+    // Navigation privée, stockage refusé : on retombe sur le défaut.
   }
-  return "system";
+  return "dark";
 }
 
-/** Le serveur ne connaît pas le choix : il rend l'état neutre. */
-const serverSnapshot = (): ThemeChoice => "system";
+/** Le serveur ne connaît pas le choix : il rend le défaut, le sombre. */
+const serverSnapshot = (): ThemeChoice => "dark";
 
 /**
  * Le même choix, exposé aux autres surfaces qui le proposent.
@@ -91,18 +88,25 @@ function choose(value: ThemeChoice) {
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
+  const t = useTranslations("theme");
   const choice = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
-  const label = LABELS[choice];
+  const label = t(choice);
 
   return (
     <button
       type="button"
       onClick={() => choose(ORDER[(ORDER.indexOf(choice) + 1) % ORDER.length])}
       title={label}
-      aria-label={`${label} — changer`}
+      aria-label={t("changer", { theme: label })}
       className={`inline-flex size-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition hover:bg-surface-hover hover:text-ink ${className}`}
     >
-      {choice === "light" ? <SunIcon /> : choice === "dark" ? <MoonIcon /> : <SystemIcon />}
+      {choice === "light" ? (
+        <SunIcon />
+      ) : choice === "dark" ? (
+        <MoonIcon />
+      ) : (
+        <SystemIcon />
+      )}
     </button>
   );
 }
@@ -136,7 +140,10 @@ function MoonIcon() {
       aria-hidden
       className="size-[1.15rem]"
     >
-      <path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" strokeLinejoin="round" />
+      <path
+        d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

@@ -33,7 +33,12 @@ def api_exception_handler(exc, context):
     if response is None:
         return None
 
-    code = getattr(exc, "default_code", None)
+    # Le code porte par le detail d'abord : une permission peut en donner un
+    # precis (« offre_pro_requise ») que le tableau de bord traduit en
+    # invitation a passer a Pro. A defaut, celui de la classe d'exception.
+    code = getattr(getattr(exc, "detail", None), "code", None) or getattr(
+        exc, "default_code", None
+    )
     detail = response.data
 
     if isinstance(detail, dict) and "detail" in detail:

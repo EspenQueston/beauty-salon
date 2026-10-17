@@ -11,3 +11,6 @@ class SchedulingConfig(AppConfig):
 
     name = "apps.scheduling"
     verbose_name = "Agenda"
+
+    def ready(self):
+        from . import signals  # noqa: F401

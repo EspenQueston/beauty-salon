@@ -1,0 +1,22 @@
+# Ce qui ne doit jamais entrer dans l'image de production.
+#
+# L'environnement virtuel est reconstruit dans l'image, pour Linux : celui du
+# poste est pour Windows, et souvent abime (voir la note sur les fichiers
+# renommes « (1) »).
+.venv/
+**/__pycache__/
+*.pyc
+
+# Donnees locales : les medias du poste et les fichiers collectes ne sont
+# pas ceux de la production, qui vivent dans des volumes.
+media/
+staticfiles/
+vues/
+
+# Secrets et reliquats de tests.
+.env
+.env.*
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/

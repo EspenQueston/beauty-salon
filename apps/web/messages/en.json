@@ -1,0 +1,3639 @@
+{
+  "plateforme": {
+    "nom": "Beauty Salon",
+    "promesse": "The booking platform for beauty professionals."
+  },
+  "langue": {
+    "etiquette": "Language",
+    "choisir": "Choose a language",
+    "lire": "Read this site in…"
+  },
+  "commun": {
+    "creerSalon": "Create my salon",
+    "seConnecter": "Sign in",
+    "reserver": "Book",
+    "ouvrirMenu": "Open menu",
+    "fermerMenu": "Close menu",
+    "prendreRdv": "Book an appointment",
+    "fenetre": {
+      "fermer": "Close",
+      "nonEnregistre": "Unsaved changes",
+      "perte": "Your changes have not been saved.",
+      "continuer": "Keep editing",
+      "abandonner": "Discard"
+    },
+    "motDePasse": {
+      "afficher": "Show password",
+      "masquer": "Hide password"
+    },
+    "installer": {
+      "votreEspace": "your space",
+      "titre": "Install {nom}",
+      "ios": "Tap <gras>Share</gras>, then <gras>Add to Home Screen</gras>. You'll then open it like an app.",
+      "autre": "Direct access from your home screen, and your pages stay readable even offline.",
+      "compris": "Got it",
+      "plusTard": "Later",
+      "installer": "Install"
+    }
+  },
+  "accueil": {
+    "titreOnglet": "Beauty Salon — online booking for beauty professionals",
+    "description": "Your own page, online booking and a diary for hairdressers, nail technicians, make-up artists and barbers in Congo, the DRC and the diaspora.",
+    "promesse": [
+      "Get booked",
+      "Do the work",
+      "Get paid"
+    ],
+    "metiers": [
+      "Hair",
+      "Nails",
+      "Make-up",
+      "Barbering"
+    ],
+    "territoires": [
+      "Congo-Brazzaville",
+      "DR Congo",
+      "China"
+    ],
+    "intro": "The booking platform for beauty professionals: hair, nails, make-up, barbering. Your own page, one diary, no double bookings.",
+    "voirFilm": "Watch the film",
+    "dureeFilm": "29 s",
+    "essai": "Free trial. No card details asked.",
+    "utilisePar": "Used by salons in",
+    "atouts": {
+      "titre": "What you get",
+      "sous": "A mini-site to share, organised bookings and your information in one place.",
+      "vitrine": {
+        "titre": "Your own page",
+        "corps": "A page in your name, with your photos, your prices and your opening hours. One link to share on WhatsApp, Instagram or TikTok.",
+        "corpsCourt": "A page in your name, with your photos and prices. One link to share on WhatsApp or Instagram.",
+        "etiquette": "Shopfront",
+        "corpsMobile": "Your services and photos, in one link."
+      },
+      "agenda": {
+        "titre": "Online booking",
+        "corps": "Your clients book at any hour, on a slot that is genuinely free. Two people can never take the same place.",
+        "corpsCourt": "Your clients book at any hour, on a slot that is genuinely free. Never the same place twice.",
+        "etiquette": "Diary",
+        "corpsMobile": "Clients book your available times."
+      },
+      "gestion": {
+        "titre": "Diary and clients",
+        "corps": "Your appointments, your team and your client list in one place. Your data stays yours, exportable at any time.",
+        "corpsCourt": "Your appointments, your team and your clients in one place. Your data stays yours.",
+        "etiquette": "Admin",
+        "corpsMobile": "Your appointments and team together."
+      },
+      "allerA": "Go to “{titre}”",
+      "export": {
+        "titre": "Export your data",
+        "corpsCourt": "Find your information and export your data from your dashboard.",
+        "corps": "Find your information and export your data from your dashboard.",
+        "etiquette": "Your data",
+        "corpsMobile": "Your information, ready to export."
+      }
+    },
+    "film": {
+      "surtitre": "Twenty-nine seconds",
+      "titre": "The product, in one film",
+      "sous": "A day at the salon: the requests coming in, the slot taken exactly once, the diary keeping up. Original music, no voice-over."
+    },
+    "apercu": {
+      "surtitre": "Try it before you sign up",
+      "titre": "What your page will look like",
+      "sous": "Type your salon's name, pick your colours. No sign-up, no email asked."
+    },
+    "etapes": {
+      "titre": "How it works",
+      "sous": "Create your space, prepare your services, then share your link after approval.",
+      "creer": {
+        "titre": "Create your salon",
+        "corps": "Choose your salon name, address and country. Create your account and confirm your email.",
+        "resume": "Choose your name and create your workspace."
+      },
+      "remplir": {
+        "titre": "Fill your shopfront",
+        "corps": "Services, prices, opening hours, photos. Three services are enough to start.",
+        "resume": "Add your services, prices and opening hours."
+      },
+      "partager": {
+        "titre": "Share your link",
+        "corps": "On WhatsApp, in a story, or as a QR code on the salon wall. Bookings land in your diary.",
+        "resume": "Once approved, share your link and receive bookings."
+      }
+    },
+    "questions": {
+      "titre": "Common questions",
+      "sous": "Your trial, publication and data: answers before you start.",
+      "prix": {
+        "q": "Do I have to pay to start?",
+        "a": "No. You get a 14-day Standard trial, or 30 days with a valid referral code, without a bank card. You then choose a paid plan to continue taking bookings. Signing up does not authorise an automatic charge."
+      },
+      "miseEnLigne": {
+        "q": "Is my page online straight away?",
+        "a": "Your web address is reserved the moment you sign up, but the page goes public once our team has checked it. You can prepare your catalogue and opening hours in the meantime."
+      },
+      "seule": {
+        "q": "What if I work on my own?",
+        "a": "That is the most common case. Simply create your own provider profile: your hours and your appointments attach to it."
+      },
+      "paiement": {
+        "q": "How do my clients pay me?",
+        "a": "Clients pay you using the methods you offer at your salon. The platform tracks deposits and their supporting documents. Your subscription payment is a separate process; KKIAPAY may be offered depending on your country and the active configuration."
+      },
+      "donnees": {
+        "q": "Can I get my data back?",
+        "a": "Yes, at any time. Your client list and your appointment history belong to you."
+      }
+    },
+    "appel": {
+      "titre": "Ready to open your diary?",
+      "sous": "Start your trial, prepare your mini-site and calendar, then share your link after approval."
+    },
+    "introCourte": "Your own page, a diary that never slips, no double bookings."
+  },
+  "devise": {
+    "ouvrir": "Show prices in another currency (currently {devise})",
+    "lire": "Show prices in…",
+    "facture": "charged",
+    "avertissement": "Indicative conversion at today's rate. The salon charges in {devise}.",
+    "noms": {
+      "XAF": "CFA franc",
+      "CNY": "Yuan",
+      "CDF": "Congolese franc",
+      "EUR": "Euro",
+      "USD": "Dollar"
+    },
+    "indisponible": "Conversion unavailable right now. Prices stay in {devise}."
+  },
+  "site": {
+    "nav": {
+      "principale": "Main navigation",
+      "fonctionnalites": "Features",
+      "film": "The film",
+      "apercu": "Preview",
+      "etapes": "How it works",
+      "questions": "Questions",
+      "tarifs": "Pricing",
+      "demo": "Demonstration"
+    },
+    "pied": {
+      "promesse": "Mini-sites and calendars for beauty professionals, in the countries supported by the platform.",
+      "donnees": "Your clients, your photos, your appointments: this data belongs to you and stays exportable.",
+      "produit": "The product",
+      "monSalon": "My salon",
+      "questions": "Common questions",
+      "motDePasse": "Forgotten password",
+      "revenirEnHaut": "Back to top"
+    },
+    "adresse": {
+      "question": "Is your web address free?",
+      "aide": "Type your salon's name. No sign-up needed.",
+      "exemple": "Blondrose",
+      "reserver": "Claim this address",
+      "verification": "Checking…",
+      "tropCourt": "Three characters minimum.",
+      "libre": "{adresse} is available. It will be reserved when you complete sign-up.",
+      "prise": "{adresse} is already taken. Try a variant.",
+      "erreur": "Address availability could not be checked.",
+      "reessayer": "Try again"
+    },
+    "apercu": {
+      "salonParDefaut": "Your salon",
+      "exemple": "Sandra's",
+      "creer": "Create my salon"
+    },
+    "film": {
+      "telecharger": "Download the film ({poids, number} MB)",
+      "lancer": "Play the 29-second presentation film, with sound",
+      "lancerMuet": "Play the presentation film without sound",
+      "activer": "Turn on sound",
+      "couper": "Mute the film",
+      "chapitres": {
+        "demandes": "Requests coming in",
+        "promesse": "Get booked. Do the work. Get paid.",
+        "outils": "The three tools",
+        "double": "No double bookings",
+        "accumulent": "Requests pile up",
+        "miniSite": "A mini-site in your name",
+        "reservent": "Booked at any hour",
+        "acompte": "Deposits with proof",
+        "agenda": "All in your calendar",
+        "essai": "14-day free trial"
+      },
+      "originalSound": "original music",
+      "previous": "Previous chapter",
+      "next": "Next chapter",
+      "timeline": "Film playback position"
+    },
+    "territoiresLus": "Used by salons in {lieux}.",
+    "territoiresPause": "Pause the country ticker",
+    "territoiresReprendre": "Resume the country ticker",
+    "apercuVitrine": {
+      "nomChamp": "Your salon's name",
+      "direct": "Live preview",
+      "reserverAdresse": "Claim {adresse}",
+      "suivi": "Your name, address and colours carry through to the form. No address is reserved until sign-up is complete.",
+      "hoteExemple": "your-salon.beautysalon",
+      "reserver": "Book an appointment",
+      "prestations": {
+        "tresses": "Cornrows",
+        "soin": "Deep conditioning"
+      },
+      "salonParDefaut": "Your salon",
+      "couleurs": "Your colours",
+      "noteExemple": "Sample services and prices — yours will replace them."
+    },
+    "filmSecours": "Your browser cannot play this video.",
+    "essaiCourt": "Free trial · No card details",
+    "palettes": {
+      "rose": "Dusty rose",
+      "orNuit": "Gold and night",
+      "terracotta": "Terracotta",
+      "emeraude": "Emerald",
+      "violet": "Violet",
+      "bleuNuit": "Midnight blue",
+      "cacao": "Cocoa",
+      "corail": "Coral",
+      "prune": "Plum",
+      "encreMenthe": "Ink and mint",
+      "cyanLagon": "Lagoon cyan",
+      "mauve": "Mauve"
+    }
+  },
+  "salon": {
+    "sections": "Salon sections",
+    "piedDePage": "Footer",
+    "prestations": "Services",
+    "realisations": "Our work",
+    "equipe": "The team",
+    "aPropos": "About",
+    "infos": "Info",
+    "infosPratiques": "Practical info",
+    "accueil": "Home",
+    "leSalon": "The salon",
+    "pratique": "Practical",
+    "contact": "Contact",
+    "itineraire": "Directions",
+    "monEspace": "My account",
+    "reserverRdv": "Book an appointment",
+    "ecrireWhatsApp": "Message on WhatsApp",
+    "jours": {
+      "0": "Monday",
+      "1": "Tuesday",
+      "2": "Wednesday",
+      "3": "Thursday",
+      "4": "Friday",
+      "5": "Saturday",
+      "6": "Sunday"
+    },
+    "statut": {
+      "ouvert": "Open",
+      "ferme": "Closed",
+      "fermeA": "Closes at {heure}",
+      "ouvreA": "Opens {quand} at {heure}",
+      "aujourdhui": "today",
+      "demain": "tomorrow"
+    },
+    "prix": {
+      "surDevis": "On request",
+      "aPartirDe": "From {prix}",
+      "aPartirDeSeul": "From"
+    },
+    "hero": {
+      "voirPrestations": "See the services",
+      "avis": "{n, plural, =0 {no reviews} one {# verified review} other {# verified reviews}}",
+      "prestations": "{n, plural, one {service} other {services}}",
+      "prestataires": "{n, plural, one {stylist} other {stylists}}",
+      "aujourdhui": "today"
+    },
+    "joursPhrase": {
+      "0": "Monday",
+      "1": "Tuesday",
+      "2": "Wednesday",
+      "3": "Thursday",
+      "4": "Friday",
+      "5": "Saturday",
+      "6": "Sunday"
+    },
+    "pages": {
+      "aProposSurtitre": "Our story",
+      "aProposVideTitre": "The introduction is on its way",
+      "aProposVideCorps": "{salon} has not written an introduction yet. In the meantime, the catalogue and opening hours are up to date.",
+      "lecture": "{n} min read",
+      "prestationsTitre": "Our services",
+      "prestationsVideTitre": "The catalogue is on its way",
+      "prestationsVideCorps": "This salon is still setting up its services. Write to them for prices.",
+      "realisationsSurtitre": "Our work",
+      "realisationsTitre": "Gallery",
+      "imagesAmbiance": "Mood images",
+      "equipeSurtitre": "Who will see you",
+      "equipeTitre": "The team",
+      "equipeVideTitre": "The team will introduce itself soon",
+      "equipeVideCorps": "This salon has not published its stylists yet.",
+      "avisSurtitre": "Thank you for your visit",
+      "avisTitre": "How did it go?",
+      "infosSurtitre": "Find us",
+      "infosTitre": "Practical info",
+      "ouNousSommes": "Where we are",
+      "adresseCachee": "The address is given when the appointment is confirmed.",
+      "deplacement": "We come to you",
+      "deplacementCorps": "We work at home in the following neighbourhoods.",
+      "deplacementFrais": "Travel costs are agreed with the salon.",
+      "deplacementForfait": "Flat travel fee, quoted before you book.",
+      "horaires": "Opening hours",
+      "nousContacter": "Contact us",
+      "reservationAnnulation": "Booking and cancellation",
+      "categories": "Categories",
+      "photos": "{n, plural, one {# photo} other {# photos}}",
+      "videos": "{n, plural, one {# video} other {# videos}}",
+      "prestationsCompte": "{n, plural, one {# service} other {# services}}",
+      "ambianceAvecTravail": "These photos illustrate the craft — they are not {salon}'s own work, which is published as it goes.",
+      "ambianceSansTravail": "{salon} has not published its own photos yet. These illustrate the craft — write to the salon to see their work.",
+      "zoneGratuite": "{n, plural, one {One area is served free of charge.} other {# areas are served free of charge.}}",
+      "offert": "Free",
+      "annulationGratuite": "Free cancellation up to {heures} h before the appointment.",
+      "delaiMinimum": "Booking open until {delai} before the slot.",
+      "agendaOuvert": "Diary open {jours} days ahead.",
+      "retardTolere": "Lateness allowed: {minutes} minutes",
+      "aucunRetard": "No lateness allowed",
+      "nousSuivre": "Follow us",
+      "aProposDe": "About {salon}",
+      "reservezChez": "Book your appointment at {salon}.",
+      "introuvable": "Salon not found",
+      "persoSurtitre": "At {salon}",
+      "persoQuestion": "A question about this page?",
+      "persoQuestionCorps": "The salon will answer you, or book your slot right away."
+    },
+    "galerie": {
+      "alt": "Work by {salon}",
+      "altNumerotee": "Work {n} by {salon}",
+      "simple": "Work"
+    },
+    "note": {
+      "surCinq": "{note} out of 5"
+    },
+    "partage": {
+      "scannez": "Scan the code with WeChat or your camera, or send the link.",
+      "copie": "copied",
+      "copier": "Copy the link",
+      "wechatTitre": "Scan the code in WeChat",
+      "wechatBureau": "Discover › Scan. From your phone, copy the ID instead.",
+      "wechatTelephone": "Open search and paste the ID below.",
+      "message": "Book an appointment at {salon}: {url}",
+      "qrWechat": "WeChat QR code for {salon}",
+      "chercher": "Search for {salon} in WeChat"
+    },
+    "etapes": {
+      "choisirTitre": "Choose your service",
+      "choisirCorps": "The price and the length are shown. Nothing is decided at this first step.",
+      "creneauTitre": "Take a free slot",
+      "creneauCorps": "Only genuinely available times appear. Two people can never take the same one.",
+      "acompteTitre": "Pay the deposit",
+      "acompteCorps": "Scan the salon's QR code and send your screenshot. Your slot is held meanwhile.",
+      "confirmeTitre": "It's booked",
+      "confirmeCorps": "You get the confirmation by email, with your arrival code to show at the salon.",
+      "commencer": "Start my booking"
+    },
+    "avisFormulaire": {
+      "lienIncomplet": "This link is incomplete.",
+      "lienInvalide": "This link is no longer valid.",
+      "auMoinsUnCritere": "Rate at least one item.",
+      "envoiImpossible": "Could not send. Try again.",
+      "verification": "Checking the link…",
+      "exemple": "How did it go? What you liked, what could be better, what you would tell a friend…",
+      "envoi": "Sending…",
+      "publier": "Publish my review"
+    },
+    "avisGarantie": "Every review is tied to an appointment that was actually kept. The salon can neither edit nor delete them.",
+    "propulsePar": "Powered by Beauty Salon",
+    "creeAvec": "Created with",
+    "tousDroitsReserves": "All rights reserved.",
+    "arreterDefilement": "Stop the scrolling",
+    "relancerDefilement": "Resume the scrolling",
+    "titres": {
+      "aPropos": "About",
+      "avis": "Your review",
+      "compte": "My account",
+      "equipe": "The team",
+      "infos": "Practical info",
+      "paiement": "Pay the deposit",
+      "prestations": "Services",
+      "realisations": "Gallery",
+      "rendezVous": "My appointment",
+      "reserver": "Book"
+    },
+    "modes": {
+      "salon": "At the salon",
+      "home": "At your place",
+      "hybrid": "At the salon or at your place"
+    },
+    "reservationImmediate": "Book online, instant confirmation",
+    "fermeture": {
+      "bandeau": "Online booking is temporarily unavailable. Please contact the salon directly.",
+      "titre": "Online booking unavailable",
+      "texte": "{salon} isn't taking online bookings right now. Contact the salon directly — they'll be happy to help.",
+      "appeler": "Call the salon",
+      "retour": "Back to home"
+    },
+    "notes": [
+      "",
+      "Very disappointed",
+      "Disappointing",
+      "Fine",
+      "Very good",
+      "Excellent"
+    ],
+    "votreNote": "Your rating",
+    "precedente": "Previous",
+    "suivante": "Next",
+    "chiffres": {
+      "prestataires": "{n, plural, one {stylist} other {stylists}}",
+      "specialites": "{n, plural, one {speciality} other {specialities}}",
+      "realisations": "pieces online",
+      "ouRecevoir": "where we are"
+    },
+    "avis": {
+      "merci": "Thank you for your review",
+      "mercicorps": "It is online. It will help the next clients choose with their eyes open.",
+      "retourAuSalon": "Back to the salon",
+      "voirLeSalon": "See the salon",
+      "votreVisite": "Your visit",
+      "pointParPoint": "Your rating, item by item",
+      "uneLigneSuffit": "rate what you like, one line is enough",
+      "criteresNotes": "{n} of {total} items"
+    },
+    "titresAccueil": {
+      "prestationsSurtitre": "What we do",
+      "prestationsTitre": "Services",
+      "toutesPrestations": "All {n} services",
+      "catalogueVideTitre": "The catalogue is on its way",
+      "catalogueVideCorps": "This salon is still setting up its services. In the meantime, write to them — they answer messages.",
+      "etapesSurtitre": "In three steps",
+      "etapesTitre": "How it works",
+      "galerieSurtitre": "Our work",
+      "galerieTitre": "The work speaks",
+      "toutesRealisations": "All {n} pieces",
+      "equipeSurtitre": "Who will see you",
+      "equipeTitre": "The team",
+      "touteEquipe": "The whole team",
+      "avisSurtitre": "What clients say",
+      "avisTitre": "Verified reviews",
+      "infosSurtitre": "Find us",
+      "infosTitre": "Practical info",
+      "toutLeDetail": "Everything in detail",
+      "adresse": "Address",
+      "itineraire": "Get directions",
+      "nousJoindre": "Contact us",
+      "appelTitre": "Ready to book?",
+      "appelCorps": "Pick your slot online, at any hour. Instant confirmation, free cancellation up to {heures} h before.",
+      "reserverMaintenant": "Book now"
+    },
+    "prestationsCatalogue": "{n, plural, one {# service in the catalogue} other {# services in the catalogue}}",
+    "acompte": "Deposit",
+    "filtre": {
+      "toutes": "All",
+      "parCategorie": "Filter by category",
+      "rechercher": "Search services",
+      "exemple": "Search: braids, gel nails…",
+      "effacer": "Clear search",
+      "resultats": "{n, plural, =0 {No services} one {# service} other {# services}}",
+      "aucunTitre": "No matching services",
+      "aucunCorps": "This category has nothing on offer yet.",
+      "aucunCorpsRecherche": "Nothing for “{q}”. Try another word, or browse all services.",
+      "toutAfficher": "Show everything",
+      "voirCategorie": "{n, plural, one {See the “{categorie}” service} other {See all # “{categorie}” services}}"
+    },
+    "assistant": {
+      "ouvrir": "Ask a question",
+      "fermer": "Close the assistant",
+      "titre": "Salon assistant",
+      "sousTitre": "Automatic answers, 24/7",
+      "bienvenue": "Hello! I can answer your questions about {salon}: services, prices, opening hours, address. How can I help?",
+      "suggestions": {
+        "prix": "What are your prices?",
+        "horaires": "What are your opening hours?",
+        "reserver": "How do I book?"
+      },
+      "placeholder": "Your question…",
+      "envoyer": "Send",
+      "reflechit": "The assistant is typing…",
+      "automatique": "Automatic assistant: it can make mistakes. It does not book anything for you.",
+      "indisponible": "The assistant can't answer right now. Contact the salon directly:",
+      "whatsapp": "WhatsApp",
+      "appeler": "Call",
+      "email": "Email",
+      "effacer": "New conversation"
+    },
+    "galeriePlus": {
+      "reservable": "Bookable",
+      "par": "by {nom}",
+      "realiseePar": "Done by {nom}",
+      "artiste": "Done by",
+      "tarif": "Price",
+      "duree": "Duration",
+      "reserverCeLook": "Book this look",
+      "reserver": "Book an appointment",
+      "partager": "Share",
+      "lienCopie": "Link copied",
+      "partageMessage": "Look at this work by {salon}: {url}",
+      "coupsDeCoeur": "Our favourites",
+      "coupsDeCoeurCorps": "The work the team is proudest of.",
+      "coupDeCoeur": "Favourite",
+      "glisser": "Swipe →",
+      "filtrer": "Filter the gallery",
+      "tout": "All",
+      "chiffreRealisations": "{n, plural, one {piece of work} other {pieces of work}}",
+      "chiffreNote": "{n, plural, =0 {average rating} one {rating · # review} other {rating · # reviews}}",
+      "avisSurtitre": "Verified reviews",
+      "avisTitre": "What clients say",
+      "ctaTitre": "Want the same result?",
+      "ctaCorps": "Pick your service and time slot in seconds. A question before booking? {salon} will answer.",
+      "ctaReserver": "Book now"
+    },
+    "compteConnecte": "My account — signed in ({nom})",
+    "seConnecterCompte": "Sign in to my account",
+    "mode": {
+      "versSombre": "Switch to dark mode",
+      "versClair": "Switch to light mode",
+      "sombre": "Dark mode",
+      "clair": "Light mode"
+    },
+    "avisLireSuite": "Read more",
+    "avisReduire": "Show less"
+  },
+  "reservation": {
+    "retour": "Back",
+    "erreurs": {
+      "nom": "Enter your name.",
+      "numeroCourt": "At least 6 digits.",
+      "numeroInvalide": "Digits only (a « + » is allowed at the start).",
+      "politique": "You must accept the cancellation policy.",
+      "zone": "Choose the area you live in.",
+      "adresse": "Say where the stylist should go.",
+      "creneauPris": "That slot has just been taken. Please choose another.",
+      "echec": "The booking failed. Please try again.",
+      "disponibilites": "Could not load availability.",
+      "inscription": "Sign-up is not possible right now.",
+      "email": "Invalid email: it needs an « @ » and a domain (e.g. name@example.com).",
+      "numeroLong": "15 digits at most.",
+      "telephoneRequis": "Enter your phone number.",
+      "emailRequis": "Enter your email address."
+    },
+    "etapes": {
+      "choix": "Your choice",
+      "prestation": "Service",
+      "prestataire": "Stylist",
+      "options": "Extras",
+      "progression": "Booking progress",
+      "creneau": "Slot",
+      "coordonnees": "Your details"
+    },
+    "catalogue": {
+      "avis": "{n, plural, one {# review} other {# reviews}}",
+      "annulationGratuite": "Free cancellation up to {hours} hours before.",
+      "quellePrestation": "Which service?",
+      "acompteDe": "Deposit of {amount}",
+      "peuImporte": "No preference",
+      "vide": "This salon has not published its catalogue yet. Contact them directly.",
+      "avecQui": "With whom?",
+      "plusDeCreneaux": "No slots left",
+      "aucunRetard": "No lateness allowed.",
+      "itineraire": "directions",
+      "confirmationImmediate": "Instant confirmation by email.",
+      "uneQuestion": "A question? Write to us",
+      "retardJusqua": "Lateness allowed up to {minutes} min.",
+      "retardMinutes": "Lateness allowed: {minutes} min."
+    },
+    "creneaux": {
+      "aucunAvecOptions": "No slot is long enough for {duration}.",
+      "optionsTropLongues": "Your extras add {duration} to this service, and the salon has no long enough opening. Remove an extra, or contact the salon to arrange a time.",
+      "revoirOptions": "Review my extras",
+      "prestationTropLongue": "{service} needs {duration} without a break.",
+      "journeesTropCourtes": "{salon} has no opening that long right now. The salon may be able to offer another time or format — please contact them.",
+      "aujourdhui": "Today",
+      "septJours": "7 days",
+      "trenteJours": "30 days",
+      "nombre": "{n, plural, one {# slot} other {# slots}}",
+      "titre": "Choose a slot",
+      "chargement": "Loading availability…",
+      "ecrireAuSalon": "Write to the salon",
+      "aucunTroisSemaines": "No slots in the next three weeks.",
+      "listeAttente": "Leave your details: the salon will let you know as soon as a place opens up.",
+      "rienCettePeriode": "Nothing in this period. Try “30 days”.",
+      "periode": "Period"
+    },
+    "coordonnees": {
+      "siteWeb": "Website",
+      "nomComplet": "Full name",
+      "emailFacultatif": "Email (optional)",
+      "acceptePolitique": "I accept the salon's cancellation policy.",
+      "envoi": "Sending…",
+      "titre": "Your details",
+      "offres": "I agree to receive the salon's offers.",
+      "usage": "Your details are used for this appointment only.",
+      "telephone": "Phone (WhatsApp)",
+      "telephoneAide": "Digits only, with the country code (e.g. +242061234567). This is how the salon will confirm.",
+      "emailAide": "To receive the confirmation and the reminder the day before.",
+      "message": "Message to the salon (optional)",
+      "confirmer": "Confirm the booking",
+      "email": "Email"
+    },
+    "lieu": {
+      "fraisDeplacement": "+ {amount} travel fee",
+      "chezMoi": "At my place",
+      "offert": "Free",
+      "zoneDesservie": "Service area: {zone}",
+      "adresse": "Address",
+      "question": "Where would you like to be seen?",
+      "quartier": "Your neighbourhood",
+      "deplacementOffert": "Travel included",
+      "deplacementOffertMinuscule": "travel included",
+      "titre": "Where the appointment happens",
+      "auSalon": "At the salon",
+      "surPlace": "On site",
+      "prestataireSeDeplace": "The stylist comes to you",
+      "adresseAide": "Street, building, floor — and a landmark if useful.",
+      "adresseExemple": "E.g. 12 avenue de la Paix, blue building, opposite the pharmacy"
+    },
+    "attente": {
+      "rappel": "The salon will call you on {phone} if a slot opens up. You do not have an appointment yet.",
+      "inscrire": "Join the waitlist",
+      "annuler": "Cancel",
+      "enregistre": "Request recorded",
+      "demandeRecue": "{salon} has received your booking request.",
+      "avec": "With",
+      "inclus": "included",
+      "aDomicile": "At your place",
+      "deplacementInclus": "{amount} travel fee, included in the total",
+      "acompteDemande": "A deposit of {amount} is required. The salon will let you know how to pay it.",
+      "mePrevenir": "Tell me if a place opens up",
+      "votreNom": "Your name",
+      "aPartirDu": "From",
+      "jusquAu": "Until",
+      "precision": "Detail (optional)",
+      "precisionExemple": "Saturday mornings preferably…",
+      "avertissement": "This books no slot: it is a request to be called back.",
+      "contacterWhatsApp": "Message the salon on WhatsApp",
+      "revenirAuSalon": "Back to the salon",
+      "cestNote": "Noted."
+    },
+    "options": {
+      "titre": "Extras",
+      "inclus": "Included",
+      "fournituresRequises": "{items}: bring or buy them before booking",
+      "nombre": "{n, plural, one {# extra} other {# extras}}",
+      "fournituresCompris": "supplies included",
+      "tempsAjoute": "{duration} extra",
+      "continuer": "Continue",
+      "avantDeVenir": "Before you come",
+      "uneOption": "An extra?",
+      "prevoir": "What to bring for this service, and what you can add to it.",
+      "facultatif": "Optional. Each extra adjusts the price and the length of the appointment.",
+      "sansOption": "No extras",
+      "repondezCiDessus": "Answer above",
+      "choisirCreneau": "Choose a slot",
+      "avecVosOptions": "with your extras"
+    },
+    "exigences": {
+      "indispensable": "Required",
+      "facultatif": "Optional",
+      "jeLapporte": "I'll bring it",
+      "enRupture": "out of stock",
+      "rienAPayer": "nothing to pay",
+      "regle": "Paid",
+      "jeLAchete": "I buy it here",
+      "aApporter": "To bring",
+      "auSalonJourMeme": "at the salon, on the day",
+      "salonNenVendPas": "the salon does not sell it",
+      "retirer": "Remove one {produit}",
+      "ajouter": "Add one {produit}"
+    },
+    "code": {
+      "titre": "My arrival code",
+      "sousTitre": "Show it when you arrive at the salon",
+      "explication": "Show this code when you arrive: the salon scans it and you are checked in."
+    },
+    "suivi": {
+      "versementIntrouvable": "Payment not found",
+      "acompte": "Deposit",
+      "renvoyerPreuve": "Resend payment proof",
+      "appeler": "Call",
+      "lienMort": "This link is no longer valid.",
+      "prendreRdv": "Book an appointment",
+      "acompteTitre": "Deposit to pay",
+      "acompteCorps": "Your slot is held while you pay.",
+      "attenteTitre": "Awaiting confirmation",
+      "attenteCorps": "The salon is checking your payment. You will get an email as soon as it is done.",
+      "refuseCorps": "The salon could not find your payment. Your slot is still held.",
+      "confirmeTitre": "Appointment confirmed",
+      "confirmeCorps": "Everything is settled. Show your arrival code when you get to the salon.",
+      "honoreTitre": "Appointment completed",
+      "honoreCorps": "Thank you for your visit. Everything is settled, nothing to do.",
+      "arriveeTitre": "You have arrived",
+      "arriveeCorps": "The salon has checked you in. Enjoy your session.",
+      "absenteTitre": "You did not come",
+      "absenteCorps": "The salon recorded your absence. Contact them to book again.",
+      "expireTitre": "Payment deadline passed",
+      "expireCorps": "The slot has been released. You can choose another one.",
+      "annuleTitre": "Appointment cancelled",
+      "annuleCorps": "This appointment will not take place.",
+      "reprendre": "Book again",
+      "itineraire": "Directions",
+      "ecrireAuSalon": "Write to the salon",
+      "auNomDe": "In the name of",
+      "avec": "With",
+      "gardezLien": "Keep this link: it reopens this page at any time.",
+      "acompteRecu": "Deposit received",
+      "aDomicile": "At your place",
+      "reglePar": "Paid by",
+      "reglerAcompte": "Pay the deposit"
+    },
+    "paiement": {
+      "aHeure": "at",
+      "surUnTotal": "Of a total of {amount}",
+      "scannerAvec": "Scan this code with {channel}",
+      "sansQr": "The salon has not added a QR code for {channel}.",
+      "envoiImpossible": "Unable to send. Please try again.",
+      "formatsFacultatifs": "JPEG or PNG, optional",
+      "facultatif": "Optional",
+      "preuveRecue": "{salon} has received your payment proof. The salon will check it and confirm your appointment — you'll get an email when it's done.",
+      "titre": "Deposit to pay",
+      "lienMort": "This link is no longer valid. Contact the salon to book again.",
+      "refuseTitre": "The salon could not find your payment.",
+      "refuseCorps": "Your slot is still held. Send a clearer screenshot, or contact the salon.",
+      "aucunMoyen": "The salon has not published a payment method yet. Contact them directly to pay your deposit.",
+      "creneauGarde": "Your slot stays held while the salon checks. Take the time you need.",
+      "recuTitre": "Your deposit has been received",
+      "recuCorps": "The salon has confirmed your appointment. There is nothing left to pay here.",
+      "voirRdv": "See my appointment",
+      "nouveauCreneau": "Choose a new slot",
+      "moyenDePaiement": "Payment method",
+      "apresPaiement": "Once you have paid",
+      "apresPaiementCorps": "Send the screenshot of your payment. The salon will check it and confirm your appointment.",
+      "annuleTitre": "This appointment was cancelled",
+      "delaiTitre": "The deadline has passed",
+      "plusDAcompte": "There is no deposit left to pay for this appointment.",
+      "delaiCorps": "With no payment within 30 minutes, the slot was released. Nothing was charged to you.",
+      "numeroTransaction": "Transaction no.",
+      "messageAuSalon": "Message to the salon",
+      "attenteTitre": "Awaiting confirmation",
+      "creneauReserve": "Your slot stays held meanwhile.",
+      "suivreRdv": "Track my appointment",
+      "imageTropGrande": "This image is over 15 MB.",
+      "changerCapture": "Change the screenshot",
+      "choisirCapture": "Choose a screenshot",
+      "envoyerPreuve": "I have paid, send the proof",
+      "envoyerPar": "Send the deposit with {channel}:"
+    },
+    "creneauGardeEncore": "Slot held for another",
+    "total": "Total",
+    "minutes": "{n} min",
+    "minutesSecondes": "{m} min {s} s",
+    "secondes": "{n} s"
+  },
+  "espace": {
+    "mdp": {
+      "titreDemande": "Forgot your password",
+      "leadDemande": "Enter the address of your account: we'll send you a link to choose a new one.",
+      "envoyer": "Send me the link",
+      "envoi": "Sending…",
+      "verifiez": "Check your inbox",
+      "verifiezCorps": "If an account exists for {email}, a link is on its way. It can only be used once.",
+      "astuce": "Nothing after a few minutes? Check your spam folder or the Promotions tab.",
+      "renvoyer": "Send the link again",
+      "renvoyerDans": "Send again in {s} s",
+      "autreAdresse": "Use another address",
+      "retourConnexion": "Back to sign in",
+      "titreNouveau": "New password",
+      "leadNouveau": "Choose the password of your account at {salon}.",
+      "nouveau": "New password",
+      "confirmer": "Confirm the password",
+      "critereLongueur": "At least 10 characters",
+      "critereIdentiques": "Both entries match",
+      "enregistrer": "Save my password",
+      "succes": "Password updated",
+      "succesCorps": "Sign in with your new password to find your appointments.",
+      "seConnecter": "Sign in",
+      "lienInvalide": "This link is no longer valid",
+      "lienInvalideCorps": "It has expired or was already used. Ask for a new one: it only takes a few seconds.",
+      "nouveauLien": "Get a new link",
+      "erreur": "Something went wrong. Please try again in a moment.",
+      "asideTitre": "Your account, kept safe",
+      "asideLienTitre": "A personal link",
+      "asideLienCorps": "It works only once, and only for your address.",
+      "asideRdvTitre": "Your appointments stay put",
+      "asideRdvCorps": "Changing your password changes nothing else in your account.",
+      "asideSansTitre": "You can still book",
+      "asideSansCorps": "An account is a convenience: you can book without one."
+    },
+    "pro": {
+      "titre": "This is a professional account.",
+      "corps": "The client area is for people who book.",
+      "tableau": "Go to my dashboard"
+    },
+    "etat": {
+      "acompte": "Deposit to pay",
+      "demande": "Requested",
+      "confirme": "Confirmed",
+      "arrivee": "You have arrived",
+      "termine": "Completed",
+      "annule": "Cancelled",
+      "nonHonore": "Not attended"
+    },
+    "compte": {
+      "nom": "Your name",
+      "telephone": "Phone",
+      "motDePasse": "Password",
+      "echec": "Failed.",
+      "motDePasseOublie": "Forgotten password?",
+      "unCompte": "One account, all your salons.",
+      "rdvAuMemeEndroit": "Your appointments in one place",
+      "reserverSansCompte": "Book without an account",
+      "plusRienARessaisir": "Nothing left to retype",
+      "plusRienCorps": "Your name and phone are already there next time.",
+      "sansCompteTitre": "You can book without an account",
+      "sansCompteCorps": "The account is for finding your appointments again, not for making them.",
+      "retrouvez": "Find your appointments",
+      "creerVotreCompte": "Create your account",
+      "unSeulCompte": "One account for every salon you go to.",
+      "seDeconnecter": "Sign out",
+      "unInstant": "One moment…",
+      "seConnecter": "Sign in",
+      "creerMonCompte": "Create my account",
+      "pasEncore": "No account yet?",
+      "dejaUn": "Already have one?",
+      "creerUnCompte": "Create an account",
+      "ceuxDeListe": "Those from {salon} and from your other salons, in one list.",
+      "ceuxDeMemeEndroit": "Those from {salon} and from your other salons, in one place.",
+      "retourChez": "Back to {salon}",
+      "code2fa": "Two-factor code",
+      "code2faAide": "The six-digit code from your app, or a recovery code.",
+      "bonjour": "Hello {nom}",
+      "deconnexionTitre": "Sign out?",
+      "deconnexionCorps": "You will need to enter your email and password again to see your appointments.",
+      "annuler": "Cancel",
+      "confirmerDeconnexion": "Sign out"
+    },
+    "liste": {
+      "echec": "Could not load your appointments.",
+      "acompteRappel": "Your slot is held, but it will be released if the deposit does not arrive.",
+      "avisInvitation": "Five items, two minutes. Your review helps the next clients choose — and the salon improve where it needs to.",
+      "aucunAVenir": "No upcoming appointments.",
+      "rienApres": "Nothing else planned after your next appointment.",
+      "passeesIci": "Your past visits will appear here.",
+      "avisDepose": "Review submitted",
+      "reprendre": "Book again",
+      "aVenir": "Upcoming",
+      "aNoter": "To review",
+      "acompteRestant": "A deposit is still due",
+      "voirDetail": "See the details",
+      "visiteAttendAvis": "A visit is waiting for your review",
+      "reprenezLa": "Pick up where you left off.",
+      "choisissezPrestation": "Choose a service to start.",
+      "enregistre": "Saved.",
+      "vosRdv": "Your appointments",
+      "avec": "With",
+      "reglerAcompte": "Pay the deposit",
+      "suivre": "Track my appointment",
+      "itineraire": "Directions",
+      "leSalon": "The salon",
+      "passe": "Past",
+      "dansUneSemaine": "In a week",
+      "dernieresHeures": "last hours",
+      "aujourdhui": "Today",
+      "demain": "Tomorrow",
+      "dansJours": "In {n} days",
+      "dansSemaines": "In {n} weeks",
+      "dansMois": "In {n} months",
+      "dernierJour": "last day",
+      "joursRestants": "{n} days",
+      "acomptesRestants": "{n, plural, one {# deposit is still due} other {# deposits are still due}}",
+      "visitesAvis": "{n, plural, one {# visit is waiting for your review} other {# visits are waiting for your review}}",
+      "visites": "{n, plural, =0 {Visits} one {Visit} other {Visits}}",
+      "reserverChez": "Book at {salon}"
+    },
+    "annuler": {
+      "leContacter": "Contact them",
+      "annuler": "Cancel this appointment",
+      "confirmer": "Cancel this appointment?",
+      "mot": "A word for the salon (optional)",
+      "echec": "Could not cancel. Contact the salon.",
+      "exemple": "Something came up at the last minute",
+      "unInstant": "One moment…"
+    },
+    "suivi": {
+      "acompteCorps": "Pay the deposit so your slot is held.",
+      "aValider": "To check",
+      "aValiderCorps": "The salon is checking your payment. You will get an email.",
+      "demande": "Requested",
+      "demandeCorps": "The salon will confirm shortly. You will get an email.",
+      "confirme": "Confirmed",
+      "confirmeCorps": "It's booked. Show your code when you arrive at the salon.",
+      "arrivee": "Arrived",
+      "arriveeCorps": "The salon has checked you in. Enjoy your session.",
+      "termine": "Completed",
+      "termineCorps": "It's done. Your review would help the next clients."
+    },
+    "parrainage": {
+      "titre": "Refer a salon",
+      "accroche": "Invite a salon: it gets a 30-day trial if the referral is eligible. Follow its registration from your account.",
+      "votreCode": "Your personal code",
+      "copierCode": "Copy code",
+      "copierLien": "Copy link",
+      "copie": "Copied",
+      "whatsapp": "Send on WhatsApp",
+      "salonsParraines": "Salons referred",
+      "remisesDisponibles": "Discounts available",
+      "statut": {
+        "en_verification": "Under review",
+        "admissible": "Approved",
+        "non_retenu": "Not accepted"
+      },
+      "utiliserSalon": "Subscription discounts are reserved for referring salons.",
+      "monAbonnement": "My subscription",
+      "utiliserSansSalon": "No reward is announced for a client referring a salon.",
+      "regles": "The first paid subscription validates the referral. A salon subscription discount then waits for the cooling period and can be used only once.",
+      "message": "I recommend Beauty Salon to run your salon: online booking, reminders, a mini-site. Sign up with my code {code} for a 30-day trial if the referral is eligible: {lien}"
+    },
+    "verification": {
+      "attente": "Checking your address…",
+      "okTitre": "Address confirmed",
+      "okCorps": "Thank you! Your email address is verified.",
+      "monEspace": "My account",
+      "erreurTitre": "Invalid link",
+      "erreurAide": "You can request a new link from your account.",
+      "incomplet": "This link is incomplete. Open the one you received by email.",
+      "echec": "Verification failed. Please try again in a moment.",
+      "renvoyer": "Resend the link",
+      "envoi": "Sending…",
+      "envoye": "Link sent",
+      "rappelTitre": "Confirm your email address",
+      "rappelCorps": "Open the link sent to <adresse>{email}</adresse>. Appointments you booked without an account using this address will appear here too."
+    },
+    "menu": {
+      "titre": "My account",
+      "apercu": "Overview",
+      "aFaire": "To do",
+      "rendezVous": "My appointments",
+      "parrainage": "Referrals",
+      "profil": "My profile"
+    },
+    "notifications": {
+      "titre": "Never miss an appointment",
+      "corps": "Get the confirmation, the day-before reminder and any time change on this phone.",
+      "iosCorps": "On iPhone, notifications work once this site is added to your Home Screen.",
+      "ios1": "Tap Share (the square with an arrow) in Safari.",
+      "ios2": "Choose “Add to Home Screen”.",
+      "ios3": "Open the site from the new icon, then turn notifications on.",
+      "point1": "Confirmation",
+      "point2": "Day-before reminder",
+      "point3": "Time changes",
+      "activer": "Turn on",
+      "plusTard": "Later",
+      "compris": "Got it",
+      "activees": "Notifications on",
+      "activeesCorps": "You will be notified on this device.",
+      "refuseTitre": "Notifications blocked",
+      "refuseCorps": "This phone will not remind you of your appointments. To allow them: tap the padlock left of the address, then “Notifications” → “Allow”, and reload the page."
+    }
+  },
+  "conversion": {
+    "create": "Create my salon for free",
+    "complete": "Finish setting up my salon",
+    "dashboard": "Go to my dashboard",
+    "audience": "Hair · Nails · Makeup · Barber",
+    "headlineFirst": "Your salon online.",
+    "headlineSecond": "Your bookings in one place.",
+    "intro": "Show your services, let clients book available times and manage your calendar from your phone.",
+    "seeDemo": "Try the demonstration",
+    "trial": "{days}-day trial · No bank card required",
+    "referralTrial": "30-day trial with a valid referral code.",
+    "previewTitle": "See your salon take shape.",
+    "previewSubtitle": "Choose a name, check your address and try your colours. Your choices carry through to sign-up.",
+    "previewEyebrow": "Your first step, without an account",
+    "demoTitle": "From your mini-site to your calendar.",
+    "demoSubtitle": "Try the three stages of a booking in this interactive demonstration. No real appointment is created.",
+    "demoEyebrow": "Try the booking journey",
+    "demoSteps": {
+      "chooseTitle": "Your client chooses a service",
+      "choose": "Your mini-site displays your services, durations and prices.",
+      "reserveTitle": "They choose an available time",
+      "reserve": "Availability takes your hours, team and existing appointments into account.",
+      "manageTitle": "You find the appointment",
+      "manage": "View your calendar and follow the appointment from your professional dashboard."
+    },
+    "snapshot": {
+      "badge": "Example interface",
+      "salon": "Example salon",
+      "service": "Cut & styling",
+      "duration": "45 minutes",
+      "reserve": "Book",
+      "agenda": "Your calendar",
+      "exampleDay": "Example day",
+      "client": "Example client",
+      "received": "Booking received",
+      "notice": "Demonstration data",
+      "try": "Try it"
+    },
+    "demo": {
+      "badge": "Interactive demonstration",
+      "step": "Step {step} / 3",
+      "service": "Service",
+      "slot": "Time",
+      "agenda": "Calendar",
+      "chooseService": "Choose a service",
+      "chooseSlot": "Choose a time",
+      "confirm": "Review your selection",
+      "received": "The booking appears in the calendar",
+      "cut": "Cut & styling",
+      "care": "Hair treatment",
+      "cutDuration": "45 minutes",
+      "careDuration": "60 minutes",
+      "exampleDay": "Example times for trying the journey.",
+      "exampleClient": "Example client · Example salon",
+      "inAgenda": "Visible in your professional dashboard",
+      "restart": "Restart the demonstration",
+      "simulate": "Simulate the booking",
+      "next": "Continue",
+      "notice": "Simulation only. No real account, payment or appointment is created.",
+      "liveExample": "Visit {name}’s mini-site"
+    },
+    "pricing": {
+      "title": "A subscription for your salon.",
+      "subtitle": "See the published prices for your country and currency, then choose your payment period.",
+      "country": "Your country",
+      "currency": "Currency",
+      "canal": {
+        "mobileMoney": "Mobile Money",
+        "carte": "Card",
+        "mobileMoneyCarte": "Mobile Money or card"
+      },
+      "period": "Payment period",
+      "monthly": "Monthly",
+      "yearly": "Annual",
+      "standardIntro": "The essentials for your mini-site and bookings.",
+      "proIntro": "Your Standard tools, with the extras below.",
+      "loading": "Loading…",
+      "unavailable": "Price not published",
+      "perMonth": "For one month",
+      "perYear": "Total for twelve months",
+      "saving": "Save {percent}%",
+      "teamLimit": "Up to {count} team members",
+      "trialEnd": "The trial includes Standard. At the end, choose a paid plan to continue taking bookings. Signing up does not authorise an automatic charge.",
+      "noCountryPrice": "No payable price is currently published for this country. You can create your salon and check available plans in your dashboard.",
+      "error": "Prices could not be loaded.",
+      "retry": "Try again",
+      "kkiapay": "KKIAPAY is offered here to pay the salon subscription. It does not handle clients’ payments to the salon.",
+      "disclaimer": "Prices come from the current catalogue, before any referral discount. The final amount and payment method are confirmed in your dashboard before payment. Annual savings compare the annual price with twelve monthly payments.",
+      "availableIn": "Available countries:",
+      "countries": {
+        "CG": "Congo-Brazzaville",
+        "CD": "DR Congo",
+        "CN": "China",
+        "BJ": "Benin",
+        "BF": "Burkina Faso",
+        "CI": "Côte d’Ivoire",
+        "TG": "Togo",
+        "SN": "Senegal",
+        "NE": "Niger",
+        "CM": "Cameroon",
+        "GH": "Ghana",
+        "GN": "Guinea",
+        "KE": "Kenya",
+        "ML": "Mali",
+        "MW": "Malawi",
+        "NG": "Nigeria",
+        "RW": "Rwanda",
+        "TZ": "Tanzania",
+        "UG": "Uganda",
+        "ZM": "Zambia"
+      },
+      "features": {
+        "site": "Mini-site with your name",
+        "booking": "Booking and calendar",
+        "clients": "Team and client records",
+        "export": "Exportable data",
+        "includes": "All Standard features",
+        "custom_domain": "Custom domain",
+        "customization": "Advanced customisation",
+        "whatsapp_assistant": "WhatsApp AI assistant and n8n",
+        "platform_assistant": "Professional space assistant",
+        "customer_assistant": "Client assistant"
+      },
+      "details": "View features",
+      "saspay": "SASPAY is offered here to pay the salon subscription, by Mobile Money or card. It does not handle clients’ payments to the salon."
+    },
+    "trust": {
+      "title": "Their experience, in their words.",
+      "subtitle": "Verified testimonials published with their authors’ permission.",
+      "mobileTitle": "From your phone",
+      "mobile": "View your mini-site and manage bookings in a mobile browser.",
+      "dataTitle": "Your data stays with you",
+      "data": "Export your salon data from your professional dashboard.",
+      "publicationTitle": "Guided publication",
+      "publication": "Prepare your services and hours. Your mini-site becomes public after approval by the team.",
+      "supportTitle": "A question before starting?",
+      "support": "Find practical answers to prepare your salon and start your trial.",
+      "email": "Email support",
+      "faq": "Read the answers",
+      "details": "Learn more",
+      "essaiTitle": "A no-commitment trial",
+      "essai": "14 days to try everything, with no card and no automatic charge."
+    },
+    "mobileIntro": "Your website, bookings and calendar together.",
+    "seeFilm": "Watch the film",
+    "filmEyebrow": "Mini Salon, in 29 seconds",
+    "headlineKeyword": "bookings"
+  },
+  "pro": {
+    "navigation": {
+      "groupes": {
+        "quotidien": "Day to day",
+        "salon": "My salon",
+        "compte": "Account",
+        "pro": "Pro plan"
+      },
+      "tableauDeBord": "Dashboard",
+      "agenda": "Calendar",
+      "clientes": "Clients",
+      "listeAttente": "Waiting list",
+      "avis": "Reviews",
+      "prestations": "Services",
+      "boutique": "Shop",
+      "prestataires": "Staff",
+      "horaires": "Opening hours",
+      "galerie": "Gallery",
+      "equipe": "Team",
+      "profil": "Profile",
+      "identite": "Identity",
+      "comptes": "Finances",
+      "abonnement": "Subscription",
+      "parrainage": "Referrals",
+      "securite": "Security",
+      "assistants": "AI assistants",
+      "apparence": "Advanced appearance",
+      "domaine": "Custom domain"
+    },
+    "roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "receptionist": "Front desk",
+      "staff": "Staff member"
+    },
+    "coquille": {
+      "chargement": "Loading…",
+      "deconnectee": "You are signed out.",
+      "fermerMenu": "Close the menu",
+      "ouvrirMenu": "Open the menu",
+      "afficherNavigation": "Show navigation",
+      "deplierNavigation": "Expand navigation",
+      "replierNavigation": "Collapse navigation",
+      "seDeconnecter": "Sign out",
+      "voirMiniSite": "View my mini-site",
+      "salonActif": "Active salon",
+      "modifierSalon": "Edit the name and contact details of {salon}",
+      "offrePro": "Pro plan",
+      "validation": "Your salon is being reviewed. Your mini-site will go public once this step is complete — you can already set everything up.",
+      "espace": "Professional space"
+    },
+    "verification": {
+      "rappel": "Confirm your address <adresse>{email}</adresse>: click the link we emailed you. Your mini-site and payments open afterwards.",
+      "envoye": "Link sent ✓",
+      "envoi": "Sending…",
+      "renvoyer": "Resend the link",
+      "echec": "Could not send right now."
+    },
+    "reglages": {
+      "titre": "Display settings",
+      "fermerReglages": "Close settings",
+      "fermer": "Close",
+      "portee": "They apply to this device, not to your salon.",
+      "langue": "Language",
+      "langueAide": "The language of your professional space.",
+      "couleur": "Workspace colour",
+      "couleurAide": "Sidebar, buttons and active states, together.",
+      "accents": {
+        "salon": "Salon colour",
+        "graphite": "Graphite",
+        "azur": "Azure",
+        "emeraude": "Emerald",
+        "ambre": "Amber",
+        "grenat": "Garnet"
+      },
+      "fond": "Sidebar background",
+      "fonds": {
+        "dark": {
+          "nom": "Dark",
+          "aide": "same background whatever the theme"
+        },
+        "transparent": {
+          "nom": "Transparent",
+          "aide": "the page shows through"
+        },
+        "light": {
+          "nom": "Light",
+          "aide": "follows the light or dark theme"
+        }
+      },
+      "barreFixe": "Fixed top bar",
+      "barreFixeOui": "It stays in place when the page scrolls.",
+      "barreFixeNon": "It scrolls away with the page and frees up height.",
+      "sombre": "Dark theme",
+      "sombreAide": "The top bar button also offers “follow the system”.",
+      "colonne": "Show the navigation sidebar",
+      "colonneMasquee": "Hidden: the button at the top left brings it back.",
+      "colonneVisible": "Visible. The same button collapses it to icons only.",
+      "origine": "Restore the original appearance"
+    },
+    "notifications": {
+      "titre": "Notifications",
+      "clocheEnAttente": "Notifications, {n} pending",
+      "toutLu": "Mark all as read",
+      "instant": "just now",
+      "minutes": "{n} min ago",
+      "heures": "{n} h ago",
+      "hier": "yesterday",
+      "acomptes": "Deposits",
+      "demandes": "Requests",
+      "aNoter": "To review",
+      "aTraiter": "To handle",
+      "aTraiterAide": "These items stay until they are dealt with.",
+      "vide": "Nothing new",
+      "videAide": "Bookings, deposits and cancellations from now on will show up here.",
+      "essaiEnvoye": "{n, plural, one {Sent. It will arrive in a few seconds.} other {Sent to # devices. It will arrive in a few seconds.}}",
+      "essaiAucun": "No device accepted the notification.",
+      "essaiEchec": "Could not send.",
+      "push": {
+        "pret": "Notifications are on for this device.",
+        "desactiver": "Turn off",
+        "possible": "Get notified on this device, even outside the dashboard.",
+        "activer": "Turn on",
+        "refuse": "Notifications are blocked for this site. Allow them again in your browser settings.",
+        "nonInstalle": "On iPhone: tap Share, then “Add to Home Screen”. Notifications will then become available.",
+        "incompatible": "This browser does not support notifications.",
+        "envoi": "Sending…",
+        "essayer": "Try it"
+      }
+    },
+    "acces": {
+      "bouton": {
+        "verification": "Payment being checked",
+        "reactiver": "Reactivate my salon",
+        "regler": "Pay my subscription",
+        "choisir": "Choose a plan",
+        "dernierJour": "last day",
+        "jours": "{n} d",
+        "annuel": "Switch to yearly",
+        "pro": "Upgrade to Pro"
+      },
+      "prevenir": "Let the salon owner know.",
+      "suspendu": "Subscription suspended: online booking is closed and the dashboard is read-only. Contact the Beauty Salon team.",
+      "resilie": "Subscription cancelled: the dashboard is read-only.",
+      "verificationExpire": "Payment received and being checked. Everything reopens once it is approved.",
+      "verification": "Payment received and being checked.",
+      "expire": "Subscription expired: online booking is closed and the dashboard is read-only. Your data is safe.",
+      "grace": "Your period ended on {fin}. Pay before {limite} to keep bookings open.",
+      "essaiFin": "Your free trial ends on {fin}.",
+      "essaiDans": "Your free trial ends in {jours} days, on {fin}.",
+      "periodeFin": "Your subscription ends on {fin}.",
+      "voir": "View",
+      "suivre": "Track",
+      "reactiver": "Reactivate",
+      "regler": "Pay",
+      "choisir": "Choose a plan",
+      "prolonger": "Renew"
+    },
+    "rappelPush": {
+      "titre": "Never miss an appointment",
+      "aide": "Get notified instantly on this device, even with the app closed.",
+      "iosAide": "On iPhone, notifications work once the dashboard is added to your Home Screen.",
+      "ios1": "Tap <b>Share</b> (the square with an arrow) in Safari.",
+      "ios2": "Choose <b>“Add to Home Screen”</b>.",
+      "ios3": "Open the dashboard from the new icon: this prompt will offer to turn notifications on.",
+      "points": {
+        "reservations": "New bookings",
+        "annulations": "Cancellations",
+        "acomptes": "Deposits to check"
+      },
+      "plusTard": "Later",
+      "jaiCompris": "Got it",
+      "activer": "Turn on",
+      "compris": "Got it",
+      "activees": "Notifications on",
+      "activeesAide": "This device will be notified of every new request.",
+      "bloquees": "Notifications blocked",
+      "bloqueesAide": "This device won't notify you of new bookings. To allow them: tap the padlock left of the address, then “Notifications” → “Allow”, and reload the page."
+    },
+    "miseEnRoute": {
+      "titre": "Getting started",
+      "progression": "{fait, plural, one {# step} other {# steps}} of {total}",
+      "aSuivre": "next: {etape}",
+      "continuer": "Continue",
+      "compte": {
+        "titre": "Salon created",
+        "aide": "Your web address is reserved."
+      },
+      "horaires": {
+        "titre": "Opening hours set",
+        "aide": "A starting schedule is already in place — adjust it."
+      },
+      "prestations": {
+        "titre": "First service",
+        "aide": "Without a catalogue, nobody can book."
+      },
+      "prestataires": {
+        "titre": "First staff profile",
+        "aide": "Even on your own, create your profile: it holds your appointments."
+      },
+      "photos": {
+        "titre": "First photos",
+        "aide": "Three sharp examples of your work are enough to trigger a booking."
+      },
+      "validation": {
+        "titre": "Mini-site online",
+        "aide": "Our team reviews your salon before it goes public."
+      }
+    },
+    "accueil": {
+      "deuxFacteurs": {
+        "titre": "Protect your salon in two minutes",
+        "aide": "Turn on two-factor authentication: a stolen password will no longer be enough to open your account.",
+        "activer": "Turn on",
+        "plusTard": "Later"
+      },
+      "aTraiter": "To handle",
+      "taches": {
+        "deposits": "{n, plural, one {deposit to check} other {deposits to check}}",
+        "requests": "{n, plural, one {request to accept} other {requests to accept}}",
+        "overdue": "{n, plural, one {past slot to settle} other {past slots to settle}}"
+      },
+      "aujourdhui": "Today",
+      "rendezVous": "{n, plural, one {appointment} other {appointments}}",
+      "prochain": "Next: <b>{service}</b> — {cliente} at {heure}",
+      "journeePassee": "All of today's appointments are over.",
+      "aucunAujourdhui": "No appointments today.",
+      "recettes": "Revenue this month",
+      "moisPrecedent": "Previous month: {montant}",
+      "evolution": "{signe}{n}% vs previous month",
+      "clientes": "Clients",
+      "rdv30": "Bookings (30 days)",
+      "panier": "Average spend",
+      "note": "Average rating",
+      "nbAvis": "{n, plural, one {# review} other {# reviews}}",
+      "aucunAvis": "No published reviews",
+      "prestationsMois": "Services this month",
+      "prestationsVide": "No completed appointments in the last 30 days.",
+      "prestationsTop": "Most booked services",
+      "trenteJours": "Over the last 30 days",
+      "avisTitre": "Client reviews",
+      "avisVide": "No published reviews yet. They come on their own: every client is invited to leave one after her visit.",
+      "avisPublies": "{n, plural, one {# published review} other {# published reviews}}",
+      "remplissage": {
+        "titre": "Occupancy",
+        "septJours": "Over the last 7 days",
+        "sansHoraires": "Set your opening hours to see how much of your time is actually booked.",
+        "poserHoraires": "Set my opening hours",
+        "occupees": "{n}% of opening hours booked",
+        "plein": "Your days are full. Time to open more slots, or adjust your prices.",
+        "confortable": "A comfortable pace: there is still room for new clients.",
+        "libre": "Many open hours are still free. A promotion or a reminder to your regulars would fill them."
+      },
+      "activite": "Activity",
+      "activiteVide": "Nothing happened in the last 30 days.",
+      "depuis": {
+        "instant": "just now",
+        "minutes": "{n} min ago",
+        "heures": "{n} h ago",
+        "jours": "{n} d ago"
+      },
+      "fil": {
+        "reservation": "{nom} booked",
+        "avis": "{nom} left {note}/5",
+        "acompte": "Deposit received from {nom}"
+      }
+    },
+    "connexion": {
+      "bienvenue": "Welcome, {nom}.",
+      "codeSecours": "Backup code used: you have {n} left. Generate new ones from the Security screen.",
+      "verificationEchec": "Verification failed. Please try again.",
+      "echec": "Could not sign in. Please try again.",
+      "deuxFacteurs": "Two-factor authentication",
+      "deuxFacteursAide": "Enter the six-digit code shown in your authenticator app, or one of your backup codes.",
+      "code": "Code",
+      "verifier": "Verify",
+      "retourMotDePasse": "Back to password",
+      "titre": "Sign in to your professional space",
+      "titreSansSalon": "Sign in with a salon account",
+      "aide": "Manage your appointments, your team and your clients.",
+      "aideCree": "Your salon has been created. Sign in to enter it.",
+      "aideSansSalon": "The account currently signed in does not give access to any salon.",
+      "sessionActuelle": "Current session:",
+      "sessionAdmin": "Platform administration has its own dedicated space.",
+      "sessionAutre": "Enter the email and password of an account linked to your salon. If this account needs access, ask the owner to invite you.",
+      "email": "Email",
+      "motDePasse": "Password",
+      "oublie": "Forgot your password?",
+      "seConnecter": "Sign in",
+      "pasDeSalon": "No salon yet?",
+      "pasDeCompteSalon": "No salon account yet?",
+      "creerLeMien": "Create mine",
+      "creerSalon": "Create a salon",
+      "essai": "14 days free, no credit card.",
+      "autreAdresse": "Signing up requires a different email address."
+    },
+    "agenda": {
+      "titre": "Calendar",
+      "description": "Your upcoming appointments, and what needs your attention.",
+      "erreurChargement": "Could not load the calendar.",
+      "confirme": "{nom}'s appointment confirmed.",
+      "annule": "{nom}'s appointment cancelled.",
+      "refusEnvoye": "The client has been notified and can send new proof.",
+      "chargement": "Loading…",
+      "recherche": "Searching…",
+      "resultats": "{n, plural, one {# result} other {# results}} for “{terme}”, across the whole calendar.",
+      "retour": "Back to the calendar",
+      "avec": "with {nom}",
+      "deplacer": {
+        "titre": "Reschedule the appointment",
+        "titreDe": "Reschedule {nom}'s appointment",
+        "succes": "{nom}'s appointment has been moved. The client has been notified.",
+        "conflit": "This slot has just been taken. Here is what is left that day.",
+        "echec": "Could not reschedule.",
+        "actuellement": "Currently on {jour} at {heure}",
+        "fermer": "Close",
+        "illisible": "Could not read availability",
+        "connexion": "The connection failed. Nothing was changed.",
+        "reessayer": "Try again",
+        "lecture": "Reading availability…",
+        "aucun": "No free slot that day. Try another day in the strip.",
+        "deplacerA": "Move to {heure}",
+        "choisir": "Choose a slot",
+        "annuler": "Cancel",
+        "bouton": "Reschedule"
+      },
+      "annuler": "Cancel",
+      "vide": {
+        "titre": "No appointments in this period",
+        "corps": "Share your mini-site link so your clients can book on their own, at any time."
+      },
+      "stats": {
+        "aujourdhui": "Today",
+        "rendezVous": "appointments",
+        "septJours": "Next 7 days",
+        "actifs": "active appointments",
+        "absences": "No-shows",
+        "annulations": "Cancellations",
+        "trenteJours": "over 30 days"
+      },
+      "cible": {
+        "rdv": "The appointment from your notification.",
+        "rdvDisparu": "This appointment no longer exists.",
+        "rienATraiter": "Nothing left to handle here — it's already done.",
+        "acomptes": "{n, plural, one {# deposit to check} other {# deposits to check}}.",
+        "demandes": "{n, plural, one {# request to accept} other {# requests to accept}}.",
+        "a-noter": "{n, plural, one {# appointment to close} other {# appointments to close}}.",
+        "elements": "{n, plural, one {# item} other {# items}}."
+      },
+      "statut": {
+        "pending_payment": "Awaiting payment",
+        "requested": "Requested",
+        "confirmed": "Confirmed",
+        "checked_in": "Client arrived",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No-show"
+      },
+      "action": {
+        "confirmed": "Confirm",
+        "checked_in": "Client arrived",
+        "no_show": "No-show",
+        "completed": "Completed"
+      },
+      "acompte": {
+        "encaisse": "{montant} received",
+        "reste": "{montant} left",
+        "attendu": "{montant} deposit expected"
+      },
+      "retard": {
+        "passe": "Slot over · to close",
+        "enRetard": "{delai} late",
+        "clientes": "{n, plural, one {# client running late} other {# clients running late}}",
+        "creneaux": "{n, plural, one {# past slot to close} other {# past slots to close}}",
+        "tolerance": "Your grace period is {n} min.",
+        "aucuneTolerance": "You allow no grace period."
+      },
+      "domicile": {
+        "zone": "At home · {zone}",
+        "frais": "{montant} travel fee, included"
+      },
+      "preuve": {
+        "nonTranche": "This appointment was confirmed without a decision on the payment: the deposit was not recorded anywhere. Record it from the Finances tab.",
+        "retrouve": "Payment found and confirmed.",
+        "nonRetrouve": "Payment not found. The client can send new proof.",
+        "nonRetrouveMotif": "Payment not found — {motif}. The client can send new proof.",
+        "aVerifier": "Deposit to check — {montant}",
+        "ditAvoirPaye": "{nom} says they have paid.",
+        "ditAvoirPayePar": "{nom} says they have paid with {moyen}.",
+        "retrouvez": "Find the payment in your app before accepting.",
+        "capture": "Payment screenshot",
+        "sansCapture": "No screenshot — the client could not attach one.",
+        "reference": "Reference",
+        "message": "Message",
+        "montantRecu": "Amount received",
+        "montantReel": "Amount actually received",
+        "motif": "Reason for rejecting",
+        "motifExemple": "No payment for this amount…",
+        "confirmerRefus": "Confirm rejection",
+        "annuler": "Cancel",
+        "accepter": "I received the deposit — accept",
+        "introuvable": "Payment not found"
+      },
+      "barre": {
+        "affichage": "Calendar view",
+        "jour": "Day",
+        "semaine": "Week",
+        "mois": "Month",
+        "precedente": "Previous period",
+        "suivante": "Next period",
+        "aujourdhui": "Today",
+        "rechercher": "Search for a client or a service",
+        "rechercheExemple": "Name, phone, service",
+        "filtreStatut": "Filter by status",
+        "tousStatuts": "All statuses",
+        "filtrePrestataire": "Filter by staff member",
+        "touteEquipe": "Whole team",
+        "statuts": {
+          "aTraiter": "To handle",
+          "confirmed": "Confirmed",
+          "checked_in": "Clients arrived",
+          "completed": "Completed",
+          "cancelled": "Cancelled",
+          "no_show": "No-shows"
+        },
+        "autres": "+{n} more",
+        "jourCompte": "{jour} — {n, plural, one {# appointment} other {# appointments}}",
+        "rdvCourt": "{n, plural, one {# appt} other {# appts}}"
+      },
+      "progression": {
+        "titre": "Appointment progress",
+        "etape": {
+          "pending_payment": "Deposit",
+          "requested": "To approve",
+          "confirmed": "Confirmed",
+          "checked_in": "Arrived",
+          "completed": "Done"
+        },
+        "sortie": {
+          "cancelled": "Cancelled — this appointment will go no further.",
+          "no_show": "No-show — this appointment will go no further."
+        }
+      }
+    },
+    "arrivee": {
+      "bouton": "Check-in",
+      "titre": "Record an arrival",
+      "arriveeDe": "{nom}'s arrival",
+      "aide": "Scan the client's QR code, or enter their code.",
+      "fermer": "Close",
+      "deja": "Already checked in",
+      "enregistree": "Arrival recorded",
+      "echec": "Could not record",
+      "modes": {
+        "camera": "Camera",
+        "image": "Image",
+        "code": "Code"
+      },
+      "sansCode": "{nom} doesn't have their code — record the arrival anyway",
+      "camera": {
+        "absente": "This device does not offer a camera to the browser.",
+        "https": "The camera is only available over HTTPS. On an http:// address, the browser blocks it.",
+        "refusee": "Camera access was denied. Allow it in your browser settings, or enter the code.",
+        "aucune": "No camera available on this device.",
+        "ouverture": "Opening the camera…",
+        "viser": "Point the device at the client's QR code. The arrival is recorded as soon as the code is read."
+      },
+      "image": {
+        "pasUneImage": "This file is not an image.",
+        "aucunQr": "No QR code was found in this image. Try a sharper screenshot, or enter the six-character code.",
+        "format": "This image format could not be opened. Try a JPEG or PNG screenshot.",
+        "lecture": "Reading the image…",
+        "deposer": "Drop the QR screenshot",
+        "ordinateur": "Drag it here, paste it with Ctrl+V, or choose a file.",
+        "telephone": "Take a photo, or choose a file.",
+        "choisir": "Choose an image",
+        "saisir": "Enter the code instead"
+      },
+      "code": {
+        "libelle": "Check-in code",
+        "aide": "Six characters, below the client's QR code.",
+        "exclus": "Our codes never contain {caracteres} — check again: it is probably {suggestion}.",
+        "jamais": "No O or 0, no I or 1, no S or 5: these characters are never used.",
+        "enregistrer": "Save",
+        "suggestion": {
+          "cO": "a misread D or Q",
+          "cQ": "a D",
+          "c0": "a D",
+          "cI": "a J",
+          "c1": "a 7",
+          "cL": "a J",
+          "cS": "a 5, which isn't used either — look again",
+          "c5": "an F",
+          "cB": "an E",
+          "c8": "an E",
+          "cZ": "a 7",
+          "c2": "a 7",
+          "cG": "a 6 or a C",
+          "c6": "a C",
+          "cU": "a V",
+          "c9": "a 4",
+          "autre": "another character"
+        }
+      },
+      "verdict": {
+        "cliente": "Client",
+        "prestation": "Service",
+        "heure": "Time",
+        "avec": "With",
+        "suivante": "Next",
+        "fermer": "Close"
+      }
+    },
+    "attente": {
+      "titre": "Waiting list",
+      "description": "Clients to call back when a spot opens up. Nothing is booked for them.",
+      "erreur": "Could not load the list.",
+      "vide": {
+        "titre": "Nobody is waiting",
+        "corps": "When your calendar is full, your clients can ask to be called back from your mini-site. They will appear here."
+      },
+      "contactee": "Contacted",
+      "periode": "Would like a slot between {debut} and {fin}",
+      "marqueeContactee": "{nom} marked as contacted.",
+      "rappele": "I called back",
+      "pris": "Appointment booked",
+      "prisClasse": "Appointment booked: request closed.",
+      "classer": "Close",
+      "classee": "Request closed."
+    },
+    "clientes": {
+      "titre": "Clients",
+      "description": "Built automatically with every booking. This data is yours.",
+      "recherche": "Search by name or phone",
+      "rechercheAria": "Search for a client",
+      "filtres": {
+        "toutes": "All",
+        "habituees": "Regulars"
+      },
+      "erreur": "Could not load your clients.",
+      "vide": {
+        "rechercheTitre": "No results",
+        "recherche": "Try another spelling, or part of the number.",
+        "habitueesTitre": "No regulars yet",
+        "habituees": "A client appears here from their second attended appointment.",
+        "titre": "No clients",
+        "corps": "Your client list will fill itself from the first booking."
+      },
+      "habituee": "Regular",
+      "absencesBadge": "{n} no-shows",
+      "dernier": "Last appointment on {date}",
+      "offres": "Accepts offers",
+      "compteurs": {
+        "venues": "{n, plural, one {visit} other {visits}}",
+        "annulations": "{n, plural, one {cancellation} other {cancellations}}",
+        "absences": "{n, plural, one {no-show} other {no-shows}}"
+      },
+      "masquer": "Hide history",
+      "voir": "{n, plural, one {View the appointment} other {View all # appointments}}",
+      "historiqueIndisponible": "History unavailable.",
+      "statut": {
+        "completed": "Completed",
+        "confirmed": "Confirmed",
+        "requested": "Requested",
+        "checked_in": "Arrived",
+        "cancelled": "Cancelled",
+        "no_show": "No-show"
+      }
+    },
+    "prestations": {
+      "titre": "Services",
+      "description": "What your clients see and book on your mini-site.",
+      "nouvelle": "New service",
+      "erreurChargement": "Could not load the catalogue.",
+      "onglets": {
+        "aria": "Page sections",
+        "prestations": "Services",
+        "ressources": "Resources"
+      },
+      "vide": {
+        "categorieTitre": "Start with a category",
+        "categorie": "Hair, nails, make-up, treatments… Categories organise your mini-site and help your clients find their way.",
+        "titre": "No services",
+        "creer": "Create my first service",
+        "corps": "Without services, your clients have nothing to book.",
+        "rechercheTitre": "No results",
+        "recherche": "No service matches this search. Try another spelling, or clear the filters."
+      },
+      "supprimee": "“{nom}” deleted.",
+      "suppressionImpossible": "Cannot delete: this service has appointments. Deactivate it instead.",
+      "retiree": "“{nom}” can no longer be booked.",
+      "remise": "“{nom}” can be booked again.",
+      "inactive": "Inactive",
+      "des": "from {montant}",
+      "modifier": "Edit",
+      "desactiver": "Deactivate",
+      "activer": "Activate",
+      "supprimer": "Delete",
+      "lectureSeule": "Only the owner and the manager can edit the catalogue.",
+      "tarifs": {
+        "fixed": "Fixed price",
+        "from": "Starting from",
+        "quote": "On request"
+      },
+      "lieux": {
+        "salon": "At the salon",
+        "home": "At home",
+        "hybrid": "Both"
+      },
+      "acompte": {
+        "court": "deposit {montant}",
+        "aucun": "No deposit will be requested when booking.",
+        "regle": "The amount comes from your salon's rule.",
+        "rien": "Your rule requests nothing: set a percentage or a minimum in Salon profile → Deposit.",
+        "devis": "Salon rule: {taux}% of the service, minimum {minimum}. The amount will be set with the quote.",
+        "soit": "That is {montant} for this service — {taux}% of the price, minimum {minimum}. Supplies are added on top.",
+        "demande": "requested",
+        "nonRegle": "not set"
+      },
+      "categories": {
+        "titre": "Categories",
+        "ajoutee": "Category “{nom}” added.",
+        "existe": "This category already exists.",
+        "pasVide": "“{nom}” contains {n, plural, one {# service} other {# services}}. Empty it first.",
+        "supprimee": "Category “{nom}” deleted.",
+        "supprimer": "Delete the category {nom}",
+        "ajouter": "Add a category",
+        "exemple": "Hair, nails…",
+        "bouton": "Add"
+      },
+      "form": {
+        "ajoutee": "“{nom}” added to the catalogue.",
+        "enregistree": "“{nom}” saved.",
+        "echec": "Could not save. Check your connection, then try again.",
+        "modifier": "Edit the service",
+        "apparaitra": "It will appear on your mini-site.",
+        "nonEnregistre": "Unsaved changes",
+        "aucuneModif": "No changes",
+        "annuler": "Cancel",
+        "enCours": "Saving…",
+        "creer": "Create the service",
+        "enregistrer": "Save",
+        "photo": "Service photo",
+        "photoAide": "Shown on your mini-site and during booking. Without a photo, a mood image is used.",
+        "nom": "Name",
+        "nomExemple": "Cornrows",
+        "categorie": "Category",
+        "duree": "Duration (min)",
+        "dureeAide": "Blocked in the calendar.",
+        "typeTarif": "Pricing",
+        "prix": "Price ({devise})",
+        "lieu": "Location",
+        "lieuSalon": "Never offered at home.",
+        "lieuDomicile": "The area's travel fee is added.",
+        "acompte": "This service requires a deposit",
+        "description": "Description",
+        "descriptionExemple": "What the service includes, what to bring…",
+        "reservable": "Bookable online",
+        "reservableAide": "Uncheck to remove it from the mini-site without deleting it.",
+        "auFil": "Options and resources are saved as you go, independently of the “Save” button.",
+        "cettePrestation": "this service"
+      },
+      "erreurs": {
+        "nomVide": "Give the service a name.",
+        "nomLong": "{max} characters at most.",
+        "categorie": "Choose a category.",
+        "dureeCourte": "At least {min} minutes, as a whole number.",
+        "dureeLongue": "A service lasts 24 hours at most.",
+        "prixVide": "Enter a price.",
+        "prixNegatif": "The price cannot be negative."
+      },
+      "options": {
+        "titre": "Options",
+        "majOk": "Option updated.",
+        "retiree": "“{nom}” removed.",
+        "ajoutee": "“{nom}” added to {prestation}.",
+        "jusqua": "Up to {duree} if everything is chosen",
+        "erreur": "Could not load the options.",
+        "vide": "No options. Add “XL length”, “extensions provided”, “removal of the old hairstyle”…",
+        "ajouter": "Add an option",
+        "nom": "Option name",
+        "supplement": "Extra cost in {devise}",
+        "temps": "Extra time in minutes",
+        "inclus": "Included",
+        "suspendre": "Pause",
+        "reactiver": "Resume",
+        "supprimer": "Delete",
+        "exemple": "XL length",
+        "bouton": "Add",
+        "annuler": "Cancel"
+      },
+      "compatibilite": {
+        "titre": "What your opening hours don't allow",
+        "intro": "A service is only offered in a time block long enough to hold it entirely.",
+        "jamais": "Never offered",
+        "jamaisAide": "None of your time blocks is long enough. Your clients won't see it anywhere.",
+        "pasProposee": "Not offered {jours}.",
+        "pasProposeePlage": "Not offered {jours} in the {plage} block.",
+        "conseil": "To make them bookable: lengthen a time block, or shorten the stated duration in <ecran>Services</ecran>.",
+        "jours": {
+          "un": "on {jour}",
+          "plage": "from {debut} to {fin}",
+          "liste": "on {liste}"
+        }
+      },
+      "filtre": {
+        "rechercher": "Search for a service",
+        "rechercherExemple": "Search for a service…",
+        "enLigne": "Online only",
+        "toutes": "All",
+        "compte": "<nombre>{n}</nombre> {n, plural, one {service} other {services}} of {total}",
+        "toutAfficher": "Show all"
+      }
+    },
+    "medias": {
+      "tropLourd": "File too large: 15 MB maximum.",
+      "ajoutee": "Photo uploaded and attached.",
+      "envoiImpossible": "Upload failed.",
+      "importee": "Photo imported and attached.",
+      "importImpossible": "Import failed.",
+      "aucune": "— No photo —",
+      "numero": "Photo {n}",
+      "televerser": "Upload",
+      "lien": "Paste a link",
+      "retirer": "Remove",
+      "adresse": "Photo address",
+      "importer": "Import"
+    },
+    "ressources": {
+      "titre": "Resources",
+      "intro": "What you only have a limited number of. A service that needs a basin will no longer be offered when all your basins are taken, even if the stylist is free.",
+      "erreur": "Could not load the resources.",
+      "vide": "No resources declared. Your slots currently depend only on your staff's availability.",
+      "ajouter": "Add a resource",
+      "majOk": "Resource updated.",
+      "reclamee": "“{nom}” is needed by {n, plural, one {# service} other {# services}}. Detach it first.",
+      "supprimee": "“{nom}” deleted.",
+      "neMobilisePlus": "“{prestation}” no longer uses {ressource}.",
+      "mobilise": "“{prestation}” now uses {ressource}.",
+      "ajoutee": "“{nom}” added.",
+      "types": {
+        "basin": "Shampoo basin",
+        "chair": "Chair",
+        "room": "Treatment room",
+        "equipment": "Equipment"
+      },
+      "moins": "Remove one {nom}",
+      "plus": "Add one {nom}",
+      "quantiteDe": "Quantity of {nom}",
+      "libre": "No service needs it — so it doesn't limit any slot.",
+      "terminer": "Done",
+      "choisir": "Choose services",
+      "suspendre": "Pause",
+      "reactiver": "Resume",
+      "supprimer": "Delete",
+      "creezPrestation": "Create a service first.",
+      "nom": "Resource name",
+      "type": "Resource type",
+      "quantite": "Quantity available",
+      "bouton": "Add",
+      "annuler": "Cancel",
+      "plusRequise": "“{nom}” is no longer required.",
+      "requise": "“{nom}” is now required.",
+      "mobilisees": "Resources used",
+      "mobiliseesAide": "One unit per appointment. When all are taken, the slot disappears.",
+      "disponibles": "{n} available"
+    },
+    "horaires": {
+      "titre": "Opening hours",
+      "description": "These hours decide which slots are offered to your clients. Salon local time ({fuseau}).",
+      "erreur": "Could not load the opening hours.",
+      "lectureSeule": "Only the owner and the manager can edit the opening hours.",
+      "ajoute": "{jour}: 09:00 – 18:00 added.",
+      "majOk": "{jour} updated.",
+      "plageSupprimee": "Time block removed ({jour}).",
+      "semaine": "Standard week",
+      "aucunJour": "No open day: no slot will be offered.",
+      "joursOuverts": "{n, plural, one {# day open} other {# days open}} out of 7.",
+      "appliquerA": "Apply to",
+      "toutLeSalon": "Whole salon",
+      "toutLeSalonMin": "whole salon",
+      "remplacent": "These hours replace the salon's hours for this person.",
+      "ferme": "Closed",
+      "ouverture": "Opening time ({jour})",
+      "fermeture": "Closing time ({jour})",
+      "supprimerPlage": "Remove the time block ({jour})",
+      "plage": "time block",
+      "pause": "Two time blocks on the same day create a break: 09:00–12:00 and 14:00–18:00 close for lunch.",
+      "types": {
+        "leave": "Leave",
+        "blocked": "Blocked slot",
+        "extra_opening": "Extra opening"
+      },
+      "exception": "Exception",
+      "exceptionEnregistree": "{type} saved. The affected slots are no longer offered.",
+      "exceptionSupprimee": "Exception deleted.",
+      "fermer": "Close",
+      "ajouter": "Add",
+      "aVenir": "Upcoming leave and closures",
+      "champs": {
+        "type": "Type",
+        "concerne": "Applies to",
+        "du": "From",
+        "au": "To",
+        "auAide": "Leave empty for a single day.",
+        "motif": "Reason",
+        "motifAide": "Visible to your team only.",
+        "motifExemple": "Annual leave"
+      },
+      "enregistrer": "Save",
+      "annuler": "Cancel",
+      "vide": {
+        "titre": "No closures planned",
+        "corps": "Add your leave in advance: the affected slots disappear from the mini-site straight away."
+      },
+      "prestataire": "staff member",
+      "supprimer": "Delete"
+    },
+    "equipe": {
+      "titre": "Team",
+      "description": "Who can access this space, and with which rights. Providing services doesn't require an account: these two lists don't necessarily overlap.",
+      "erreur": "Could not load the team.",
+      "membres": "Members",
+      "invitations": "Invitations",
+      "vide": {
+        "titre": "No pending invitations",
+        "corps": "Invited people will appear here until they join the team."
+      },
+      "inviteePar": "invited by {nom}",
+      "annuler": "Cancel",
+      "lectureSeule": "Only the owner and the manager can invite new people.",
+      "invitationAnnulee": "Invitation for {email} cancelled.",
+      "invitationEnvoyee": "Invitation sent to {email}. The link is valid for 7 days.",
+      "inviter": "Invite someone",
+      "email": "Email",
+      "emailExemple": "name@example.com",
+      "role": "Role",
+      "envoyer": "Send the invitation",
+      "roles": {
+        "staff": {
+          "libelle": "Staff member",
+          "aide": "Only sees their own calendar."
+        },
+        "receptionist": {
+          "libelle": "Front desk",
+          "aide": "Manages appointments and clients."
+        },
+        "manager": {
+          "libelle": "Manager",
+          "aide": "Also manages the catalogue and the team."
+        },
+        "owner": {
+          "libelle": "Owner",
+          "aide": "Full access, billing included."
+        }
+      },
+      "statuts": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "revoked": "Cancelled",
+        "expired": "Expired"
+      },
+      "sansCompte": {
+        "titre": "<gras>{n, plural, one {# staff member} other {# staff members}}</gras> {n, plural, one {has} other {have}} no account:",
+        "aide": "They appear in the calendar and in booking without signing in. Invite them above only if they need to open this space."
+      }
+    },
+    "prestataires": {
+      "titre": "Staff",
+      "description": "Who provides the services, and which ones. A profile is enough for the calendar: the account to sign in is separate, and is given from Team.",
+      "ajouter": "Add",
+      "erreur": "Could not load your staff.",
+      "vide": {
+        "titre": "No staff members",
+        "ajouter": "Add the first person",
+        "corps": "Even if you work alone, create your profile: it holds your hours and your appointments."
+      },
+      "inactif": "Inactive",
+      "acces": "Has access",
+      "sansCompte": "No account",
+      "sansCompetence": "No skills — not shown in booking",
+      "modifier": "Edit",
+      "supprimer": "Delete",
+      "lectureSeule": "Only the owner and the manager can edit the team.",
+      "retire": "{nom} removed from the list.",
+      "retraitImpossible": "{nom} could not be removed.",
+      "form": {
+        "ajoute": "{nom} added to the team.",
+        "enregistree": "{nom}'s profile saved.",
+        "nouveau": "New staff member",
+        "modifier": "Edit “{nom}”",
+        "nom": "Name",
+        "specialite": "Specialty",
+        "specialiteAide": "Shown on the mini-site.",
+        "specialiteExemple": "Braids and wigs",
+        "presentation": "About",
+        "portrait": "Portrait",
+        "portraitAide": "Shown on your mini-site. Without a photo, their initials are used.",
+        "competences": "Skills",
+        "competencesAide": "Only the checked services will be offered with this person.",
+        "creezPrestations": "Create some services first.",
+        "accepte": "Accepts appointments",
+        "accepteAide": "Uncheck during long leave, without deleting the profile.",
+        "ajouter": "Add",
+        "enregistrer": "Save",
+        "annuler": "Cancel"
+      }
+    },
+    "avis": {
+      "titre": "Reviews",
+      "description": "What your clients say after their appointment. Every review is tied to a service that actually took place.",
+      "erreur": "Could not load the reviews.",
+      "vide": {
+        "titre": "No reviews yet",
+        "corps": "A review request is sent automatically by email a few hours after each completed service. The first ones will come on their own."
+      },
+      "moyenne": "Average rating",
+      "surAvis": "from {n, plural, one {# published review} other {# published reviews}}",
+      "cinq": "Five stars",
+      "partDesAvis": "{pct}% of reviews",
+      "troisOuMoins": "Three stars or fewer",
+      "priorite": "read these first",
+      "repartition": "Breakdown",
+      "masque": "Hidden by the platform",
+      "surCinq": "{n} out of 5",
+      "criteres": {
+        "rating_result": "The result",
+        "rating_welcome": "The welcome",
+        "rating_punctuality": "Punctuality",
+        "rating_cleanliness": "Salon cleanliness",
+        "rating_value": "Value for money"
+      },
+      "regle": "You can neither edit nor delete a review: that is what gives reviews their value in your clients' eyes. A clearly abusive review can be reported to the Beauty Salon team, who decide whether to remove it."
+    },
+    "galerie": {
+      "titre": "Photos",
+      "description": "Your work, your logo and your banner. It's the first thing a client sees.",
+      "erreur": "Could not load your photos.",
+      "identiteVisuelle": "Visual identity",
+      "identite": {
+        "logo": {
+          "titre": "Logo",
+          "aide": "Square, at least 400 px per side.",
+          "maj": "Logo updated on your mini-site.",
+          "retire": "Logo removed.",
+          "choisir": "Choose the logo"
+        },
+        "banner": {
+          "titre": "Banner",
+          "aide": "Panoramic, at least 1200 px wide.",
+          "maj": "Banner updated on your mini-site.",
+          "retire": "Banner removed.",
+          "choisir": "Choose the banner"
+        }
+      },
+      "galerie": "Gallery",
+      "compte": "{n, plural, one {# photo} other {# photos}} · {vitrine}/{max} featured",
+      "aideEtoile": "The star features a photo on your home page. The arrows change the order of the “Our work” page — the two are independent.",
+      "aideRelier": "Link each photo to its <gras>service</gras>: on your mini-site, it shows the price and a “Book this look” button, and lands in the right filter. Add who did it to showcase your team.",
+      "vide": {
+        "titre": "No photos",
+        "corps": "An empty gallery hurts the mini-site. Three or four sharp examples of your work are enough to trigger a booking."
+      },
+      "realisation": "Salon work",
+      "vitrine": "Featured",
+      "retirerVitrine": "Remove from featured",
+      "mettreVitrineAccueil": "Feature on the home page",
+      "mettreVitrine": "Feature",
+      "decrire": "Describe the photo",
+      "description_": "Photo description",
+      "prestationMontree": "Service shown in the photo",
+      "prestationAucune": "Service: none",
+      "realiseePar": "Staff member who did it",
+      "realiseeParAucun": "Done by: not specified",
+      "taille": {
+        "ko": "{n} KB",
+        "mo": "{n} MB"
+      },
+      "reculer": "Move back one place",
+      "avancer": "Move forward one place",
+      "supprimer": "Delete",
+      "retirer": "Remove",
+      "lectureSeule": "Only the owner and the manager can manage photos.",
+      "aucune": "— None —",
+      "numero": "Photo {n}",
+      "supprimee": "Photo deleted.",
+      "vitrinePleine": "The home page shows {n} items. Remove one before adding another.",
+      "misEnVitrine": "Photo featured on your home page.",
+      "retireeVitrine": "Photo removed from featured.",
+      "descriptionOk": "Description saved.",
+      "prestationReliee": "Service linked: the photo now offers “Book this look”.",
+      "prestationRetiree": "Service removed from the photo.",
+      "signatureOk": "Photo credit saved.",
+      "ordreOk": "Order updated.",
+      "envoi": {
+        "tropLourd": "Over 15 MB",
+        "impossible": "Upload failed",
+        "uneAjoutee": "Photo added. It's live on your mini-site.",
+        "ajoutees": "{n} photos added.",
+        "unEchec": "“{nom}” could not be uploaded.",
+        "echecs": "{n} files could not be uploaded.",
+        "deposer": "Drop your photos here",
+        "formats": "JPEG, PNG, WebP or short MP4 / WebM video. 15 MB maximum per file.",
+        "choisir": "Choose files"
+      },
+      "lien": {
+        "importe": "Media imported from the link.",
+        "ouvrir": "or paste the link to a photo or video",
+        "adresse": "Photo or video address",
+        "importer": "Import",
+        "annuler": "Cancel"
+      }
+    },
+    "boutique": {
+      "titre": "Shop",
+      "description": "What you sell at the counter, and what clients need to bring for each service.",
+      "erreur": "Could not load the shop.",
+      "articleMaj": "Item updated.",
+      "retireBoutique": "“{nom}” removed from the shop.",
+      "ruptures": "{n, plural, one {# item out of stock} other {# items out of stock}}",
+      "bientotEpuises": "Running low: {liste}",
+      "onglets": {
+        "aria": "Shop sections",
+        "articles": "Items",
+        "prevoir": "To bring"
+      },
+      "vide": {
+        "titre": "Your shop is empty",
+        "corps": "Extensions, wigs, care kits… What you sell here can be offered to your clients when they book."
+      },
+      "ajouterArticle": "Add an item",
+      "retire": "Withdrawn",
+      "unites": {
+        "piece": "Per unit",
+        "pack": "Pack",
+        "meter": "Metre",
+        "gram": "Gram"
+      },
+      "stockDe": "Stock of {nom}",
+      "stock": {
+        "illimite": "always available",
+        "bas": "running low",
+        "ok": "in stock",
+        "rupture": "out of stock"
+      },
+      "modifier": "Edit",
+      "retirer": "Withdraw",
+      "remettre": "Restore",
+      "supprimer": "Delete",
+      "enregistrer": "Save",
+      "ajouter": "Add",
+      "annuler": "Cancel",
+      "form": {
+        "maj": "“{nom}” updated.",
+        "ajoute": "“{nom}” added to your shop.",
+        "modifier": "Edit “{nom}”",
+        "nouveau": "New item",
+        "nom": "Name",
+        "nomExemple": "Kanekalon braiding hair",
+        "prix": "Price ({devise})",
+        "vendu": "Sold",
+        "stock": "Stock",
+        "stockAide": "Empty = unlimited.",
+        "seuil": "Alert threshold",
+        "seuilAide": "Alert below this.",
+        "description": "Description (optional)",
+        "descriptionAide": "Length, colour, brand… what a client would ask at the counter.",
+        "photo": "Photo (optional)",
+        "photoAide": "A photo helps the client recognise what they're buying."
+      },
+      "prevoir": {
+        "maj": "“{nom}” updated.",
+        "ajoutee": "Supply added.",
+        "retiree": "“{nom}” removed.",
+        "plusPropose": "“{nom}” is no longer offered for this supply.",
+        "propose": "“{nom}” is now offered for this supply.",
+        "intro": "What the client needs to bring. Shown before booking — even if you sell nothing, writing it down avoids appointments cancelled on the spot.",
+        "vide": {
+          "titre": "Nothing to bring yet",
+          "corps": "“3 packs of braiding hair”, “a wig”, “your kit”… Your clients will see it when they book."
+        },
+        "ajouter": "Add a supply",
+        "indispensable": "Required",
+        "facultatif": "Optional",
+        "modifier": "Edit",
+        "supprimer": "Delete",
+        "proposez": "What you offer to those who don't have it:",
+        "annuler": "Cancel",
+        "form": {
+          "quoi": "What to bring",
+          "quoiExemple": "3 packs of braiding hair",
+          "prestation": "For which service",
+          "precision": "Details (optional)",
+          "precisionAide": "Length, colour, recommended quantity… The client reads it before booking.",
+          "precisionExemple": "26-inch length, colour 1B",
+          "indispensable": "Required — the client will have to say whether they're bringing it",
+          "enregistrer": "Save",
+          "ajouter": "Add",
+          "annuler": "Cancel"
+        }
+      }
+    },
+    "securite": {
+      "titre": "Security",
+      "description": "Protect access to your salon: two-factor authentication, password and sessions.",
+      "erreur": "Could not read the two-factor authentication status.",
+      "activee": "On",
+      "desactivee": "Off",
+      "deuxFacteurs": "Two-factor authentication",
+      "activation": {
+        "preparationEchec": "Could not prepare. Please try again.",
+        "ok": "Two-factor authentication turned on.",
+        "echec": "Could not turn it on. Please try again.",
+        "intro": "A password can leak, be guessed or be stolen. With two-factor authentication, every sign-in also asks for a six-digit code shown by an app on your phone: without it, your password alone opens nothing.",
+        "gratuit": "Free, no SMS",
+        "activer": "Turn on two-factor authentication",
+        "qr": "QR code to scan with your authenticator app",
+        "etape1": "In your app, add an account and scan this QR code.",
+        "sansCamera": "No camera? Enter this key:",
+        "etape2": "2. Code shown by the app",
+        "etape3": "3. Your password",
+        "confirmer": "Confirm and turn on",
+        "annuler": "Cancel"
+      },
+      "active": {
+        "desactiveeOk": "Two-factor authentication turned off.",
+        "echec": "Could not complete. Please try again.",
+        "restants": "Every sign-in asks for the code from your app. Backup codes left:",
+        "regenerer": "generate new ones now.",
+        "nouveauxCodes": "New backup codes",
+        "desactiver": "Turn off",
+        "avertissementCodes": "Your current codes will stop working.",
+        "avertissementDesactiver": "Your password alone will be enough to sign in again.",
+        "codeApplication": "Code from the app",
+        "motDePasse": "Password",
+        "generer": "Generate new codes",
+        "annuler": "Cancel"
+      },
+      "codes": {
+        "fichierTitre": "Beauty Salon backup codes",
+        "fichierNom": "beauty-salon-backup-codes.txt",
+        "activee": "On",
+        "titre": "Your backup codes",
+        "intro": "If you lose your phone, each of these codes opens <gras>one</gras> sign-in. They will never be shown again: store them now, away from this phone.",
+        "copies": "Codes copied.",
+        "copieImpossible": "Could not copy: write them down by hand.",
+        "copier": "Copy",
+        "telecharger": "Download (.txt)",
+        "ranges": "I have stored my codes somewhere safe.",
+        "terminer": "Done"
+      },
+      "motDePasse": {
+        "ok": "Password changed. Your other devices have been signed out.",
+        "echec": "Could not change it. Please try again.",
+        "titre": "Password",
+        "actuel": "Current password",
+        "nouveau": "New password",
+        "regle": "At least 10 characters. Common passwords, or ones already exposed in a data breach, are refused.",
+        "changer": "Change password"
+      },
+      "sessions": {
+        "titre": "Sessions",
+        "duree": "A session closes by itself after <gras>3 days</gras> of inactivity, and after 14 days at the latest.",
+        "motDePasse": "Changing your password signs out all your other devices.",
+        "journal": "Every sign-in and every sensitive change is logged by the Beauty Salon team.",
+        "fermer": "Sign out my other devices",
+        "fermerAide": "Lost phone, shared computer: every other session of your account is closed. This one stays open.",
+        "confirmer": "Yes, sign them out",
+        "annuler": "Cancel",
+        "fermees": "Your other devices have been signed out."
+      }
+    },
+    "parrainage": {
+      "titre": "Referrals",
+      "description": "Invite a salon: it gets a 30-day trial if the referral is eligible, and you get a discount on your subscription once it's validated.",
+      "reserve": {
+        "titre": "For the salon owner only",
+        "corps": "Referrals affect the subscription: only the owner can see them."
+      },
+      "erreur": "Could not load your referrals. Please try again in a moment.",
+      "pause": {
+        "titre": "Referrals are paused",
+        "corps": "The referral programme isn't open at the moment. Discounts you've already earned are kept."
+      },
+      "versSalon": "To a new salon — platform",
+      "chiffres": {
+        "parraines": "Salons referred",
+        "valides": "Validated",
+        "disponibles": "Discounts available",
+        "prochain": "Next payment"
+      },
+      "reduction": "Your next subscription payment will be reduced by {pct}%, automatically.",
+      "voirAbonnement": "View my subscription",
+      "vosRemises": "Your discounts",
+      "aucunFilleul": "No salons referred yet. Share your code: the salon just needs to enter it when signing up.",
+      "inscritLe": "Signed up on {date}",
+      "aucuneRemise": "No discount yet. It arrives when a referred salon is validated.",
+      "paiementDe": "Payment by {nom}",
+      "inscriptionDe": "Sign-up of {nom}",
+      "utiliseeLe": "Used on {date}",
+      "jusquAu": "Until {date}",
+      "creeeLe": "Created on {date}",
+      "statutFilleul": {
+        "en_verification": "Under review",
+        "admissible": "Validated",
+        "non_retenu": "Not eligible"
+      },
+      "statutRemise": {
+        "en_attente": "Safety period",
+        "suspendue": "Under review",
+        "disponible": "Available",
+        "reservee": "Reserved",
+        "utilisee": "Used",
+        "expiree": "Expired",
+        "annulee": "Cancelled"
+      },
+      "partage": {
+        "message": "I run my salon with Beauty Salon: bookings, reminders, mini-site. Sign yours up with my code {code} and get a 30-day trial if the referral is eligible: {lien}",
+        "votreCode": "Your referral code",
+        "parSalon": "−{pct}% per validated salon",
+        "codeCopie": "Code copied.",
+        "lienCopie": "Link copied.",
+        "copierCode": "Copy the code",
+        "copierLien": "Copy the link",
+        "partager": "Share",
+        "copieImpossible": "Could not copy: select the text by hand.",
+        "copie": "Copied"
+      },
+      "regles": {
+        "titre": "How it works",
+        "partager": {
+          "titre": "Share your code",
+          "texte": "The salon enters it when signing up, or follows your link. A salon has only one referrer."
+        },
+        "valide": {
+          "titre": "The salon is validated",
+          "texte": "After its first confirmed payment: Standard or Pro, monthly or yearly."
+        },
+        "recevez": {
+          "titre": "You get −{pct}%",
+          "salon": "A one-off 10% discount, after a safety period equal to half of the paid period.",
+          "autre": "The referred salon gets a 30-day trial. No additional client benefit is offered."
+        },
+        "auto": {
+          "titre": "It applies automatically",
+          "texte": "On a single payment, discounts can't be combined, valid {jours} days after becoming available.",
+          "nonConfigure": "The settings must be approved in the administration before discounts are released."
+        },
+        "note": "A discount isn't money: it can't be withdrawn or transferred. Self-referrals, or referrals between members of the same salon, aren't eligible."
+      },
+      "clients": {
+        "erreur": "Could not load client referrals.",
+        "invalide": "Invalid settings.",
+        "titre": "Client to client — in your salon",
+        "intro": "A client recommends your salon. When the person they referred makes their first confirmed booking, they get a discount on their next booking with you. You fund this discount.",
+        "reduction": "Discount (%)",
+        "reductionAide": "10% minimum",
+        "validite": "Validity (days)",
+        "plafond": "Maximum discount ({devise})",
+        "activer": "Turn on the programme",
+        "detailsTitre": "Calculation, eligibility and cancellations",
+        "details": "One reward per booking, combinable with promotions. Calculated after promotions on the service and its options. The cap is a maximum amount per booking. Conditions already granted are kept. Any earlier booking, even cancelled, excludes the referred client. The reward stays earned after confirmation; if the referrer cancels their booking, their discount is restored until it expires.",
+        "enregistrer": "Save"
+      }
+    },
+    "finances": {
+      "titre": "Finances",
+      "description": "What comes in, what goes out, what you have left.",
+      "exporter": "Export to Excel",
+      "exportOk": "Workbook downloaded: one sheet per direction.",
+      "exportEchec": "Export unavailable at the moment.",
+      "erreur": "Could not load your finances.",
+      "fenetres": {
+        "j30": {
+          "libelle": "30 days",
+          "avant": "the previous 30 days"
+        },
+        "m3": {
+          "libelle": "3 months",
+          "avant": "the previous 3 months"
+        },
+        "m12": {
+          "libelle": "12 months",
+          "avant": "the previous 12 months"
+        }
+      },
+      "comparaisonIndisponible": "comparison unavailable",
+      "comparaisonEnCours": "comparing…",
+      "points": {
+        "recettes": "{mois}: {montant} in income",
+        "depenses": "{mois}: {montant} in expenses",
+        "cumul": "End of {mois}: {montant} cumulative"
+      },
+      "cartes": {
+        "resultat": "Profit",
+        "recettes": "Income",
+        "depenses": "Expenses",
+        "marge": "Margin",
+        "aucuneRecette": "no income",
+        "deCeQuiRentre": "of income"
+      },
+      "figures": {
+        "recettes": "Income month by month",
+        "meilleurMois": "Best month: {mois}, {montant}.",
+        "aucuneRecette": "No income recorded in this period.",
+        "mouvements": "{n, plural, one {# transaction} other {# transactions}} in this period",
+        "cumul": "Cumulative profit",
+        "cumulAide": "What's left once every month is added up — the curve that tells you whether you're climbing back.",
+        "arreteA": "as of {mois}",
+        "aucunMois": "no month to show",
+        "cumulCourbe": "Cumulative profit month by month",
+        "depenses": "Expenses month by month",
+        "posteLourd": "Biggest expense: {poste}, {montant}.",
+        "aucuneDepense": "No expenses recorded in this period.",
+        "postes": "{n, plural, one {# expense category} other {# expense categories}}"
+      },
+      "ouPart": "Where the money goes",
+      "depensesPeriode": "<gras>{montant}</gras> in expenses over the period",
+      "aucuneDepenseTableau": "No expenses recorded in this period. Recorded payments feed this view automatically.",
+      "derniers": "Latest transactions",
+      "plusRecents": "the {n} most recent",
+      "rienEncore": "Nothing yet. Services you mark as “completed” will appear here on their own.",
+      "dOuVient": "Where the money comes from",
+      "coteACote": "Income and expenses, side by side",
+      "ecart": "it's the gap between the two that matters",
+      "mouvements": "Transactions",
+      "aucunMouvement": "No transactions in this period. Services you mark as “completed” will appear here automatically.",
+      "manuelle": "Former manual entry, kept read-only.",
+      "automatique": "Recorded automatically — corrected at its source.",
+      "postes": {
+        "service": "Service",
+        "product": "Product sale",
+        "travel": "Travel",
+        "tip": "Tip",
+        "other_income": "Other income",
+        "supplies": "Supplies and products",
+        "rent": "Rent",
+        "wages": "Wages",
+        "utilities": "Water, electricity, internet",
+        "transport": "Transport and travel",
+        "marketing": "Advertising",
+        "equipment": "Equipment",
+        "taxes": "Taxes",
+        "other_expense": "Other expense",
+        "autres": "Other ({n} categories)"
+      },
+      "methodes": {
+        "cash": "Cash",
+        "mobile_money": "Mobile Money",
+        "transfer": "Bank transfer",
+        "card": "Card",
+        "wechat": "WeChat Pay",
+        "alipay": "Alipay",
+        "other": "Other"
+      },
+      "sources": {
+        "manual": "Manual entry",
+        "booking_deposit": "Deposit received",
+        "booking_balance": "Service balance",
+        "booking_items": "Counter sale",
+        "booking_travel": "Travel fee",
+        "subscription": "Platform subscription"
+      },
+      "graphiques": {
+        "recettes": "Income",
+        "depenses": "Expenses",
+        "barresTitre": "Income and expenses over the last {n} months",
+        "recettesMin": "income",
+        "depensesMin": "expenses",
+        "survol": "Hover over a month for details.",
+        "cumulTitre": "Cumulative profit over the period",
+        "cumulAuJour": "Total to date:",
+        "aucuneRecette": "No income in this period.",
+        "anneauTitre": "Income breakdown by source"
+      },
+      "evolution": {
+        "rien": "Nothing to compare with {periode}",
+        "stable": "steady",
+        "vs": "vs {periode}",
+        "points": "pts"
+      },
+      "tableau": {
+        "poste": "Category",
+        "montant": "Amount",
+        "part": "Share"
+      }
+    },
+    "domaine": {
+      "titre": "Custom domain",
+      "description": "Your mini-site on your own domain name — www.mysalon.com rather than a Beauty Salon address.",
+      "reserve": {
+        "titre": "For the owner only",
+        "corps": "Connecting a domain changes the salon's public address: the owner takes care of it."
+      },
+      "ajoute": "Domain added. Now create the two DNS records.",
+      "ajoutImpossible": "Could not add the domain.",
+      "ajouter": {
+        "titre": "Add a domain",
+        "detail": "A domain you already own, bought from a registrar (OVH, GoDaddy, Namecheap, Alibaba Cloud…).",
+        "champ": "Domain",
+        "exemple": "www.mysalon.com",
+        "bouton": "Add"
+      },
+      "aucun": "No domain yet. Your mini-site stays reachable at its Beauty Salon address.",
+      "carte": {
+        "relieOk": "{domaine} is now connected to your mini-site.",
+        "verificationImpossible": "Could not verify.",
+        "retire": "Domain removed.",
+        "retraitImpossible": "Could not remove.",
+        "statuts": {
+          "pause": "Paused",
+          "relie": "Connected",
+          "attente": "Waiting for DNS"
+        },
+        "enPause": "Connected, but only served with the Pro plan: visits go to your Beauty Salon address.",
+        "enLigne": "Your clients find your mini-site there, over HTTPS.",
+        "derniereVerification": "Last checked on {date}.",
+        "creez": "Create the two records below, then verify.",
+        "ouvrir": "Open",
+        "registraire": "At your registrar",
+        "prouver": "Prove the domain is yours",
+        "amener": "Point the domain here",
+        "confirmer": "Remove {domaine}?",
+        "annuler": "Cancel",
+        "retirer": "Remove",
+        "verifier": "Verify"
+      },
+      "dns": {
+        "type": "Type",
+        "nom": "Name",
+        "valeur": "Value",
+        "valeurInconnue": "Server address: ask the team",
+        "copier": "Copy {terme}",
+        "copie": "{terme} copied.",
+        "copieImpossible": "Could not copy: select the text by hand."
+      },
+      "aide": {
+        "titre": "Good to know",
+        "p1": "You must already own the domain: Beauty Salon doesn't buy it for you.",
+        "p2": "A subdomain (www.mysalon.com) is connected with a CNAME; the bare domain (mysalon.com) with an A record.",
+        "p3": "DNS takes from a few minutes to a few hours to propagate. Check again later if needed.",
+        "p4": "The HTTPS certificate is created automatically on the first visit.",
+        "p5": "Your Beauty Salon address stays active, and takes over again if Pro stops."
+      }
+    },
+    "offrePro": {
+      "faitPartie": "{fonction} is part of the Pro plan",
+      "fermee": "This feature is temporarily closed by the Beauty Salon team.",
+      "reglagesGardes": "Your settings are kept: they resume as soon as Pro is active.",
+      "passer": "Upgrade to Pro",
+      "parlezEn": "Talk to the salon owner about it."
+    },
+    "fonctionsPro": {
+      "custom_domain": {
+        "nom": "Custom domain",
+        "resume": "Your mini-site on your own domain name."
+      },
+      "customization": {
+        "nom": "Advanced appearance",
+        "resume": "Fonts, menu, section order, tagline and button."
+      },
+      "whatsapp_assistant": {
+        "nom": "WhatsApp AI assistant",
+        "resume": "Automatic replies to your clients on your WhatsApp number."
+      },
+      "platform_assistant": {
+        "nom": "Pro space AI assistant",
+        "resume": "Answers your questions about your calendar and your salon."
+      },
+      "customer_assistant": {
+        "nom": "24/7 AI assistant",
+        "resume": "Automatic replies to your clients on the mini-site, day and night."
+      }
+    },
+    "assistants": {
+      "titre": "AI assistants",
+      "description": "One assistant for your team, one for your clients on the mini-site, one on WhatsApp. They inform; they never book or change anything.",
+      "nonBranche": "The AI service isn't connected to the platform yet: in the meantime, the assistants reply with the salon's contact details.",
+      "conversation": {
+        "silence": "The assistant isn't responding.",
+        "titre": "Pro space assistant",
+        "lit": "It reads your calendar for the next 7 days and your catalogue.",
+        "effacer": "Clear",
+        "question": "What would you like to know?",
+        "suggestions": {
+          "demain": "What's coming up tomorrow?",
+          "semaine": "How many appointments this week?",
+          "horaires": "Where do I change my opening hours?"
+        },
+        "ecrit": "The assistant is typing…",
+        "placeholder": "Your question…",
+        "reservePro": "Pro plan only",
+        "aria": "Your question",
+        "envoyer": "Send"
+      },
+      "clientes": {
+        "active": "Assistant turned on for your mini-site.",
+        "retire": "Assistant removed from the mini-site.",
+        "changementImpossible": "Could not change it.",
+        "titre": "On the mini-site",
+        "detail": "An AI answers your clients' questions day and night — it isn't a person. If it fails, it gives your contact details.",
+        "enLigne": "Online",
+        "horsLigne": "Offline",
+        "afficher": "Show the assistant",
+        "bulle": "A bubble at the bottom left of the mini-site.",
+        "offrePro": "Pro plan."
+      },
+      "whatsapp": {
+        "operationImpossible": "Could not complete.",
+        "repond": "The assistant now replies on WhatsApp.",
+        "neRepondPlus": "The assistant no longer replies on WhatsApp.",
+        "changementImpossible": "Could not change it.",
+        "titre": "On WhatsApp",
+        "detail": "Replies to messages received on the salon's number, at most 20 replies per hour per contact.",
+        "statuts": {
+          "aucun": "Not connected",
+          "en_attente": "Waiting for scan",
+          "connecte": "Connected",
+          "deconnecte": "Disconnected"
+        },
+        "nonConfiguree": "The WhatsApp gateway isn't set up on the platform yet. The Beauty Salon team will let you know as soon as it is.",
+        "proprietaire": "The salon owner connects the WhatsApp number.",
+        "qr": "QR code to scan with WhatsApp",
+        "etape1": "Open WhatsApp on the salon's phone.",
+        "etape2": "Settings → Linked devices → Link a device.",
+        "etape3": "Scan this code. It refreshes on its own.",
+        "numero": "Number {numero}.",
+        "derniereActivite": "Last activity on {date}.",
+        "aucunMessage": "No messages handled yet.",
+        "repondreAuto": "Reply automatically",
+        "repondreAutoAide": "Turn it off at any time to reply yourself.",
+        "scannez": "Scan the QR code with the salon's phone.",
+        "relier": "Connect my WhatsApp",
+        "deconnecteOk": "WhatsApp disconnected.",
+        "deconnecter": "Disconnect",
+        "avertissement": "The connection goes through WhatsApp Web, like a linked computer: it isn't Meta's official API, and use deemed abusive can get the number restricted."
+      },
+      "n8n": {
+        "numeroOk": "Number saved.",
+        "numeroRefuse": "Number rejected.",
+        "confirmerRegenerer": "Regenerate the address? The old one will stop working: remember to update n8n.",
+        "operationImpossible": "Could not complete.",
+        "confirmerDebrancher": "Disconnect n8n? Messages already received stay in the history.",
+        "debranche": "n8n disconnected.",
+        "copieImpossible": "Could not copy: select the text by hand.",
+        "titre": "With n8n",
+        "detail": "Your WhatsApp automation on n8n sends every message here: you follow the conversations in the history below.",
+        "relie": "Connected",
+        "nonRelie": "Not connected",
+        "offrePro": "Pro plan feature.",
+        "numero": "Assistant's WhatsApp number",
+        "enregistrer": "Save",
+        "numeroAide": "The one your clients write to. It's shown in the history.",
+        "copiezMaintenant": "Copy this address now: it won't be shown again.",
+        "copierAdresse": "Copy the webhook address",
+        "adresseCopiee": "Address copied.",
+        "dernierMessage": "Last message received on {date} · {n} in total.",
+        "enAttente": "Address ready: waiting for the first message from n8n.",
+        "regenerer": "Regenerate the address",
+        "creer": "Create the webhook address",
+        "debrancher": "Disconnect",
+        "proprietaire": "The salon owner creates the webhook address.",
+        "dansN8n": "In n8n: “HTTP Request” node",
+        "methode": "Method <gras>POST</gras>, <gras>JSON</gras> body, to the address above. One message per call — or <code>'{'\"messages\": [...]'}'</code>, 50 at most.",
+        "copierExemple": "Copy the example",
+        "exempleCopie": "Example copied.",
+        "champs": "<code>direction</code>: <code>entrant</code> (the client) or <code>sortant</code> (the assistant). <code>id</code> prevents duplicates if n8n resends a message."
+      },
+      "historique": {
+        "titre": "Conversation history",
+        "description": "Exchanges between the assistant and your clients, on WhatsApp and via n8n.",
+        "canal": "Channel",
+        "tous": "All",
+        "offrePro": "Conversation history is part of the Pro plan.",
+        "rechercher": "Search for a contact",
+        "rechercheExemple": "Name or number",
+        "aucuneCorrespond": "No conversation matches.",
+        "aucune": "No conversations yet. They appear as soon as the assistant replies on WhatsApp or n8n sends a message.",
+        "choisissez": "Choose a conversation.",
+        "retour": "Back to conversations",
+        "viaN8n": "via n8n",
+        "viaPlateforme": "WhatsApp (platform)",
+        "repondre": "Reply",
+        "assistant": "Assistant"
+      }
+    },
+    "zones": {
+      "majOk": "Area updated.",
+      "retiree": "“{nom}” removed from your list.",
+      "ajoutee": "“{nom}” added to your list.",
+      "titre": "Travel areas",
+      "desservies": "{n, plural, one {# area served} other {# areas served}}",
+      "sansFrais": "{n} free",
+      "intro": "The fee is added to the service price and shown to the client <fort>before</fort> they confirm. An area at 0 is served for free.",
+      "erreur": "Could not load your areas.",
+      "vide": {
+        "titre": "No areas yet",
+        "corps": "As long as this list is empty, home appointments aren't offered on your mini-site."
+      },
+      "ajouter": "Add an area",
+      "nom": "Neighbourhood name",
+      "frais": "Travel fee in {devise}",
+      "offert": "Free",
+      "suspendre": "Pause",
+      "reactiver": "Resume",
+      "supprimer": "Delete",
+      "exemple": "Bacongo",
+      "bouton": "Add",
+      "annuler": "Cancel"
+    },
+    "encaissement": {
+      "ajoute": "Method added. Upload your QR code.",
+      "enregistre": "Saved.",
+      "retire": "{moyen} removed.",
+      "titre": "Collect deposits",
+      "intro": "Publish your account’s QR code or number: clients pay their deposit there before coming. The money goes straight to you — we never touch it.",
+      "sansQr": "With no method published, clients book without paying anything and you collect on site, as today.",
+      "ajouter": "Add {moyen}",
+      "propose": "Offered",
+      "qrManquant": "QR missing",
+      "qrDe": "{moyen} QR code",
+      "qr": "QR code",
+      "qrAide": "The screenshot of your code from the app.",
+      "compte": "Account name",
+      "compteExemple": "What the client will see when scanning",
+      "precision": "Note",
+      "precisionExemple": "“Put your name in the comment”",
+      "suspendre": "Pause",
+      "reactiver": "Resume",
+      "supprimer": "Delete",
+      "virement": "Bank transfer",
+      "ajouteNumero": "Method added. Enter your number.",
+      "numeroManquant": "Number missing",
+      "qrFacultatif": "QR code (optional)",
+      "titulaire": "Account holder",
+      "titulaireExemple": "The name your client sees when sending",
+      "numero": "Number and instructions",
+      "numeroExemple": "06 123 45 67 — put your name as the reference",
+      "coordonnees": "Bank details",
+      "coordonneesExemple": "Bank, IBAN or account number, and the reference to use",
+      "horsPays": "Not in your country"
+    },
+    "contraste": {
+      "paires": {
+        "price": {
+          "libelle": "Prices and titles",
+          "aide": "main colour on a white card"
+        },
+        "button": {
+          "libelle": "Button text",
+          "aide": "white on the main colour"
+        },
+        "body": {
+          "libelle": "Body text",
+          "aide": "on the page background"
+        },
+        "pill": {
+          "libelle": "Badges",
+          "aide": "main colour on the secondary one"
+        }
+      },
+      "lisibilite": "Readability: {verdict}",
+      "ratio": "contrast {ratio}:1",
+      "corriger": "Fix",
+      "mesure": "WCAG 2.1 contrast measurement. Above 70%, your text stays readable on a small screen in daylight.",
+      "note": "Readability score: {n} out of 100. {verdict}.",
+      "verdicts": {
+        "insuffisant": {
+          "libelle": "Unreadable",
+          "detail": "These two colours blend together. Your prices and buttons will be hard to read on a phone."
+        },
+        "limite": {
+          "libelle": "Borderline",
+          "detail": "Readable for large titles, but tiring for the rest. Darken the main colour a little."
+        },
+        "bon": {
+          "libelle": "Good",
+          "detail": "Readable everywhere, even in bright sunlight on a small screen."
+        },
+        "excellent": {
+          "libelle": "Excellent",
+          "detail": "Maximum reading comfort, whatever the screen."
+        }
+      }
+    },
+    "kkiapay": {
+      "chargement": "Loading payment…",
+      "enCours": "Server confirmation is in progress. Your access will open after verification; don't pay a second time.",
+      "nonConfirme": "Payment not confirmed. You can try again.",
+      "indisponible": "Payment is not available.",
+      "verification": "Verifying payment…",
+      "payer": "Pay with KKIAPAY",
+      "securise": "Secure payment in XOF. The subscription is activated after server confirmation."
+    },
+    "commun": {
+      "chargementImpossible": "Could not load."
+    },
+    "profilNav": {
+      "sections": "Profile sections"
+    },
+    "identite": {
+      "ongletTitre": "Identity · {salon}",
+      "ok": "Your details are up to date.",
+      "titre": "Identity",
+      "description": "Your salon's name, and how to reach you.",
+      "votreSalon": "Your salon",
+      "nomSalon": "Salon name",
+      "nomSalonAide": "Shown at the top of your mini-site, in your emails and on your invoices.",
+      "adresseMiniSite": "Your mini-site address",
+      "adresseCopiee": "Address copied.",
+      "copieImpossible": "Copying isn't possible in this browser.",
+      "copier": "Copy",
+      "ouvrir": "Open",
+      "adresseFixe": "This address doesn't change: it may already be printed or shared. Write to us if you really need to change it.",
+      "vous": "You",
+      "votreNom": "Your name",
+      "votreNomAide": "Shown on your staff profile.",
+      "telephone": "Phone",
+      "telephoneAide": "So the Beauty Salon team can reach you.",
+      "email": "Email address",
+      "emailAide": "It's also your sign-in identifier.",
+      "motDePasse": "Current password",
+      "motDePasseAide": "To confirm the change of identifier. Your old address will be notified.",
+      "enregistrer": "Save",
+      "lectureSeule": "Only the salon owner can change these details."
+    },
+    "devise": {
+      "apercuImpossible": "Preview unavailable at the moment.",
+      "ok": "Your prices are now in {devise}.",
+      "titre": "Currency",
+      "chargement": "Loading…",
+      "actuelle": "Your prices, deposits and shop are in <gras>{devise}</gras>. It's also the default currency shown on your mini-site.",
+      "decalage": "Your salon is registered in <gras>{pays}</gras>, where prices are usually in <gras>{devise}</gras>. Choose it below if this is a mistake — or keep yours if it's intentional.",
+      "votre": "Your currency",
+      "selectionnee": "Selected",
+      "basculer": "Switch",
+      "lectureTaux": "Reading today's rate…",
+      "passer": "Switch from {de} to {vers}",
+      "exemple": "<fort>{nom}</fort>: <chiffre>{avant}</chiffre> {de} becomes <resultat>{apres}</resultat> {vers}",
+      "taux": "Today's rate: 1 {vers} = <chiffre>{inverse}</chiffre> {de}",
+      "lignes": {
+        "prestations": "services",
+        "options": "options",
+        "articles": "items",
+        "zones": "areas"
+      },
+      "historique": "Your past appointments and accounting entries keep their original currency: what was collected in {de} stays in {de}.",
+      "convertir": "Convert to {vers}",
+      "annuler": "Cancel",
+      "devises": {
+        "XAF": "CFA franc",
+        "XOF": "CFA franc (BCEAO)",
+        "CDF": "Congolese franc",
+        "CNY": "Yuan",
+        "USD": "US dollar",
+        "EUR": "Euro",
+        "GHS": "Ghanaian cedi",
+        "GNF": "Guinean franc",
+        "KES": "Kenyan shilling",
+        "MWK": "Malawian kwacha",
+        "NGN": "Nigerian naira",
+        "RWF": "Rwandan franc",
+        "TZS": "Tanzanian shilling",
+        "UGX": "Ugandan shilling",
+        "ZMW": "Zambian kwacha"
+      }
+    },
+    "apparence": {
+      "titre": "Advanced appearance",
+      "reserve": "For the salon owner and manager only.",
+      "titreRequis": "Each page needs a title (at least 2 characters).",
+      "ok": "Appearance saved: your mini-site is up to date.",
+      "echec": "Could not save.",
+      "nouvellePage": "New page",
+      "description": "Fonts, menu, pages and key texts of your mini-site. Colours and logo stay in “Identity”.",
+      "pages": {
+        "titre": "Your pages",
+        "detail": "Up to three pages of your own — prices, training, events… — added to the mini-site menu. Write them in French: the English version of the mini-site receives them translated automatically.",
+        "ajouter": "Add a page",
+        "max": "Three pages at most: remove one to create another."
+      },
+      "menuTitre": "Menu",
+      "menuDetail": "The order of the sections, and which ones are shown.",
+      "menuVide": "A section with no content (no work photos, for example) stays hidden.",
+      "accueilTitre": "Home page",
+      "accueilDetail": "The order of the sections, between the header and the final call to action.",
+      "textes": {
+        "titre": "Key texts",
+        "detail": "Plain text. The English version of the mini-site receives it translated automatically.",
+        "accroche": "Header tagline",
+        "accrocheAide": "{n}/{max} — empty: the salon description.",
+        "accrocheExemple": "Braids, treatments and hairstyles, by appointment in Brazzaville.",
+        "bouton": "Booking button",
+        "boutonAide": "{n}/{max} — empty: “Book”.",
+        "boutonExemple": "Book an appointment"
+      },
+      "nonEnregistre": "Unsaved changes",
+      "enregistrer": "Save",
+      "annuler": "Cancel",
+      "menu": {
+        "prestations": "Services",
+        "realisations": "Our work",
+        "equipe": "Team",
+        "a-propos": "About",
+        "infos": "Practical info"
+      },
+      "sections": {
+        "prestations": "Featured services",
+        "etapes": "How it works",
+        "realisations": "Our work",
+        "equipe": "The team",
+        "avis": "Client reviews",
+        "infos": "Practical info"
+      },
+      "polices": {
+        "titre": "Fonts",
+        "resume": "Titles: {titres} · Text: {texte}",
+        "accords": "Suggested pairings",
+        "exempleAccord": "Belle Allure",
+        "accordsNoms": {
+          "classique": "Classic chic",
+          "romantique": "Romantic",
+          "luxe": "Luxury",
+          "contemporain": "Contemporary",
+          "editorial": "Editorial",
+          "epure": "Minimal"
+        },
+        "aChoisir": "Font to choose",
+        "titres": "Titles",
+        "texte": "Text",
+        "familles": {
+          "toutes": "All",
+          "moderne": "Modern",
+          "elegante": "Elegant",
+          "affiche": "Display",
+          "manuscrite": "Handwritten"
+        },
+        "policeTitres": "Title font",
+        "policeTexte": "Text font",
+        "exempleTitre": "Salon Elegance",
+        "exempleTexte": "Your beauty appointment",
+        "reserveesTitres": "Display and handwritten fonts are reserved for titles: in paragraphs they're hard to read on a phone."
+      },
+      "page": {
+        "sansTitre": "New page — give it a title",
+        "titre": "Title (in the menu)",
+        "titreExemple": "Prices, Training, Events…",
+        "accroche": "Tagline (optional)",
+        "accrocheAide": "One sentence at the top of the page.",
+        "accrocheExemple": "Everything to know before you come.",
+        "contenu": "Content",
+        "contenuAide": "{n}/{max} — a blank line separates two paragraphs.",
+        "contenuExemple": "Present what matters to your clients.\n\nOne paragraph per idea.",
+        "image": "Image (optional)",
+        "imageAide": "Shown next to the text, above it on a phone.",
+        "confirmer": "Remove this page and its menu entry?",
+        "garder": "Keep",
+        "retirer": "Remove",
+        "retirerPage": "Remove the page"
+      },
+      "liste": {
+        "page": "Page",
+        "masquer": "Hide {nom}",
+        "montrer": "Show {nom}",
+        "monter": "Move {nom} up",
+        "descendre": "Move {nom} down"
+      },
+      "apercu": {
+        "titre": "Live preview",
+        "description": "Your salon description appears here.",
+        "reserver": "Book"
+      }
+    },
+    "profil": {
+      "titre": "Salon profile",
+      "description": "What your clients see before booking, and the rules your calendar follows.",
+      "erreur": "Could not load.",
+      "ok": "Profile saved. Your mini-site is up to date.",
+      "alignees": "{n, plural, one {# service is now offered at home.} other {# services are now offered at home.}}",
+      "sections": {
+        "vitrine": "Showcase",
+        "reseaux": "Social",
+        "couleurs": "Colours",
+        "apropos": "About",
+        "regles": "Booking",
+        "deplacement": "Travel",
+        "acompte": "Deposit",
+        "devise": "Currency",
+        "encaissement": "Payments",
+        "annulation": "Cancellation",
+        "retard": "Lateness"
+      },
+      "vitrine": {
+        "titre": "Showcase",
+        "presentation": "Description",
+        "presentationAide": "Two or three sentences: your specialty, what sets you apart.",
+        "adresse": "Address",
+        "ville": "City",
+        "telephone": "Phone",
+        "whatsappAide": "International format, e.g. +242060000000.",
+        "email": "Contact email",
+        "emailAide": "Shown on your mini-site, in the footer and on the Info page.",
+        "emailExemple": "contact@mysalon.com",
+        "utiliser": "Use {email}",
+        "monEmail": "My email",
+        "lieu": "Where services take place",
+        "lieuSalon": "Opening home visits will also offer your services at the client's home, except those you set apart.",
+        "lieuDomicile": "Your services are offered at home, except those set to “At the salon” on their page. Travel fees are set in “Travel”.",
+        "lieux": {
+          "salon": "At the salon",
+          "home": "At home",
+          "hybrid": "Both"
+        }
+      },
+      "reseaux": {
+        "titre": "Social media",
+        "wechat": "Let clients add you on WeChat",
+        "wechatAide": "The QR code is shown on your mini-site with your ID next to it. A client scans it from their computer, or copies the ID if they're reading the page inside WeChat.",
+        "wechatId": "WeChat ID",
+        "wechatIdAide": "The one people type to find you, not your display name.",
+        "wechatQr": "WeChat QR code",
+        "wechatQrAide": "In WeChat: Me › My QR code › save the image, then upload it here."
+      },
+      "couleurs": {
+        "titre": "Colours",
+        "intro": "They dress your mini-site. The layout stays the same for everyone — that's what keeps it readable on a small screen.",
+        "principale": "Main",
+        "principaleAide": "Buttons and prices",
+        "secondaire": "Secondary",
+        "secondaireAide": "Badges, medallions",
+        "fond": "Page background",
+        "fondAide": "Behind the cards",
+        "apercu": "Mini-site preview",
+        "ville": "Your city",
+        "pastille": "Braids",
+        "reserver": "Book",
+        "hexa": "{couleur} in hexadecimal"
+      },
+      "regles": {
+        "titre": "Booking rules",
+        "intro": "These settings change the slots offered to your clients. A change applies to future bookings, not those already made.",
+        "pas": "Slot interval",
+        "pasAide": "{n} min offers {exemple}…",
+        "battement": "Buffer between appointments",
+        "battementAide": "{duree} reserved after each service.",
+        "battementAucun": "No turnaround time reserved.",
+        "delai": "Minimum notice before an appointment",
+        "delaiAide": "A client can't book within the next {duree}.",
+        "delaiAucun": "Booking possible up to the last minute.",
+        "horizon": "Bookable up to (days ahead)",
+        "horizonAide": "Calendar open {n} days ahead."
+      },
+      "apropos": {
+        "titre": "“About” page",
+        "intro": "Your story, in a few paragraphs. It becomes a separate page on your mini-site, and the link only appears in the menu once the text is written.",
+        "titrePage": "Page title",
+        "titrePageAide": "Left empty, your mini-site shows “About {salon}”.",
+        "titrePageExemple": "About {salon}",
+        "presentation": "Your story",
+        "presentationAide": "Separate your paragraphs with a blank line. How long you've been working, what you do best, what sets you apart.",
+        "presentationExemple": "We opened in 2015, in a neighbourhood where nobody styled afro hair.\n\nToday, three stylists welcome you by appointment…",
+        "mots": "{n, plural, one {# word} other {# words}}",
+        "enLigne": "the page is live",
+        "masquee": "the page stays hidden while this field is empty",
+        "photo": "Page photo",
+        "photoAide": "Portrait or view of the salon. Without a photo, a mood image is shown instead."
+      },
+      "deplacement": {
+        "titre": "Where you travel",
+        "quartiers": "Neighbourhoods served",
+        "quartiersAide": "Separated by commas. Shown as written on your mini-site."
+      },
+      "acompte": {
+        "titre": "Deposit amount",
+        "intro": "Time is reserved with a percentage: a slot freed early enough can be rebooked. Supplies are paid in full — you've already bought them.",
+        "part": "Share of the service requested (%)",
+        "partAide": "Applies to the services you've marked “requires a deposit”.",
+        "minimum": "Minimum deposit ({devise})",
+        "minimumAide": "A floor, whatever the percentage. Useful for small services.",
+        "fournitures": "Supplies paid in advance",
+        "fournituresAide": "Hair bought for a specific client can't always be resold.",
+        "aucun": "With 0% and no minimum, no deposit will be requested — even on services that require one."
+      },
+      "annulation": {
+        "titre": "Cancellation",
+        "politique": "Policy shown to the client",
+        "politiqueAide": "It must be accepted before any booking: this is the text you can rely on in case of dispute.",
+        "delai": "Free cancellation up to (hours before)"
+      },
+      "retard": {
+        "titre": "Lateness",
+        "intro": "Lateness is handled by saying it upfront. A client who's been told arrives on time; one who finds out on the spot feels cheated — and you lose both.",
+        "audela": "What happens beyond that",
+        "audelaAide": "Shown on your mini-site and repeated in the confirmation email.",
+        "audelaExemple": "We do our best to see you anyway, but the service may be shortened or postponed depending on the following appointments.",
+        "tolerance": "Grace period",
+        "aucune": "None",
+        "autre": "Other",
+        "toleranceAria": "Grace period in minutes",
+        "vuParCliente": "As the client sees it",
+        "apercuSansTolerance": "Please arrive on time. If you are late:",
+        "apercuTolerance": "Please arrive on time. Beyond {n} minutes late:",
+        "vide": "While this field is empty, nothing is shown to the client and the email doesn't mention lateness.",
+        "agendaSignale": "The calendar already flags appointments more than {n} min late."
+      },
+      "point": {
+        "recherche": "beauty salon",
+        "format": "Expected format: 4.2634, 15.2429",
+        "libelle": "Exact location (optional)",
+        "aide": "Paste the coordinates from Google Maps: right-click on your salon, then click the numbers to copy them.",
+        "aria": "Latitude and longitude",
+        "verifier": "Check the location on the map",
+        "trouver": "Find my salon on the map",
+        "itineraireExact": "Directions lead to the exact spot.",
+        "itineraireAdresse": "Without a location, directions search for the written address."
+      },
+      "exemple": {
+        "titre": "On an example",
+        "prestation": "Service",
+        "options": "Options",
+        "fournitures": "Supplies",
+        "total": "Total",
+        "acompte": "Deposit requested",
+        "partTotal": "{pct}% of the total",
+        "sansPourcentage": "Without a percentage, the deposit stays at the minimum whatever the basket — {minimum}, plus supplies.",
+        "minimumApplique": "Here the minimum applies: {taux}% would only be {montant}."
+      },
+      "nonEnregistre": "Unsaved changes.",
+      "toutEnregistre": "Everything is saved.",
+      "enregistrer": "Save",
+      "lectureSeule": "Only the owner and the manager can edit the profile."
+    },
+    "abonnement": {
+      "titre": "Subscription",
+      "description": "Your access, your plan and your payments, in one place.",
+      "reserve": {
+        "titre": "For the owner only",
+        "corps": "The subscription is paid from the account of the person who owns the salon."
+      },
+      "paiementValide": "Payment validated: your subscription is active.",
+      "paiementTraite": "Your payment has been processed. Check the history.",
+      "aucunAbonnement": "No subscription is attached to this salon yet. The Beauty Salon team takes care of it on validation.",
+      "erreur": "Could not load.",
+      "statutDemande": {
+        "pending": "Under review",
+        "approved": "Validated",
+        "rejected": "Rejected"
+      },
+      "statutFacture": {
+        "draft": "Draft",
+        "issued": "To pay",
+        "paid": "Paid",
+        "void": "Cancelled"
+      },
+      "plans": {
+        "trial": "Trial",
+        "monthly": "Standard monthly",
+        "yearly": "Standard yearly",
+        "pro_monthly": "Pro monthly",
+        "pro_yearly": "Pro yearly"
+      },
+      "statutAbonnement": {
+        "trialing": "Trial period",
+        "active": "Active",
+        "expired": "Expired",
+        "pending_payment": "Payment under review",
+        "suspended": "Suspended",
+        "past_due": "Unpaid",
+        "cancelled": "Cancelled"
+      },
+      "etat": {
+        "jours": "{n, plural, one {day} other {days}}",
+        "restants": "{n, plural, one {# day left} other {# days left}}",
+        "essai": {
+          "titre": "Free trial in progress",
+          "detail": "Until <gras>{date}</gras>. Choose your plan whenever you like: the paid period starts when the trial ends.",
+          "badge": "Trial",
+          "action": "Choose my plan"
+        },
+        "periode": {
+          "titre": "{offre} plan active",
+          "detail": "Your salon is covered until <gras>{date}</gras>. An early payment is added on top, without losing a day.",
+          "badge": "Active",
+          "action": "Extend"
+        },
+        "grace": {
+          "titre": "Period over — grace period",
+          "detail": "Pay before <gras>{date}</gras>: after that, online bookings stop and the dashboard becomes read-only.",
+          "badge": "Grace",
+          "action": "Pay now"
+        },
+        "expire": {
+          "titre": "Subscription expired",
+          "detail": "Online bookings closed, dashboard read-only. Your data is intact: everything reopens as soon as your payment is validated.",
+          "badge": "Expired",
+          "action": "Reactivate my salon"
+        },
+        "suspendu": {
+          "titre": "Subscription suspended",
+          "detail": "The Beauty Salon team has suspended this salon. Contact them to reopen it.",
+          "badge": "Suspended"
+        },
+        "resilie": {
+          "titre": "Subscription cancelled",
+          "detail": "Contact the Beauty Salon team to resume.",
+          "badge": "Cancelled"
+        },
+        "sansAbonnement": {
+          "titre": "Subscription being set up",
+          "detail": "The Beauty Salon team will attach your trial shortly."
+        },
+        "faits": {
+          "offre": "Plan",
+          "statut": "Status",
+          "finEssai": "Trial ends",
+          "finPeriode": "Period ends",
+          "tarif": "Price",
+          "an": "year",
+          "mois": "month",
+          "gratuit": "Free"
+        }
+      },
+      "pro": {
+        "titre": "Upgrade to Pro",
+        "plus": "Everything in Standard, plus:",
+        "decouvrir": "Discover Pro"
+      },
+      "programme": {
+        "titre": "{offre} from {date}",
+        "detail": "Your current plan runs to its end, then {offre} takes over until {fin} ({montant}). Pro features will then pause: your settings are kept, and come back if you return to Pro."
+      },
+      "annuel": {
+        "titre": "Switch to yearly, save {montant} a year",
+        "detail": "{montant} for twelve months (−{pct}%).",
+        "detailSuite": "{montant} for twelve months (−{pct}%), starting {date} — right after your current month.",
+        "bouton": "Switch to yearly"
+      },
+      "attente": {
+        "titre": "Payment under review",
+        "kkiapay": "KKIAPAY is confirming your transaction with the server. Your period opens after this confirmation.",
+        "manuel": "The Beauty Salon team finds your payment on the receiving account, then opens your period. This page updates on its own; you'll also get an email and a notification.",
+        "offre": "Plan",
+        "montant": "Amount",
+        "moyen": "Method",
+        "reference": "Reference",
+        "mois": "{n, plural, one {# month} other {# months}}",
+        "declare": "Submitted on {date}. Only one payment can be pending at a time.",
+        "saspay": "SASPAY is confirming your payment with the server. Your period opens as soon as it is confirmed; if you did not finish paying, resume below."
+      },
+      "groupes": {
+        "standard": "Standard",
+        "pro": "Pro"
+      },
+      "commande": {
+        "fermee": {
+          "titre": "Payment isn't open yet",
+          "corps": "No payment method is set up at the moment. The Beauty Salon team will contact you before your period ends — nothing stops without warning."
+        },
+        "debutSuite": "Your new period will start on {date}, right after the current one.",
+        "debutValidation": "Your period will start when the payment is validated.",
+        "preuveFormat": "Send a JPEG, PNG or WebP screenshot.",
+        "preuveTaille": "The screenshot is over 15 MB. Send a lighter image.",
+        "referenceCourte": "Enter the full transaction reference.",
+        "declareOk": "Payment submitted. You'll receive a confirmation email.",
+        "envoiImpossible": "Could not send at the moment.",
+        "etape1": "Your plan",
+        "pays": "Country",
+        "devise": "Currency",
+        "canal": {
+          "mobileMoney": "Mobile Money",
+          "carte": "Card",
+          "mobileMoneyCarte": "Mobile Money or card"
+        },
+        "gamme": "Range",
+        "offre": "Plan",
+        "remise": "<gras>Referral: −{pct}%</gras> on this payment ({n, plural, one {# discount} other {# discounts}}). {n, plural, one {It is used on validation, and returned if the payment is rejected.} other {They are used on validation, and returned if the payment is rejected.}}",
+        "monParrainage": "My referrals",
+        "toutStandard": "Everything in Standard, plus",
+        "bloque": "A switch to {offre} is already scheduled: a new Pro payment will be possible once this change takes effect.",
+        "etape2": "Pay {somme}",
+        "moyen": "Payment method",
+        "etape3": "Submit your payment",
+        "reference": "Transaction reference",
+        "referenceAide": "The receipt number, in your payment app.",
+        "referenceExemple": "E.g. 4200001234202609251234",
+        "capture": "Receipt screenshot",
+        "facultative": "(optional)",
+        "apercuCapture": "Screenshot preview",
+        "changer": "Change",
+        "ajouter": "Add",
+        "retirer": "Remove",
+        "formats": "JPEG, PNG or WebP, 15 MB at most.",
+        "offreMin": "{offre} plan",
+        "accesVerification": "Your access opens when the payment is verified, not when this form is sent.",
+        "declarer": "Submit",
+        "declarerSuite": " my payment",
+        "effet": {
+          "monteeEssai": "Pro opens as soon as the payment is validated, and your {n, plural, one {# remaining trial day is} other {# remaining trial days are}} added to your period: until around {fin}.",
+          "monteeSimple": "Pro opens as soon as the payment is validated, until around {fin}.",
+          "montee": "Pro opens as soon as the payment is validated. Your remaining Standard days become {n, plural, one {# day} other {# days}} of Pro, added to your period: until around {fin}.",
+          "descente": "Your Pro plan runs to its end, on {debut}. Standard takes over until {fin}; Pro features then pause, and your settings are kept.",
+          "renouvellement": "Your new period will start on {debut}, right after the current one, and run until {fin}.",
+          "defaut": "Your period will start when the payment is validated, until around {fin}."
+        }
+      },
+      "carte": {
+        "meilleurPrix": "Best price",
+        "parAn": "per year",
+        "parMois": "per month",
+        "soit": "i.e. {montant}/month",
+        "sansEngagement": "No commitment",
+        "votreOffre": "Your plan",
+        "economie": "−{pct}% · {montant}"
+      },
+      "moyen": {
+        "agrandir": "Enlarge",
+        "qr": "{moyen} QR code",
+        "qrIndisponible": "QR code unavailable. Reload the page.",
+        "scannez": "Scan the code with {moyen}.",
+        "envoyez": "Send exactly <gras>{somme}</gras>.",
+        "copiez": "Copy the receipt reference below.",
+        "numero": "Number",
+        "numeroCopie": "Number copied.",
+        "titulaire": "Account holder",
+        "montant": "Amount",
+        "verifiez": "Check that the account holder's name is shown before confirming the transfer in your app.",
+        "copieImpossible": "Could not copy: select the text by hand.",
+        "copie": "Copied",
+        "copier": "Copy"
+      },
+      "suivi": {
+        "paiements": "Payments",
+        "factures": "Invoices",
+        "aria": "Subscription history",
+        "erreurHistorique": "Could not load the history.",
+        "aucunPaiement": "No payments submitted yet.",
+        "parrainage": "Referral −{pct}% · {montant} deducted",
+        "periode": "From {debut} to {fin}",
+        "capture": "Screenshot",
+        "erreurFactures": "Could not load the invoices.",
+        "aucuneFacture": "An invoice is issued for every validated payment.",
+        "enRetard": "Overdue",
+        "regleeLe": "Paid on {date}",
+        "emiseLe": "Issued on {date}",
+        "titre": "Payments and invoices",
+        "sousTitre": "Your declared payments and the invoices issued for each validated payment.",
+        "telecharger": "PDF",
+        "telechargement": "Preparing…",
+        "telechargerAria": "Download invoice {numero} as PDF",
+        "erreurPdf": "Download failed. Try again in a moment."
+      },
+      "questions": {
+        "titre": "Frequently asked questions",
+        "debut": {
+          "q": "When does my paid period start?",
+          "r": "Right after your current period (trial or paid month), without losing a day. Exception: Pro chosen during the trial opens on validation, and your remaining trial days are added to it. If your period has already ended, it starts when the payment is validated."
+        },
+        "annuel": {
+          "q": "Can I switch from monthly to yearly?",
+          "r": "Yes, at any time: choose the yearly plan and pay for it. Your year starts at the end of your current month."
+        },
+        "versPro": {
+          "q": "If I switch from Standard to Pro, do I lose my paid days?",
+          "r": "No. Pro opens as soon as your payment is validated, and your remaining Standard days are converted into Pro days pro rata to the monthly prices, then added to your Pro period. No refund, no extra charge."
+        },
+        "versStandard": {
+          "q": "And if I go back from Pro to Standard?",
+          "r": "Your Pro plan runs to the end of what you've paid, then Standard takes over. Pro features pause — domain, appearance, assistants — but their settings are kept and come back if you return to Pro."
+        },
+        "retard": {
+          "q": "What happens if I don't pay on time?",
+          "r": "You have 3 days of grace. After that, online bookings stop and the dashboard becomes read-only — your mini-site stays visible and your data stays intact. Everything reopens as soon as your payment is validated."
+        },
+        "rappel": {
+          "q": "Will I get a reminder before the due date?",
+          "r": "Yes, by email: a week before, three days before and the day before (a month before for the yearly plan), then at each step of your payment."
+        }
+      }
+    },
+    "saspay": {
+      "payer": "Pay with SASPAY",
+      "redirection": "Opening the payment page…",
+      "securise": "You pay on SASPAY’s secure page (Mobile Money or card). The subscription is activated after server confirmation.",
+      "indisponible": "Payment is not available right now.",
+      "reprendre": "Resume payment",
+      "verifier": "I have paid: check",
+      "verification": "Checking the payment…",
+      "confirme": "Payment confirmed. Your subscription is extended.",
+      "pasEncore": "SASPAY has not confirmed the payment yet. If you just approved it on your phone, wait a moment: your period will open by itself, with no new payment.",
+      "erreur": "The check did not go through. Try again in a moment; do not pay twice."
+    },
+    "reauth": {
+      "titre": "Confirm your identity",
+      "pourquoi": "This change affects where your clients send their deposits. For security, confirm it is you: the confirmation lasts ten minutes.",
+      "motDePasse": "Password",
+      "code": "Two-factor authentication code",
+      "parCode": "Use a two-factor authentication code instead",
+      "parMotDePasse": "Use my password instead",
+      "confirmer": "Confirm",
+      "annuler": "Cancel",
+      "erreur": "Could not confirm. Try again."
+    }
+  },
+  "theme": {
+    "system": "System theme",
+    "light": "Light theme",
+    "dark": "Dark theme",
+    "changer": "{theme} — change"
+  },
+  "compte": {
+    "verifier": {
+      "attente": "Verifying your address…",
+      "ok": {
+        "titre": "Address confirmed",
+        "corps": "Thank you! Your email address is verified. Every feature of your space is open.",
+        "acceder": "Go to my space"
+      },
+      "erreur": {
+        "titre": "Invalid link",
+        "incomplet": "This link is incomplete. Open the one you received by email, or ask for a new one.",
+        "echec": "Verification failed. Please try again in a moment.",
+        "bandeau": "Sign in: a banner at the top of your space lets you get a new link.",
+        "connexion": "Sign in"
+      }
+    },
+    "invitation": {
+      "plusValable": "This invitation is no longer valid.",
+      "ok": "You're now part of {salon}'s team.",
+      "incomplet": "Incomplete invitation link.",
+      "indisponible": "Invitation unavailable",
+      "septJours": "An invitation is valid for 7 days. Ask the salon to send you a new one.",
+      "bienvenue": "Welcome to the team",
+      "membre": "You're now part of {salon}.",
+      "acceder": "Go to the space",
+      "rejoindre": "Join {salon}",
+      "roles": {
+        "owner": "Owner",
+        "manager": "Manager",
+        "receptionist": "Front desk",
+        "staff": "Staff member"
+      },
+      "compteExistant": "You already have a Beauty Salon account. Confirm with its password to add this salon — you'll switch between them from the menu.",
+      "motDePasseCompte": "Your account password",
+      "nom": "Your name",
+      "motDePasse": "Password",
+      "motDePasseAide": "At least 10 characters.",
+      "bouton": "Join the team"
+    },
+    "oubli": {
+      "envoye": "Link sent. Check your inbox.",
+      "echec": "Could not send. Please try again in a moment.",
+      "boite": {
+        "titre": "Check your inbox",
+        "corps": "If an account exists for <gras>{email}</gras>, a link has just been sent. It's valid for 24 hours and works only once.",
+        "rien": "Nothing received? Check your spam folder, then the spelling of your address."
+      },
+      "retour": "Back to sign in",
+      "corriger": "Correct my address",
+      "titre": "Forgot your password",
+      "intro": "Enter your email address and we'll send you a link.",
+      "email": "Email",
+      "envoyer": "Send the link"
+    },
+    "nouveau": {
+      "differents": "The two passwords don't match.",
+      "ok": "Password updated.",
+      "lienExpire": "This link is no longer valid. Ask for a new one.",
+      "incomplet": {
+        "titre": "Incomplete link",
+        "corps": "Open the link exactly as it appears in the email, without changing it. Some email apps split it in two.",
+        "demander": "Ask for a new link"
+      },
+      "fini": {
+        "titre": "Password updated",
+        "corps": "You can now sign in. Other open sessions stay valid; change it again if you suspect unauthorised access.",
+        "connexion": "Sign in"
+      },
+      "titre": "New password",
+      "intro": "Choose a password of at least 10 characters.",
+      "champ": "New password",
+      "champAide": "At least 10 characters.",
+      "confirmation": "Confirm",
+      "saisiesDifferent": "The two entries differ.",
+      "enregistrer": "Save"
+    },
+    "parcours": {
+      "etape": "Step {n} of {total}",
+      "avancement": "Sign-up progress",
+      "encouragement": {
+        "debut": "three minutes is enough",
+        "fini": "all set",
+        "unChamp": "one field left",
+        "deuxChamps": "two left",
+        "bonDebut": "good start",
+        "avance": "you're getting there"
+      },
+      "force": {
+        "encore": "{n, plural, one {# more character} other {# more characters}}",
+        "correct": "OK",
+        "solide": "Strong",
+        "unMotDePlus": "one more word would make it strong"
+      }
+    },
+    "film": {
+      "lancer": "Play the presentation film, 29 seconds, no sound",
+      "voir": "Watch the film · 29 s",
+      "pastille": "The product, in 29 s",
+      "pauseAria": "Pause the film",
+      "reprendreAria": "Resume the film",
+      "pause": "Pause",
+      "reprendre": "Resume"
+    },
+    "titres": {
+      "invitation": "Invitation",
+      "nouveau": "New password",
+      "oubli": "Forgot password",
+      "verifier": "Confirm my email address",
+      "inscription": "Create my salon"
+    },
+    "inscription": {
+      "erreurs": {
+        "nomSalon": "Enter your salon's name.",
+        "slugCourt": "At least 3 characters.",
+        "slugFormat": "Lowercase letters, numbers and hyphens only.",
+        "email": "Invalid email address.",
+        "motDePasse": "At least 10 characters.",
+        "palette": "Choose your salon's colours.",
+        "conditions": "You must accept the terms.",
+        "code": "Letters and numbers only."
+      },
+      "etapes": {
+        "salon": "Your salon",
+        "vous": "You",
+        "acces": "Your access",
+        "compte": "Your account"
+      },
+      "cree": "{salon} has been created. Sign in to enter.",
+      "echec": "Sign-up failed. Please try again.",
+      "choixRepris": "Your choices are carried over",
+      "vosCouleurs": "your colours",
+      "titre": "Create my salon",
+      "essai": "<gras>14 days free</gras>, up to 30 days with an eligible referral, no credit card.",
+      "nomSalon": "Salon name",
+      "nomSalonExemple": "Fatou's Salon",
+      "auNomDe": "Your page will be shown under the name <gras>{nom}</gras>.",
+      "adresse": "Your mini-site address",
+      "prise": "This address is already taken.",
+      "verification": "Checking…",
+      "libre": "is available.",
+      "aVous": "It will be yours once the salon is created.",
+      "pays": "Country",
+      "tarifsEn": "Prices in {devise} · time zone {fuseau}",
+      "couleurs": "Your colours",
+      "obligatoire": "(required)",
+      "votreSalon": "Your salon",
+      "apercu": "Preview of your mini-site",
+      "email": "Your email",
+      "identifiant": "This will be your sign-in identifier.",
+      "nom": "Your name",
+      "facultatif": "Optional",
+      "nomExemple": "Grace Mabiala",
+      "code": "Referral code",
+      "codeInconnu": "Unknown code. Check it, or leave this field empty.",
+      "codeExemple": "E.g. 7KQ2M9XP4T",
+      "parrainePar": "Referred by {salon}.",
+      "codeReconnu": "Code recognised: up to 30 days of trial if the referral is eligible.",
+      "motDePasse": "Password",
+      "conditions": "I accept the Beauty Salon terms of use.",
+      "vousCreez": "You're creating",
+      "creer": "Create my salon",
+      "continuer": "Continue",
+      "retour": "Back",
+      "arguments": {
+        "preleveTitre": "Nothing is charged",
+        "preleve": "at the end of the trial.",
+        "donneesTitre": "Your data stays yours",
+        "donnees": "exportable at any time."
+      },
+      "dejaCompte": "Already have an account?",
+      "connexion": "Sign in",
+      "bienvenue": {
+        "titre": "{salon} has been created",
+        "adresse": "Your address is reserved: <gras>{adresse}</gras>",
+        "verification": "Our team reviews your salon before putting your mini-site online. In the meantime, you can already prepare your catalogue, opening hours and team.",
+        "derniere": "Last step",
+        "connectez": "Sign in with the address <gras>{email}</gras> and the password you've just chosen.",
+        "bouton": "Sign me in"
+      }
+    }
+  }
+}

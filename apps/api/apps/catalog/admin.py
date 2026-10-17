@@ -18,7 +18,11 @@ l'utilisent.
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from apps.common.admin import TenantScopedAdmin, TenantScopedTabularInline
+from apps.common.admin import (
+    SuppressionTracee,
+    TenantScopedAdmin,
+    TenantScopedTabularInline,
+)
 
 from .models import Resource, Service, ServiceCategory, ServiceOption, ServiceResource
 
@@ -71,7 +75,7 @@ class ServiceCategoryAdmin(TenantScopedAdmin):
 
 
 @admin.register(Service)
-class ServiceAdmin(TenantScopedAdmin):
+class ServiceAdmin(SuppressionTracee, TenantScopedAdmin):
     list_display = (
         "name",
         "tenant",
@@ -97,7 +101,7 @@ class ServiceAdmin(TenantScopedAdmin):
 
 
 @admin.register(Resource)
-class ResourceAdmin(TenantScopedAdmin):
+class ResourceAdmin(SuppressionTracee, TenantScopedAdmin):
     """Bacs, fauteuils, postes : ce qui se partage entre prestations.
 
     Lecture seule, comme tout ce qui appartient au salon. La capacite est
@@ -117,8 +121,9 @@ class ResourceAdmin(TenantScopedAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # La suppression, elle, est ouverte : seul le lien
+    # prestation<->ressource pointe vers une ressource, et il part avec.
+    # Aucune ecriture comptable, aucun rendez-vous n'y fait reference.
 
     @admin.display(description="Capacité", ordering="capacity")
     def capacite(self, resource):

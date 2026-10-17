@@ -33,6 +33,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Toggle } from "@/features/ui";
 import { setTheme, useThemeChoice } from "@/features/ui/ThemeToggle";
+import { SelecteurLangue } from "@/features/ui/SelecteurLangue";
+import { useTranslations } from "next-intl";
 import { Icon } from "./icons";
 
 /* --------------------------------------------------------------------------
@@ -41,12 +43,7 @@ import { Icon } from "./icons";
 
 export type NavType = "dark" | "transparent" | "light";
 export type AccentName =
-  | "salon"
-  | "graphite"
-  | "azur"
-  | "emeraude"
-  | "ambre"
-  | "grenat";
+  "salon" | "graphite" | "azur" | "emeraude" | "ambre" | "grenat";
 
 export interface ShellPrefs {
   accent: AccentName;
@@ -74,13 +71,14 @@ const DEFAULTS: ShellPrefs = {
  * les clientes voient. Les cinq autres existent pour qui gère deux salons
  * dans deux onglets et veut les distinguer d'un coup d'œil.
  */
-export const ACCENTS: Record<AccentName, { label: string; color: string }> = {
-  salon: { label: "Couleur du salon", color: "var(--salon-primary)" },
-  graphite: { label: "Graphite", color: "#42424a" },
-  azur: { label: "Azur", color: "#1a73e8" },
-  emeraude: { label: "Émeraude", color: "#43a047" },
-  ambre: { label: "Ambre", color: "#fb8c00" },
-  grenat: { label: "Grenat", color: "#e53935" },
+/** Les couleurs ; leurs noms sont traduits dans `pro.reglages.accents`. */
+export const ACCENTS: Record<AccentName, { color: string }> = {
+  salon: { color: "var(--salon-primary)" },
+  graphite: { color: "#42424a" },
+  azur: { color: "#1a73e8" },
+  emeraude: { color: "#43a047" },
+  ambre: { color: "#fb8c00" },
+  grenat: { color: "#e53935" },
 };
 
 export function accentGradient(accent: AccentName): string {
@@ -263,10 +261,11 @@ export const NAV_SKINS: Record<NavType, NavSkin> = {
   light: { aside: "bg-surface lg:border-r lg:border-line", ...ON_LIGHT },
 };
 
-const NAV_TYPES: { value: NavType; label: string; hint: string }[] = [
-  { value: "dark", label: "Sombre", hint: "fond constant, quel que soit le thème" },
-  { value: "transparent", label: "Transparente", hint: "la page passe dessous" },
-  { value: "light", label: "Claire", hint: "suit le thème clair ou sombre" },
+/** Les fonds possibles ; noms et explications dans `pro.reglages.fonds`. */
+const NAV_TYPES: { value: NavType }[] = [
+  { value: "dark" },
+  { value: "transparent" },
+  { value: "light" },
 ];
 
 /* ----- Magasin ---------------------------------------------------------- */
@@ -284,7 +283,10 @@ function read(): ShellPrefs {
       // Chaque champ est revalidé : un stockage écrit par une version
       // antérieure, ou trafiqué à la main, ne doit pas pouvoir peindre la
       // navigation avec une valeur qui n'existe pas.
-      accent: parsed.accent && parsed.accent in ACCENTS ? parsed.accent : DEFAULTS.accent,
+      accent:
+        parsed.accent && parsed.accent in ACCENTS
+          ? parsed.accent
+          : DEFAULTS.accent,
       navType: NAV_TYPES.some((type) => type.value === parsed.navType)
         ? (parsed.navType as NavType)
         : DEFAULTS.navType,
@@ -375,6 +377,7 @@ export function setShellPrefs(patch: Partial<ShellPrefs>) {
  * ---------------------------------------------------------------------- */
 
 export function Configurator() {
+  const t = useTranslations("pro.reglages");
   const prefs = useShellPrefs();
   const theme = useThemeChoice();
   const [open, setOpen] = useState(false);
@@ -415,8 +418,8 @@ export function Configurator() {
         type="button"
         onClick={() => setOpen(true)}
         aria-expanded={open}
-        aria-label="Réglages d'affichage"
-        title="Réglages d'affichage"
+        aria-label={t("titre")}
+        title={t("titre")}
         className="salon-gradient group fixed bottom-5 right-5 z-30 flex size-12 items-center justify-center rounded-full text-white shadow-float transition hover:brightness-110 active:scale-95"
       >
         {/* Les curseurs pivotent au survol : posé par-dessus le contenu, un
@@ -431,7 +434,7 @@ export function Configurator() {
       {open && (
         <button
           type="button"
-          aria-label="Fermer les réglages"
+          aria-label={t("fermerReglages")}
           onClick={() => setOpen(false)}
           className="fixed inset-0 z-[45] bg-black/40 backdrop-blur-[2px]"
         />
@@ -441,7 +444,7 @@ export function Configurator() {
         ref={panel}
         tabIndex={-1}
         role="dialog"
-        aria-label="Réglages d'affichage"
+        aria-label={t("titre")}
         aria-hidden={!open}
         // `translate-x-full` plutôt que le démontage : le tiroir glisse au
         // lieu d'apparaître, et son contenu garde sa position de défilement
@@ -453,16 +456,14 @@ export function Configurator() {
         <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-ink">
-              Réglages d&apos;affichage
+              {t("titre")}
             </h2>
-            <p className="mt-0.5 text-xs text-muted">
-              Ils valent pour cet appareil, pas pour votre salon.
-            </p>
+            <p className="mt-0.5 text-xs text-muted">{t("portee")}</p>
           </div>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            aria-label="Fermer"
+            aria-label={t("fermer")}
             className="-mr-1.5 rounded-lg p-1.5 text-muted transition hover:bg-surface-hover hover:text-ink"
           >
             <Icon name="close" className="size-5" />
@@ -470,18 +471,28 @@ export function Configurator() {
         </header>
 
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+          {/* ----- Langue ------------------------------------------------ */}
+          {/* En tête du panneau : c'est le réglage qu'on cherche quand on
+              ne lit pas la langue affichée, et il doit se trouver sans lire. */}
+          <section>
+            <h3 className="text-sm font-semibold text-ink">{t("langue")}</h3>
+            <p className="mt-0.5 text-xs text-muted">{t("langueAide")}</p>
+            <SelecteurLangue
+              large
+              className="mt-3 border-line bg-surface-muted"
+              classeActive="salon-gradient text-white shadow-sm"
+              classeInactive="text-muted hover:text-ink"
+            />
+          </section>
+
           {/* ----- Accent ------------------------------------------------ */}
           <section>
-            <h3 className="text-sm font-semibold text-ink">
-              Couleur de l&apos;espace
-            </h3>
+            <h3 className="text-sm font-semibold text-ink">{t("couleur")}</h3>
             {/* Le libellé disait « Couleur de la navigation », et le réglage
                 ne touchait effectivement que la colonne : on obtenait une
                 colonne verte à côté d'un contenu rose. Il repeint désormais
                 tout l'espace, et le titre le dit. */}
-            <p className="mt-0.5 text-xs text-muted">
-              Colonne, boutons et états actifs, ensemble.
-            </p>
+            <p className="mt-0.5 text-xs text-muted">{t("couleurAide")}</p>
 
             <div className="mt-3 flex flex-wrap gap-2.5">
               {(Object.keys(ACCENTS) as AccentName[]).map((name) => {
@@ -492,8 +503,8 @@ export function Configurator() {
                     type="button"
                     onClick={() => setShellPrefs({ accent: name })}
                     aria-pressed={chosen}
-                    title={ACCENTS[name].label}
-                    aria-label={ACCENTS[name].label}
+                    title={t(`accents.${name}`)}
+                    aria-label={t(`accents.${name}`)}
                     style={{ backgroundImage: accentGradient(name) }}
                     className={`flex size-8 items-center justify-center rounded-full text-white transition hover:scale-110 ${
                       chosen
@@ -513,9 +524,7 @@ export function Configurator() {
 
           {/* ----- Fond de la colonne ------------------------------------ */}
           <section>
-            <h3 className="text-sm font-semibold text-ink">
-              Fond de la colonne
-            </h3>
+            <h3 className="text-sm font-semibold text-ink">{t("fond")}</h3>
             <div className="mt-3 grid grid-cols-3 gap-2">
               {NAV_TYPES.map((type) => {
                 const chosen = prefs.navType === type.value;
@@ -525,7 +534,7 @@ export function Configurator() {
                     type="button"
                     onClick={() => setShellPrefs({ navType: type.value })}
                     aria-pressed={chosen}
-                    title={type.hint}
+                    title={t(`fonds.${type.value}.aide`)}
                     className={`rounded-xl border px-2 py-2.5 text-xs font-medium transition ${
                       chosen
                         ? "border-transparent text-white shadow-sm"
@@ -537,13 +546,13 @@ export function Configurator() {
                         : undefined
                     }
                   >
-                    {type.label}
+                    {t(`fonds.${type.value}.nom`)}
                   </button>
                 );
               })}
             </div>
             <p className="mt-2 text-xs text-muted">
-              {NAV_TYPES.find((type) => type.value === prefs.navType)?.hint}
+              {t(`fonds.${prefs.navType}.aide`)}
             </p>
           </section>
 
@@ -554,19 +563,15 @@ export function Configurator() {
             <Toggle
               checked={prefs.navbarFixed}
               onChange={(value) => setShellPrefs({ navbarFixed: value })}
-              label="Barre du haut fixe"
-              hint={
-                prefs.navbarFixed
-                  ? "Elle reste en place quand la page défile."
-                  : "Elle remonte avec la page et libère de la hauteur."
-              }
+              label={t("barreFixe")}
+              hint={prefs.navbarFixed ? t("barreFixeOui") : t("barreFixeNon")}
             />
 
             <Toggle
               checked={dark}
               onChange={(value) => setTheme(value ? "dark" : "light")}
-              label="Thème sombre"
-              hint="Le bouton de la barre du haut propose en plus « suivre le système »."
+              label={t("sombre")}
+              hint={t("sombreAide")}
             />
 
             {/*
@@ -581,12 +586,8 @@ export function Configurator() {
             <Toggle
               checked={!prefs.sidebarHidden}
               onChange={(value) => setShellPrefs({ sidebarHidden: !value })}
-              label="Afficher la colonne de navigation"
-              hint={
-                prefs.sidebarHidden
-                  ? "Masquée : le bouton en haut à gauche la fait revenir."
-                  : "Visible. Le même bouton la replie aux icônes seules."
-              }
+              label={t("colonne")}
+              hint={prefs.sidebarHidden ? t("colonneMasquee") : t("colonneVisible")}
             />
           </div>
 
@@ -597,7 +598,7 @@ export function Configurator() {
             onClick={() => setShellPrefs(DEFAULTS)}
             className="w-full rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:bg-surface-hover hover:text-ink"
           >
-            Revenir à l&apos;apparence d&apos;origine
+            {t("origine")}
           </button>
         </div>
       </div>

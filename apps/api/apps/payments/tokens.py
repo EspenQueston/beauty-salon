@@ -32,6 +32,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core import signing
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from apps.scheduling.models import Booking
@@ -284,6 +285,42 @@ def booking_from_code(code: str, tenant_id) -> tuple[Booking | None, bool]:
     if len(found) > 1:
         return None, True
     return (found[0] if found else None), False
+
+
+def code_du_rendez_vous(code: str, booking_id, tenant_id) -> tuple[Booking | None, bool]:
+    """Verifie un code contre **un** rendez-vous connu, sans fenetre de dates.
+
+    Quand le panneau d'arrivee a ete ouvert depuis une ligne de l'agenda, on
+    sait deja de quel rendez-vous on parle : il n'y a rien a chercher. La
+    fenetre de +/- deux jours n'existe que pour empecher deux codes a six
+    caracteres de se croiser, et cette precaution n'a aucun objet quand il
+    n'y a qu'un seul candidat.
+
+    Elle avait en revanche un cout bien reel : une cliente attendue dans
+    deux jours et demi, affichee a l'ecran et nommee dans le panneau, se
+    voyait repondre « aucun rendez-vous ne porte ce code ».
+
+    Si le code ne correspond pas au rendez-vous ouvert, on retombe sur la
+    recherche par fenetre : c'est elle qui permet de dire « ce code est
+    celui d'une autre cliente » plutot qu'un simple refus.
+    """
+    wanted = normalize_checkin_code(code)
+    if not checkin_code_is_wellformed(wanted):
+        return None, False
+
+    try:
+        booking = (
+            Booking.objects.select_related("customer", "staff_member")
+            .filter(pk=booking_id, tenant_id=tenant_id)
+            .first()
+        )
+    except (ValidationError, ValueError):
+        booking = None
+
+    if booking is not None and hmac.compare_digest(checkin_code(booking), wanted):
+        return booking, False
+
+    return booking_from_code(wanted, tenant_id)
 
 
 # ---------------------------------------------------------------------------
