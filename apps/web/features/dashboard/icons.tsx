@@ -57,7 +57,11 @@ export type IconName =
   | "send"
   // Parrainage.
   | "gift"
-  | "share";
+  | "share"
+  // Catalogue : liste ou galerie, et les gestes des vignettes.
+  | "rows"
+  | "trash"
+  | "eye-off";
 
 /*
   Exportés pour l'image des notifications (app/notification-image), qui
@@ -259,6 +263,24 @@ export const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   bolt: <path d="M13.5 3 5.5 13.5h5L10 21l8.5-10.5h-5z" />,
+  rows: (
+    <>
+      <rect x="3" y="4" width="18" height="6.5" rx="1.6" />
+      <rect x="3" y="13.5" width="18" height="6.5" rx="1.6" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16M9.5 7V4.8c0-.4.4-.8.8-.8h3.4c.4 0 .8.4.8.8V7" />
+      <path d="m6 7 1 12.2c.1.9.8 1.8 1.8 1.8h6.4c1 0 1.7-.9 1.8-1.8L18 7M10 11v6M14 11v6" />
+    </>
+  ),
+  "eye-off": (
+    <>
+      <path d="M10.6 5.6c.5-.1.9-.1 1.4-.1 6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.4M6.6 6.7A17 17 0 0 0 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1.1" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+    </>
+  ),
   eye: (
     <>
       <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />

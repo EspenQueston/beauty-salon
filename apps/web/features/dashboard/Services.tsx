@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
 import { formatDuration, formatPrice } from "@/lib/format";
+import { illustrationUrl, pickIllustration, themeFromCategory } from "@/lib/illustrations";
 import {
   Badge,
   Button,
@@ -32,6 +33,7 @@ import { Modal } from "@/features/ui/Modal";
 import { useToast } from "@/features/ui/Toast";
 import { Icon } from "./icons";
 import { CatalogFilter, EMPTY_FILTER, type FilterState } from "./CatalogFilter";
+import { SelecteurVue, TuilePrestation, useVuePrestations } from "./GaleriePrestations";
 import { MediaPicker, type PickableMedia } from "./MediaPicker";
 import { ServiceOptions } from "./ServiceOptions";
 import { Resources, ServiceResources } from "./Resources";
@@ -233,6 +235,7 @@ export function Services() {
   // monte et se démonte à chaque ouverture.
   const rule = useResource<DepositRule>("/api/v1/salon-profile", tenantId);
   const [filter, setFilter] = useState<FilterState>(EMPTY_FILTER);
+  const [vue, choisirVue] = useVuePrestations();
 
   const categoryRows = rows(categories.data);
 
@@ -259,6 +262,14 @@ export function Services() {
   }
   const serviceRows = rows(services.data);
   const mediaRows = rows(media.data);
+  const mediaParId = new Map(mediaRows.map((asset) => [asset.id, asset]));
+
+  /** Le prix tel que la cliente le lit : ferme, « dès », ou sur devis. */
+  function prixDe(service: Service): string {
+    if (service.price_kind === "quote") return t("tarifs.quote");
+    const montant = formatPrice(service.price_amount, currency, region);
+    return service.price_kind === "from" ? t("des", { montant }) : montant;
+  }
 
   /*
    * Filtrage dérivé, jamais stocké.
@@ -456,14 +467,22 @@ export function Services() {
               onChange={setFilter}
               total={serviceRows.length}
               shown={visible.length}
+              extra={<SelecteurVue vue={vue} onChange={choisirVue} />}
             />
+          )}
+
+          {/* Peu de prestations, pas de filtres : l'interrupteur reste là. */}
+          {serviceRows.length > 0 && serviceRows.length <= 3 && (
+            <div className="mb-4 flex justify-end">
+              <SelecteurVue vue={vue} onChange={choisirVue} />
+            </div>
           )}
 
           {visible.length === 0 && serviceRows.length > 0 && (
             <EmptyState title={t("vide.rechercheTitre")}>{t("vide.recherche")}</EmptyState>
           )}
 
-          <div className="mt-7 space-y-8">
+          <div className="mt-5 space-y-6 sm:mt-7 sm:space-y-8">
             {categoryRows.map((category) => {
               const list = visible.filter((s) => s.category === category.id);
               if (list.length === 0) return null;
@@ -471,9 +490,58 @@ export function Services() {
               return (
                 <div key={category.id}>
                   <SectionTitle>{category.name}</SectionTitle>
-                  <ul className="space-y-2.5">
-                    {list.map((service) => (
-                      <li key={service.id}>
+                  {vue === "galerie" ? (
+                    // Deux colonnes sur téléphone, trois puis quatre ensuite.
+                    // La clé change avec la vue : les vignettes rejouent leur
+                    // entrée quand on bascule, et seulement à ce moment-là.
+                    <ul
+                      key="galerie"
+                      className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4"
+                    >
+                      {list.map((service, rang) => (
+                        <TuilePrestation
+                          key={service.id}
+                          nom={service.name}
+                          description={service.description}
+                          active={service.active}
+                          photo={service.image ? mediaParId.get(service.image) : undefined}
+                          // Le choix du mini-site (page Prestations) : même
+                          // famille, même tirage, même cadrage.
+                          illustration={illustrationUrl(
+                            pickIllustration(service.id, themeFromCategory(category.name)).id,
+                            { width: 640, ratio: 0.63 },
+                          )}
+                          prix={prixDe(service)}
+                          details={[
+                            formatDuration(service.duration_minutes),
+                            service.location_mode !== "salon" ? t(`lieux.${service.location_mode}`) : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          acompte={
+                            service.requires_deposit
+                              ? t("acompte.court", {
+                                  montant: depositLabel(service, rule.data, currency, t, region),
+                                })
+                              : null
+                          }
+                          canEdit={canEdit}
+                          recente={recente === service.id}
+                          rang={rang}
+                          onModifier={(bouton) => ouvrir(service, bouton)}
+                          onBasculer={() => toggle(service)}
+                          onSupprimer={() => remove(service)}
+                        />
+                      ))}
+                    </ul>
+                  ) : (
+                  <ul key="liste" className="space-y-2.5">
+                    {list.map((service, rang) => (
+                      <li
+                        key={service.id}
+                        className="vue-entre"
+                        style={{ "--i": Math.min(rang, 12) } as React.CSSProperties}
+                      >
                         <Card
                           className={`transition-shadow duration-500 ${
                             recente === service.id
@@ -507,13 +575,7 @@ export function Services() {
                             </div>
 
                             <span className="tabular shrink-0 font-semibold text-salon">
-                              {service.price_kind === "quote"
-                                ? t("tarifs.quote")
-                                : service.price_kind === "from"
-                                  ? t("des", {
-                                      montant: formatPrice(service.price_amount, currency, region),
-                                    })
-                                  : formatPrice(service.price_amount, currency, region)}
+                              {prixDe(service)}
                             </span>
                           </div>
 
@@ -543,6 +605,7 @@ export function Services() {
                       </li>
                     ))}
                   </ul>
+                  )}
                 </div>
               );
             })}

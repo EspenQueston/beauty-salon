@@ -1858,6 +1858,17 @@
         "toutes": "Toutes",
         "compte": "<nombre>{n}</nombre> {n, plural, one {prestation} other {prestations}} sur {total}",
         "toutAfficher": "Tout afficher"
+      },
+      "vue": {
+        "aria": "Affichage du catalogue",
+        "liste": "Liste",
+        "galerie": "Galerie"
+      },
+      "galerie": {
+        "ajouterPhoto": "Ajouter une photo",
+        "modifierAria": "Modifier « {nom} »",
+        "annuler": "Annuler",
+        "confirmerAria": "Confirmer la suppression de « {nom} »"
       }
     },
     "medias": {

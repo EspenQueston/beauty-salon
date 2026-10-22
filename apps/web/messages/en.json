@@ -1858,6 +1858,17 @@
         "toutes": "All",
         "compte": "<nombre>{n}</nombre> {n, plural, one {service} other {services}} of {total}",
         "toutAfficher": "Show all"
+      },
+      "vue": {
+        "aria": "Catalogue display",
+        "liste": "List",
+        "galerie": "Gallery"
+      },
+      "galerie": {
+        "ajouterPhoto": "Add a photo",
+        "modifierAria": "Edit “{nom}”",
+        "annuler": "Cancel",
+        "confirmerAria": "Confirm deleting “{nom}”"
       }
     },
     "medias": {

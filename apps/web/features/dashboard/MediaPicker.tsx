@@ -24,6 +24,10 @@ import { Icon } from "./icons";
 export interface PickableMedia {
   id: string;
   url: string;
+  /** Copies WebP réduites, par largeur (« 480 », « 1024 ») ; vides pour un média privé. */
+  variants?: Record<string, string>;
+  /** Largeur de l'original : la dernière entrée du `srcset`. */
+  width?: number | null;
   content_type: string;
   alt_text: string;
   kind: string;

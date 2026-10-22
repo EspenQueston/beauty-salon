@@ -38,7 +38,10 @@ export function CatalogFilter({
   onChange,
   total,
   shown,
+  extra,
 }: {
+  /** Placé au bout de la barre : le choix liste ou galerie. */
+  extra?: React.ReactNode;
   categories: { id: string; name: string }[];
   /** Nombre de prestations par catégorie : un filtre vide se voit avant le clic. */
   counts: Record<string, number>;
@@ -84,6 +87,7 @@ export function CatalogFilter({
           <Icon name="check" className="size-4" />
           {t("enLigne")}
         </button>
+        {extra}
       </div>
 
       {categories.length > 1 && (

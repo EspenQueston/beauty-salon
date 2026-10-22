@@ -68,6 +68,14 @@ def _write_derivative(asset, image, label: str, width: int) -> str:
     buffer = BytesIO()
     resized.save(buffer, format="WEBP", quality=WEBP_QUALITY)
 
+    from .models import PRIVATE_PREFIX, MediaAsset
+
+    # Les copies suivent l'original : sous `prive/` pour un media prive.
+    # Elles etaient toujours ecrites sous la racine publique, et la copie
+    # d'une image privee restait servie par le serveur de fichiers alors que
+    # l'original, lui, ne l'etait plus.
     name = f"tenants/{asset.tenant_id}/media/{asset.id}/{label}.webp"
+    if asset.visibility == MediaAsset.Visibility.PRIVATE:
+        name = f"{PRIVATE_PREFIX}/{name}"
     asset.file.storage.save(name, ContentFile(buffer.getvalue()))
     return name
