@@ -17,6 +17,7 @@ import type { PublicReview, RatingSummary } from "@/lib/types";
 import { Stars } from "./Stars";
 import { SURFACE } from "./ui";
 import { Reveal } from "@/features/ui/Reveal";
+import { delaiCascade } from "./effets";
 import { CommentaireAvis } from "./CommentaireAvis";
 
 export function RatingBadge({ rating }: { rating: RatingSummary }) {
@@ -79,7 +80,7 @@ export function ReviewList({
       */}
       <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         {reviews.map((review, index) => (
-          <Reveal as="li" key={review.id} delay={Math.min(index, 6) * 70}>
+          <Reveal as="li" key={review.id} delay={delaiCascade(index)}>
             {/*
               Traitement en citation plutôt qu'en carte de commentaire.
 

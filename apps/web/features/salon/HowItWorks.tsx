@@ -26,6 +26,8 @@
 
 import { useTranslations } from "next-intl";
 
+import { Reveal } from "@/features/ui/Reveal";
+import { delaiCascade } from "./effets";
 import { SalonIcon, type SalonIconName } from "./icons";
 import { PrimaryLink } from "./ui";
 import type { PublicSalon } from "@/lib/types";
@@ -86,8 +88,13 @@ export function HowItWorks({ salon }: { salon: PublicSalon }) {
         />
 
         {steps.map((step, index) => (
-          <li
+          // Les trois étapes entrent l'une après l'autre : c'est une
+          // séquence, la cascade la fait lire dans l'ordre. Portée par le
+          // <li> lui-même, qui tient la place dans la grille.
+          <Reveal
+            as="li"
             key={step.title}
+            delay={delaiCascade(index)}
             className={`relative ${index === 2 ? "col-span-2 lg:col-span-1" : ""}`}
           >
             <div className="lift h-full rounded-2xl border border-[var(--site-line)] bg-[var(--site-surface)] p-4 shadow-[0_1px_3px_rgb(23_23_28_/_0.05)] sm:p-5">
@@ -105,7 +112,7 @@ export function HowItWorks({ salon }: { salon: PublicSalon }) {
                 {step.body}
               </p>
             </div>
-          </li>
+          </Reveal>
         ))}
       </ol>
 

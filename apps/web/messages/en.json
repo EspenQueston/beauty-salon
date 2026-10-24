@@ -305,7 +305,9 @@
       "avis": "{n, plural, =0 {no reviews} one {# verified review} other {# verified reviews}}",
       "prestations": "{n, plural, one {service} other {services}}",
       "prestataires": "{n, plural, one {stylist} other {stylists}}",
-      "aujourdhui": "today"
+      "aujourdhui": "today",
+      "pauseFond": "Pause the background animation",
+      "reprendreFond": "Resume the background animation"
     },
     "joursPhrase": {
       "0": "Monday",

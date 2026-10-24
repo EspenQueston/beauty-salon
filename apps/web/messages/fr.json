@@ -305,7 +305,9 @@
       "avis": "{n, plural, =0 {aucun avis} one {# avis vérifié} other {# avis vérifiés}}",
       "prestations": "{n, plural, one {prestation} other {prestations}}",
       "prestataires": "{n, plural, one {prestataire} other {prestataires}}",
-      "aujourdhui": "aujourd'hui"
+      "aujourdhui": "aujourd'hui",
+      "pauseFond": "Mettre en pause l'animation du fond",
+      "reprendreFond": "Reprendre l'animation du fond"
     },
     "joursPhrase": {
       "0": "lundi",

@@ -35,6 +35,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Lien } from "@/features/ui/Lien";
 import { Reveal } from "@/features/ui/Reveal";
+import { delaiCascade } from "./effets";
 import { formatDuration } from "@/lib/format";
 import { isVideo, type MediaAsset } from "@/lib/types";
 import { Prix } from "./Devise";
@@ -160,7 +161,7 @@ export function GalleryGrid({
             <Reveal
               as="li"
               key={asset.id}
-              delay={Math.min(index, 8) * 60}
+              delay={delaiCascade(index, 8)}
               className={spanOf(index)}
             >
               {/*

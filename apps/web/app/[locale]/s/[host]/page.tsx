@@ -4,6 +4,8 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { ANCRE_CONTENU, Hero } from "@/features/salon/Hero";
+import { CielEtoile } from "@/features/salon/CielEtoile";
+import { delaiCascade } from "@/features/salon/effets";
 import { ServiceCard } from "@/features/salon/ServiceCard";
 import {
   VitrinePrestations,
@@ -263,7 +265,7 @@ export default async function SalonHome({ params }: Props) {
               vedette={featured.map(({ service, category }, index) => ({
                 id: service.id,
                 carte: (
-                  <Reveal delay={Math.min(index, 5) * 80}>
+                  <Reveal delay={delaiCascade(index)}>
                     <ServiceCard
                       service={service}
                       icon={categoryIcon(category.name)}
@@ -330,7 +332,10 @@ export default async function SalonHome({ params }: Props) {
     realisations: (
     <div className="mx-auto max-w-5xl px-4">
         {showcase.length > 0 && (
-          <Reveal as="section" className="pt-20">
+          // Le titre se révèle seul : les photos ont déjà leur cascade, et
+          // un bloc qui monte autour d'elles noyait la leur.
+          <section className="pt-20">
+            <Reveal>
             <SectionTitle
               eyebrow={t("titresAccueil.galerieSurtitre")}
               title={t("titresAccueil.galerieTitre")}
@@ -344,8 +349,9 @@ export default async function SalonHome({ params }: Props) {
                 ) : undefined
               }
             />
+            </Reveal>
             <GalleryGrid assets={showcase} salonName={salon.name} />
-          </Reveal>
+          </section>
         )}
     </div>
   ),
@@ -367,12 +373,11 @@ export default async function SalonHome({ params }: Props) {
               />
             </Reveal>
 
-            <Reveal>
-              {/* Six : deux rangées pleines dans une mosaïque de trois
-                  colonnes. Au-delà, la mosaïque s'allonge plus vite que la
-                  liste de noms placée à côté, et le bloc se déséquilibre. */}
-              <TeamShowcase members={salon.staff_members.slice(0, 6)} />
-            </Reveal>
+            {/* Six : deux rangées pleines dans une mosaïque de trois
+                colonnes. Au-delà, la mosaïque s'allonge plus vite que la
+                liste de noms placée à côté, et le bloc se déséquilibre.
+                Chaque personne a sa propre entrée (`TeamShowcase`). */}
+            <TeamShowcase members={salon.staff_members.slice(0, 6)} />
           </section>
         )}
     </div>
@@ -397,18 +402,21 @@ export default async function SalonHome({ params }: Props) {
     ) : null,
     infos: (
     <div className="mx-auto max-w-5xl px-4">
-        <Reveal as="section" className="pt-20">
-          <SectionTitle
-            eyebrow={t("titresAccueil.infosSurtitre")}
-            title={t("titresAccueil.infosTitre")}
-            action={
-              <MoreLink href="/infos">
-                {t("titresAccueil.toutLeDetail")}
-              </MoreLink>
-            }
-          />
+        {/* Le titre, puis les cartes une à une (`PracticalSummary`). */}
+        <section className="pt-20">
+          <Reveal>
+            <SectionTitle
+              eyebrow={t("titresAccueil.infosSurtitre")}
+              title={t("titresAccueil.infosTitre")}
+              action={
+                <MoreLink href="/infos">
+                  {t("titresAccueil.toutLeDetail")}
+                </MoreLink>
+              }
+            />
+          </Reveal>
           <PracticalSummary salon={salon} instantServeur={instantServeur} />
-        </Reveal>
+        </section>
     </div>
   ),
   };
@@ -417,8 +425,30 @@ export default async function SalonHome({ params }: Props) {
     .map((section) => section.cle);
 
   return (
-    <main>
+    // `accueil-salon` : la classe qui porte les réglages d'entrée propres à
+    // l'accueil (globals.css, « Accueil des mini-sites »).
+    <main className="accueil-salon">
       <Hero salon={salon} instantServeur={instantServeur} />
+
+      {/*
+        Le ciel de la page, sous le haut de page — pas dedans : le haut de
+        page a déjà le défilé de ses photos.
+
+        Fixé à l'écran et sous tout le contenu (`-z-10`, dans le contexte de
+        `.salon-site`) : le haut de page, opaque, le recouvre, et ses coins
+        arrondis le laissent déjà paraître. Il ne prend aucune place, et
+        n'allonge ni ne décale rien. `h-lvh` : la hauteur de l'écran barre
+        d'adresse repliée, pour que Safari ne le redimensionne pas à chaque
+        défilement.
+
+        Le conteneur est ce que le ciel observe : il s'arrête quand plus rien
+        de ce contenu n'est à l'écran.
+      */}
+      <div className="relative">
+      <CielEtoile
+        zone="page"
+        className="fixed inset-x-0 top-0 -z-10 h-lvh w-full"
+      />
 
       {/*
         La bande défilante, hors du conteneur : elle traverse toute la
@@ -441,6 +471,7 @@ export default async function SalonHome({ params }: Props) {
         {ordre.map((cle) => (
           <Fragment key={cle}>{blocs[cle]}</Fragment>
         ))}
+      </div>
       </div>
 
       <div className="mx-auto max-w-5xl px-4">
@@ -467,7 +498,8 @@ function PracticalSummary({
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {salon.business_hours.length > 0 && (
-        <Card className="lift">
+        <Reveal className="h-full">
+        <Card className="lift h-full">
           {/*
             La réponse d'abord, la grille ensuite.
 
@@ -495,10 +527,12 @@ function PracticalSummary({
             timeZone={salon.timezone}
           />
         </Card>
+        </Reveal>
       )}
 
       <div className="space-y-4">
         {salon.address && (
+          <Reveal delay={delaiCascade(1)}>
           <Card className="lift">
             <h3 className="mb-2 flex items-center gap-2 font-semibold text-[var(--site-ink)]">
               <SalonIcon
@@ -519,9 +553,11 @@ function PracticalSummary({
               </div>
             )}
           </Card>
+          </Reveal>
         )}
 
         {contacts.length > 0 && (
+          <Reveal delay={delaiCascade(2)}>
           <Card className="lift">
             <h3 className="mb-3 flex items-center gap-2 font-semibold text-[var(--site-ink)]">
               <SalonIcon
@@ -552,6 +588,7 @@ function PracticalSummary({
               ))}
             </ul>
           </Card>
+          </Reveal>
         )}
       </div>
     </div>

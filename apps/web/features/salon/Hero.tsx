@@ -37,6 +37,7 @@
  */
 
 import { HeroCarousel } from "./HeroCarousel";
+import { PauseFond } from "./PauseFond";
 import { HOME_SLIDES, salonSlides } from "./slides";
 import { Mots } from "@/features/ui/Accent";
 import { shortTime } from "@/lib/format";
@@ -182,6 +183,10 @@ export function Hero({
         `scroll-behavior` de la feuille de style. `ANCRE_CONTENU` est le
         contrat entre ce composant et la page qui pose la cible.
       */}
+      {/* Arrête le défilé de photos et le ciel de la page. Coin bas gauche :
+          libre à toutes les largeurs, loin du bouton « Réserver ». */}
+      <PauseFond className="absolute bottom-4 left-4 z-20 sm:bottom-6 sm:left-6" />
+
       <a
         href={`#${ANCRE_CONTENU}`}
         className="absolute inset-x-0 bottom-6 z-10 hidden justify-center sm:flex"

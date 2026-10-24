@@ -58,9 +58,11 @@
 import { useTranslations } from "next-intl";
 
 import { Lien } from "@/features/ui/Lien";
+import { Reveal } from "@/features/ui/Reveal";
 import { useState } from "react";
 
 import type { PublicStaffMember } from "@/lib/types";
+import { delaiCascade } from "./effets";
 import { SalonIcon } from "./icons";
 import { photo, TAILLES } from "./images";
 
@@ -137,8 +139,12 @@ export function TeamShowcase({
       {/* Trois colonnes dès 640 px : à deux, la fiche atteignait 362 px de
           large sur une tablette — deux portraits géants par rangée. */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:hidden">
+        {/* Chaque fiche entre à son tour : la cascade se lit comme une équipe
+            qui se présente, pas comme un bloc qui se charge. */}
         {members.map((member, rang) => (
-          <Fiche key={member.id} member={member} rang={rang} />
+          <Reveal key={member.id} delay={delaiCascade(rang)}>
+            <Fiche member={member} rang={rang} />
+          </Reveal>
         ))}
       </div>
 
@@ -156,13 +162,14 @@ export function TeamShowcase({
                 .map((member, rang) => ({ member, rang }))
                 .filter(({ rang }) => rang % colonnes === colonne)
                 .map(({ member, rang }) => (
-                  <Tuile
-                    key={member.id}
-                    member={member}
-                    rang={rang}
-                    actif={actif}
-                    onActif={setActif}
-                  />
+                  <Reveal key={member.id} delay={delaiCascade(rang)}>
+                    <Tuile
+                      member={member}
+                      rang={rang}
+                      actif={actif}
+                      onActif={setActif}
+                    />
+                  </Reveal>
                 ))}
             </div>
           ))}
@@ -175,14 +182,15 @@ export function TeamShowcase({
           sans balayer toute la page.
         */}
         <div className="flex min-w-0 flex-1 flex-col gap-5 pt-1">
-          {members.map((member) => (
-            <Ligne
-              key={member.id}
-              member={member}
-              actif={actif}
-              onActif={setActif}
-              detailed={detailed}
-            />
+          {members.map((member, rang) => (
+            <Reveal key={member.id} delay={delaiCascade(rang)}>
+              <Ligne
+                member={member}
+                actif={actif}
+                onActif={setActif}
+                detailed={detailed}
+              />
+            </Reveal>
           ))}
         </div>
       </div>

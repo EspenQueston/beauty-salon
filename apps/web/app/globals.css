@@ -3097,3 +3097,150 @@ body {
     );
   }
 }
+
+/* ------------------------------------------------------------------------ */
+/* Accueil des mini-sites : le ciel et les entrées                          */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * `.salon-site` devient un contexte d'empilement.
+ *
+ * Le ciel posé sous le contenu (`-z-10`) s'y range alors au-dessus du fond
+ * de la page au lieu de passer dessous. La navigation, la visionneuse de la
+ * galerie et la barre de réservation vivent toutes dans `.salon-site` : leur
+ * ordre entre elles ne change pas. Un conteneur isolé autour du seul contenu,
+ * lui, aurait enfermé la visionneuse (`z-50`) sous la navigation (`z-40`).
+ */
+.salon-site {
+  isolation: isolate;
+
+  /*
+   * Entrée des blocs : réglages communs à tous les salons.
+   *
+   * Une première version (0,7 s, 1,1 rem, courbe très rapide au départ)
+   * passait inaperçue : le bloc avait fait 85 % du chemin en 220 ms, au bas
+   * de l'écran, là où le regard n'est pas encore. Le mouvement est donc plus
+   * ample, plus long, et sa courbe étale la fin au lieu de la tasser — sans
+   * jamais dépasser sa position (pas de rebond).
+   */
+  --entree-duree: 1s;
+  --entree-distance: 3rem;
+  --entree-echelle: 0.96;
+  --entree-flou: 6px;
+  --entree-courbe: cubic-bezier(0.2, 0.7, 0.2, 1); /* sans rebond */
+  /* Au-delà, un bloc que le JavaScript n'a jamais pris en main apparaît. */
+  --entree-secours: 2.5s;
+}
+
+@media (max-width: 639px) {
+  .salon-site {
+    --entree-duree: 0.85s;
+    --entree-distance: 2rem;
+    /* Pas de flou sur téléphone : il force à recomposer chaque image, et
+       une cascade de cartes floues ferait saccader un appareil modeste. */
+    --entree-flou: 0px;
+  }
+}
+
+/*
+ * Le ciel (`CielEtoile.tsx`).
+ *
+ * Couleur et intensité sont lues par le moteur sur le canvas lui-même : elles
+ * suivent la couleur du salon et le mode, sans rien d'imposé — ni fond noir,
+ * ni bleu « science-fiction ». En mode sombre, des étoiles claires teintées
+ * de la couleur du salon ; en mode clair, des points de cette couleur, plus
+ * discrets. Le haut de page n'en a pas : il a déjà ses photos.
+ */
+.ciel {
+  --ciel-etoile: color-mix(in srgb, var(--salon-primary) 22%, #ffffff);
+  --ciel-intensite: 1;
+  color: var(--ciel-etoile);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.ciel[data-pret] {
+  opacity: 1;
+}
+
+/*
+ * Le fond de la page. Le fondu vertical est calculé par le moteur
+ * (`CIEL.fondu`), pas par un masque CSS : un masque oblige à repeindre le
+ * calque à chaque image.
+ */
+.ciel--page {
+  --ciel-intensite: 0.8;
+}
+
+/* Sur fond clair, des points de la couleur du salon, plus discrets. */
+.salon-site[data-mode="light"] .ciel--page {
+  --ciel-etoile: color-mix(in srgb, var(--salon-primary) 70%, var(--site-ink));
+  --ciel-intensite: 0.55;
+}
+
+/* La commande de pause : présente, mais en retrait. */
+.pause-fond {
+  opacity: 0.6;
+}
+
+.pause-fond:hover {
+  opacity: 1;
+}
+
+/*
+ * L'entrée des blocs et des cartes, sur toutes les pages vitrines du
+ * mini-site (accueil, prestations, réalisations, équipe, infos, à propos…).
+ * Les pages de réservation, de paiement et de compte n'ont pas de `Reveal` :
+ * on n'anime pas un formulaire.
+ *
+ * Elle reprend `Reveal` et son observateur unique, avec trois différences :
+ *
+ *   - un mouvement réglé ici (`--entree-*`) : le bloc monte de trois rems,
+ *     grandit de 0,96 à 1 et se met au point (sur ordinateur), en une
+ *     seconde ;
+ *   - l'état de départ est posé **avant le premier rendu**, grâce à
+ *     `html[data-js]` qu'écrit le script de démarrage. Un bloc déjà à
+ *     l'écran au chargement joue donc son entrée au lieu d'apparaître d'un
+ *     coup — sans éclair, puisqu'il n'a jamais été affiché avant ;
+ *   - un filet de sécurité : si le JavaScript n'a pas pris la main au bout
+ *     de `--entree-secours`, le bloc apparaît de lui-même. Le contenu ne
+ *     dépend jamais du script pour exister.
+ *
+ * L'opacité ne retire rien à l'accessibilité : un bloc en cours d'entrée
+ * reste lu par les lecteurs d'écran et ses boutons restent actifs.
+ *
+ * Mouvement réduit : rien de tout cela ne s'applique — les blocs sont là,
+ * immédiatement.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-js] .salon-site .reveal {
+    transition:
+      opacity var(--entree-duree) var(--entree-courbe),
+      transform var(--entree-duree) var(--entree-courbe),
+      filter var(--entree-duree) var(--entree-courbe);
+  }
+
+  html[data-js] .salon-site .reveal:not([data-visible="true"]) {
+    opacity: 0;
+    transform: translate3d(0, var(--entree-distance), 0) scale(var(--entree-echelle));
+    filter: blur(var(--entree-flou));
+  }
+
+  html[data-js] .salon-site .reveal:not([data-visible="true"]):not([data-reveal-ready]) {
+    animation: entree-secours 0.5s ease var(--entree-secours) forwards;
+  }
+
+  html[data-js] .salon-site .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes entree-secours {
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}

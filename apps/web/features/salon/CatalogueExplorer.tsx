@@ -33,6 +33,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode 
 import { Reveal } from "@/features/ui/Reveal";
 
 import { CategorieRail } from "./CategorieRail";
+import { delaiCascade } from "./effets";
 import { normaliser, type CategorieFiltre } from "./catalogue";
 import { SalonIcon } from "./icons";
 import { Pill } from "./ui";
@@ -217,15 +218,16 @@ export function CatalogueExplorer({
       ) : (
         <div className="mt-6 space-y-12">
           {visibles.map(({ categorie: c, prestations }) => (
-            <Reveal
+            <section
               key={c.id}
-              as="section"
               // Les ancres d'avant (`/prestations#ongles`) mènent toujours
               // à leur section, sous le menu et la barre de filtre.
               id={c.slug}
               className="scroll-mt-48"
             >
-              <div className="mb-4 flex flex-wrap items-center gap-3">
+              {/* L'en-tête entre seul, puis les cartes une à une : la
+                  section entière en un bloc noyait la cascade. */}
+              <Reveal className="mb-4 flex flex-wrap items-center gap-3">
                 <span
                   className="flex size-11 items-center justify-center rounded-2xl"
                   style={{
@@ -239,14 +241,16 @@ export function CatalogueExplorer({
                   {c.nom}
                 </h2>
                 <Pill>{tp("prestationsCompte", { n: prestations.length })}</Pill>
-              </div>
+              </Reveal>
 
               <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {prestations.map(({ id, carte }) => (
-                  <div key={id}>{carte}</div>
+                {prestations.map(({ id, carte }, rang) => (
+                  <Reveal key={id} delay={delaiCascade(rang)}>
+                    {carte}
+                  </Reveal>
                 ))}
               </div>
-            </Reveal>
+            </section>
           ))}
         </div>
       )}

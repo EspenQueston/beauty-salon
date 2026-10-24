@@ -6,7 +6,6 @@ import { PageHero } from "@/features/salon/PageHero";
 import { PAGE_SLIDES, salonSlides } from "@/features/salon/slides";
 import { TeamShowcase } from "@/features/salon/TeamShowcase";
 import { EmptyNote } from "@/features/salon/ui";
-import { Reveal } from "@/features/ui/Reveal";
 import { fetchSalon } from "@/lib/salon-serveur";
 
 type Props = { params: Promise<{ host: string }> };
@@ -40,9 +39,9 @@ export default async function EquipePage({ params }: Props) {
             {t("pages.equipeVideCorps")}
           </EmptyNote>
         ) : (
-          <Reveal>
-            <TeamShowcase members={salon.staff_members} detailed />
-          </Reveal>
+          // Chaque personne a sa propre entrée (voir `TeamShowcase`) : un
+          // bloc autour superposerait deux mouvements.
+          <TeamShowcase members={salon.staff_members} detailed />
         )}
       </main>
     </>
