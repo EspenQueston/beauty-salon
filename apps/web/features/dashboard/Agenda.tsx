@@ -9,10 +9,20 @@
  * ne porte que les actions possibles à cet instant précis.
  */
 
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
-import { formatDate, formatDayKey, formatPrice, formatTime } from "@/lib/format";
+import {
+  formatDate,
+  formatDayKey,
+  formatPrice,
+  formatTime,
+} from "@/lib/format";
 import { useNow } from "@/lib/useNow";
 import {
   Badge,
@@ -28,6 +38,7 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+
 import { Icon } from "./icons";
 import {
   AgendaToolbar,
@@ -42,6 +53,22 @@ import { BookingProgress } from "./BookingProgress";
 import { CheckInButton, CheckInPanel } from "./CheckIn";
 import { ReschedulePanel } from "./Reschedule";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
+import { nomDuMoyen } from "./moyens";
+
+/**
+ * Les trois listes de « ce qui attend un geste ».
+ *
+ * Les clés sont celles de l'URL et du serveur
+ * (`overview.FILTRES_ATTENTION`) : c'est lui qui décide ce que contient
+ * chaque liste, ici on ne fait que la nommer. Un libellé inventé de ce côté
+ * finirait par décrire autre chose que ce que la requête ramène.
+ *
+ * Les deux formes sont écrites, plutôt qu'un « s » ajouté à la fin : le
+ * pluriel porte sur le nom, pas sur la phrase — « 2 acomptes à vérifier »
+ * et non « 2 acompte à vérifiers ».
+ */
+const LISTES_ATTENTE = ["acomptes", "demandes", "a-noter"] as const;
 
 interface Booking {
   id: string;
@@ -54,6 +81,7 @@ interface Booking {
   staff_member_name: string;
   customer_name: string;
   customer_phone: string;
+  customer_email: string;
   total_amount: string;
   deposit_amount: string;
   deposit_paid: boolean;
@@ -88,30 +116,97 @@ interface Summary {
 
 type Tone = "neutral" | "success" | "warning" | "danger" | "info";
 
-const STATUS: Record<string, { label: string; tone: Tone }> = {
-  pending_payment: { label: "En attente de paiement", tone: "warning" },
-  requested: { label: "Demandée", tone: "warning" },
-  confirmed: { label: "Confirmée", tone: "success" },
-  checked_in: { label: "Cliente arrivée", tone: "info" },
-  completed: { label: "Terminée", tone: "neutral" },
-  cancelled: { label: "Annulée", tone: "danger" },
-  no_show: { label: "Absente", tone: "danger" },
+/** Le ton de chaque statut ; le libellé vient du catalogue (`pro.agenda.statut`). */
+const STATUS: Record<string, Tone> = {
+  pending_payment: "warning",
+  requested: "warning",
+  confirmed: "success",
+  checked_in: "info",
+  completed: "neutral",
+  cancelled: "danger",
+  no_show: "danger",
 };
 
+/**
+ * Une preuve de versement attend-elle un verdict ?
+ *
+ * Tant que c'est le cas, le rendez-vous ne doit avancer que par la décision
+ * sur l'acompte — c'est elle, et elle seule, qui fait entrer l'argent en
+ * caisse.
+ */
+function acompteEnAttente(booking: Booking): boolean {
+  return (
+    booking.deposit_proof?.status === "submitted" &&
+    ["requested", "pending_payment"].includes(booking.status)
+  );
+}
+
+/**
+ * Joindre la cliente, depuis la carte du rendez-vous.
+ *
+ * ===========================================================================
+ * Pourquoi ce sont des liens, et pas du texte
+ * ===========================================================================
+ *
+ * Le numéro était écrit à côté du nom, à lire et à recopier. Or ce qu'on
+ * fait d'un contact dans un agenda, c'est appeler ou écrire — jamais lire.
+ * `tel:` compose sur un téléphone, `mailto:` ouvre le courrier sur un poste
+ * fixe : le geste tient en un toucher au lieu d'une sélection au doigt.
+ *
+ * ===========================================================================
+ * Deux colonnes quand ça tient, une ligne chacun sinon
+ * ===========================================================================
+ *
+ * `flex-wrap` plutôt qu'une grille à deux colonnes figée. Un numéro fait
+ * dix-sept caractères, une adresse en fait souvent trente-cinq : dans une
+ * grille, la colonne de l'e-mail tomberait à dix-huit caractères sur un
+ * écran de 360 px, et une adresse tronquée ne sert plus à rien.
+ *
+ * Ici les deux se placent côte à côte quand ils tiennent, et l'adresse passe
+ * à la ligne quand elle est longue — où elle dispose de toute la largeur.
+ *
+ * L'adresse peut manquer : une cliente qui réserve par téléphone n'en donne
+ * pas toujours. On n'affiche alors rien, plutôt qu'un tiret à expliquer.
+ */
+function Contact({ booking }: { booking: Booking }) {
+  const courriel = booking.customer_email?.trim();
+
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <a
+        href={`tel:${booking.customer_phone.replace(/\s/g, "")}`}
+        onClick={(evenement) => evenement.stopPropagation()}
+        className="tabular inline-flex max-w-full items-center gap-1.5 text-[0.8rem] text-muted transition hover:text-salon"
+      >
+        <Icon name="phone" className="size-3.5 shrink-0" />
+        <span className="truncate">{booking.customer_phone}</span>
+      </a>
+
+      {courriel && (
+        <a
+          href={`mailto:${courriel}`}
+          onClick={(evenement) => evenement.stopPropagation()}
+          title={courriel}
+          className="inline-flex max-w-full items-center gap-1.5 text-[0.8rem] text-muted transition hover:text-salon"
+        >
+          <Icon name="mail" className="size-3.5 shrink-0" />
+          <span className="truncate">{courriel}</span>
+        </a>
+      )}
+    </div>
+  );
+}
+
 /** Actions proposées selon l'état courant du rendez-vous. */
-const NEXT_ACTIONS: Record<string, { status: string; label: string }[]> = {
-  requested: [
-    { status: "confirmed", label: "Confirmer" },
-    { status: "checked_in", label: "Cliente arrivée" },
-  ],
-  confirmed: [
-    { status: "checked_in", label: "Cliente arrivée" },
-    { status: "no_show", label: "Absente" },
-  ],
-  checked_in: [{ status: "completed", label: "Terminée" }],
+const NEXT_ACTIONS: Record<string, string[]> = {
+  requested: ["confirmed", "checked_in"],
+  confirmed: ["checked_in", "no_show"],
+  checked_in: ["completed"],
 };
 
 export function Agenda() {
+  const t = useTranslations("pro.agenda");
+  const formats = useFormats();
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -127,8 +222,24 @@ export function Agenda() {
   const [staffId, setStaffId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
+
+  /*
+   * Ce sur quoi la cloche nous a envoyées.
+   *
+   * `?rdv=<id>` : un rendez-vous précis, celui dont parlait la
+   * notification. `?attente=<clé>` : l'une des trois listes de « ce qui
+   * attend un geste », celles que comptent les pastilles.
+   *
+   * Dans les deux cas la période affichée n'a plus de sens — le
+   * rendez-vous cherché est rarement dans la semaine en cours — et on la
+   * met de côté, exactement comme pendant une recherche.
+   */
+  const parametres = useSearchParams();
+  const rdv = parametres.get("rdv");
+  const attente = parametres.get("attente");
+  const cible = Boolean(rdv || attente);
   /* Le rendez-vous dont on est en train de vérifier l'arrivée, s'il y en a
      un : le lecteur s'ouvre alors ciblé sur lui. */
   const [arrival, setArrival] = useState<Booking | null>(null);
@@ -174,6 +285,11 @@ export function Agenda() {
     const params = new URLSearchParams({ page_size: "300" });
     if (searching) {
       params.set("search", debounced);
+    } else if (cible) {
+      // La cible commande : pas de période. On montre exactement ce que
+      // la notification annonçait.
+      if (rdv) params.set("id", rdv);
+      if (attente) params.set("attente", attente);
     } else {
       params.set("from", from.toISOString());
       params.set("to", to.toISOString());
@@ -193,10 +309,10 @@ export function Agenda() {
         if (cancelled) return;
         setBookings(page.results);
         setSummary(stats);
-        setError(null);
+        setError(false);
       })
       .catch(() => {
-        if (!cancelled) setError("Impossible de charger l’agenda.");
+        if (!cancelled) setError(true);
       });
 
     return () => {
@@ -209,6 +325,9 @@ export function Agenda() {
     statusFilter,
     searching,
     debounced,
+    cible,
+    rdv,
+    attente,
     tenantId,
     reloadToken,
   ]);
@@ -222,7 +341,7 @@ export function Agenda() {
           tenantId,
         ),
       {
-        success: `${booking.customer_name} — ${(STATUS[status]?.label ?? status).toLowerCase()}.`,
+        success: `${booking.customer_name} — ${libelleStatut(status).toLowerCase()}.`,
       },
     );
     if (ok) reload();
@@ -246,7 +365,7 @@ export function Agenda() {
           },
           tenantId,
         ),
-      { success: `Rendez-vous de ${booking.customer_name} confirmé.` },
+      { success: t("confirme", { nom: booking.customer_name }) },
     );
     if (ok) reload();
   }
@@ -259,7 +378,7 @@ export function Agenda() {
           { method: "POST", body: JSON.stringify({ reason }) },
           tenantId,
         ),
-      { success: "La cliente est prévenue et peut renvoyer une preuve." },
+      { success: t("refusEnvoye") },
     );
     if (ok) reload();
   }
@@ -269,12 +388,20 @@ export function Agenda() {
       () =>
         dashboardFetch(
           `/api/v1/bookings/${booking.id}/cancel/`,
-          { method: "POST", body: JSON.stringify({ reason: "Annulé par le salon" }) },
+          {
+            method: "POST",
+            body: JSON.stringify({ reason: "Annulé par le salon" }),
+          },
           tenantId,
         ),
-      { success: `Rendez-vous de ${booking.customer_name} annulé.` },
+      { success: t("annule", { nom: booking.customer_name }) },
     );
     if (ok) reload();
+  }
+
+  /** « Confirmée », « Absente »… ; un statut inconnu s'affiche tel quel. */
+  function libelleStatut(status: string): string {
+    return status in STATUS ? t(`statut.${status}`) : status;
   }
 
   const grouped = useMemo(() => {
@@ -309,11 +436,34 @@ export function Agenda() {
   const waiting = [...late.values()].filter((state) => !state.overdue).length;
   const unresolved = [...late.values()].filter((state) => state.overdue).length;
 
+  /*
+    Ce que dit le bandeau quand on arrive d'une notification.
+
+    Le cas « plus rien » compte autant que les autres : un acompte peut avoir
+    été vérifié entre la notification et le clic — par une collègue, ou par
+    soi-même depuis un autre appareil. Afficher une liste vide sans
+    explication ferait croire à une panne.
+  */
+  const nombre = bookings?.length ?? 0;
+  const libelleCible =
+    bookings === null
+      ? t("chargement")
+      : rdv
+        ? nombre > 0
+          ? t("cible.rdv")
+          : t("cible.rdvDisparu")
+        : nombre > 0
+          ? t(
+              `cible.${(LISTES_ATTENTE as readonly string[]).includes(attente ?? "") ? attente : "elements"}`,
+              { n: nombre },
+            )
+          : t("cible.rienATraiter");
+
   return (
     <section>
       <PageHeader
-        title="Agenda"
-        description="Vos rendez-vous à venir, et ce qui demande une action."
+        title={t("titre")}
+        description={t("description")}
         // L'arrivée se scanne depuis l'agenda plutôt que depuis une rubrique
         // à part : c'est l'écran déjà ouvert quand une cliente pousse la
         // porte, et la ligne qui change d'état est juste en dessous.
@@ -322,22 +472,26 @@ export function Agenda() {
 
       {summary && (
         <div className="mb-7 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-          <StatTile label="Aujourd’hui" value={summary.today_count} hint="rendez-vous" />
           <StatTile
-            label="7 prochains jours"
-            value={summary.upcoming_count}
-            hint="rendez-vous actifs"
+            label={t("stats.aujourdhui")}
+            value={summary.today_count}
+            hint={t("stats.rendezVous")}
           />
           <StatTile
-            label="Absences"
+            label={t("stats.septJours")}
+            value={summary.upcoming_count}
+            hint={t("stats.actifs")}
+          />
+          <StatTile
+            label={t("stats.absences")}
             value={summary.no_show_last_30_days}
-            hint="sur 30 jours"
+            hint={t("stats.trenteJours")}
             tone={summary.no_show_last_30_days > 0 ? "danger" : "neutral"}
           />
           <StatTile
-            label="Annulations"
+            label={t("stats.annulations")}
             value={summary.cancelled_last_30_days}
-            hint="sur 30 jours"
+            hint={t("stats.trenteJours")}
           />
         </div>
       )}
@@ -364,16 +518,35 @@ export function Agenda() {
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface-muted px-4 py-2.5">
           <p className="text-sm text-muted">
             {bookings === null
-              ? "Recherche…"
-              : `${bookings.length} résultat${bookings.length > 1 ? "s" : ""} pour « ${search.trim()} », sur tout l'agenda.`}
+              ? t("recherche")
+              : t("resultats", { n: bookings.length, terme: search.trim() })}
           </p>
           <button
             type="button"
             onClick={() => setSearch("")}
             className="ml-auto rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-hover"
           >
-            Revenir à l&apos;agenda
+            {t("retour")}
           </button>
+        </div>
+      )}
+
+      {/*
+        On arrive d'une notification.
+
+        Même traitement que la recherche, et pour la même raison : ce qui
+        est affiché ne correspond plus à la période choisie. Sans ce
+        bandeau, on croirait que l'agenda ne contient qu'un rendez-vous.
+      */}
+      {cible && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-salon bg-salon-soft/40 px-4 py-2.5">
+          <p className="text-sm text-ink">{libelleCible}</p>
+          <Link
+            href="/agenda"
+            className="ml-auto rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-hover"
+          >
+            {t("retour")}
+          </Link>
         </div>
       )}
 
@@ -387,14 +560,15 @@ export function Agenda() {
         />
       )}
 
-      {error && <ErrorState>{error}</ErrorState>}
+      {error && <ErrorState>{t("erreurChargement")}</ErrorState>}
       {bookings === null && !error && <Skeleton rows={4} />}
 
       {bookings?.length === 0 && (
-        <EmptyState title="Aucun rendez-vous sur cette période">
-          Partagez le lien de votre mini-site pour que vos clientes réservent
-          elles-mêmes, à toute heure.
-        </EmptyState>
+        // Une marge sous l'encart : la semaine affichée juste en dessous
+        // venait s'y coller.
+        <div className="mb-5">
+          <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
+        </div>
       )}
 
       {/*
@@ -428,18 +602,20 @@ export function Agenda() {
         </div>
       )}
 
-      <div className={`space-y-7 ${view === "month" && !searching ? "hidden" : ""}`}>
+      <div
+        className={`space-y-7 ${view === "month" && !searching ? "hidden" : ""}`}
+      >
         {grouped.map(([day, rows]) => (
           <div key={day}>
             <h2 className="mb-2.5 text-sm font-medium text-muted first-letter:uppercase">
-              {formatDate(rows[0].starts_at, timeZone)}
+              {formatDate(rows[0].starts_at, timeZone, formats.region)}
             </h2>
 
             <ul className="space-y-2.5">
               {rows.map((booking) => {
-                const status = STATUS[booking.status] ?? {
-                  label: booking.status,
-                  tone: "neutral" as Tone,
+                const status = {
+                  label: libelleStatut(booking.status),
+                  tone: STATUS[booking.status] ?? ("neutral" as Tone),
                 };
 
                 return (
@@ -455,10 +631,11 @@ export function Agenda() {
                             {booking.service_name}
                           </p>
                           <p className="mt-0.5 text-sm text-muted">
-                            {booking.customer_name} · {booking.customer_phone}
+                            {booking.customer_name}
                           </p>
+                          <Contact booking={booking} />
                           <p className="mt-0.5 text-sm text-subtle">
-                            avec {booking.staff_member_name}
+                            {t("avec", { nom: booking.staff_member_name })}
                           </p>
                         </div>
 
@@ -477,7 +654,7 @@ export function Agenda() {
                             <Badge tone={status.tone}>{status.label}</Badge>
                           )}
                           <span className="tabular text-sm font-medium text-ink">
-                            {formatPrice(booking.total_amount, currency)}
+                            {formatPrice(booking.total_amount, currency, formats.region)}
                           </span>
                         </div>
                       </div>
@@ -537,14 +714,33 @@ export function Agenda() {
                       )}
 
                       {Number(booking.deposit_amount) > 0 && (
-                        <DepositLine
-                          booking={booking}
-                          currency={currency}
-                        />
+                        <DepositLine booking={booking} currency={currency} />
                       )}
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {(NEXT_ACTIONS[booking.status] ?? []).map((action) =>
+                        {/*
+                          Ces boutons disparaissent tant qu'une preuve de
+                          versement attend un verdict.
+
+                          Il y avait deux chemins vers « confirmée » : celui-ci
+                          et « J'ai reçu l'acompte — accepter », juste au-dessus.
+                          Le second tranche la preuve, encaisse l'acompte et
+                          confirme ; le premier ne faisait que confirmer.
+
+                          Passer par le premier laissait donc un acompte reçu
+                          et jamais entré en caisse, une preuve éternellement
+                          « à vérifier » — et l'autre bouton, resté visible,
+                          répondait alors « ce rendez-vous n'est plus en attente
+                          d'acceptation » à chaque clic.
+
+                          Le serveur refuse désormais cette transition ; on ne
+                          la propose plus ici non plus, pour ne pas offrir un
+                          geste voué au refus.
+                        */}
+                        {(acompteEnAttente(booking)
+                          ? []
+                          : (NEXT_ACTIONS[booking.status] ?? [])
+                        ).map((statut) =>
                           /*
                             « Cliente arrivée » n'écrit plus directement : il
                             ouvre le lecteur, sur *cette* ligne.
@@ -559,22 +755,22 @@ export function Agenda() {
                             est au bas du lecteur, pour la cliente qui n'a pas
                             son code.
                           */
-                          action.status === "checked_in" ? (
+                          statut === "checked_in" ? (
                             <Button
-                              key={action.status}
+                              key={statut}
                               type="button"
                               icon={<Icon name="scan" className="size-4" />}
                               onClick={() => setArrival(booking)}
                             >
-                              {action.label}
+                              {t(`action.${statut}`)}
                             </Button>
                           ) : (
                             <GhostButton
-                              key={action.status}
+                              key={statut}
                               type="button"
-                              onClick={() => changeStatus(booking, action.status)}
+                              onClick={() => changeStatus(booking, statut)}
                             >
-                              {action.label}
+                              {t(`action.${statut}`)}
                             </GhostButton>
                           ),
                         )}
@@ -600,12 +796,17 @@ export function Agenda() {
                             icon={<Icon name="calendar" className="size-4" />}
                             onClick={() => setMoving(booking)}
                           >
-                            Déplacer
+                            {t("deplacer.bouton")}
                           </GhostButton>
                         )}
-                        {!["cancelled", "completed"].includes(booking.status) && (
-                          <DangerButton type="button" onClick={() => cancel(booking)}>
-                            Annuler
+                        {!["cancelled", "completed"].includes(
+                          booking.status,
+                        ) && (
+                          <DangerButton
+                            type="button"
+                            onClick={() => cancel(booking)}
+                          >
+                            {t("annuler")}
                           </DangerButton>
                         )}
                       </div>
@@ -684,7 +885,9 @@ function DepositLine({
   booking: Booking;
   currency: string;
 }) {
-  const expected = formatPrice(booking.deposit_amount, currency);
+  const t = useTranslations("pro.agenda.acompte");
+  const { region } = useFormats();
+  const expected = formatPrice(booking.deposit_amount, currency, region);
 
   // ----- déjà encaissé ---------------------------------------------------
   if (booking.deposit_paid) {
@@ -696,10 +899,12 @@ function DepositLine({
         <p className="flex items-center gap-2 text-sm text-success">
           <Icon name="check" className="size-4 shrink-0" />
           <span>
-            {received > 0
-              ? formatPrice(booking.deposit_received, currency)
-              : expected}{" "}
-            encaissé
+            {t("encaisse", {
+              montant:
+                received > 0
+                  ? formatPrice(booking.deposit_received, currency, region)
+                  : expected,
+            })}
           </span>
         </p>
 
@@ -707,10 +912,11 @@ function DepositLine({
             du rendez-vous. */}
         {short && (
           <Badge tone="warning">
-            reste {formatPrice(Number(booking.deposit_amount) - received, currency)}
+            {t("reste", {
+              montant: formatPrice(Number(booking.deposit_amount) - received, currency, region),
+            })}
           </Badge>
         )}
-
       </div>
     );
   }
@@ -719,7 +925,7 @@ function DepositLine({
   return (
     <div className="mt-3 rounded-lg bg-warning-bg px-3 py-2">
       <p className="text-sm font-medium text-warning">
-        Acompte de {expected} attendu
+        {t("attendu", { montant: expected })}
       </p>
     </div>
   );
@@ -777,12 +983,13 @@ function formatDelay(minutes: number): string {
 }
 
 function LateBadge({ state }: { state: LateState }) {
+  const t = useTranslations("pro.agenda.retard");
   if (state.overdue) {
-    return <Badge tone="danger">Créneau passé · à clôturer</Badge>;
+    return <Badge tone="danger">{t("passe")}</Badge>;
   }
   return (
     <Badge tone="warning">
-      <span className="tabular">En retard de {formatDelay(state.minutes)}</span>
+      <span className="tabular">{t("enRetard", { delai: formatDelay(state.minutes) })}</span>
     </Badge>
   );
 }
@@ -803,15 +1010,10 @@ function LateBanner({
   unresolved: number;
   tolerance: number;
 }) {
+  const t = useTranslations("pro.agenda.retard");
   const parts: string[] = [];
-  if (waiting > 0) {
-    parts.push(`${waiting} cliente${waiting > 1 ? "s" : ""} en retard`);
-  }
-  if (unresolved > 0) {
-    parts.push(
-      `${unresolved} créneau${unresolved > 1 ? "x" : ""} passé${unresolved > 1 ? "s" : ""} à clôturer`,
-    );
-  }
+  if (waiting > 0) parts.push(t("clientes", { n: waiting }));
+  if (unresolved > 0) parts.push(t("creneaux", { n: unresolved }));
 
   return (
     <div
@@ -827,9 +1029,7 @@ function LateBanner({
       <p className="text-sm text-ink">
         <span className="font-medium">{parts.join(" · ")}.</span>{" "}
         <span className="text-muted">
-          {tolerance > 0
-            ? `Votre tolérance est de ${tolerance} min.`
-            : "Vous ne tolérez aucun retard."}
+          {tolerance > 0 ? t("tolerance", { n: tolerance }) : t("aucuneTolerance")}
         </span>
       </p>
     </div>
@@ -855,16 +1055,17 @@ function TravelLine({
     .join(" ");
   const maps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   const fee = Number(booking.travel_fee_amount);
+  const t = useTranslations("pro.agenda.domicile");
+  const { region } = useFormats();
 
   return (
     <div className="mt-3 rounded-lg border border-info/25 bg-info-bg p-3">
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-ink">
         <Icon name="store" className="size-4 shrink-0" />
-        À domicile · {booking.travel_zone_name}
+        {t("zone", { zone: booking.travel_zone_name })}
         {fee > 0 && (
           <span className="tabular font-normal text-muted">
-            {formatPrice(booking.travel_fee_amount, currency)} de déplacement,
-            inclus
+            {t("frais", { montant: formatPrice(booking.travel_fee_amount, currency, region) })}
           </span>
         )}
       </p>
@@ -914,18 +1115,47 @@ function ProofPanel({
   onAccept: (booking: Booking, amount?: string) => void;
   onReject: (booking: Booking, reason: string) => void;
 }) {
+  const t = useTranslations("pro.agenda.preuve");
+  const tMoyens = useTranslations("pro.encaissement");
+  const { region } = useFormats();
   const proof = booking.deposit_proof;
   const [refusing, setRefusing] = useState(false);
   const [reason, setReason] = useState("");
-  const [amount, setAmount] = useState(booking.deposit_amount);
+  // « 9600 », pas « 9600.00 » : sans centimes quand le montant est entier —
+  // et il l'est toujours en franc CFA, guinéen ou rwandais.
+  const [amount, setAmount] = useState(() =>
+    Number.isInteger(Number(booking.deposit_amount))
+      ? String(Number(booking.deposit_amount))
+      : booking.deposit_amount,
+  );
 
   if (!proof) return null;
+
+  /*
+    Le verdict n'a plus d'objet une fois le rendez-vous avancé.
+
+    Cette carte ne regardait que l'état de la **preuve**. Un rendez-vous
+    confirmé par l'autre chemin la laissait donc afficher « J'ai reçu
+    l'acompte — accepter », un bouton que le serveur refusait à chaque clic.
+
+    On le dit au lieu de le proposer : l'acompte n'a pas été enregistré, et
+    c'est une information comptable, pas un détail d'affichage.
+  */
+  const decidable = ["requested", "pending_payment"].includes(booking.status);
+  if (proof.status === "submitted" && !decidable) {
+    return (
+      <p className="mt-3 flex items-start gap-2 text-sm text-warning">
+        <Icon name="bolt" className="mt-0.5 size-4 shrink-0" />
+        <span>{t("nonTranche")}</span>
+      </p>
+    );
+  }
 
   if (proof.status === "accepted") {
     return (
       <p className="mt-3 flex items-center gap-2 text-sm text-success">
         <Icon name="check" className="size-4" />
-        Versement retrouvé et confirmé.
+        {t("retrouve")}
       </p>
     );
   }
@@ -933,8 +1163,9 @@ function ProofPanel({
   if (proof.status === "rejected") {
     return (
       <p className="mt-3 text-sm text-muted">
-        Versement non retrouvé{proof.rejection_reason && ` — ${proof.rejection_reason}`}.
-        La cliente peut renvoyer une preuve.
+        {proof.rejection_reason
+          ? t("nonRetrouveMotif", { motif: proof.rejection_reason })
+          : t("nonRetrouve")}
       </p>
     );
   }
@@ -942,12 +1173,18 @@ function ProofPanel({
   return (
     <div className="mt-3 rounded-xl border-l-4 border-l-amber-500 border-y border-r border-line bg-surface-muted/50 p-3">
       <p className="text-sm font-medium text-ink">
-        Acompte à vérifier — {formatPrice(booking.deposit_amount, currency)}
+        {t("aVerifier", { montant: formatPrice(booking.deposit_amount, currency, region) })}
       </p>
       <p className="mt-0.5 text-xs text-muted">
-        {booking.customer_name} dit avoir payé
-        {proof.channel && ` par ${proof.channel === "wechat" ? "WeChat Pay" : "Alipay"}`}
-        . Retrouvez le versement dans votre application avant d&apos;accepter.
+        {proof.channel
+          ? t("ditAvoirPayePar", {
+              nom: booking.customer_name,
+              // Mobile Money, Orange, Airtel, virement : plus seulement WeChat ou
+              // Alipay — une preuve Mobile Money s'affichait « Alipay ».
+              moyen: nomDuMoyen(proof.channel, tMoyens("virement")),
+            })
+          : t("ditAvoirPaye", { nom: booking.customer_name })}{" "}
+        {t("retrouvez")}
       </p>
 
       {/* Deux colonnes dès le téléphone : la capture à gauche, les détails
@@ -963,37 +1200,37 @@ function ProofPanel({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={proof.image_url}
-              alt="Capture du versement"
+              alt={t("capture")}
               className="max-h-56 w-full object-contain"
             />
           </a>
         ) : (
           <p className="rounded-lg border border-dashed border-line p-3 text-xs text-subtle">
-            Aucune capture — la cliente n&apos;a pas pu en joindre.
+            {t("sansCapture")}
           </p>
         )}
 
         <dl className="space-y-1.5 text-xs">
           {proof.reference && (
             <div>
-              <dt className="text-subtle">Référence</dt>
+              <dt className="text-subtle">{t("reference")}</dt>
               <dd className="tabular break-all text-ink">{proof.reference}</dd>
             </div>
           )}
           {proof.note && (
             <div>
-              <dt className="text-subtle">Message</dt>
+              <dt className="text-subtle">{t("message")}</dt>
               <dd className="text-ink">{proof.note}</dd>
             </div>
           )}
           <div>
-            <dt className="text-subtle">Montant reçu</dt>
+            <dt className="text-subtle">{t("montantRecu")}</dt>
             <dd>
               <input
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 inputMode="decimal"
-                aria-label="Montant réellement reçu"
+                aria-label={t("montantReel")}
                 className="tabular mt-0.5 w-24 rounded-lg border border-line bg-surface px-2 py-1 text-sm text-ink"
               />
             </dd>
@@ -1007,8 +1244,8 @@ function ProofPanel({
             autoFocus
             value={reason}
             onChange={(event) => setReason(event.target.value)}
-            placeholder="Aucun versement à ce montant…"
-            aria-label="Motif du refus"
+            placeholder={t("motifExemple")}
+            aria-label={t("motif")}
             className={inputClass}
           />
           <div className="mt-2 flex flex-wrap gap-2">
@@ -1019,20 +1256,20 @@ function ProofPanel({
                 setRefusing(false);
               }}
             >
-              Confirmer le refus
+              {t("confirmerRefus")}
             </DangerButton>
             <GhostButton type="button" onClick={() => setRefusing(false)}>
-              Annuler
+              {t("annuler")}
             </GhostButton>
           </div>
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap gap-2">
           <Button type="button" onClick={() => onAccept(booking, amount)}>
-            J&apos;ai reçu l&apos;acompte — accepter
+            {t("accepter")}
           </Button>
           <GhostButton type="button" onClick={() => setRefusing(true)}>
-            Versement introuvable
+            {t("introuvable")}
           </GhostButton>
         </div>
       )}

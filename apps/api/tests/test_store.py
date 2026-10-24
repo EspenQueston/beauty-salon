@@ -53,6 +53,7 @@ def booking_payload(salon, starts_at, **overrides):
         "starts_at": starts_at.isoformat(),
         "full_name": "Awa Diallo",
         "phone": "+242066112233",
+        "email": "awa@example.com",
         "accepts_policy": True,
     }
     payload.update(overrides)

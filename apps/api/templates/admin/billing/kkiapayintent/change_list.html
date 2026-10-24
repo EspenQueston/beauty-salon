@@ -1,0 +1,15 @@
+{% extends "admin/change_list.html" %}
+{% block content %}
+<section class="programmes" aria-labelledby="kkiapay-titre">
+  <h2 id="kkiapay-titre">KKIAPAY · abonnements des salons</h2>
+  <p>Encaissement sur le compte marchand de la plateforme, en XOF. La confirmation côté serveur ouvre l’abonnement ; les paiements de réservation sont exclus de ce parcours.</p>
+  <div class="programmes-grid">
+    <div class="programmes-carte"><strong>{% if kkiapay_ready %}Configuration serveur prête{% else %}Indisponible{% endif %}</strong><span>Interrupteur : {% if kkiapay_enabled %}activé{% else %}désactivé{% endif %} · {% if kkiapay_sandbox %}Sandbox{% else %}Production{% endif %}. La configuration ne remplace pas la validation d’un paiement marchand réel.</span></div>
+    <div class="programmes-carte"><strong>Pays autorisés</strong><span>{{ kkiapay_countries|default:"Aucun pays activé" }} · devise XOF uniquement.</span></div>
+    <div class="programmes-carte"><strong>Accès serveur</strong><ul>{% for cle in kkiapay_credentials %}<li>{{ cle.nom }} : {% if cle.presente %}configuré{% else %}manquant{% endif %}</li>{% endfor %}</ul></div>
+    <div class="programmes-carte"><strong>Webhook {% if kkiapay_sandbox %}test{% else %}live{% endif %}</strong><code>{{ kkiapay_webhook_path }}</code><span>À enregistrer sur votre domaine HTTPS chez KKIAPAY. Les valeurs des clés test et live ne sont jamais affichées ici.</span></div>
+  </div>
+  <div class="programmes-liens">{% if kkiapay_method_url %}<a href="{{ kkiapay_method_url }}">Moyens KKIAPAY</a>{% endif %}{% if kkiapay_prices_url %}<a href="{{ kkiapay_prices_url }}">Tarifs XOF</a>{% endif %}</div>
+</section>
+{{ block.super }}
+{% endblock %}

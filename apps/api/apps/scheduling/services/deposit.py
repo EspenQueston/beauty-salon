@@ -56,11 +56,13 @@ paie :
 
 from __future__ import annotations
 
-from decimal import ROUND_DOWN, Decimal
+from decimal import Decimal
+
+from apps.common.devises import arrondir
 
 # Monnaies dont l'usage courant ignore les centimes. Un acompte de 137,40 XAF
-# ne se paie pas : il n'existe pas de piece pour cela.
-WHOLE_UNIT_CURRENCIES = {"XAF", "XOF", "CDF"}
+# ne se paie pas : il n'existe pas de piece pour cela. La liste vit dans
+# `apps/common/devises.py`, commune a toute la plateforme (audit, C-07).
 
 
 def compute_deposit(
@@ -130,8 +132,7 @@ def compute_for(booking_service, profile, *, options_amount, items_amount, trave
 
 
 def _round_down(amount: Decimal, currency: str) -> Decimal:
-    step = Decimal("1") if currency.upper() in WHOLE_UNIT_CURRENCIES else Decimal("0.01")
-    return amount.quantize(step, rounding=ROUND_DOWN)
+    return arrondir(amount, currency, vers_le_bas=True)
 
 
 def explain(

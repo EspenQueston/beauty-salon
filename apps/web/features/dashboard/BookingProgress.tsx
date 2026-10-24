@@ -24,26 +24,23 @@
  * La barre disparaît donc pour ces deux cas, remplacée par la mention seule.
  */
 
+import { useTranslations } from "next-intl";
+
 import { Icon } from "./icons";
 
 type Step = { key: string; label: string; done: boolean; current: boolean };
 
 /** Chemin normal d'un rendez-vous, du plus tôt au plus tard. */
-const PATH = ["pending_payment", "requested", "confirmed", "checked_in", "completed"];
-
-const LABELS: Record<string, string> = {
-  pending_payment: "Acompte",
-  requested: "À valider",
-  confirmed: "Confirmé",
-  checked_in: "Arrivée",
-  completed: "Terminé",
-};
+const PATH = [
+  "pending_payment",
+  "requested",
+  "confirmed",
+  "checked_in",
+  "completed",
+];
 
 /** Statuts qui sortent du chemin : la barre n'a plus de sens. */
-const OFF_PATH: Record<string, string> = {
-  cancelled: "Annulée",
-  no_show: "Absente",
-};
+const OFF_PATH = ["cancelled", "no_show"];
 
 export function BookingProgress({
   status,
@@ -56,29 +53,29 @@ export function BookingProgress({
    */
   hasDeposit: boolean;
 }) {
-  const off = OFF_PATH[status];
-  if (off) {
+  const t = useTranslations("pro.agenda.progression");
+  if (OFF_PATH.includes(status)) {
     return (
-      <p className="mt-3 text-xs font-medium text-muted">
-        {off} — le rendez-vous n&apos;ira pas plus loin.
-      </p>
+      <p className="mt-3 text-xs font-medium text-muted">{t(`sortie.${status}`)}</p>
     );
   }
 
-  const path = hasDeposit ? PATH : PATH.filter((key) => key !== "pending_payment");
+  const path = hasDeposit
+    ? PATH
+    : PATH.filter((key) => key !== "pending_payment");
   const position = path.indexOf(status);
   if (position < 0) return null;
 
   const steps: Step[] = path.map((key, index) => ({
     key,
-    label: LABELS[key],
+    label: t(`etape.${key}`),
     done: index < position,
     current: index === position,
   }));
 
   return (
     <ol
-      aria-label="Progression du rendez-vous"
+      aria-label={t("titre")}
       className="mt-3 flex items-center gap-1"
     >
       {steps.map((step, index) => (

@@ -1,0 +1,26 @@
+# ---------------------------------------------------------------------------
+# Complement a compose.yml quand le serveur fait deja tourner Coolify.
+#
+#   ENTREE=coolify dans .env : `deployer.sh` ajoute alors ce fichier.
+#
+# Coolify tient les ports 80 et 443 avec son propre Traefik, devant d'autres
+# services (n8n, Evolution API…). Caddy renonce donc a ces ports et rejoint
+# le reseau de Coolify, ou Traefik le trouve sous le nom `salon-caddy` et lui
+# transmet les connexions de notre domaine sans les dechiffrer. Voir
+# caddy/traefik-coolify.yaml pour la route, caddy/coolify.caddy pour ce que
+# Caddy change de son cote.
+# ---------------------------------------------------------------------------
+
+services:
+  caddy:
+    # Aucun port publie : on n'entre que par Traefik.
+    ports: !reset []
+    networks:
+      default: {}
+      coolify:
+        aliases:
+          - salon-caddy
+
+networks:
+  coolify:
+    external: true

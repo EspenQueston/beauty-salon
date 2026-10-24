@@ -70,9 +70,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { usePauseFond } from "./fondPause";
+
 export interface HeroSlide {
   key: string;
   url: string;
+  /** Copies réduites de la même image : voir `images.ts`. */
+  srcSet?: string;
   /** Nom de la prestation, affiché sous le défilé. */
   label: string;
   /** Tarif formaté, ou chaîne vide. */
@@ -146,12 +150,21 @@ export function HeroCarousel({
     return () => query.removeEventListener("change", sync);
   }, []);
 
+  /*
+   * La commande « pause » du haut de page d'accueil (`PauseFond`) arrête
+   * aussi le défilé : c'est le mécanisme d'arrêt que les puces assuraient.
+   * Les bandeaux des pages intérieures gardent leurs puces, et n'ont pas de
+   * bouton pour reprendre : la pause ne les concerne pas.
+   */
+  const pauseFond = usePauseFond();
+  const enPause = !band && pauseFond;
+
   const advance = useCallback(() => {
     setIndex((current) => (current + 1) % slides.length);
   }, [slides.length]);
 
   useEffect(() => {
-    if (slides.length < 2 || taken) return;
+    if (slides.length < 2 || taken || enPause) return;
 
     const timer = setInterval(
       () => {
@@ -162,7 +175,7 @@ export function HeroCarousel({
     );
 
     return () => clearInterval(timer);
-  }, [advance, slides.length, taken, calm]);
+  }, [advance, slides.length, taken, calm, enPause]);
 
   if (slides.length === 0) return null;
 
@@ -174,6 +187,8 @@ export function HeroCarousel({
           <img
             key={slide.key}
             src={slide.url}
+            srcSet={slide.srcSet}
+            sizes={slide.srcSet ? "100vw" : undefined}
             alt=""
             aria-hidden
             fetchPriority={position === 0 ? "high" : "low"}

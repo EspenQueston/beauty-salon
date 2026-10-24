@@ -137,7 +137,11 @@ export function AuthShell({
                 aria-hidden
                 className="size-4"
               >
-                <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M15 6l-6 6 6 6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               <span className="hidden sm:inline">{homeLabel}</span>
             </a>
@@ -189,15 +193,21 @@ function AnimatedBackdrop() {
       <span className="auth-blob auth-blob-3" />
 
       {/*
-        Voile de lisibilité.
+        Le voile, qui porte aussi le dégradé.
 
-        Il est passé de 55 % à 80 % : le dégradé occupait l'écran entier au
-        lieu de l'habiller, et la carte du formulaire — qui est la seule
-        chose à regarder ici — se retrouvait à égalité avec son décor. À
-        80 %, la couleur reste perceptible dans les angles et ne dispute
-        plus rien au premier plan.
+        Il ne fait plus seulement baisser les taches : il pose par-dessus
+        trois masses de couleur choisies, à une densité réglée par thème
+        (`--auth-teinte`). Voir `.auth-voile` dans `globals.css`.
+
+        Une couleur de fond et une image de fond se peignent dans cet ordre
+        sur un même élément : une seule couche fait donc les deux gestes,
+        là où il en fallait deux et où la couleur n'arrivait pas à l'écran.
+
+        La carte du formulaire reste opaque, donc le contraste de ce qui est
+        dedans ne dépend pas de ce fond. Seuls le titre et les mentions posés
+        à côté sont concernés, et ils sont mesurés.
       */}
-      <span className="absolute inset-0 bg-bg/80" />
+      <span className="auth-voile" />
     </div>
   );
 }

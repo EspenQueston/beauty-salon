@@ -39,12 +39,18 @@
  * l'usage : on ouvre cette page pour un coup d'œil, pas pour une lecture.
  */
 
-import Link from "next/link";
+import { useState } from "react";
+// Les liens portent la langue (/en/…) : sans elle, chaque clic en anglais
+// passerait par une redirection.
+import { Lien as Link } from "@/features/ui/Lien";
 
 import { Card, ErrorState, Skeleton } from "@/features/ui";
 import { formatPrice } from "@/lib/format";
 
+import { useTranslations } from "next-intl";
+
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon, type IconName } from "./icons";
 import { SetupChecklist } from "./SetupChecklist";
 import { useResource } from "./useResource";
@@ -71,38 +77,77 @@ interface Overview {
   };
   top_services: { name: string; count: number; revenue: string }[];
   ratings: { rating: number; count: number }[];
-  feed: { kind: string; at: string; title: string; detail: string }[];
+  feed: EntreeActivite[];
   occupancy: number | null;
 }
 
-/** Ce qui attend un geste, et où aller le faire. */
-const TASKS: {
-  key: keyof Overview["attention"];
-  href: string;
-  one: string;
-  many: string;
-}[] = [
-  {
-    key: "deposits",
-    href: "/agenda",
-    one: "acompte à vérifier",
-    many: "acomptes à vérifier",
-  },
-  {
-    key: "requests",
-    href: "/agenda",
-    one: "demande à accepter",
-    many: "demandes à accepter",
-  },
-  {
-    key: "overdue",
-    href: "/agenda",
-    one: "créneau passé à trancher",
-    many: "créneaux passés à trancher",
-  },
+/** Ce qui attend un geste, et où aller le faire (libellés : `pro.accueil.taches`). */
+const TASKS: { key: keyof Overview["attention"]; href: string }[] = [
+  { key: "deposits", href: "/agenda" },
+  { key: "requests", href: "/agenda" },
+  { key: "overdue", href: "/agenda" },
 ];
 
+const CONSEIL_2FA = "beauty-salon.conseil-2fa-masque";
+
+/**
+ * Pour la propriétaire : la double authentification, recommandée tant
+ * qu'elle n'est pas active. Le compte propriétaire ouvre la facturation, la
+ * suppression du salon et les données de toutes les clientes.
+ * « Plus tard » le masque sur cet appareil ; l'écran Sécurité reste là.
+ */
+function ConseilDoubleAuthentification() {
+  const t = useTranslations("pro.accueil.deuxFacteurs");
+  const { user, membership } = useDashboard();
+  const [masque, setMasque] = useState(() => {
+    try {
+      return localStorage.getItem(CONSEIL_2FA) === "1";
+    } catch {
+      return false;
+    }
+  });
+  if (membership.role !== "owner" || user.mfa_enabled !== false || masque) return null;
+
+  return (
+    <Card className="border-l-4 border-l-salon">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-salon-soft text-salon">
+          <Icon name="lock" className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">{t("titre")}</p>
+          <p className="text-[13px] leading-relaxed text-muted">{t("aide")}</p>
+        </div>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <Link
+            href="/securite"
+            className="flex-1 rounded-lg bg-salon px-3 py-2 text-center text-sm font-medium text-white transition hover:brightness-110 sm:flex-none"
+          >
+            {t("activer")}
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setMasque(true);
+              try {
+                localStorage.setItem(CONSEIL_2FA, "1");
+              } catch {
+                /* rien a garder */
+              }
+            }}
+            className="flex-1 rounded-lg border border-line px-3 py-2 text-sm font-medium text-ink transition hover:bg-surface-hover sm:flex-none"
+          >
+            {t("plusTard")}
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function Overview() {
+  const t = useTranslations("pro.accueil");
+  const formats = useFormats();
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const { data, error } = useResource<Overview>("/api/v1/overview", tenantId);
@@ -119,12 +164,13 @@ export function Overview() {
   return (
     <div className="space-y-5">
       <SetupChecklist />
+      <ConseilDoubleAuthentification />
 
       {/* ----- 1. Ce qui attend ---------------------------------------- */}
       {pending.length > 0 && (
         <Card className="border-l-4 border-l-warning">
-          <p className="text-sm font-semibold text-ink">À traiter</p>
-          <ul className="mt-2.5 grid gap-2 sm:grid-cols-3">
+          <p className="text-sm font-semibold text-ink">{t("aTraiter")}</p>
+          <ul className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {pending.map((task) => (
               <li key={task.key}>
                 <Link
@@ -135,7 +181,7 @@ export function Overview() {
                     {task.count}
                   </span>
                   <span className="text-sm text-muted">
-                    {task.count > 1 ? task.many : task.one}
+                    {t(`taches.${task.key}`, { n: task.count })}
                   </span>
                 </Link>
               </li>
@@ -145,49 +191,44 @@ export function Overview() {
       )}
 
       {/* ----- 2. Aujourd'hui, et le mois ------------------------------ */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         <Highlight
-          label="Aujourd'hui"
+          label={t("aujourdhui")}
           value={String(today.count)}
-          unit={today.count > 1 ? "rendez-vous" : "rendez-vous"}
+          unit={t("rendezVous", { n: today.count })}
           icon="calendar"
           filled
           footer={
             today.next ? (
-              <>
-                Prochain : <strong>{today.next.service_name}</strong> —{" "}
-                {today.next.customer_name} à{" "}
-                {new Intl.DateTimeFormat("fr-FR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }).format(new Date(today.next.at))}
-              </>
+              t.rich("prochain", {
+                service: today.next.service_name,
+                cliente: today.next.customer_name,
+                heure: formats.heure.format(new Date(today.next.at)),
+                b: (morceau) => <strong>{morceau}</strong>,
+              })
             ) : today.count > 0 ? (
-              "Tous les rendez-vous du jour sont passés."
+              t("journeePassee")
             ) : (
-              "Aucun rendez-vous aujourd'hui."
+              t("aucunAujourdhui")
             )
           }
         />
 
         <Highlight
-          label="Recettes du mois"
-          value={formatPrice(month.income, currency)}
+          label={t("recettes")}
+          value={formatPrice(month.income, currency, formats.region)}
           icon="wallet"
           footer={
             month.growth === null ? (
               // Une croissance depuis zéro n'est pas un pourcentage : on
               // donne le mois précédent en clair plutôt qu'un « +100 % »
               // inventé.
-              <>
-                Mois précédent : {formatPrice(month.previous_income, currency)}
-              </>
+              <>{t("moisPrecedent", { montant: formatPrice(month.previous_income, currency, formats.region) })}</>
             ) : (
               <span
                 className={month.growth >= 0 ? "text-success" : "text-danger"}
               >
-                {month.growth >= 0 ? "+" : ""}
-                {month.growth} % par rapport au mois précédent
+                {t("evolution", { signe: month.growth >= 0 ? "+" : "", n: month.growth })}
               </span>
             )
           }
@@ -198,42 +239,43 @@ export function Overview() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile
           icon="users"
-          label="Clientes"
+          label={t("clientes")}
           value={String(counters.customers)}
         />
         <Tile
           icon="calendar"
-          label="RDV sur 30 j"
+          label={t("rdv30")}
           value={String(counters.bookings)}
         />
         <Tile
           icon="trend"
-          label="Panier moyen"
+          label={t("panier")}
           value={
             counters.average_basket
-              ? formatPrice(counters.average_basket, currency)
+              ? formatPrice(counters.average_basket, currency, formats.region)
               : "—"
           }
         />
         <Tile
           icon="star"
-          label="Note moyenne"
+          label={t("note")}
           value={counters.rating !== null ? `${counters.rating}/5` : "—"}
           hint={
-            counters.reviews > 0
-              ? `${counters.reviews} avis`
-              : "Aucun avis publié"
+            counters.reviews > 0 ? t("nbAvis", { n: counters.reviews }) : t("aucunAvis")
           }
         />
       </div>
 
       {/* ----- 4. Le détail -------------------------------------------- */}
-      <div className="grid gap-5 lg:grid-cols-2">
+      {/* `grid-cols-1` et non la colonne implicite : celle-ci s'élargit à la
+          ligne la plus longue d'un enfant (un avis tronqué sur une ligne), et
+          la carte débordait de l'écran sur téléphone. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <TopServices rows={data.top_services} currency={currency} />
         <Ratings rows={data.ratings} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Occupancy value={data.occupancy} />
         <Feed entries={data.feed} />
       </div>
@@ -266,7 +308,7 @@ function Highlight({
 }) {
   return (
     <div
-      className={`rounded-2xl p-5 shadow-card ${
+      className={`min-w-0 rounded-2xl p-3 shadow-card sm:p-4 ${
         filled
           ? "salon-gradient text-white"
           : "border border-line bg-surface text-ink"
@@ -274,7 +316,7 @@ function Highlight({
     >
       <div className="flex items-start justify-between gap-3">
         <p
-          className={`text-sm font-medium ${
+          className={`text-xs font-medium sm:text-sm ${
             filled ? "text-white/85" : "text-muted"
           }`}
         >
@@ -282,17 +324,17 @@ function Highlight({
         </p>
         <Icon
           name={icon}
-          className={`size-5 shrink-0 ${
+          className={`size-4 shrink-0 sm:size-5 ${
             filled ? "text-white/70" : "text-subtle"
           }`}
         />
       </div>
 
-      <p className="tabular mt-2 flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+      <p className="tabular mt-2 min-w-0 text-lg font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-xl lg:text-2xl">
         {value}
         {unit && (
           <span
-            className={`text-sm font-normal ${
+            className={`ml-1 text-xs font-normal sm:text-sm ${
               filled ? "text-white/80" : "text-muted"
             }`}
           >
@@ -301,9 +343,7 @@ function Highlight({
         )}
       </p>
 
-      <p
-        className={`mt-2 text-sm ${filled ? "text-white/85" : "text-muted"}`}
-      >
+      <p className={`mt-2 text-xs leading-snug sm:text-sm ${filled ? "text-white/85" : "text-muted"}`}>
         {footer}
       </p>
     </div>
@@ -326,17 +366,21 @@ function Tile({
     // colonnes sur un écran de 375 px, une tuile fait 160 px de large, et une
     // icône en tête y ampute le libellé de trois mots — « Panier moyen »
     // devenait « Panier mo… ». À droite, elle ne vole rien à personne.
-    <Card className="min-w-0">
+    <Card className="min-w-0" padded={false}>
+      <div className="p-3 sm:p-4">
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-sm leading-snug text-muted">{label}</p>
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-salon-soft">
-          <Icon name={icon} className="size-4 text-salon" />
+        <p className="min-w-0 text-xs leading-snug text-muted sm:text-sm">{label}</p>
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-salon-soft sm:size-8">
+          <Icon name={icon} className="size-3.5 text-salon sm:size-4" />
         </span>
       </div>
-      <p className="tabular mt-1.5 text-xl font-semibold tracking-tight text-ink sm:text-2xl">
+      <p className="tabular mt-1.5 min-w-0 text-base font-semibold tracking-tight text-ink [overflow-wrap:anywhere] sm:text-lg lg:text-xl">
         {value}
       </p>
-      {hint && <p className="mt-0.5 text-xs leading-snug text-subtle">{hint}</p>}
+      {hint && (
+        <p className="mt-0.5 text-xs leading-snug text-subtle">{hint}</p>
+      )}
+      </div>
     </Card>
   );
 }
@@ -356,23 +400,21 @@ function TopServices({
   rows: { name: string; count: number; revenue: string }[];
   currency: string;
 }) {
+  const t = useTranslations("pro.accueil");
+  const formats = useFormats();
   if (rows.length === 0) {
     return (
       <Card>
-        <p className="text-sm font-semibold text-ink">Prestations du mois</p>
-        <p className="mt-2 text-sm text-muted">
-          Aucun rendez-vous honoré sur les 30 derniers jours.
-        </p>
+        <p className="text-sm font-semibold text-ink">{t("prestationsMois")}</p>
+        <p className="mt-2 text-sm text-muted">{t("prestationsVide")}</p>
       </Card>
     );
   }
 
   return (
     <Card>
-      <p className="text-sm font-semibold text-ink">
-        Prestations les plus réservées
-      </p>
-      <p className="mt-0.5 text-xs text-subtle">Sur les 30 derniers jours</p>
+      <p className="text-sm font-semibold text-ink">{t("prestationsTop")}</p>
+      <p className="mt-0.5 text-xs text-subtle">{t("trenteJours")}</p>
 
       <ul className="mt-3 divide-y divide-line">
         {rows.map((row) => (
@@ -387,7 +429,7 @@ function TopServices({
               {row.count}×
             </span>
             <span className="tabular shrink-0 text-sm font-medium text-ink">
-              {formatPrice(row.revenue, currency)}
+              {formatPrice(row.revenue, currency, formats.region)}
             </span>
           </li>
         ))}
@@ -404,16 +446,14 @@ function TopServices({
  * problème, et un seul chiffre les confond.
  */
 function Ratings({ rows }: { rows: { rating: number; count: number }[] }) {
+  const t = useTranslations("pro.accueil");
   const total = rows.reduce((sum, row) => sum + row.count, 0);
 
   if (total === 0) {
     return (
       <Card>
-        <p className="text-sm font-semibold text-ink">Avis des clientes</p>
-        <p className="mt-2 text-sm text-muted">
-          Aucun avis publié pour l&apos;instant. Ils arrivent tout seuls :
-          chaque cliente en reçoit la proposition après sa visite.
-        </p>
+        <p className="text-sm font-semibold text-ink">{t("avisTitre")}</p>
+        <p className="mt-2 text-sm text-muted">{t("avisVide")}</p>
       </Card>
     );
   }
@@ -425,10 +465,8 @@ function Ratings({ rows }: { rows: { rating: number; count: number }[] }) {
 
   return (
     <Card>
-      <p className="text-sm font-semibold text-ink">Avis des clientes</p>
-      <p className="mt-0.5 text-xs text-subtle">
-        {total} avis publié{total > 1 ? "s" : ""}
-      </p>
+      <p className="text-sm font-semibold text-ink">{t("avisTitre")}</p>
+      <p className="mt-0.5 text-xs text-subtle">{t("avisPublies", { n: total })}</p>
 
       <ul className="mt-3 space-y-2">
         {rows.map((row) => (
@@ -465,19 +503,18 @@ function Ratings({ rows }: { rows: { rating: number; count: number }[] }) {
  * que je travaille assez ».
  */
 function Occupancy({ value }: { value: number | null }) {
+  const t = useTranslations("pro.accueil.remplissage");
+  const { pourcent } = useFormats();
   if (value === null) {
     return (
       <Card>
-        <p className="text-sm font-semibold text-ink">Remplissage</p>
-        <p className="mt-2 text-sm text-muted">
-          Déclarez vos horaires d&apos;ouverture pour connaître la part de vos
-          heures réellement occupées.
-        </p>
+        <p className="text-sm font-semibold text-ink">{t("titre")}</p>
+        <p className="mt-2 text-sm text-muted">{t("sansHoraires")}</p>
         <Link
           href="/horaires"
           className="mt-3 inline-flex text-sm font-medium text-salon hover:underline"
         >
-          Poser mes horaires
+          {t("poserHoraires")}
         </Link>
       </Card>
     );
@@ -485,16 +522,16 @@ function Occupancy({ value }: { value: number | null }) {
 
   return (
     <Card>
-      <p className="text-sm font-semibold text-ink">Remplissage</p>
-      <p className="mt-0.5 text-xs text-subtle">Sur les 7 derniers jours</p>
+      <p className="text-sm font-semibold text-ink">{t("titre")}</p>
+      <p className="mt-0.5 text-xs text-subtle">{t("septJours")}</p>
 
       <p className="tabular mt-3 text-3xl font-semibold tracking-tight text-ink">
-        {value} %
+        {pourcent(value)}
       </p>
 
       <div
         role="img"
-        aria-label={`${value} % des heures d'ouverture occupées`}
+        aria-label={t("occupees", { n: value })}
         className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-surface-muted"
       >
         <span
@@ -504,11 +541,7 @@ function Occupancy({ value }: { value: number | null }) {
       </div>
 
       <p className="mt-2 text-sm text-muted">
-        {value >= 80
-          ? "Vos journées sont pleines. C'est le moment d'ouvrir des créneaux, ou d'ajuster vos tarifs."
-          : value >= 40
-            ? "Un rythme confortable : il reste de la place pour de nouvelles clientes."
-            : "Beaucoup d'heures ouvertes restent libres. Une promotion ou un rappel à vos habituées les remplirait."}
+        {value >= 80 ? t("plein") : value >= 40 ? t("confortable") : t("libre")}
       </p>
     </Card>
   );
@@ -521,25 +554,49 @@ const FEED_ICONS: Record<string, IconName> = {
 };
 
 /** Ce qui s'est passé, du plus récent au plus ancien. */
-function Feed({
-  entries,
-}: {
-  entries: { kind: string; at: string; title: string; detail: string }[];
-}) {
+/**
+ * Une ligne du fil d'activité. Le serveur envoie les faits (`nom`, `note`,
+ * `montant`, `devise`) et la phrase se compose ici, dans la langue de la
+ * page ; `title` et `detail` sont sa version française, gardée en repli.
+ */
+interface EntreeActivite {
+  kind: string;
+  at: string;
+  title: string;
+  detail: string;
+  nom?: string;
+  note?: number;
+  montant?: string;
+  devise?: string;
+}
+
+function Feed({ entries }: { entries: EntreeActivite[] }) {
+  const t = useTranslations("pro.accueil");
+  const { montant } = useFormats();
+
+  const titre = (entry: EntreeActivite) => {
+    if (entry.nom === undefined) return entry.title;
+    if (entry.kind === "booking") return t("fil.reservation", { nom: entry.nom });
+    if (entry.kind === "review") return t("fil.avis", { nom: entry.nom, note: entry.note ?? 0 });
+    if (entry.kind === "payment") return t("fil.acompte", { nom: entry.nom });
+    return entry.title;
+  };
+  const detail = (entry: EntreeActivite) =>
+    entry.kind === "payment" && entry.montant && entry.devise
+      ? montant(entry.montant, entry.devise)
+      : entry.detail;
   if (entries.length === 0) {
     return (
       <Card>
-        <p className="text-sm font-semibold text-ink">Activité</p>
-        <p className="mt-2 text-sm text-muted">
-          Rien ne s&apos;est passé sur les 30 derniers jours.
-        </p>
+        <p className="text-sm font-semibold text-ink">{t("activite")}</p>
+        <p className="mt-2 text-sm text-muted">{t("activiteVide")}</p>
       </Card>
     );
   }
 
   return (
     <Card>
-      <p className="text-sm font-semibold text-ink">Activité</p>
+      <p className="text-sm font-semibold text-ink">{t("activite")}</p>
 
       <ul className="mt-3 divide-y divide-line">
         {entries.map((entry) => (
@@ -552,14 +609,14 @@ function Feed({
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-ink">{entry.title}</p>
-              {entry.detail && (
-                <p className="truncate text-xs text-subtle">{entry.detail}</p>
+              <p className="truncate text-sm text-ink">{titre(entry)}</p>
+              {detail(entry) && (
+                <p className="truncate text-xs text-subtle">{detail(entry)}</p>
               )}
             </div>
 
             <span className="shrink-0 text-xs text-subtle">
-              {ago(entry.at)}
+              {ago(entry.at, t)}
             </span>
           </li>
         ))}
@@ -574,12 +631,12 @@ function Feed({
  * Un délai se comprend là où une date se lit. Sur un fil d'activité, c'est
  * la fraîcheur qui compte, pas le jour exact.
  */
-function ago(iso: string): string {
+function ago(iso: string, t: ReturnType<typeof useTranslations<"pro.accueil">>): string {
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
 
-  if (minutes < 2) return "à l'instant";
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 2) return t("depuis.instant");
+  if (minutes < 60) return t("depuis.minutes", { n: minutes });
   const hours = Math.round(minutes / 60);
-  if (hours < 24) return `il y a ${hours} h`;
-  return `il y a ${Math.round(hours / 24)} j`;
+  if (hours < 24) return t("depuis.heures", { n: hours });
+  return t("depuis.jours", { n: Math.round(hours / 24) });
 }

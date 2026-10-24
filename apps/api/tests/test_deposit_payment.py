@@ -35,6 +35,11 @@ def next_monday_at(hour: int) -> datetime:
 
 
 def give_channel(salon, kind=PaymentChannel.Kind.WECHAT):
+    # Un moyen n'est proposé que dans son pays (`payments/moyens.py`) :
+    # WeChat Pay et Alipay, c'est un salon en Chine.
+    if kind in (PaymentChannel.Kind.WECHAT, PaymentChannel.Kind.ALIPAY):
+        salon.tenant.country, salon.tenant.currency = "CN", "CNY"
+        salon.tenant.save(update_fields=["country", "currency"])
     with as_tenant(salon.tenant):
         return PaymentChannel.objects.create(
             tenant=salon.tenant,

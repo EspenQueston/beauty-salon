@@ -25,6 +25,7 @@
  * rafraîchissement mal placé.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -42,6 +43,7 @@ import {
   inputClass,
 } from "@/features/ui";
 import { useToast } from "@/features/ui/Toast";
+import { useFormats } from "./formats";
 import { rows, useResource, type Page } from "./useResource";
 
 export interface Zone {
@@ -61,6 +63,7 @@ export function TravelZones({
   currency: string;
   canEdit: boolean;
 }) {
+  const t = useTranslations("pro.zones");
   const toast = useToast();
   const zones = useResource<Page<Zone>>("/api/v1/travel-zones/", tenantId);
   const [creating, setCreating] = useState(false);
@@ -75,7 +78,7 @@ export function TravelZones({
           { method: "PATCH", body: JSON.stringify(changes) },
           tenantId,
         ),
-      { success: "Zone mise à jour." },
+      { success: t("majOk") },
     );
     if (ok) zones.reload();
   }
@@ -88,7 +91,7 @@ export function TravelZones({
           { method: "DELETE" },
           tenantId,
         ),
-      { success: `« ${zone.name} » retirée de votre grille.` },
+      { success: t("retiree", { nom: zone.name }) },
     );
     if (ok) zones.reload();
   }
@@ -108,7 +111,7 @@ export function TravelZones({
           },
           tenantId,
         ),
-      { success: `« ${name} » ajoutée à votre grille.` },
+      { success: t("ajoutee", { nom: name }) },
     );
     if (ok) {
       zones.reload();
@@ -123,29 +126,24 @@ export function TravelZones({
   return (
     <Card>
       <SectionTitle>
-        Zones de déplacement
+        {t("titre")}
         {served.length > 0 && (
           <span className="ml-2 font-normal normal-case tracking-normal text-subtle">
-            {served.length} desservie{served.length > 1 ? "s" : ""}
-            {free > 0 && ` · ${free} sans frais`}
+            {t("desservies", { n: served.length })}
+            {free > 0 && ` · ${t("sansFrais", { n: free })}`}
           </span>
         )}
       </SectionTitle>
 
       <p className="-mt-2 mb-5 text-sm text-muted">
-        Le forfait s&apos;ajoute au prix de la prestation et s&apos;affiche à la
-        cliente <span className="text-ink">avant</span> qu&apos;elle confirme.
-        Une zone à 0 est desservie gratuitement.
+        {t.rich("intro", { fort: (texte) => <span className="text-ink">{texte}</span> })}
       </p>
 
-      {zones.error && <ErrorState>Impossible de charger vos zones.</ErrorState>}
+      {zones.error && <ErrorState>{t("erreur")}</ErrorState>}
       {zones.data === null && !zones.error && <Skeleton rows={2} />}
 
       {zones.data !== null && list.length === 0 && !creating && (
-        <EmptyState title="Aucune zone pour l'instant">
-          Tant que cette grille est vide, la réservation à domicile n&apos;est
-          pas proposée sur votre mini-site.
-        </EmptyState>
+        <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
       )}
 
       {list.length > 0 && (
@@ -173,7 +171,7 @@ export function TravelZones({
             />
           ) : (
             <Button type="button" onClick={() => setCreating(true)}>
-              Ajouter une zone
+              {t("ajouter")}
             </Button>
           )}
         </div>
@@ -202,6 +200,8 @@ function ZoneRow({
   onPatch: (changes: Partial<Zone>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("pro.zones");
+  const { region } = useFormats();
   const [name, setName] = useState(zone.name);
   const [fee, setFee] = useState(zone.fee_amount);
 
@@ -227,7 +227,7 @@ function ZoneRow({
             if (trimmed !== zone.name) onPatch({ name: trimmed });
           }}
           disabled={!canEdit}
-          aria-label="Nom du quartier"
+          aria-label={t("nom")}
           className={inputClass}
         />
 
@@ -240,7 +240,7 @@ function ZoneRow({
             }}
             disabled={!canEdit}
             inputMode="decimal"
-            aria-label={`Frais de déplacement en ${currency}`}
+            aria-label={t("frais", { devise: currency })}
             className={`${inputClass} tabular`}
           />
           <span className="shrink-0 text-xs text-subtle">{currency}</span>
@@ -251,10 +251,10 @@ function ZoneRow({
               dit pas si « 3000 » vaut trois mille ou trente. */}
           <span className="text-xs">
             {free ? (
-              <Badge tone="success">Offert</Badge>
+              <Badge tone="success">{t("offert")}</Badge>
             ) : (
               <span className="tabular text-muted">
-                {formatPrice(fee, currency)}
+                {formatPrice(fee, currency, region)}
               </span>
             )}
           </span>
@@ -265,10 +265,10 @@ function ZoneRow({
                 type="button"
                 onClick={() => onPatch({ active: !zone.active })}
               >
-                {zone.active ? "Suspendre" : "Réactiver"}
+                {zone.active ? t("suspendre") : t("reactiver")}
               </GhostButton>
               <DangerButton type="button" onClick={onRemove}>
-                Supprimer
+                {t("supprimer")}
               </DangerButton>
             </span>
           )}
@@ -287,6 +287,7 @@ function NewZone({
   onCancel: () => void;
   onCreate: (name: string, fee: string) => Promise<boolean>;
 }) {
+  const t = useTranslations("pro.zones");
   const [name, setName] = useState("");
   const [fee, setFee] = useState("");
   const [pending, setPending] = useState(false);
@@ -329,8 +330,8 @@ function NewZone({
         autoFocus
         value={name}
         onChange={(event) => setName(event.target.value)}
-        placeholder="Bacongo"
-        aria-label="Nom du quartier"
+        placeholder={t("exemple")}
+        aria-label={t("nom")}
         className={inputClass}
       />
       <div className="flex items-center gap-2">
@@ -339,7 +340,7 @@ function NewZone({
           onChange={(event) => setFee(event.target.value)}
           placeholder="0"
           inputMode="decimal"
-          aria-label={`Frais de déplacement en ${currency}`}
+          aria-label={t("frais", { devise: currency })}
           className={`${inputClass} tabular`}
         />
         <span className="shrink-0 text-xs text-subtle">{currency}</span>
@@ -351,14 +352,14 @@ function NewZone({
           disabled={!name.trim()}
           onClick={(event) => void submit(event)}
         >
-          Ajouter
+          {t("bouton")}
         </Button>
         <button
           type="button"
           onClick={onCancel}
           className="rounded-lg px-2 py-2 text-sm text-muted transition hover:text-ink"
         >
-          Annuler
+          {t("annuler")}
         </button>
       </div>
     </div>

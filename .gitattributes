@@ -1,0 +1,11 @@
+# Fins de ligne Unix, quelle que soit la machine qui extrait le depot.
+#
+# Ces fichiers sont lus par Linux — dans un conteneur ou sur le serveur. Sur
+# un poste Windows ou `core.autocrlf` vaut true, git les extrairait avec des
+# CRLF : un script shell s'arrete alors a la premiere ligne
+# (« /bin/sh^M: bad interpreter »), et Caddy lit un Caddyfile corrompu.
+infra/** text eol=lf
+*.sh text eol=lf
+*.Dockerfile text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf

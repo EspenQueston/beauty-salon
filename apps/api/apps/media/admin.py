@@ -1,12 +1,12 @@
 from django.contrib import admin
 
-from apps.common.admin import ADMIN_DB, TenantScopedAdmin
+from apps.common.admin import ADMIN_DB, SuppressionTracee, TenantScopedAdmin
 
 from .models import MediaAsset
 
 
 @admin.register(MediaAsset)
-class MediaAssetAdmin(TenantScopedAdmin):
+class MediaAssetAdmin(SuppressionTracee, TenantScopedAdmin):
     list_display = ("__str__", "tenant", "kind", "visibility", "width", "height")
     list_filter = ("kind", "visibility", "tenant")
     search_fields = ("alt_text", "tenant__name")

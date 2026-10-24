@@ -15,12 +15,32 @@
  * un piège ; une valeur par défaut qui s'annonce est un service.
  */
 
-export type CountryCode = "CG" | "CD" | "CN";
+export type CountryCode =
+  | "CG" | "CD" | "CN"
+  | "BJ" | "BF" | "CI" | "TG" | "SN" | "NE"
+  | "CM" | "GH" | "GN" | "KE" | "ML" | "MW" | "NG" | "RW" | "TZ" | "UG" | "ZM";
 
 const BY_TIMEZONE: Record<string, CountryCode> = {
   "Africa/Brazzaville": "CG",
   "Africa/Kinshasa": "CD",
   "Africa/Lubumbashi": "CD",
+  "Africa/Porto-Novo": "BJ",
+  "Africa/Ouagadougou": "BF",
+  "Africa/Abidjan": "CI",
+  "Africa/Lome": "TG",
+  "Africa/Dakar": "SN",
+  "Africa/Niamey": "NE",
+  "Africa/Douala": "CM",
+  "Africa/Accra": "GH",
+  "Africa/Conakry": "GN",
+  "Africa/Nairobi": "KE",
+  "Africa/Bamako": "ML",
+  "Africa/Blantyre": "MW",
+  "Africa/Lagos": "NG",
+  "Africa/Kigali": "RW",
+  "Africa/Dar_es_Salaam": "TZ",
+  "Africa/Kampala": "UG",
+  "Africa/Lusaka": "ZM",
   "Asia/Shanghai": "CN",
   "Asia/Chongqing": "CN",
   "Asia/Harbin": "CN",
@@ -32,7 +52,18 @@ const BY_TIMEZONE: Record<string, CountryCode> = {
 export const DEFAULT_COUNTRY: CountryCode = "CG";
 
 export function guessCountry(): CountryCode {
-  if (typeof Intl === "undefined") return DEFAULT_COUNTRY;
+  return countryFromTimezone() ?? DEFAULT_COUNTRY;
+}
+
+/**
+ * Le pays que le fuseau désigne vraiment, ou `null`.
+ *
+ * Sans repli : là où `guessCountry` doit remplir un champ quoi qu'il arrive,
+ * la grille tarifaire de l'accueil préfère ne rien supposer — un visiteur à
+ * Paris n'a pas à voir les prix du Congo en dollars.
+ */
+export function countryFromTimezone(): CountryCode | null {
+  if (typeof Intl === "undefined") return null;
 
   try {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -42,8 +73,8 @@ export function guessCountry(): CountryCode {
     if (zone?.startsWith("Asia/")) return "CN";
     if (zone?.startsWith("Africa/")) return DEFAULT_COUNTRY;
   } catch {
-    // Intl indisponible ou fuseau illisible : la valeur par défaut fait
-    // aussi bien qu'une supposition hasardeuse.
+    // Intl indisponible ou fuseau illisible : aucune supposition plutôt
+    // qu'une supposition hasardeuse.
   }
-  return DEFAULT_COUNTRY;
+  return null;
 }

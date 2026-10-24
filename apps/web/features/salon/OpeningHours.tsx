@@ -5,7 +5,9 @@
  * cherchent, et la seule qui réponde à « est-ce ouvert maintenant ? ».
  */
 
-import { shortTime, weekdayLabel } from "@/lib/format";
+import { useTranslations } from "next-intl";
+
+import { shortTime } from "@/lib/format";
 import type { PublicSalon } from "@/lib/types";
 import { hoursByDay, todayIndex } from "./contact";
 import { maintenantAuSalon } from "./ouverture";
@@ -30,6 +32,7 @@ export function OpeningHours({
    */
   timeZone?: string;
 }) {
+  const t = useTranslations("salon");
   const days = hoursByDay(hours);
   const today = timeZone
     ? maintenantAuSalon(timeZone, new Date()).jour
@@ -51,7 +54,7 @@ export function OpeningHours({
             }`}
           >
             <span className="flex items-center gap-2">
-              {weekdayLabel(day.weekday)}
+              {t(`jours.${day.weekday}`)}
               {isToday && !compact && (
                 <span
                   className="rounded-full px-2 py-0.5 text-[0.7rem] font-medium"
@@ -67,7 +70,9 @@ export function OpeningHours({
 
             <span className="tabular text-right">
               {closed ? (
-                <span className="text-[var(--site-subtle)]">Fermé</span>
+                <span className="text-[var(--site-subtle)]">
+                  {t("statut.ferme")}
+                </span>
               ) : (
                 day.ranges.map((range, index) => (
                   <span key={index} className="block whitespace-nowrap">

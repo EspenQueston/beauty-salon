@@ -145,6 +145,10 @@ class PublicReviewCreateView(APIView):
             },
         )
 
+        from apps.notifications import evenements
+
+        evenements.nouvel_avis(review)
+
         return Response(
             PublicReviewSerializer(review).data, status=status.HTTP_201_CREATED
         )

@@ -24,6 +24,10 @@
  * arguments : sans lui, l'ordre se devine, il ne se voit pas.
  */
 
+import { useTranslations } from "next-intl";
+
+import { Reveal } from "@/features/ui/Reveal";
+import { delaiCascade } from "./effets";
 import { SalonIcon, type SalonIconName } from "./icons";
 import { PrimaryLink } from "./ui";
 import type { PublicSalon } from "@/lib/types";
@@ -35,6 +39,7 @@ interface Step {
 }
 
 export function HowItWorks({ salon }: { salon: PublicSalon }) {
+  const t = useTranslations("salon.etapes");
   // Un acompte est demandé dès qu'une prestation en porte un. On ne l'annonce
   // pas « au cas où » : une cliente à qui l'on parle d'acompte alors qu'il n'y
   // en a pas referme la page.
@@ -44,20 +49,18 @@ export function HowItWorks({ salon }: { salon: PublicSalon }) {
 
   const steps: Step[] = [
     {
-      title: "Choisissez votre prestation",
-      body: "Le tarif et la durée sont affichés. Rien ne se décide sur cette première étape.",
+      title: t("choisirTitre"),
+      body: t("choisirCorps"),
       icon: "sparkle",
     },
     {
-      title: "Prenez un créneau libre",
-      body: "Seules les heures réellement disponibles apparaissent. Deux personnes ne peuvent pas prendre la même.",
+      title: t("creneauTitre"),
+      body: t("creneauCorps"),
       icon: "calendar",
     },
     {
-      title: asksDeposit ? "Réglez l'acompte" : "C'est réservé",
-      body: asksDeposit
-        ? "Scannez le QR du salon, envoyez votre capture. Le créneau vous est gardé pendant ce temps."
-        : "Vous recevez la confirmation par e-mail, avec votre code d'arrivée à montrer au salon.",
+      title: asksDeposit ? t("acompteTitre") : t("confirmeTitre"),
+      body: asksDeposit ? t("acompteCorps") : t("confirmeCorps"),
       icon: asksDeposit ? "star" : "check",
     },
   ];
@@ -85,8 +88,13 @@ export function HowItWorks({ salon }: { salon: PublicSalon }) {
         />
 
         {steps.map((step, index) => (
-          <li
+          // Les trois étapes entrent l'une après l'autre : c'est une
+          // séquence, la cascade la fait lire dans l'ordre. Portée par le
+          // <li> lui-même, qui tient la place dans la grille.
+          <Reveal
+            as="li"
             key={step.title}
+            delay={delaiCascade(index)}
             className={`relative ${index === 2 ? "col-span-2 lg:col-span-1" : ""}`}
           >
             <div className="lift h-full rounded-2xl border border-[var(--site-line)] bg-[var(--site-surface)] p-4 shadow-[0_1px_3px_rgb(23_23_28_/_0.05)] sm:p-5">
@@ -104,13 +112,13 @@ export function HowItWorks({ salon }: { salon: PublicSalon }) {
                 {step.body}
               </p>
             </div>
-          </li>
+          </Reveal>
         ))}
       </ol>
 
       <div className="mt-6 flex justify-center">
         <PrimaryLink href="/reserver" icon="calendar" className="px-6 py-3">
-          Commencer ma réservation
+          {t("commencer")}
         </PrimaryLink>
       </div>
     </div>

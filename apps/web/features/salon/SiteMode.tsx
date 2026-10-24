@@ -15,6 +15,7 @@
  * thème du produit n'a rien à dire sur la vitrine d'un commerce.
  */
 
+import { useTranslations } from "next-intl";
 import { useCallback, useSyncExternalStore } from "react";
 
 import { SalonIcon } from "./icons";
@@ -41,15 +42,10 @@ function read(slug: string): Mode {
     const stored = localStorage.getItem(storageKey(slug));
     if (stored === "light" || stored === "dark") return stored;
   } catch {
-    /* stockage refusé : on retombe sur le réglage système */
+    /* stockage refusé : on retombe sur le défaut */
   }
-  try {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  } catch {
-    return "light";
-  }
+  // Le sombre est le défaut du produit, comme sur la plateforme.
+  return "dark";
 }
 
 function apply(slug: string, mode: Mode) {
@@ -73,24 +69,28 @@ export function SiteModeToggle({
   const mode = useSyncExternalStore(
     subscribe,
     useCallback(() => read(slug), [slug]),
-    // Le serveur ne connaît pas la préférence : il rend le mode clair, que
-    // le script d'amorçage corrige avant le premier pixel.
-    () => "light" as Mode,
+    // Le serveur ne connaît pas la préférence : il rend le défaut (sombre),
+    // que le script d'amorçage corrige avant le premier pixel si besoin.
+    () => "dark" as Mode,
   );
 
   const next: Mode = mode === "dark" ? "light" : "dark";
+  const t = useTranslations("salon.mode");
 
   return (
     <button
       type="button"
       onClick={() => apply(slug, next)}
-      aria-label={next === "dark" ? "Passer en mode sombre" : "Passer en mode clair"}
-      title={next === "dark" ? "Mode sombre" : "Mode clair"}
+      aria-label={next === "dark" ? t("versSombre") : t("versClair")}
+      title={next === "dark" ? t("sombre") : t("clair")}
       className={`inline-flex size-9 items-center justify-center rounded-lg border transition ${className}`}
     >
       {/* L'icône montre le mode *actuel*, pas la destination : c'est la
           convention que les gens connaissent, et l'infobulle dit le reste. */}
-      <SalonIcon name={mode === "dark" ? "moon" : "sun"} className="size-[1.1rem]" />
+      <SalonIcon
+        name={mode === "dark" ? "moon" : "sun"}
+        className="size-[1.1rem]"
+      />
     </button>
   );
 }

@@ -2,6 +2,7 @@
 
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,9 +12,14 @@ from apps.common.permissions import IsTenantResolved
 from apps.common.viewsets import TenantModelViewSet
 from apps.media.models import MediaAsset
 from apps.scheduling.models import Booking
+from apps.tenants.models import Tenant
+from apps.translations.booking import public_booking_labels
+from apps.translations.langue import table_pour
+from apps.translations.serializers import Traduit
 
 from . import services
 from .models import DepositProof, PaymentChannel
+from .moyens import moyens_du_pays, propose
 from .tokens import (
     booking_from_cancel,
     booking_from_status,
@@ -34,10 +40,14 @@ EVERYONE = (*FRONT_DESK, Membership.Role.STAFF)
 # ---------------------------------------------------------------------------
 
 
-class PaymentChannelSerializer(serializers.ModelSerializer):
+class PaymentChannelSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("instructions",)
     kind_label = serializers.CharField(source="get_kind_display", read_only=True)
     qr_url = serializers.SerializerMethodField()
     usable = serializers.BooleanField(read_only=True)
+    # Faux pour un moyen qui n'existe pas dans le pays du salon (il a changé
+    # de pays) : gardé, mais plus proposé aux clientes.
+    propose = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentChannel
@@ -52,7 +62,29 @@ class PaymentChannelSerializer(serializers.ModelSerializer):
             "active",
             "position",
             "usable",
+            "propose",
         )
+
+    def _pays(self) -> str:
+        if "pays" not in self.context:
+            request = self.context.get("request")
+            tenant_id = getattr(request, "tenant_id", None)
+            self.context["pays"] = (
+                Tenant.objects.filter(pk=tenant_id).values_list("country", flat=True).first() or ""
+            )
+        return self.context["pays"]
+
+    def get_propose(self, channel) -> bool:
+        return propose(channel.kind, self._pays())
+
+    def validate_kind(self, kind):
+        if (self.instance is None or self.instance.kind != kind) and not propose(
+            kind, self._pays()
+        ):
+            raise serializers.ValidationError(
+                "Ce moyen de paiement n’est pas proposé dans votre pays."
+            )
+        return kind
 
     def get_qr_url(self, channel) -> str:
         if not channel.qr_image_id or not channel.qr_image:
@@ -62,13 +94,116 @@ class PaymentChannelSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(url) if request else url
 
 
+def _decrire(channel) -> str:
+    """Ce que la cliente lira : titulaire, numero ou consignes, QR, etat."""
+    if channel is None:
+        return ""
+    morceaux = [channel.account_name.strip(), channel.instructions.strip()]
+    if channel.qr_image_id:
+        morceaux.append("QR code")
+    if not channel.active:
+        morceaux.append("suspendu")
+    return " — ".join(m for m in morceaux if m) or "—"
+
+
+# Ce qui change l'endroit ou l'argent des clientes arrive. L'ordre d'affichage
+# (`position`) n'en fait pas partie.
+CHAMPS_SENSIBLES = ("kind", "account_name", "instructions", "qr_image_id", "active")
+
+
 class PaymentChannelViewSet(TenantModelViewSet):
+    """Les moyens d'encaissement des acomptes du salon.
+
+    Les ecritures exigent une reauthentification de moins de dix minutes,
+    sont journalisees (avant / apres) et prevenues par e-mail aux
+    proprietaires : audit du 16/10/2026, C-04. Une session volee ne suffit
+    plus a detourner les acomptes en silence.
+    """
+
     serializer_class = PaymentChannelSerializer
     model = PaymentChannel
     select_related = ("qr_image",)
     required_roles = MANAGERS
     safe_roles = EVERYONE
     pagination_class = None  # un salon a deux ou trois moyens, pas cent
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        from rest_framework.exceptions import PermissionDenied
+
+        from apps.accounts import reauth
+
+        if request.method not in ("GET", "HEAD", "OPTIONS") and not reauth.recente(request):
+            raise PermissionDenied(
+                "Confirmez votre identité pour modifier un moyen d'encaissement.",
+                code="reauth_requise",
+            )
+
+    def _tracer(self, operation: str, avant, apres) -> None:
+        from django.db import transaction
+
+        from apps.accounts.journal import _origine
+        from apps.accounts.tasks import alerte_encaissement
+        from apps.audit.models import AuditLog
+
+        canal = apres or avant
+        ancien, nouveau = _decrire(avant), _decrire(apres)
+        AuditLog.objects.create(
+            tenant_id=self.request.tenant_id,
+            actor_user=self.request.user,
+            action=AuditLog.Action.PAYMENT_CHANNEL_CHANGED,
+            resource_type="payment_channel",
+            resource_id=str(canal.pk),
+            metadata={
+                "operation": operation,
+                "moyen": canal.kind,
+                "avant": ancien,
+                "apres": nouveau,
+                **_origine(self.request),
+            },
+        )
+        auteur = self.request.user.display_name or self.request.user.email
+        transaction.on_commit(
+            lambda: alerte_encaissement.delay(
+                str(self.request.tenant_id),
+                operation,
+                canal.get_kind_display(),
+                ancien,
+                nouveau,
+                auteur,
+            )
+        )
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._tracer("creation", None, serializer.instance)
+
+    def perform_update(self, serializer):
+        from copy import copy
+
+        avant = copy(serializer.instance)
+        serializer.save()
+        apres = serializer.instance
+        if any(getattr(avant, c) != getattr(apres, c) for c in CHAMPS_SENSIBLES):
+            self._tracer("modification", avant, apres)
+
+    def perform_destroy(self, instance):
+        from copy import copy
+
+        avant = copy(instance)
+        instance.delete()
+        self._tracer("suppression", avant, None)
+
+    @action(detail=False, methods=["get"])
+    def disponibles(self, request):
+        """Les moyens qu'un salon de ce pays peut publier, dans l'ordre."""
+        pays = Tenant.objects.filter(pk=request.tenant_id).values_list("country", flat=True).first()
+        return Response(
+            [
+                {"kind": kind, "label": str(PaymentChannel.Kind(kind).label)}
+                for kind in moyens_du_pays(pays or "")
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +241,8 @@ class PublicPaymentView(APIView):
 
         channels = services.channels_for(request.tenant_id)
         proof = getattr(booking, "deposit_proof", None)
+        language = request.query_params.get("lang", booking.language)
+        labels = public_booking_labels(booking, language)
 
         return Response(
             {
@@ -121,14 +258,19 @@ class PublicPaymentView(APIView):
                 "status_token": status_token(booking),
                 "booking": {
                     "id": str(booking.id),
-                    "service_name": booking.service_name,
+                    "service_name": labels["service_name"],
                     "starts_at": booking.starts_at,
                     "status": booking.status,
                     "deposit_amount": str(booking.deposit_amount),
                     "total_amount": str(booking.total_amount),
                 },
                 "channels": PaymentChannelSerializer(
-                    channels, many=True, context={"request": request}
+                    channels,
+                    many=True,
+                    context={
+                        "request": request,
+                        "traductions": table_pour(request, booking.tenant_id),
+                    },
                 ).data,
                 "proof": (
                     {
@@ -216,12 +358,14 @@ class PublicBookingStatusView(APIView):
 
         state = services.payment_state(booking)
         proof = getattr(booking, "deposit_proof", None)
+        language = request.query_params.get("lang", booking.language)
+        labels = public_booking_labels(booking, language)
 
         return Response(
             {
                 "booking": {
                     "id": str(booking.id),
-                    "service_name": booking.service_name,
+                    "service_name": labels["service_name"],
                     "starts_at": booking.starts_at,
                     "ends_at": booking.ends_at,
                     "status": booking.status,
@@ -231,8 +375,8 @@ class PublicBookingStatusView(APIView):
                     ),
                     "customer_name": booking.customer.full_name,
                     "total_amount": str(booking.total_amount),
-                    "options_snapshot": booking.options_snapshot,
-                    "items_snapshot": booking.items_snapshot,
+                    "options_snapshot": labels["options_snapshot"],
+                    "items_snapshot": labels["items_snapshot"],
                     "travel_zone_name": booking.travel_zone_name,
                     "address": booking.address,
                     "cancellation_reason": booking.cancellation_reason,
@@ -273,17 +417,13 @@ class PublicBookingStatusView(APIView):
                 # et on se presenterait pour un creneau que personne n'a
                 # accepte.
                 "checkin_token": (
-                    checkin_token(booking)
-                    if booking.status == Booking.Status.CONFIRMED
-                    else ""
+                    checkin_token(booking) if booking.status == Booking.Status.CONFIRMED else ""
                 ),
                 # Le meme droit, sous une forme qui se tape : l'appareil photo
                 # du salon peut etre en panne ou refuse, et la cliente est
                 # deja devant le comptoir.
                 "checkin_code": (
-                    checkin_code(booking)
-                    if booking.status == Booking.Status.CONFIRMED
-                    else ""
+                    checkin_code(booking) if booking.status == Booking.Status.CONFIRMED else ""
                 ),
             }
         )
@@ -294,11 +434,21 @@ class DepositProofSerializer(serializers.Serializer):
     channel = serializers.ChoiceField(
         choices=PaymentChannel.Kind.choices, required=False, allow_blank=True, default=""
     )
-    reference = serializers.CharField(
-        max_length=120, required=False, allow_blank=True, default=""
-    )
+    reference = serializers.CharField(max_length=120, required=False, allow_blank=True, default="")
     note = serializers.CharField(required=False, allow_blank=True, default="")
     image = serializers.ImageField(required=False, allow_null=True)
+
+    def validate_image(self, fichier):
+        # La meme borne que tout autre televersement : cette route est
+        # ouverte sans compte, elle n'a pas a accepter davantage.
+        from apps.media.models import MAX_UPLOAD_BYTES
+
+        if fichier is not None and fichier.size > MAX_UPLOAD_BYTES:
+            limite = MAX_UPLOAD_BYTES // (1024 * 1024)
+            raise serializers.ValidationError(
+                f"La capture dépasse {limite} Mo. Envoyez une image plus légère."
+            )
+        return fichier
 
 
 class PublicDepositProofView(APIView):
@@ -323,6 +473,19 @@ class PublicDepositProofView(APIView):
             return Response(
                 {"detail": "Ce lien n'est plus valable.", "code": "invalid_token"},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Le moyen declare doit etre l'un de ceux que le salon propose : la
+        # gerante lisait sinon « a paye par Orange Money » sans avoir de
+        # compte Orange Money (audit du 16/10/2026, C-08).
+        canal = data.get("channel", "")
+        if canal and canal not in {c.kind for c in services.channels_for(booking.tenant_id)}:
+            return Response(
+                {
+                    "detail": "Ce moyen de paiement n'est pas proposé par le salon.",
+                    "code": "moyen_non_propose",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         asset = None
@@ -381,9 +544,7 @@ class DepositReviewSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, required=False, allow_null=True
     )
     method = serializers.CharField(max_length=20, required=False, allow_blank=True)
-    reason = serializers.CharField(
-        max_length=255, required=False, allow_blank=True, default=""
-    )
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
 
 
 def _booking_for(request, pk) -> Booking:
@@ -444,8 +605,7 @@ class PublicBookingCancelView(APIView):
             return Response(
                 {
                     "detail": (
-                        "Le délai d'annulation est passé. "
-                        "Contactez le salon, il reste joignable."
+                        "Le délai d'annulation est passé. Contactez le salon, il reste joignable."
                     ),
                     "code": "cancel_window_closed",
                 },

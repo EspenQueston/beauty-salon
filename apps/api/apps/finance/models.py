@@ -77,6 +77,7 @@ class Transaction(TenantOwnedModel):
         TRANSFER = "transfer", _("Virement")
         CARD = "card", _("Carte")
         WECHAT = "wechat", _("WeChat Pay")
+        ALIPAY = "alipay", _("Alipay")
         OTHER = "other", _("Autre")
 
     kind = models.CharField(_("sens"), max_length=10, choices=Kind.choices)

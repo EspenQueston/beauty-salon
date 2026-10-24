@@ -1,14 +1,14 @@
 {% extends "emails/base_client.html" %}
 
-{% block preheader %}Votre avis sur {{ booking.service_name }} en deux minutes{% endblock %}
+{% block preheader %}{{ pre }}{% endblock %}
 
 {% block body %}
-  {% include "emails/_parts.html" with part="title" text="Comment ça s'est passé ?" %}
-  {% include "emails/_parts.html" with part="text" text=intro %}
+  {% include "emails/_parts.html" with part="title" text=t.avis_titre %}
+  {% include "emails/_parts.html" with part="lead" text=intro %}
 
   {% include "emails/_details.html" with rows=details %}
 
-  {% include "emails/_parts.html" with part="text" text="Vous noterez cinq points, de 1 à 5 étoiles, et vous pourrez ajouter un commentaire si vous le souhaitez." %}
+  {% include "emails/_parts.html" with part="text" text=t.avis_cinq_points %}
 
   {% comment %} -------------------------------------------------------------
     Les critères, annoncés avant le clic.
@@ -28,7 +28,7 @@
       <td class="ink line" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:400 14px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">
         {{ label }}
       </td>
-      <td class="muted line" align="right" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:400 15px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b8b8c0;letter-spacing:2px;white-space:nowrap;">
+      <td class="muted line" align="right" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:400 15px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#70707a;letter-spacing:2px;white-space:nowrap;">
         &#9734;&#9734;&#9734;&#9734;&#9734;
       </td>
     </tr>
@@ -36,11 +36,8 @@
   </table>
 
   {% if review_url %}
-    {% include "emails/_parts.html" with part="button" url=review_url text="Laisser mon avis" color=brand %}
+    {% include "emails/_parts.html" with part="button" url=review_url text=t.avis_bouton color=brand %}
   {% endif %}
 {% endblock %}
 
-{% block footer %}
-  Vous recevez ce message après votre rendez-vous chez {{ salon.name }}.
-  Si vous ne souhaitez pas laisser d'avis, ignorez simplement cet e-mail.
-{% endblock %}
+{% block footer %}{{ pied }}{% endblock %}

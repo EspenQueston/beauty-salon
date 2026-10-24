@@ -14,6 +14,8 @@
  * Cliquer filtre ; supprimer demande d'ouvrir la gestion des catégories.
  */
 
+import { useTranslations } from "next-intl";
+
 import { Icon } from "./icons";
 
 export interface FilterState {
@@ -36,7 +38,10 @@ export function CatalogFilter({
   onChange,
   total,
   shown,
+  extra,
 }: {
+  /** Placé au bout de la barre : le choix liste ou galerie. */
+  extra?: React.ReactNode;
   categories: { id: string; name: string }[];
   /** Nombre de prestations par catégorie : un filtre vide se voit avant le clic. */
   counts: Record<string, number>;
@@ -45,6 +50,7 @@ export function CatalogFilter({
   total: number;
   shown: number;
 }) {
+  const t = useTranslations("pro.prestations.filtre");
   const filtering =
     value.query.trim() !== "" || value.categoryId !== null || value.activeOnly;
 
@@ -52,7 +58,7 @@ export function CatalogFilter({
     <div className="mb-6">
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-[14rem] flex-1">
-          <span className="sr-only">Rechercher une prestation</span>
+          <span className="sr-only">{t("rechercher")}</span>
           <Icon
             name="sparkles"
             className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle"
@@ -60,8 +66,10 @@ export function CatalogFilter({
           <input
             type="search"
             value={value.query}
-            onChange={(event) => onChange({ ...value, query: event.target.value })}
-            placeholder="Rechercher une prestation…"
+            onChange={(event) =>
+              onChange({ ...value, query: event.target.value })
+            }
+            placeholder={t("rechercherExemple")}
             className="w-full rounded-xl border border-line bg-surface py-2.5 pl-9 pr-3 text-sm text-ink transition focus:border-salon"
           />
         </label>
@@ -77,8 +85,9 @@ export function CatalogFilter({
           }`}
         >
           <Icon name="check" className="size-4" />
-          En ligne seulement
+          {t("enLigne")}
         </button>
+        {extra}
       </div>
 
       {categories.length > 1 && (
@@ -88,7 +97,7 @@ export function CatalogFilter({
             onClick={() => onChange({ ...value, categoryId: null })}
             count={total}
           >
-            Toutes
+            {t("toutes")}
           </Chip>
 
           {categories.map((category) => (
@@ -100,7 +109,8 @@ export function CatalogFilter({
                   ...value,
                   // Recliquer la catégorie courante la désélectionne : c'est
                   // le geste attendu, et il évite de chercher « Toutes ».
-                  categoryId: value.categoryId === category.id ? null : category.id,
+                  categoryId:
+                    value.categoryId === category.id ? null : category.id,
                 })
               }
               count={counts[category.id] ?? 0}
@@ -114,15 +124,18 @@ export function CatalogFilter({
       {filtering && (
         <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
           <span>
-            <span className="tabular font-medium text-ink">{shown}</span>{" "}
-            prestation{shown > 1 ? "s" : ""} sur {total}
+            {t.rich("compte", {
+              n: shown,
+              total,
+              nombre: (texte) => <span className="tabular font-medium text-ink">{texte}</span>,
+            })}
           </span>
           <button
             type="button"
             onClick={() => onChange(EMPTY_FILTER)}
             className="rounded-lg px-2 py-1 text-sm font-medium text-salon transition hover:bg-salon-soft"
           >
-            Tout afficher
+            {t("toutAfficher")}
           </button>
         </p>
       )}

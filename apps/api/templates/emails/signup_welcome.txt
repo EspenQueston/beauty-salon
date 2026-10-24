@@ -1,15 +1,13 @@
-{% autoescape off %}Bonjour,
+{% autoescape off %}{{ t.pro_bonjour }}
 
-Votre salon {{ salon.name }} est créé sur Beauty Salon.
+{{ texte_cree }}
 
-Adresse de votre mini-site : {{ hostname }}
-Votre espace professionnel : {{ app_url }}
+{{ texte_adresse }}
+{{ texte_espace }}
 
-Prochaine étape : notre équipe vérifie votre salon avant de rendre votre
-mini-site public. En attendant, vous pouvez déjà préparer votre catalogue,
-vos horaires et votre équipe depuis votre espace.
+{{ t.bienvenue_txt_suite }}
 
-Vous recevrez un message dès que votre mini-site sera en ligne.
+{{ t.bienvenue_txt_en_ligne }}
 
-L'équipe Beauty Salon
+{{ t.pro_signature }}
 {% endautoescape %}

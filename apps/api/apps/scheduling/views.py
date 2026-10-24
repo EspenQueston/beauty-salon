@@ -4,6 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -16,7 +17,7 @@ from apps.accounts.models import Membership
 from apps.audit.models import AuditLog
 from apps.billing.serializers import DepositSerializer
 from apps.common.exceptions import SlotUnavailable
-from apps.common.permissions import IsTenantResolved
+from apps.common.permissions import IsTenantMember, IsTenantResolved
 from apps.common.viewsets import TenantModelViewSet
 from apps.customers.models import Customer
 from apps.payments.views import DepositReviewSerializer
@@ -44,6 +45,7 @@ class BusinessHoursViewSet(TenantModelViewSet):
     select_related = ("staff_member",)
     required_roles = MANAGERS
     safe_roles = EVERYONE
+
     pagination_class = None  # une grille hebdomadaire tient en une reponse
 
 
@@ -76,6 +78,22 @@ class BookingViewSet(TenantModelViewSet):
     required_roles = FRONT_DESK
     safe_roles = EVERYONE
 
+    def destroy(self, request, *args, **kwargs):
+        booking = self.get_object()
+        from apps.parrainage.models import RecompenseClient
+
+        if RecompenseClient.objects.filter(
+            Q(declencheur=booking) | Q(utilisation=booking)
+        ).exists():
+            return Response(
+                {
+                    "detail": "Ce rendez-vous appartient à un historique de parrainage. "
+                    "Annulez-le pour conserver sa trace."
+                },
+                status=400,
+            )
+        return super().destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         queryset = super().get_queryset()
         params = self.request.query_params
@@ -91,6 +109,26 @@ class BookingViewSet(TenantModelViewSet):
             queryset = queryset.filter(staff_member_id=staff_member)
         if statuses := params.get("status"):
             queryset = queryset.filter(status__in=statuses.split(","))
+
+        # Un seul rendez-vous, nomme par son identifiant.
+        #
+        # C'est la ou menent les notifications : « Acompte a verifier - Aicha »
+        # ouvre l'agenda sur *ce* rendez-vous, pas sur la semaine ou il se
+        # trouve. Sans cela, il faut le chercher a l'oeil dans une grille.
+        if booking_id := params.get("id"):
+            queryset = queryset.filter(pk=booking_id)
+
+        # Les trois listes de « ce qui attend un geste ». La definition vient
+        # d'`overview.py`, la meme qui alimente les compteurs de la cloche :
+        # un compteur qui annonce deux acomptes et une liste qui en montre
+        # trois discreditent les deux.
+        #
+        # Une cle inconnue ne rend rien, plutot que l'agenda entier : un
+        # signet garde apres qu'on a renomme une liste montrerait sinon tous
+        # les rendez-vous du salon sous le titre « acomptes a verifier ».
+        if attente := params.get("attente"):
+            filtre = overview.FILTRES_ATTENTION.get(attente)
+            queryset = filtre(queryset) if filtre else queryset.none()
 
         # Recherche libre : nom, telephone, prestation.
         #
@@ -162,6 +200,8 @@ class BookingViewSet(TenantModelViewSet):
             ends_at=starts_at + timedelta(minutes=service.duration_minutes),
             status=Booking.Status.CONFIRMED,
             source=Booking.Source.STAFF,
+            # Saisi par le salon : l'adresse est celle que le salon connait.
+            contact_email=(customer.email or "").strip().lower(),
             service_name=service.name,
             total_amount=service.price_amount,
             deposit_amount=deposit_due,
@@ -178,8 +218,10 @@ class BookingViewSet(TenantModelViewSet):
             # Meme forcee, une saisie manuelle ne peut pas superposer deux
             # rendez-vous chez la meme personne.
             return Response(
-                {"detail": "Ce prestataire a déjà un rendez-vous sur ce créneau.",
-                 "code": "slot_unavailable"},
+                {
+                    "detail": "Ce prestataire a déjà un rendez-vous sur ce créneau.",
+                    "code": "slot_unavailable",
+                },
                 status=status.HTTP_409_CONFLICT,
             )
 
@@ -191,9 +233,7 @@ class BookingViewSet(TenantModelViewSet):
             resource_id=str(booking.id),
             metadata={"source": "staff"},
         )
-        return Response(
-            BookingSerializer(booking).data, status=status.HTTP_201_CREATED
-        )
+        return Response(BookingSerializer(booking).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
@@ -225,8 +265,7 @@ class BookingViewSet(TenantModelViewSet):
             reschedule_booking(booking=booking, starts_at=starts_at, actor=request.user)
         except SlotUnavailable as exc:
             return Response(
-                {"detail": str(exc.detail), "code": "slot_unavailable",
-                 "extra": exc.extra},
+                {"detail": str(exc.detail), "code": "slot_unavailable", "extra": exc.extra},
                 status=status.HTTP_409_CONFLICT,
             )
         except BookingRefused as exc:
@@ -253,9 +292,49 @@ class BookingViewSet(TenantModelViewSet):
         }
         if new_status not in allowed:
             return Response(
-                {"detail": "Statut non autorisé par cette route.",
-                 "code": "invalid_status"},
+                {"detail": "Statut non autorisé par cette route.", "code": "invalid_status"},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # -----------------------------------------------------------------
+        # Un acompte en attente bloque la sortie de « demandee »
+        # -----------------------------------------------------------------
+        #
+        # Deux chemins menaient a « confirmee » : ce bouton-ci, et
+        # « J'ai recu l'acompte - accepter » sur la preuve de versement.
+        # Le second fait trois choses d'un coup : il tranche la preuve,
+        # encaisse l'acompte et confirme. Le premier ne faisait que
+        # confirmer.
+        #
+        # Passer par celui-ci laissait donc un rendez-vous confirme, une
+        # preuve eternellement « a verifier », et surtout **un acompte
+        # jamais entre en caisse**. L'argent etait bien sur le compte du
+        # salon, mais dans aucun livre - et la seule route capable de
+        # l'enregistrer refusait desormais de s'executer, puisque le
+        # rendez-vous n'etait plus en attente.
+        #
+        # On ferme ici plutot que dans le navigateur : c'est la seule
+        # place ou la regle tient quel que soit l'appelant.
+        from apps.payments.models import DepositProof
+
+        proof = getattr(booking, "deposit_proof", None)
+        en_attente = proof is not None and proof.status == DepositProof.Status.SUBMITTED
+        if en_attente and booking.status in (
+            Booking.Status.REQUESTED,
+            Booking.Status.PENDING_PAYMENT,
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "Une preuve de versement attend votre verdict. "
+                        "Repondez d'abord a « J'ai recu l'acompte » ou "
+                        "« Versement introuvable » : c'est ce geste qui "
+                        "enregistre l'argent en caisse."
+                    ),
+                    "code": "deposit_pending",
+                    "booking": BookingSerializer(booking).data,
+                },
+                status=status.HTTP_409_CONFLICT,
             )
 
         previous = booking.status
@@ -313,8 +392,7 @@ class BookingViewSet(TenantModelViewSet):
 
         if booking.deposit_amount <= 0:
             return Response(
-                {"detail": "Cette prestation ne demande pas d'acompte.",
-                 "code": "no_deposit"},
+                {"detail": "Cette prestation ne demande pas d'acompte.", "code": "no_deposit"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if booking.deposit_paid:
@@ -330,9 +408,7 @@ class BookingViewSet(TenantModelViewSet):
         booking.deposit_paid_at = timezone.now()
         booking.deposit_method = payload.validated_data["method"]
         # A defaut de montant precise, le montant attendu fait foi.
-        booking.deposit_received = payload.validated_data.get(
-            "amount", booking.deposit_amount
-        )
+        booking.deposit_received = payload.validated_data.get("amount", booking.deposit_amount)
         booking.save(
             update_fields=[
                 "deposit_paid",
@@ -438,8 +514,7 @@ class BookingViewSet(TenantModelViewSet):
 
         if not booking.deposit_paid:
             return Response(
-                {"detail": "Aucun acompte n'est noté comme encaissé.",
-                 "code": "not_paid"},
+                {"detail": "Aucun acompte n'est noté comme encaissé.", "code": "not_paid"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -511,6 +586,7 @@ class BookingViewSet(TenantModelViewSet):
             booking_from_checkin,
             booking_from_code,
             checkin_code_is_wellformed,
+            code_du_rendez_vous,
             normalize_checkin_code,
         )
 
@@ -536,7 +612,27 @@ class BookingViewSet(TenantModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            booking, ambiguous = booking_from_code(typed, request.tenant_id)
+            # Le rendez-vous vise, quand le panneau a ete ouvert depuis
+            # une ligne de l'agenda.
+            #
+            # Compare directement a lui, le code n'a pas besoin d'etre
+            # cherche : on sait deja de quel rendez-vous on parle.
+            # La recherche par fenetre de +/- deux jours existe pour que
+            # deux codes a six caracteres ne puissent pas se croiser -
+            # une precaution qui n'a aucun objet quand il n'y a qu'un
+            # seul candidat.
+            #
+            # Elle refusait par ailleurs tout rendez-vous plus lointain :
+            # une cliente attendue dans deux jours et demi, affichee a
+            # l'ecran, nommee dans le panneau, recevait « aucun
+            # rendez-vous ne porte ce code ». La fenetre, faite pour
+            # eviter les collisions, se comportait comme une regle
+            # metier qu'on n'avait jamais ecrite.
+            vise = str(request.data.get("booking", "")).strip()
+            if vise:
+                booking, ambiguous = code_du_rendez_vous(typed, vise, request.tenant_id)
+            else:
+                booking, ambiguous = booking_from_code(typed, request.tenant_id)
             if ambiguous:
                 return Response(
                     {
@@ -549,16 +645,15 @@ class BookingViewSet(TenantModelViewSet):
             if booking is None:
                 return Response(
                     {
-                        "detail": "Aucun rendez-vous des deux prochains jours "
-                        "ne porte ce code.",
+                        "detail": "Aucun rendez-vous des deux jours passés "
+                        "ou à venir ne porte ce code.",
                         "code": "unknown_code",
                     },
                     status=status.HTTP_404_NOT_FOUND,
                 )
         else:
             return Response(
-                {"detail": "Scannez un QR ou saisissez un code d'arrivée.",
-                 "code": "missing_code"},
+                {"detail": "Scannez un QR ou saisissez un code d'arrivée.", "code": "missing_code"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -566,8 +661,10 @@ class BookingViewSet(TenantModelViewSet):
         # le QR d'une cliente d'un autre salon serait accepte ici.
         if booking is None or str(booking.tenant_id) != str(request.tenant_id):
             return Response(
-                {"detail": "Ce code ne correspond à aucun rendez-vous de votre salon.",
-                 "code": "unknown_code"},
+                {
+                    "detail": "Ce code ne correspond à aucun rendez-vous de votre salon.",
+                    "code": "unknown_code",
+                },
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -608,9 +705,11 @@ class BookingViewSet(TenantModelViewSet):
 
         if booking.status == Booking.Status.CHECKED_IN:
             return Response(
-                {"detail": f"{booking.customer.full_name} est déjà notée arrivée.",
-                 "code": "already_checked_in",
-                 "booking": BookingSerializer(booking).data}
+                {
+                    "detail": f"{booking.customer.full_name} est déjà notée arrivée.",
+                    "code": "already_checked_in",
+                    "booking": BookingSerializer(booking).data,
+                }
             )
 
         if booking.status != Booking.Status.CONFIRMED:
@@ -619,10 +718,12 @@ class BookingViewSet(TenantModelViewSet):
                 # annule, et pour qui, est ce qui permet de trancher au
                 # comptoir. Sans lui, le salon relit tout son agenda pour
                 # comprendre ce que le message lui reproche.
-                {"detail": "Ce rendez-vous n'est pas confirmé : "
-                           f"il est « {booking.get_status_display().lower()} ».",
-                 "code": "not_confirmed",
-                 "booking": BookingSerializer(booking).data},
+                {
+                    "detail": "Ce rendez-vous n'est pas confirmé : "
+                    f"il est « {booking.get_status_display().lower()} ».",
+                    "code": "not_confirmed",
+                    "booking": BookingSerializer(booking).data,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -669,13 +770,9 @@ class BookingViewSet(TenantModelViewSet):
         return Response(
             {
                 "currency": tenant.currency,
-                "late_tolerance_minutes": (
-                    profile.late_tolerance_minutes if profile else 15
-                ),
+                "late_tolerance_minutes": (profile.late_tolerance_minutes if profile else 15),
                 "upcoming_count": upcoming.count(),
-                "today_count": upcoming.filter(
-                    starts_at__lt=now + timedelta(days=1)
-                ).count(),
+                "today_count": upcoming.filter(starts_at__lt=now + timedelta(days=1)).count(),
                 "no_show_last_30_days": Booking.objects.filter(
                     status=Booking.Status.NO_SHOW,
                     starts_at__gte=now - timedelta(days=30),
@@ -734,6 +831,45 @@ class WaitlistViewSet(TenantModelViewSet):
         )
         entry.save(update_fields=["status", "updated_at"])
         return Response(WaitlistEntrySerializer(entry).data)
+
+
+class AvailabilityView(APIView):
+    """Les creneaux libres, vus depuis le tableau de bord.
+
+    -----------------------------------------------------------------------
+    Pourquoi cette route existe, alors qu'il y en a deja une
+    -----------------------------------------------------------------------
+
+    Le panneau « Deplacer le rendez-vous » interrogeait
+    `/api/v1/public/availability`. Cette route-la deduit le salon du **nom
+    d'hote** - c'est ce qui permet a un mini-site de servir ses creneaux sans
+    aucun compte. Or le tableau de bord vit sur `app.<domaine>` et s'adresse
+    a l'API sur son propre hote : aucun des deux n'est le sous-domaine d'un
+    salon.
+
+    Le middleware repondait donc « Salon introuvable » (404) a chaque
+    ouverture du panneau, et l'ecran affichait « Impossible de lire les
+    disponibilites ». Pas par intermittence : **toujours**.
+
+    Le prefixe `public/` n'est pas une convention de nommage, c'est ce sur
+    quoi le middleware decide a qui faire confiance. Une route du tableau de
+    bord doit vivre hors de ce prefixe, et tirer son salon du membership -
+    ce que fait celle-ci.
+    """
+
+    permission_classes = [IsAuthenticated, IsTenantMember]
+    # Pas de portee de limitation : `public_read` borne les visiteuses
+    # anonymes d'un mini-site, pas une gerante qui fait defiler un ruban de
+    # dates dans son agenda.
+    throttle_scope = None
+
+    def get(self, request):
+        from .views_public import creneaux_disponibles
+
+        # Le meme moteur que le mini-site, a une exception pres : une
+        # prestation retiree du catalogue n'empeche pas de deplacer les
+        # rendez-vous deja pris.
+        return creneaux_disponibles(request, prestation_active_seulement=False)
 
 
 class OverviewView(APIView):

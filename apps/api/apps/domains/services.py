@@ -7,6 +7,7 @@ sous-domaines inexistants deviendrait un flot de requetes SQL.
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db.models import Q
 
 from .models import Domain
 
@@ -29,21 +30,43 @@ def resolve_tenant_id(hostname: str) -> str | None:
     if cached == _MISS:
         return None
     if cached:
-        return cached
+        return _ouvrir(cached)
 
-    tenant_id = (
+    # Un domaine personnalise n'est routable qu'une fois verifie : une ligne
+    # saisie a la main sans preuve ne fait arriver aucun trafic.
+    ligne = (
         Domain.objects.filter(hostname=hostname, active=True)
-        .values_list("tenant_id", flat=True)
+        .filter(Q(kind=Domain.Kind.PLATFORM_SUBDOMAIN) | Q(verified_at__isnull=False))
+        .values_list("tenant_id", "kind")
         .first()
     )
 
-    if tenant_id is None:
+    if ligne is None:
         cache.set(key, _MISS, NEGATIVE_CACHE_TTL)
         return None
 
-    tenant_id = str(tenant_id)
-    cache.set(key, tenant_id, CACHE_TTL)
-    return tenant_id
+    tenant_id, kind = str(ligne[0]), ligne[1]
+    valeur = f"{_PERSO}{tenant_id}" if kind == Domain.Kind.CUSTOM_DOMAIN else tenant_id
+    cache.set(key, valeur, CACHE_TTL)
+    return _ouvrir(valeur)
+
+
+_PERSO = "perso:"
+
+
+def _ouvrir(valeur: str) -> str | None:
+    """Le salon d'une entree de cache — sauf domaine personnalise en pause.
+
+    Le droit (offre Pro, fonction ouverte) se relit a part, avec son propre
+    cache court : une descente ou une coupure prend effet en deux minutes,
+    sans attendre l'expiration de la resolution.
+    """
+    if not valeur.startswith(_PERSO):
+        return valeur
+    tenant_id = valeur[len(_PERSO) :]
+    from .personnalises import domaine_perso_ouvert
+
+    return tenant_id if domaine_perso_ouvert(tenant_id) else None
 
 
 def invalidate_hostname(hostname: str) -> None:
@@ -65,9 +88,7 @@ def ensure_platform_domain(tenant, *, using: str = "default") -> Domain:
         tenant=tenant,
         hostname=hostname,
         kind=Domain.Kind.PLATFORM_SUBDOMAIN,
-        is_primary=not Domain.objects.using(using).filter(
-            tenant=tenant, is_primary=True
-        ).exists(),
+        is_primary=not Domain.objects.using(using).filter(tenant=tenant, is_primary=True).exists(),
         active=True,
     )
     domain.save(using=using)

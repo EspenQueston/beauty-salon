@@ -24,6 +24,7 @@
  * poids d'un écran qu'on ouvre à chaque appel.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -38,6 +39,7 @@ import {
 } from "@/features/ui";
 import { formatPrice } from "@/lib/format";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { Icon } from "./icons";
 
 interface Customer {
@@ -64,25 +66,28 @@ interface HistoryRow {
   internal_note: string;
 }
 
-const STATUS_LABELS: Record<string, { label: string; tone: "success" | "danger" | "warning" | "neutral" }> = {
-  completed: { label: "Terminée", tone: "success" },
-  confirmed: { label: "Confirmée", tone: "neutral" },
-  requested: { label: "Demandée", tone: "warning" },
-  checked_in: { label: "Arrivée", tone: "neutral" },
-  cancelled: { label: "Annulée", tone: "neutral" },
-  no_show: { label: "Absente", tone: "danger" },
+/** Le ton de chaque statut ; le libellé vient de `pro.clientes.statut`. */
+const STATUS_TONES: Record<string, "success" | "danger" | "warning" | "neutral"> = {
+  completed: "success",
+  confirmed: "neutral",
+  requested: "warning",
+  checked_in: "neutral",
+  cancelled: "neutral",
+  no_show: "danger",
 };
 
 type Filter = "all" | "recurring";
 
 export function Customers() {
+  const t = useTranslations("pro.clientes");
+  const { region } = useFormats();
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const timeZone = membership.tenant.timezone;
   const currency = membership.tenant.currency;
 
   const [customers, setCustomers] = useState<Customer[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [open, setOpen] = useState<string | null>(null);
@@ -93,7 +98,8 @@ export function Customers() {
     // Petit délai : évite une requête par touche frappée.
     const handle = setTimeout(() => {
       const query = search ? `&search=${encodeURIComponent(search)}` : "";
-      const recurring = filter === "recurring" ? "&recurring=true&ordering=visits" : "";
+      const recurring =
+        filter === "recurring" ? "&recurring=true&ordering=visits" : "";
       dashboardFetch<{ results: Customer[] }>(
         `/api/v1/customers/?page_size=50${query}${recurring}`,
         {},
@@ -102,10 +108,10 @@ export function Customers() {
         .then((page) => {
           if (cancelled) return;
           setCustomers(page.results);
-          setError(null);
+          setError(false);
         })
         .catch(() => {
-          if (!cancelled) setError("Impossible de charger les clientes.");
+          if (!cancelled) setError(true);
         });
     }, 250);
 
@@ -115,7 +121,7 @@ export function Customers() {
     };
   }, [search, filter, tenantId]);
 
-  const dateFormat = new Intl.DateTimeFormat("fr-FR", {
+  const dateFormat = new Intl.DateTimeFormat(region, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -125,8 +131,8 @@ export function Customers() {
   return (
     <section>
       <PageHeader
-        title="Clientes"
-        description="Constitué automatiquement à chaque réservation. Ces données sont les vôtres."
+        title={t("titre")}
+        description={t("description")}
       />
 
       <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -134,16 +140,16 @@ export function Customers() {
           type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Rechercher par nom ou téléphone"
-          aria-label="Rechercher une cliente"
+          placeholder={t("recherche")}
+          aria-label={t("rechercheAria")}
           className={`${inputClass} sm:max-w-sm`}
         />
 
         <div className="flex rounded-lg border border-line bg-surface p-0.5 sm:ml-auto">
           {(
             [
-              ["all", "Toutes"],
-              ["recurring", "Habituées"],
+              ["all", t("filtres.toutes")],
+              ["recurring", t("filtres.habituees")],
             ] as [Filter, string][]
           ).map(([key, label]) => (
             <button
@@ -163,24 +169,24 @@ export function Customers() {
         </div>
       </div>
 
-      {error && <ErrorState>{error}</ErrorState>}
+      {error && <ErrorState>{t("erreur")}</ErrorState>}
       {customers === null && !error && <Skeleton rows={4} />}
 
       {customers?.length === 0 && (
         <EmptyState
           title={
             search
-              ? "Aucun résultat"
+              ? t("vide.rechercheTitre")
               : filter === "recurring"
-                ? "Pas encore d’habituées"
-                : "Aucune cliente"
+                ? t("vide.habitueesTitre")
+                : t("vide.titre")
           }
         >
           {search
-            ? "Essayez une autre orthographe, ou une partie du numéro."
+            ? t("vide.recherche")
             : filter === "recurring"
-              ? "Une cliente entre ici dès son deuxième rendez-vous honoré."
-              : "Votre fichier se remplira tout seul à la première réservation."}
+              ? t("vide.habituees")
+              : t("vide.corps")}
         </EmptyState>
       )}
 
@@ -193,11 +199,11 @@ export function Customers() {
                   <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
                     {customer.full_name}
                     {customer.visit_count >= 2 && (
-                      <Badge tone="success">Habituée</Badge>
+                      <Badge tone="success">{t("habituee")}</Badge>
                     )}
                     {customer.no_show_count >= 2 && (
                       <Badge tone="danger">
-                        {customer.no_show_count} absences
+                        {t("absencesBadge", { n: customer.no_show_count })}
                       </Badge>
                     )}
                   </p>
@@ -207,15 +213,16 @@ export function Customers() {
                   </p>
                   {customer.last_booking_at && (
                     <p className="mt-0.5 text-sm text-subtle">
-                      Dernier rendez-vous le{" "}
-                      {dateFormat.format(new Date(customer.last_booking_at))}
+                      {t("dernier", {
+                        date: dateFormat.format(new Date(customer.last_booking_at)),
+                      })}
                     </p>
                   )}
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
                   {customer.marketing_consent && (
-                    <Badge tone="success">Accepte les offres</Badge>
+                    <Badge tone="success">{t("offres")}</Badge>
                   )}
                 </div>
               </div>
@@ -223,13 +230,16 @@ export function Customers() {
               {/* Trois compteurs côte à côte, en deux colonnes dès le
                   téléphone : ils se lisent ensemble ou pas du tout. */}
               <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3">
-                <Counter label="venues" value={customer.visit_count} />
                 <Counter
-                  label={customer.cancelled_count > 1 ? "annulations" : "annulation"}
+                  label={t("compteurs.venues", { n: customer.visit_count })}
+                  value={customer.visit_count}
+                />
+                <Counter
+                  label={t("compteurs.annulations", { n: customer.cancelled_count })}
                   value={customer.cancelled_count}
                 />
                 <Counter
-                  label={customer.no_show_count > 1 ? "absences" : "absence"}
+                  label={t("compteurs.absences", { n: customer.no_show_count })}
                   value={customer.no_show_count}
                   tone={customer.no_show_count > 0 ? "danger" : "neutral"}
                 />
@@ -247,14 +257,16 @@ export function Customers() {
                   className="mt-3 flex items-center gap-1.5 text-sm text-muted transition hover:text-ink"
                 >
                   <Icon
-                    name={open === customer.id ? "chevron-left" : "chevron-right"}
+                    name={
+                      open === customer.id ? "chevron-left" : "chevron-right"
+                    }
                     className={`size-3.5 transition-transform ${
                       open === customer.id ? "rotate-90" : ""
                     }`}
                   />
                   {open === customer.id
-                    ? "Masquer l’historique"
-                    : `Voir les ${customer.booking_count} rendez-vous`}
+                    ? t("masquer")
+                    : t("voir", { n: customer.booking_count })}
                 </button>
               )}
 
@@ -315,6 +327,8 @@ function History({
   timeZone: string;
   currency: string;
 }) {
+  const t = useTranslations("pro.clientes");
+  const { region } = useFormats();
   const [rows, setRows] = useState<HistoryRow[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -333,7 +347,7 @@ function History({
     };
   }, [customerId, tenantId]);
 
-  const format = new Intl.DateTimeFormat("fr-FR", {
+  const format = new Intl.DateTimeFormat(region, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -343,9 +357,7 @@ function History({
   });
 
   if (failed) {
-    return (
-      <p className="mt-3 text-sm text-danger">Historique indisponible.</p>
-    );
+    return <p className="mt-3 text-sm text-danger">{t("historiqueIndisponible")}</p>;
   }
   if (rows === null) {
     return (
@@ -358,9 +370,9 @@ function History({
   return (
     <ol className="mt-3 space-y-2 border-t border-line pt-3">
       {rows.map((row) => {
-        const status = STATUS_LABELS[row.status] ?? {
-          label: row.status,
-          tone: "neutral" as const,
+        const status = {
+          label: row.status in STATUS_TONES ? t(`statut.${row.status}`) : row.status,
+          tone: STATUS_TONES[row.status] ?? ("neutral" as const),
         };
 
         return (
@@ -380,7 +392,7 @@ function History({
               {row.staff_member_name && ` · ${row.staff_member_name}`}
               {" · "}
               <span className="tabular">
-                {formatPrice(row.total_amount, currency)}
+                {formatPrice(row.total_amount, currency, region)}
               </span>
             </p>
 

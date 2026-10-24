@@ -22,40 +22,33 @@
  * franchir l'étape.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { checkSlug } from "@/lib/dashboard";
-import { appUrl } from "@/lib/site";
 import { SLUG_MIN, toSlug } from "@/lib/slug";
+import { PALETTES } from "./palettes";
+import { CreateSalonLink, useHome } from "./HomeContext";
+import { Reveal } from "@/features/ui/Reveal";
 
-/** Mêmes palettes que dans l'espace professionnel : ce qu'on voit est vrai. */
-const PALETTES = [
-  { name: "Rose poudré", primary: "#B4436C", accent: "#F7D9E1", surface: "#FCF7F9" },
-  { name: "Or et nuit", primary: "#1F2937", accent: "#E9C46A", surface: "#FBF8F1" },
-  { name: "Terracotta", primary: "#9C4221", accent: "#F6D5C0", surface: "#FDF7F3" },
-  { name: "Émeraude", primary: "#0F766E", accent: "#CDEDE7", surface: "#F4FAF9" },
-  { name: "Violet", primary: "#6D28D9", accent: "#E4D8FB", surface: "#F9F7FE" },
-  { name: "Bleu nuit", primary: "#1E3A8A", accent: "#D6E0FA", surface: "#F6F8FD" },
-  { name: "Cacao", primary: "#5C3A21", accent: "#E8D5C0", surface: "#FBF7F3" },
-  { name: "Corail", primary: "#C2410C", accent: "#FDDCC8", surface: "#FFF8F4" },
-  { name: "Prune", primary: "#86198F", accent: "#F3D5F5", surface: "#FDF6FE" },
-  { name: "Encre et menthe", primary: "#134E4A", accent: "#B9E7DC", surface: "#F2FAF8" },
-];
-
-type SlugState = "idle" | "checking" | "free" | "taken";
+type SlugState = "idle" | "checking" | "free" | "taken" | "error";
 
 export function SitePreview() {
+  const t = useTranslations("site");
+  const {action,referral,track} = useHome();
+  const [retry,setRetry]=useState(0);
   const [name, setName] = useState("");
-  const [palette, setPalette] = useState(PALETTES[0]);
+  const [palette, setPalette] = useState<(typeof PALETTES)[number]>(PALETTES[0]);
   /** Dernière réponse du serveur, avec l'adresse à laquelle elle répond. */
   const [checked, setChecked] = useState<{
     slug: string;
     available: boolean;
     hostname: string;
+    error?: boolean;
   } | null>(null);
 
   const slug = toSlug(name);
-  const displayName = name.trim() || "Votre salon";
+  const displayName = name.trim() || t("apercuVitrine.salonParDefaut");
 
   /*
    * L'état affiché est **déduit**, pas stocké.
@@ -70,7 +63,7 @@ export function SitePreview() {
     slug.length < SLUG_MIN
       ? "idle"
       : checked?.slug === slug
-        ? checked.available
+        ? checked.error ? "error" : checked.available
           ? "free"
           : "taken"
         : "checking";
@@ -94,8 +87,7 @@ export function SitePreview() {
           });
         })
         .catch(() => {
-          // Le serveur n'a pas répondu : on reste en « vérification »
-          // plutôt que d'annoncer une disponibilité qu'on ignore.
+          if(!cancelled) setChecked({slug,available:false,hostname:"",error:true});
         });
     }, 400);
 
@@ -103,11 +95,12 @@ export function SitePreview() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [slug]);
+  }, [slug,retry]);
 
   // Ce qui a été composé accompagne l'inscription : le formulaire arrive
   // pré-rempli plutôt que vide.
-  const signupHref = `${appUrl}/inscription?${new URLSearchParams({
+  const signupHref = `${action.href.split("?")[0]}?${new URLSearchParams({
+    ...(referral ? {parrain:referral} : {}),
     ...(name.trim() ? { nom: name.trim() } : {}),
     ...(slug.length >= SLUG_MIN ? { slug } : {}),
     // Les trois couleurs voyagent, pas le nom de la palette : le serveur
@@ -119,52 +112,58 @@ export function SitePreview() {
   })}`;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+    <div className="grid min-w-0 gap-5 lg:grid-cols-[1fr_1.1fr] lg:items-center">
       {/* ------------------------------------------------------ commandes */}
-      <div>
+      <Reveal variant="cinema" className="min-w-0">
         <label
           htmlFor="apercu-nom"
           className="mb-1.5 block text-sm font-medium text-ink"
         >
-          Le nom de votre salon
+          {t("apercuVitrine.nomChamp")}
         </label>
         <input
           id="apercu-nom"
           value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Chez Sandra"
+          onChange={(event) => {setName(event.target.value);track("preview_used")}}
+          autoComplete="organization"
+          placeholder={t("apercu.exemple")}
           maxLength={60}
           className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-ink transition focus:border-salon"
         />
 
-        <p className="mt-2 min-h-5 text-sm" aria-live="polite">
+        <p className="mt-2 min-h-5 text-sm [overflow-wrap:anywhere]" aria-live="polite">
           {slug.length >= SLUG_MIN && slugState === "checking" && (
-            <span className="text-subtle">Vérification de l&apos;adresse…</span>
+            <span className="text-subtle">{t("adresse.verification")}</span>
           )}
           {slugState === "free" && (
             <span className="text-success">
-              {hostname} est libre — elle sera à vous.
+              {t("adresse.libre", { adresse: hostname })}
             </span>
           )}
           {slugState === "taken" && (
             <span className="text-danger">
-              {hostname} est déjà pris. Essayez une variante.
+              {t("adresse.prise", { adresse: hostname })}
             </span>
           )}
+          {slugState === "error" && <span className="text-muted">{t("adresse.erreur")} <button type="button" className="min-h-11 font-semibold text-salon-ink underline" onClick={()=>{setChecked(null);setRetry(value=>value+1)}}>{t("adresse.reessayer")}</button></span>}
+          {name && slug.length<SLUG_MIN && <span className="text-muted">{t("adresse.tropCourt")}</span>}
         </p>
 
-        <p className="mb-2 mt-5 text-sm font-medium text-ink">Vos couleurs</p>
+        <p className="mb-2 mt-5 text-sm font-medium text-ink">
+          {t("apercuVitrine.couleurs")}
+        </p>
         <div className="flex flex-wrap gap-2">
           {PALETTES.map((entry) => {
-            const active = entry.name === palette.name;
+            const active = entry.cle === palette.cle;
             return (
               <button
-                key={entry.name}
+                key={entry.cle}
                 type="button"
-                onClick={() => setPalette(entry)}
+                onClick={() => {setPalette(entry);track("preview_used")}}
                 aria-pressed={active}
-                title={entry.name}
-                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs transition ${
+                aria-label={t(`palettes.${entry.cle}`)}
+                title={t(`palettes.${entry.cle}`)}
+                className={`flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs transition ${
                   active
                     ? "border-salon bg-salon-soft text-ink"
                     : "border-line bg-surface text-muted hover:bg-surface-hover"
@@ -180,33 +179,29 @@ export function SitePreview() {
                     style={{ background: entry.accent }}
                   />
                 </span>
-                <span className="hidden sm:inline">{entry.name}</span>
+                <span className="hidden sm:inline">
+                  {t(`palettes.${entry.cle}`)}
+                </span>
               </button>
             );
           })}
         </div>
 
-        <a
+        <CreateSalonLink
           href={signupHref}
-          className="mt-6 inline-flex items-center justify-center rounded-xl bg-salon px-6 py-3.5 font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:brightness-110"
-        >
-          {slugState === "free"
-            ? `Réserver ${hostname}`
-            : "Créer mon salon"}
-        </a>
+          className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-salon px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:brightness-110 sm:w-auto"
+        />
 
-        <p className="mt-2 text-xs text-subtle">
-          Vos choix vous suivent : le formulaire arrive déjà rempli.
-        </p>
-      </div>
+        <p className="mt-2 text-xs text-muted">{t("apercuVitrine.suivi")}</p>
+      </Reveal>
 
       {/* -------------------------------------------------------- aperçu */}
-      <div
+      <Reveal variant="cinema" order={1} className="min-w-0"><div
         className="rounded-3xl border border-line p-4 shadow-card transition-colors duration-500 sm:p-6"
         style={{ background: palette.surface }}
       >
-        <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.12em] text-black/40">
-          Aperçu en direct
+        <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.12em] text-black/65">
+          {t("apercuVitrine.direct")}
         </p>
 
         <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
@@ -227,19 +222,22 @@ export function SitePreview() {
 
           <div className="p-4 sm:p-5">
             <p
-              className="text-lg font-semibold transition-colors duration-500"
+              className="break-words text-lg font-semibold transition-colors duration-500"
               style={{ color: palette.primary }}
             >
               {displayName}
             </p>
-            <p className="mt-0.5 text-sm text-black/50">
-              {hostname || "votre-salon.beautysalon"}
+            <p className="mt-0.5 break-all text-sm text-black/65">
+              {hostname || t("apercuVitrine.hoteExemple")}
             </p>
 
             <div className="mt-4 space-y-2">
               {[
-                { label: "Tresses collées", price: "12 000" },
-                { label: "Soin profond", price: "8 000" },
+                {
+                  label: t("apercuVitrine.prestations.tresses"),
+                  price: "12 000",
+                },
+                { label: t("apercuVitrine.prestations.soin"), price: "8 000" },
               ].map((row) => (
                 <div
                   key={row.label}
@@ -260,15 +258,15 @@ export function SitePreview() {
               className="mt-4 block rounded-xl py-2.5 text-center text-sm font-semibold text-white transition-[background] duration-500"
               style={{ background: palette.primary }}
             >
-              Réserver un rendez-vous
+              {t("apercuVitrine.reserver")}
             </span>
           </div>
         </div>
 
-        <p className="mt-3 text-center text-xs text-black/40">
-          Prestations et tarifs d&apos;exemple — les vôtres les remplaceront.
+        <p className="mt-3 text-center text-xs text-black/65">
+          {t("apercuVitrine.noteExemple")}
         </p>
-      </div>
+      </div></Reveal>
     </div>
   );
 }

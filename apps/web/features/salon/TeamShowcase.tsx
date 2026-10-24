@@ -55,11 +55,16 @@
  * mosaïque, pleine sur les fiches, où rien ne viendrait la révéler.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { Lien } from "@/features/ui/Lien";
+import { Reveal } from "@/features/ui/Reveal";
 import { useState } from "react";
 
 import type { PublicStaffMember } from "@/lib/types";
+import { delaiCascade } from "./effets";
 import { SalonIcon } from "./icons";
+import { photo, TAILLES } from "./images";
 
 /**
  * Largeur relative de chaque colonne.
@@ -134,8 +139,12 @@ export function TeamShowcase({
       {/* Trois colonnes dès 640 px : à deux, la fiche atteignait 362 px de
           large sur une tablette — deux portraits géants par rangée. */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 md:hidden">
+        {/* Chaque fiche entre à son tour : la cascade se lit comme une équipe
+            qui se présente, pas comme un bloc qui se charge. */}
         {members.map((member, rang) => (
-          <Fiche key={member.id} member={member} rang={rang} />
+          <Reveal key={member.id} delay={delaiCascade(rang)}>
+            <Fiche member={member} rang={rang} />
+          </Reveal>
         ))}
       </div>
 
@@ -153,13 +162,14 @@ export function TeamShowcase({
                 .map((member, rang) => ({ member, rang }))
                 .filter(({ rang }) => rang % colonnes === colonne)
                 .map(({ member, rang }) => (
-                  <Tuile
-                    key={member.id}
-                    member={member}
-                    rang={rang}
-                    actif={actif}
-                    onActif={setActif}
-                  />
+                  <Reveal key={member.id} delay={delaiCascade(rang)}>
+                    <Tuile
+                      member={member}
+                      rang={rang}
+                      actif={actif}
+                      onActif={setActif}
+                    />
+                  </Reveal>
                 ))}
             </div>
           ))}
@@ -172,14 +182,15 @@ export function TeamShowcase({
           sans balayer toute la page.
         */}
         <div className="flex min-w-0 flex-1 flex-col gap-5 pt-1">
-          {members.map((member) => (
-            <Ligne
-              key={member.id}
-              member={member}
-              actif={actif}
-              onActif={setActif}
-              detailed={detailed}
-            />
+          {members.map((member, rang) => (
+            <Reveal key={member.id} delay={delaiCascade(rang)}>
+              <Ligne
+                member={member}
+                actif={actif}
+                onActif={setActif}
+                detailed={detailed}
+              />
+            </Reveal>
           ))}
         </div>
       </div>
@@ -205,7 +216,7 @@ export function TeamShowcase({
  */
 function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
   return (
-    <Link
+    <Lien
       href="/reserver"
       className="group relative block overflow-hidden rounded-xl outline-offset-2"
     >
@@ -213,7 +224,7 @@ function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
         {member.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={member.photo.url}
+            {...photo(member.photo, TAILLES.grille)}
             alt={member.photo.alt_text || member.name}
             loading="lazy"
             className="size-full object-cover transition-transform duration-500 group-active:scale-[1.03]"
@@ -255,7 +266,7 @@ function Fiche({ member, rang }: { member: PublicStaffMember; rang: number }) {
           </p>
         )}
       </div>
-    </Link>
+    </Lien>
   );
 }
 
@@ -299,7 +310,7 @@ function Tuile({
       {member.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={member.photo.url}
+          {...photo(member.photo, TAILLES.cartes)}
           alt={member.photo.alt_text || member.name}
           loading="lazy"
           className="size-full object-cover transition-[filter,transform] duration-500"
@@ -339,11 +350,12 @@ function Ligne({
   onActif: (id: string | null) => void;
   detailed: boolean;
 }) {
+  const c = useTranslations("commun");
   const estActif = actif === member.id;
   const eteint = actif !== null && !estActif;
 
   return (
-    <Link
+    <Lien
       href="/reserver"
       onMouseEnter={() => onActif(member.id)}
       onMouseLeave={() => onActif(null)}
@@ -386,7 +398,7 @@ function Ligne({
               : "-translate-x-1.5 opacity-0"
           }`}
         >
-          Réserver
+          {c("reserver")}
           <SalonIcon name="arrow" className="size-3" />
         </span>
       </span>
@@ -406,6 +418,6 @@ function Ligne({
           {member.bio}
         </span>
       )}
-    </Link>
+    </Lien>
   );
 }

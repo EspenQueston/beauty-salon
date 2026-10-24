@@ -7,7 +7,8 @@
  * le jour où un vrai domaine remplace `localhost`, rien d'autre ne bouge.
  */
 
-const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
+export const PLATFORM_DOMAIN =
+  process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
 const WEB_PORT = process.env.NEXT_PUBLIC_WEB_PORT ?? "3100";
 
 /** Le port disparaît de lui-même en production, où il est implicite. */
@@ -22,6 +23,13 @@ export const platformUrl = origin(PLATFORM_DOMAIN);
 
 /** Espace professionnel des salons. */
 export const appUrl = origin(`app.${PLATFORM_DOMAIN}`);
+
+/** Professional links use the same app host as the existing public site. */
+export function professionalUrl(locale: string = "fr", path: string = ""): string {
+  const language = locale === "en" ? "/en" : "";
+  const route = path === "/" ? "" : path;
+  return `${appUrl}${language}${route}`;
+}
 
 /** Mini-site d'un salon. */
 export function salonUrl(slug: string): string {

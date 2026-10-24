@@ -147,12 +147,17 @@ def test_a_salon_team_member_cannot_reach_the_admin(client):
 
 @pytest.mark.django_db
 def test_the_orders_view_is_read_only_for_the_platform(salon_a):
-    """La plateforme regarde les commandes des salons, elle n'y touche pas.
+    """La plateforme regarde les commandes des salons, elle ne les corrige pas.
 
     Un rendez-vous porte le chiffre d'affaires du salon, ses acomptes et ses
     engagements envers une cliente. Une correction faite depuis
     l'administration passerait sous ses yeux sans trace dans son agenda, et
     ses comptes ne tomberaient plus juste.
+
+    La **suppression**, elle, est ouverte depuis qu'elle emporte les
+    ecritures comptables et laisse une trace nominative : voir
+    `tests/test_admin_suppression.py`. Corriger en silence et effacer en
+    laissant une trace ne sont pas le meme geste.
     """
     from django.contrib.admin.sites import site
 
@@ -162,7 +167,7 @@ def test_the_orders_view_is_read_only_for_the_platform(salon_a):
 
     assert admin_class.has_add_permission(None) is False
     assert admin_class.has_change_permission(None) is False
-    assert admin_class.has_delete_permission(None) is False
+    assert admin_class.has_delete_permission(None) is True
 
     # Tout champ affiche est en lecture seule - y compris ceux qu'on
     # ajoutera au modele plus tard, puisque la liste est derivee des
@@ -205,13 +210,15 @@ def test_the_platform_can_read_every_salons_bookings(admin_client, salon_a):
     assert b"Box braids" in response.content
 
 
-def test_the_platform_cannot_create_change_or_delete_a_booking(admin_client, salon_a):
+def test_the_platform_cannot_create_or_change_a_booking(admin_client, salon_a):
     """Un rendez-vous appartient au salon.
 
     Une correction faite ici passerait sous ses yeux sans trace dans son
-    agenda, et ses comptes ne tomberaient plus juste. La suppression est
-    fermee plus fort encore : les lignes de recette pointent vers ces
-    rendez-vous.
+    agenda, et ses comptes ne tomberaient plus juste.
+
+    La suppression fait exception, et elle est testee ailleurs : elle
+    emporte les ecritures comptables au lieu de laisser une recette sans
+    origine, et elle ecrit une ligne d'audit nominative.
 
     Le controle porte sur les reponses HTTP, pas sur les methodes : quelqu'un
     qui redefinirait `has_change_permission` ferait tomber ce test, ce qui est
@@ -236,10 +243,10 @@ def test_the_platform_cannot_create_change_or_delete_a_booking(admin_client, sal
     # Creation : la page d'ajout n'existe pas.
     assert admin_client.get("/admin/scheduling/booking/add/").status_code == 403
 
-    # Suppression : refusee.
+    # La suppression, elle, s'ouvre : la page de confirmation repond.
     assert (
         admin_client.get(f"/admin/scheduling/booking/{booking.id}/delete/").status_code
-        == 403
+        == 200
     )
 
     # Consultation : ouverte, mais sans formulaire modifiable.

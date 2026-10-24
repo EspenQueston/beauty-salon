@@ -1,22 +1,45 @@
 {% extends "mfa/base.html" %}
 {% block title %}Vérification{% endblock %}
 
+{% comment %}
+Trois éléments de texte, et pas un de plus.
+
+Il y en avait cinq : un titre, une consigne de deux lignes, un libellé de
+champ, le bouton, puis deux lignes sur les codes de secours. Pour un champ de
+six chiffres que l'on remplit en quatre secondes, c'était un mur.
+
+Ce qu'on garde, et pourquoi :
+
+  - **le compte** : sur un poste partagé, c'est la seule façon de savoir
+    quelle entrée ouvrir dans son application ;
+  - **les codes de secours** : personne ne devine qu'ils se saisissent dans
+    ce champ-là, et c'est la seule issue quand le téléphone est resté chez
+    soi.
+
+Ce qu'on retire : « Ouvrez votre application d'authentification ». On arrive
+ici parce qu'on a déjà enrôlé un appareil — la phrase apprenait à quelqu'un
+ce qu'il vient de faire. Et le libellé « Code à 6 chiffres », qui devient le
+texte d'invite du champ : la même information, sans ligne supplémentaire.
+{% endcomment %}
+
 {% block contenu %}
   <h1>Code de vérification</h1>
-  <p>
-    Ouvrez votre application d'authentification et saisissez le code affiché
-    pour {{ user.email }}.
-  </p>
+  <p class="mfa-discret mfa-compte">{{ user.email }}</p>
 
   <form method="post">
     {% csrf_token %}
-    <label for="token"><strong>Code à 6 chiffres</strong></label>
+    {% comment %}
+    Le libellé reste, pour les lecteurs d'écran : un champ dont le seul
+    intitulé est un texte d'invite disparaît dès qu'on tape.
+    {% endcomment %}
+    <label class="mfa-cache" for="token">Code à 6 chiffres</label>
     <input type="text" id="token" name="token" inputmode="numeric"
+           placeholder="Code à 6 chiffres"
            autocomplete="one-time-code" pattern="[0-9A-Za-z ]*" required autofocus>
-    <button type="submit">Vérifier</button>
+    <button type="submit" class="mfa-valider">Vérifier</button>
   </form>
 
-  <p class="discret" style="margin-top:1.5rem">
-    Téléphone perdu ? Saisissez l'un de vos codes de secours dans le même champ.
+  <p class="mfa-discret mfa-secours">
+    Téléphone perdu ? Un code de secours fonctionne ici aussi.
   </p>
 {% endblock %}

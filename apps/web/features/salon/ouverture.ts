@@ -28,14 +28,29 @@
  * de la même façon : on ne demande jamais l'heure à la machine qui affiche.
  */
 
-import { shortTime, weekdayLabel } from "@/lib/format";
+import { shortTime } from "@/lib/format";
 import type { PublicSalon } from "@/lib/types";
 import { hoursByDay } from "./contact";
 
+/**
+ * Ce qu'il y a à dire, et non la phrase qui le dit.
+ *
+ * Ce module rendait « Ferme à 22:00 » tout formé. C'était pratique tant
+ * qu'il n'y avait qu'une langue ; avec deux, la phrase française se
+ * retrouvait sous un titre anglais, et rien dans le fichier ne le
+ * signalait — le texte n'était pas écrit dans le composant qui l'affiche.
+ *
+ * Il rend maintenant une clé et ses variables. C'est le composant qui
+ * demande la phrase au catalogue, dans la langue de la page.
+ */
+export type DetailOuverture =
+  | { cle: "fermeA"; heure: string }
+  | { cle: "ouvreA"; quand: string; heure: string };
+
 export interface EtatOuverture {
   ouvert: boolean;
-  /** « Ferme à 22:00 », « Ouvre demain à 09:00 ». Vide si rien à dire. */
-  detail: string;
+  /** `null` quand il n'y a rien à dire — un salon sans horaires publiés. */
+  detail: DetailOuverture | null;
   /** Jour de la semaine **du salon**, lundi = 0. */
   jour: number;
 }
@@ -117,12 +132,12 @@ export function etatOuverture(salon: PublicSalon, now: Date): EtatOuverture {
   // Aucun horaire publié : on ne dit rien. Annoncer « fermé » à un salon qui
   // n'a pas encore rempli sa grille serait lui inventer une mauvaise nouvelle.
   if (salon.business_hours.length === 0) {
-    return { ouvert: false, detail: "", jour };
+    return { ouvert: false, detail: null, jour };
   }
 
   for (const plage of semaine[jour].ranges) {
     if (couvre(enMinutes(plage.starts_at), enMinutes(plage.ends_at), minutes)) {
-      return { ouvert: true, detail: `Ferme à ${shortTime(plage.ends_at)}`, jour };
+      return { ouvert: true, detail: { cle: "fermeA", heure: shortTime(plage.ends_at) }, jour };
     }
   }
 
@@ -133,7 +148,7 @@ export function etatOuverture(salon: PublicSalon, now: Date): EtatOuverture {
     const debut = enMinutes(plage.starts_at);
     const fin = enMinutes(plage.ends_at);
     if (fin <= debut && minutes < fin) {
-      return { ouvert: true, detail: `Ferme à ${shortTime(plage.ends_at)}`, jour };
+      return { ouvert: true, detail: { cle: "fermeA", heure: shortTime(plage.ends_at) }, jour };
     }
   }
 
@@ -145,25 +160,33 @@ export function etatOuverture(salon: PublicSalon, now: Date): EtatOuverture {
       if (delta === 0 && debut <= minutes) continue;
       return {
         ouvert: false,
-        detail: `Ouvre ${quand(delta, index)} à ${shortTime(plage.starts_at)}`,
+        detail: {
+          cle: "ouvreA",
+          quand: quand(delta, index),
+          heure: shortTime(plage.starts_at),
+        },
         jour,
       };
     }
   }
 
-  return { ouvert: false, detail: "", jour };
+  return { ouvert: false, detail: null, jour };
 }
 
 /**
- * « aujourd'hui », « demain », puis le nom du jour.
+ * « aujourd'hui », « demain », puis le nom du jour — en clés.
  *
  * Au-delà de demain, le nom du jour est plus court à lire que « dans quatre
  * jours » et se replace tout seul dans une semaine.
+ *
+ * La clé d'un jour est son indice : c'est ce que le catalogue attend sous
+ * `salon.jours`, et c'est ce qui évite d'avoir à traduire un nom de jour
+ * déjà traduit ailleurs.
  */
 function quand(delta: number, index: number): string {
-  if (delta === 0) return "aujourd'hui";
+  if (delta === 0) return "aujourdhui";
   if (delta === 1) return "demain";
-  return weekdayLabel(index).toLowerCase();
+  return String(index);
 }
 
 /** Les plages du jour, dans le fuseau du salon. Vide = fermé. */
