@@ -56,7 +56,6 @@ export function Securite() {
         </div>
         <div className="grid min-w-0 content-start gap-5">
           <MotDePasse />
-          <Sessions />
         </div>
       </div>
     </>
@@ -461,11 +460,12 @@ function MotDePasse() {
           {t("changer")}
         </Button>
       </form>
+      <AutresAppareils />
     </Card>
   );
 }
 
-function Sessions() {
+function AutresAppareils() {
   const t = useTranslations("pro.securite.sessions");
   const toast = useToast();
   const [confirmer, setConfirmer] = useState(false);
@@ -484,14 +484,7 @@ function Sessions() {
   }
 
   return (
-    <Card>
-      <Titre icone="clock">{t("titre")}</Titre>
-      <ul className="grid gap-2 text-[13px] leading-relaxed text-muted sm:text-sm">
-        <li>{t.rich("duree", { gras: (texte) => <strong className="text-ink">{texte}</strong> })}</li>
-        <li>{t("motDePasse")}</li>
-        <li>{t("journal")}</li>
-      </ul>
-      <div className="mt-4 border-t border-line pt-4">
+    <div className="mt-5 border-t border-line pt-4">
         <p className="text-[13px] leading-relaxed text-muted sm:text-sm">{t("fermerAide")}</p>
         {confirmer ? (
           <div className="mt-3 grid grid-cols-2 gap-2 sm:flex">
@@ -507,7 +500,6 @@ function Sessions() {
             {t("fermer")}
           </GhostButton>
         )}
-      </div>
-    </Card>
+    </div>
   );
 }

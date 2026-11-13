@@ -2263,7 +2263,7 @@
     },
     "securite": {
       "titre": "Security",
-      "description": "Protect access to your salon: two-factor authentication, password and sessions.",
+      "description": "Protect access to your salon: two-factor authentication and password.",
       "erreur": "Could not read the two-factor authentication status.",
       "activee": "On",
       "desactivee": "Off",
@@ -2272,7 +2272,7 @@
         "preparationEchec": "Could not prepare. Please try again.",
         "ok": "Two-factor authentication turned on.",
         "echec": "Could not turn it on. Please try again.",
-        "intro": "A password can leak, be guessed or be stolen. With two-factor authentication, every sign-in also asks for a six-digit code shown by an app on your phone: without it, your password alone opens nothing.",
+        "intro": "Passwords can leak or be stolen. With two-factor authentication, every sign-in also asks for a 6-digit code from an app on your phone. Without that code, your password alone isn't enough.",
         "gratuit": "Free, no SMS",
         "activer": "Turn on two-factor authentication",
         "qr": "QR code to scan with your authenticator app",
@@ -2291,7 +2291,7 @@
         "nouveauxCodes": "New backup codes",
         "desactiver": "Turn off",
         "avertissementCodes": "Your current codes will stop working.",
-        "avertissementDesactiver": "Your password alone will be enough to sign in again.",
+        "avertissementDesactiver": "Your password alone will be enough to sign in.",
         "codeApplication": "Code from the app",
         "motDePasse": "Password",
         "generer": "Generate new codes",
@@ -2302,7 +2302,7 @@
         "fichierNom": "beauty-salon-backup-codes.txt",
         "activee": "On",
         "titre": "Your backup codes",
-        "intro": "If you lose your phone, each of these codes opens <gras>one</gras> sign-in. They will never be shown again: store them now, away from this phone.",
+        "intro": "If you lose your phone, each code allows <gras>one</gras> sign-in. They won't be shown again: store them now, somewhere other than this phone.",
         "copies": "Codes copied.",
         "copieImpossible": "Could not copy: write them down by hand.",
         "copier": "Copy",
@@ -2316,16 +2316,12 @@
         "titre": "Password",
         "actuel": "Current password",
         "nouveau": "New password",
-        "regle": "At least 10 characters. Common passwords, or ones already exposed in a data breach, are refused.",
+        "regle": "At least 10 characters. Common or leaked passwords are refused.",
         "changer": "Change password"
       },
       "sessions": {
-        "titre": "Sessions",
-        "duree": "A session closes by itself after <gras>3 days</gras> of inactivity, and after 14 days at the latest.",
-        "motDePasse": "Changing your password signs out all your other devices.",
-        "journal": "Every sign-in and every sensitive change is logged by the Beauty Salon team.",
         "fermer": "Sign out my other devices",
-        "fermerAide": "Lost phone, shared computer: every other session of your account is closed. This one stays open.",
+        "fermerAide": "Lost phone or shared computer? Sign out all your other devices. This one stays signed in.",
         "confirmer": "Yes, sign them out",
         "annuler": "Cancel",
         "fermees": "Your other devices have been signed out."
@@ -3034,7 +3030,7 @@
     },
     "profil": {
       "titre": "Salon profile",
-      "description": "What your clients see before booking, and the rules your calendar follows.",
+      "description": "What clients see before booking, and how your calendar accepts appointments.",
       "erreur": "Could not load.",
       "ok": "Profile saved. Your mini-site is up to date.",
       "alignees": "{n, plural, one {# service is now offered at home.} other {# services are now offered at home.}}",
@@ -3054,19 +3050,19 @@
       "vitrine": {
         "titre": "Showcase",
         "presentation": "Description",
-        "presentationAide": "Two or three sentences: your specialty, what sets you apart.",
+        "presentationAide": "Two or three sentences: your specialty and what sets you apart.",
         "adresse": "Address",
         "ville": "City",
         "telephone": "Phone",
         "whatsappAide": "International format, e.g. +242060000000.",
         "email": "Contact email",
-        "emailAide": "Shown on your mini-site, in the footer and on the Info page.",
+        "emailAide": "Shown on your mini-site (footer and Info page).",
         "emailExemple": "contact@mysalon.com",
         "utiliser": "Use {email}",
         "monEmail": "My email",
         "lieu": "Where services take place",
-        "lieuSalon": "Opening home visits will also offer your services at the client's home, except those you set apart.",
-        "lieuDomicile": "Your services are offered at home, except those set to “At the salon” on their page. Travel fees are set in “Travel”.",
+        "lieuSalon": "With home visits on, your services are also offered at the client's home, except those you exclude.",
+        "lieuDomicile": "Your services are offered at home, except those set to “At the salon”. Set travel fees in “Travel”.",
         "lieux": {
           "salon": "At the salon",
           "home": "At home",
@@ -3076,15 +3072,15 @@
       "reseaux": {
         "titre": "Social media",
         "wechat": "Let clients add you on WeChat",
-        "wechatAide": "The QR code is shown on your mini-site with your ID next to it. A client scans it from their computer, or copies the ID if they're reading the page inside WeChat.",
+        "wechatAide": "Your QR code and ID appear on your mini-site. Clients scan the code, or copy the ID from inside WeChat.",
         "wechatId": "WeChat ID",
-        "wechatIdAide": "The one people type to find you, not your display name.",
+        "wechatIdAide": "The ID people search for in WeChat, not your display name.",
         "wechatQr": "WeChat QR code",
-        "wechatQrAide": "In WeChat: Me › My QR code › save the image, then upload it here."
+        "wechatQrAide": "In WeChat: Me › My QR code › Save image, then upload it here."
       },
       "couleurs": {
         "titre": "Colours",
-        "intro": "They dress your mini-site. The layout stays the same for everyone — that's what keeps it readable on a small screen.",
+        "intro": "They apply to your mini-site. The layout is the same for every salon, so it stays readable on phones.",
         "principale": "Main",
         "principaleAide": "Buttons and prices",
         "secondaire": "Secondary",
@@ -3099,60 +3095,60 @@
       },
       "regles": {
         "titre": "Booking rules",
-        "intro": "These settings change the slots offered to your clients. A change applies to future bookings, not those already made.",
+        "intro": "These settings define the slots offered. A change only applies to new bookings.",
         "pas": "Slot interval",
         "pasAide": "{n} min offers {exemple}…",
         "battement": "Buffer between appointments",
         "battementAide": "{duree} reserved after each service.",
-        "battementAucun": "No turnaround time reserved.",
+        "battementAucun": "No break between appointments.",
         "delai": "Minimum notice before an appointment",
         "delaiAide": "A client can't book within the next {duree}.",
-        "delaiAucun": "Booking possible up to the last minute.",
+        "delaiAucun": "Clients can book up to the last minute.",
         "horizon": "Bookable up to (days ahead)",
-        "horizonAide": "Calendar open {n} days ahead."
+        "horizonAide": "Bookings open {n} days ahead."
       },
       "apropos": {
         "titre": "“About” page",
-        "intro": "Your story, in a few paragraphs. It becomes a separate page on your mini-site, and the link only appears in the menu once the text is written.",
+        "intro": "Your story in a few paragraphs, on its own page. The menu link appears once the text is written.",
         "titrePage": "Page title",
-        "titrePageAide": "Left empty, your mini-site shows “About {salon}”.",
+        "titrePageAide": "If empty: “About {salon}”.",
         "titrePageExemple": "About {salon}",
         "presentation": "Your story",
-        "presentationAide": "Separate your paragraphs with a blank line. How long you've been working, what you do best, what sets you apart.",
+        "presentationAide": "A blank line between paragraphs. Your experience, what you do best, what sets you apart.",
         "presentationExemple": "We opened in 2015, in a neighbourhood where nobody styled afro hair.\n\nToday, three stylists welcome you by appointment…",
         "mots": "{n, plural, one {# word} other {# words}}",
         "enLigne": "the page is live",
-        "masquee": "the page stays hidden while this field is empty",
+        "masquee": "the page stays hidden until this field is filled",
         "photo": "Page photo",
-        "photoAide": "Portrait or view of the salon. Without a photo, a mood image is shown instead."
+        "photoAide": "A portrait or a view of the salon. Without one, a default image is shown."
       },
       "deplacement": {
         "titre": "Where you travel",
         "quartiers": "Neighbourhoods served",
-        "quartiersAide": "Separated by commas. Shown as written on your mini-site."
+        "quartiersAide": "Separated by commas. Shown as written."
       },
       "acompte": {
         "titre": "Deposit amount",
-        "intro": "Time is reserved with a percentage: a slot freed early enough can be rebooked. Supplies are paid in full — you've already bought them.",
+        "intro": "The deposit is a percentage of the service, so a slot freed in time can be rebooked. Supplies are paid in full, since you've already bought them.",
         "part": "Share of the service requested (%)",
-        "partAide": "Applies to the services you've marked “requires a deposit”.",
+        "partAide": "Only for services marked “requires a deposit”.",
         "minimum": "Minimum deposit ({devise})",
-        "minimumAide": "A floor, whatever the percentage. Useful for small services.",
+        "minimumAide": "Minimum amount, whatever the percentage. Useful for small services.",
         "fournitures": "Supplies paid in advance",
         "fournituresAide": "Hair bought for a specific client can't always be resold.",
-        "aucun": "With 0% and no minimum, no deposit will be requested — even on services that require one."
+        "aucun": "At 0% with no minimum, no deposit is requested, even on services that require one."
       },
       "annulation": {
         "titre": "Cancellation",
         "politique": "Policy shown to the client",
-        "politiqueAide": "It must be accepted before any booking: this is the text you can rely on in case of dispute.",
+        "politiqueAide": "Clients accept it before booking: it's the text that applies in a dispute.",
         "delai": "Free cancellation up to (hours before)"
       },
       "retard": {
         "titre": "Lateness",
-        "intro": "Lateness is handled by saying it upfront. A client who's been told arrives on time; one who finds out on the spot feels cheated — and you lose both.",
+        "intro": "State the rule in advance: a client who knows arrives on time; one surprised on the spot feels cheated.",
         "audela": "What happens beyond that",
-        "audelaAide": "Shown on your mini-site and repeated in the confirmation email.",
+        "audelaAide": "Shown on your mini-site and in the confirmation email.",
         "audelaExemple": "We do our best to see you anyway, but the service may be shortened or postponed depending on the following appointments.",
         "tolerance": "Grace period",
         "aucune": "None",
@@ -3161,19 +3157,19 @@
         "vuParCliente": "As the client sees it",
         "apercuSansTolerance": "Please arrive on time. If you are late:",
         "apercuTolerance": "Please arrive on time. Beyond {n} minutes late:",
-        "vide": "While this field is empty, nothing is shown to the client and the email doesn't mention lateness.",
+        "vide": "While this field is empty, clients see nothing and the email doesn't mention lateness.",
         "agendaSignale": "The calendar already flags appointments more than {n} min late."
       },
       "point": {
         "recherche": "beauty salon",
         "format": "Expected format: 4.2634, 15.2429",
         "libelle": "Exact location (optional)",
-        "aide": "Paste the coordinates from Google Maps: right-click on your salon, then click the numbers to copy them.",
+        "aide": "In Google Maps, right-click your salon, click the coordinates to copy them, then paste them here.",
         "aria": "Latitude and longitude",
         "verifier": "Check the location on the map",
         "trouver": "Find my salon on the map",
-        "itineraireExact": "Directions lead to the exact spot.",
-        "itineraireAdresse": "Without a location, directions search for the written address."
+        "itineraireExact": "Directions lead to this exact spot.",
+        "itineraireAdresse": "Without it, directions use the written address."
       },
       "exemple": {
         "titre": "On an example",
@@ -3183,7 +3179,7 @@
         "total": "Total",
         "acompte": "Deposit requested",
         "partTotal": "{pct}% of the total",
-        "sansPourcentage": "Without a percentage, the deposit stays at the minimum whatever the basket — {minimum}, plus supplies.",
+        "sansPourcentage": "Without a percentage, the deposit is the minimum ({minimum}) plus supplies, whatever the total.",
         "minimumApplique": "Here the minimum applies: {taux}% would only be {montant}."
       },
       "nonEnregistre": "Unsaved changes.",
@@ -3193,14 +3189,14 @@
     },
     "abonnement": {
       "titre": "Subscription",
-      "description": "Your access, your plan and your payments, in one place.",
+      "description": "Your plan, your access and your payments.",
       "reserve": {
         "titre": "For the owner only",
         "corps": "The subscription is paid from the account of the person who owns the salon."
       },
       "paiementValide": "Payment validated: your subscription is active.",
       "paiementTraite": "Your payment has been processed. Check the history.",
-      "aucunAbonnement": "No subscription is attached to this salon yet. The Beauty Salon team takes care of it on validation.",
+      "aucunAbonnement": "No subscription for this salon yet. The Beauty Salon team will set it up.",
       "erreur": "Could not load.",
       "statutDemande": {
         "pending": "Under review",
@@ -3234,13 +3230,13 @@
         "restants": "{n, plural, one {# day left} other {# days left}}",
         "essai": {
           "titre": "Free trial in progress",
-          "detail": "Until <gras>{date}</gras>. Choose your plan whenever you like: the paid period starts when the trial ends.",
+          "detail": "Until <gras>{date}</gras>. Choose a plan whenever you like: paid time starts when the trial ends.",
           "badge": "Trial",
           "action": "Choose my plan"
         },
         "periode": {
           "titre": "{offre} plan active",
-          "detail": "Your salon is covered until <gras>{date}</gras>. An early payment is added on top, without losing a day.",
+          "detail": "Your salon is covered until <gras>{date}</gras>. Paying early adds time after that, without losing a day.",
           "badge": "Active",
           "action": "Extend"
         },
@@ -3252,7 +3248,7 @@
         },
         "expire": {
           "titre": "Subscription expired",
-          "detail": "Online bookings closed, dashboard read-only. Your data is intact: everything reopens as soon as your payment is validated.",
+          "detail": "Online bookings are closed and the dashboard is read-only. Your data is kept: everything reopens once your payment is validated.",
           "badge": "Expired",
           "action": "Reactivate my salon"
         },
@@ -3288,7 +3284,7 @@
       },
       "programme": {
         "titre": "{offre} from {date}",
-        "detail": "Your current plan runs to its end, then {offre} takes over until {fin} ({montant}). Pro features will then pause: your settings are kept, and come back if you return to Pro."
+        "detail": "Your current plan runs to its end, then {offre} takes over until {fin} ({montant}). Pro features then pause; their settings are kept."
       },
       "annuel": {
         "titre": "Switch to yearly, save {montant} a year",
@@ -3298,15 +3294,15 @@
       },
       "attente": {
         "titre": "Payment under review",
-        "kkiapay": "KKIAPAY is confirming your transaction with the server. Your period opens after this confirmation.",
-        "manuel": "The Beauty Salon team finds your payment on the receiving account, then opens your period. This page updates on its own; you'll also get an email and a notification.",
+        "kkiapay": "KKIAPAY is confirming your payment. Your period opens once it's confirmed.",
+        "manuel": "The Beauty Salon team checks your payment, then opens your period. You'll get an email and a notification; this page updates by itself.",
         "offre": "Plan",
         "montant": "Amount",
         "moyen": "Method",
         "reference": "Reference",
         "mois": "{n, plural, one {# month} other {# months}}",
-        "declare": "Submitted on {date}. Only one payment can be pending at a time.",
-        "saspay": "SASPAY is confirming your payment with the server. Your period opens as soon as it is confirmed; if you did not finish paying, resume below."
+        "declare": "Sent on {date}. Only one payment can be under review at a time.",
+        "saspay": "SASPAY is confirming your payment. Your period opens once it's confirmed. Didn't finish paying? Resume below."
       },
       "groupes": {
         "standard": "Standard",
@@ -3315,7 +3311,7 @@
       "commande": {
         "fermee": {
           "titre": "Payment isn't open yet",
-          "corps": "No payment method is set up at the moment. The Beauty Salon team will contact you before your period ends — nothing stops without warning."
+          "corps": "No payment method is available yet. The Beauty Salon team will contact you before your period ends: nothing stops without notice."
         },
         "debutSuite": "Your new period will start on {date}, right after the current one.",
         "debutValidation": "Your period will start when the payment is validated.",
@@ -3342,7 +3338,7 @@
         "moyen": "Payment method",
         "etape3": "Submit your payment",
         "reference": "Transaction reference",
-        "referenceAide": "The receipt number, in your payment app.",
+        "referenceAide": "The transaction number shown on the receipt in your payment app.",
         "referenceExemple": "E.g. 4200001234202609251234",
         "capture": "Receipt screenshot",
         "facultative": "(optional)",
@@ -3352,7 +3348,7 @@
         "retirer": "Remove",
         "formats": "JPEG, PNG or WebP, 15 MB at most.",
         "offreMin": "{offre} plan",
-        "accesVerification": "Your access opens when the payment is verified, not when this form is sent.",
+        "accesVerification": "Your access opens once the payment is verified, not when you send this form.",
         "declarer": "Submit",
         "declarerSuite": " my payment",
         "effet": {
@@ -3379,12 +3375,12 @@
         "qrIndisponible": "QR code unavailable. Reload the page.",
         "scannez": "Scan the code with {moyen}.",
         "envoyez": "Send exactly <gras>{somme}</gras>.",
-        "copiez": "Copy the receipt reference below.",
+        "copiez": "Enter the receipt reference in step 3 below.",
         "numero": "Number",
         "numeroCopie": "Number copied.",
         "titulaire": "Account holder",
         "montant": "Amount",
-        "verifiez": "Check that the account holder's name is shown before confirming the transfer in your app.",
+        "verifiez": "Check the account holder's name before confirming the transfer in your app.",
         "copieImpossible": "Could not copy: select the text by hand.",
         "copie": "Copied",
         "copier": "Copy"
@@ -3404,7 +3400,7 @@
         "regleeLe": "Paid on {date}",
         "emiseLe": "Issued on {date}",
         "titre": "Payments and invoices",
-        "sousTitre": "Your declared payments and the invoices issued for each validated payment.",
+        "sousTitre": "The payments you've sent and the invoice for each validated one.",
         "telecharger": "PDF",
         "telechargement": "Preparing…",
         "telechargerAria": "Download invoice {numero} as PDF",

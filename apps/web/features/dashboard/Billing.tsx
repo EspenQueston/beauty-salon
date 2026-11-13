@@ -1273,7 +1273,9 @@ function Commande({
           <div
             role="radiogroup"
             aria-label={c("moyen")}
-            className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"
+            className="mb-3 grid gap-2 sm:flex sm:flex-wrap"
+            // Autant de colonnes que de moyens (3 au plus) : pas de bouton seul sur sa ligne.
+            style={{ gridTemplateColumns: `repeat(${Math.min(devise.moyens.length, 3)}, minmax(0, 1fr))` }}
           >
             {devise.moyens.map((item) => (
               <button
@@ -1295,6 +1297,17 @@ function Commande({
                 <span className="truncate">{item.libelle}</span>
               </button>
             ))}
+            {/* Les QR codes sont chargés d'avance : passer de WeChat à Alipay
+                affiche le bon code tout de suite, sans garder l'ancien le
+                temps du réseau. */}
+            <div hidden aria-hidden>
+              {devise.moyens.map((item) =>
+                item.qr_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={item.id} src={item.qr_url} alt="" />
+                ) : null,
+              )}
+            </div>
           </div>
         )}
 
@@ -1620,7 +1633,9 @@ function PanneauMoyen({ moyen, somme }: { moyen: Moyen; somme: string }) {
               <a href={moyen.qr_url} target="_blank" rel="noreferrer noopener" title={m("agrandir")}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
+                  key={moyen.id}
                   src={moyen.qr_url}
+                  decoding="async"
                   alt={m("qr", { moyen: moyen.libelle })}
                   className="aspect-square w-full rounded-xl border border-line bg-white object-contain p-1.5 sm:p-2"
                   onError={() => setQrEnErreur(moyen.qr_url)}

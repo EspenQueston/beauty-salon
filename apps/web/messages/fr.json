@@ -2263,7 +2263,7 @@
     },
     "securite": {
       "titre": "Sécurité",
-      "description": "Protégez l'accès à votre salon : double authentification, mot de passe et sessions.",
+      "description": "Protégez l'accès à votre salon : double authentification et mot de passe.",
       "erreur": "Impossible de lire l'état de la double authentification.",
       "activee": "Activée",
       "desactivee": "Désactivée",
@@ -2272,7 +2272,7 @@
         "preparationEchec": "Préparation impossible. Réessayez.",
         "ok": "Double authentification activée.",
         "echec": "Activation impossible. Réessayez.",
-        "intro": "Un mot de passe peut fuiter, se deviner ou se voler. Avec la double authentification, chaque connexion demande aussi un code à six chiffres affiché par une application sur votre téléphone : sans lui, votre mot de passe seul n'ouvre rien.",
+        "intro": "Un mot de passe peut fuiter ou être volé. Avec la double authentification, chaque connexion demande aussi un code à 6 chiffres donné par une application sur votre téléphone. Sans ce code, le mot de passe seul ne suffit pas.",
         "gratuit": "Gratuit, sans SMS",
         "activer": "Activer la double authentification",
         "qr": "QR code à scanner avec votre application d'authentification",
@@ -2291,7 +2291,7 @@
         "nouveauxCodes": "Nouveaux codes de secours",
         "desactiver": "Désactiver",
         "avertissementCodes": "Les codes actuels cesseront de fonctionner.",
-        "avertissementDesactiver": "Votre mot de passe suffira de nouveau pour vous connecter.",
+        "avertissementDesactiver": "Votre mot de passe seul suffira pour vous connecter.",
         "codeApplication": "Code de l'application",
         "motDePasse": "Mot de passe",
         "generer": "Générer de nouveaux codes",
@@ -2302,7 +2302,7 @@
         "fichierNom": "codes-de-secours-beauty-salon.txt",
         "activee": "Activée",
         "titre": "Vos codes de secours",
-        "intro": "Si vous perdez votre téléphone, chacun de ces codes ouvre <gras>une</gras> connexion. Ils ne seront plus jamais affichés : rangez-les maintenant, hors de ce téléphone.",
+        "intro": "Si vous perdez votre téléphone, chaque code permet <gras>une</gras> connexion. Ils ne seront plus affichés : rangez-les maintenant, ailleurs que sur ce téléphone.",
         "copies": "Codes copiés.",
         "copieImpossible": "Copie impossible : recopiez-les à la main.",
         "copier": "Copier",
@@ -2316,16 +2316,12 @@
         "titre": "Mot de passe",
         "actuel": "Mot de passe actuel",
         "nouveau": "Nouveau mot de passe",
-        "regle": "10 caractères au moins. Les mots de passe courants ou déjà publiés dans une fuite de données sont refusés.",
+        "regle": "10 caractères minimum. Les mots de passe courants ou ayant fuité sont refusés.",
         "changer": "Changer le mot de passe"
       },
       "sessions": {
-        "titre": "Sessions",
-        "duree": "Une session se ferme d'elle-même après <gras>3 jours</gras> sans activité, et au plus tard après 14 jours.",
-        "motDePasse": "Changer votre mot de passe déconnecte tous vos autres appareils.",
-        "journal": "Chaque connexion et chaque changement sensible sont consignés par l'équipe Beauty Salon.",
         "fermer": "Déconnecter mes autres appareils",
-        "fermerAide": "Téléphone perdu, ordinateur partagé : toutes les autres sessions de votre compte sont fermées. Celle-ci reste ouverte.",
+        "fermerAide": "Téléphone perdu ou ordinateur partagé ? Déconnectez tous vos autres appareils. Celui-ci reste connecté.",
         "confirmer": "Oui, les déconnecter",
         "annuler": "Annuler",
         "fermees": "Vos autres appareils ont été déconnectés."
@@ -3034,7 +3030,7 @@
     },
     "profil": {
       "titre": "Profil du salon",
-      "description": "Ce que voient vos clientes avant de réserver, et les règles que suit votre agenda.",
+      "description": "Ce que voient vos clientes avant de réserver, et comment votre agenda accepte les rendez-vous.",
       "erreur": "Chargement impossible.",
       "ok": "Profil enregistré. Votre mini-site est à jour.",
       "alignees": "{n, plural, one {# prestation est désormais proposée à domicile.} other {# prestations sont désormais proposées à domicile.}}",
@@ -3054,19 +3050,19 @@
       "vitrine": {
         "titre": "Vitrine",
         "presentation": "Présentation",
-        "presentationAide": "Deux ou trois phrases : votre spécialité, ce qui vous distingue.",
+        "presentationAide": "Deux ou trois phrases : votre spécialité et ce qui vous distingue.",
         "adresse": "Adresse",
         "ville": "Ville",
         "telephone": "Téléphone",
         "whatsappAide": "Format international, ex. +242060000000.",
         "email": "E-mail de contact",
-        "emailAide": "Affiché sur votre mini-site, dans le pied de page et la page Infos.",
+        "emailAide": "Affiché sur votre mini-site (pied de page et page Infos).",
         "emailExemple": "contact@monsalon.com",
         "utiliser": "Utiliser {email}",
         "monEmail": "Mon e-mail",
         "lieu": "Prestations réalisées",
-        "lieuSalon": "Ouvrir le domicile proposera aussi vos prestations chez la cliente, sauf celles que vous aurez mises à part.",
-        "lieuDomicile": "Vos prestations sont proposées à domicile, sauf celles réglées sur « Au salon » dans leur fiche. Les forfaits se règlent dans « Déplacement ».",
+        "lieuSalon": "Avec le domicile, vos prestations sont aussi proposées chez la cliente, sauf celles que vous excluez.",
+        "lieuDomicile": "Vos prestations sont proposées à domicile, sauf celles réglées sur « Au salon ». Les frais se règlent dans « Déplacement ».",
         "lieux": {
           "salon": "Au salon",
           "home": "À domicile",
@@ -3076,15 +3072,15 @@
       "reseaux": {
         "titre": "Réseaux sociaux",
         "wechat": "Vous ajouter sur WeChat",
-        "wechatAide": "Le QR code s'affiche sur votre mini-site avec votre identifiant à côté. Une cliente scanne depuis son ordinateur, ou recopie l'identifiant si elle lit la page depuis WeChat.",
+        "wechatAide": "Votre QR code et votre identifiant s'affichent sur votre mini-site. La cliente scanne le code, ou copie l'identifiant depuis WeChat.",
         "wechatId": "Identifiant WeChat",
-        "wechatIdAide": "Celui qu'on tape pour vous chercher, pas votre nom affiché.",
+        "wechatIdAide": "L'identifiant qu'on recherche dans WeChat, pas votre nom affiché.",
         "wechatQr": "QR code WeChat",
-        "wechatQrAide": "Dans WeChat : Moi › QR code personnel › enregistrer l'image, puis téléversez-la ici."
+        "wechatQrAide": "Dans WeChat : Moi › QR code personnel › Enregistrer l'image, puis ajoutez-la ici."
       },
       "couleurs": {
         "titre": "Couleurs",
-        "intro": "Elles habillent votre mini-site. La mise en page, elle, reste la même pour tous — c'est ce qui garantit qu'il reste lisible sur un petit écran.",
+        "intro": "Elles s'appliquent à votre mini-site. La mise en page est la même pour tous les salons, pour rester lisible sur téléphone.",
         "principale": "Principale",
         "principaleAide": "Boutons et prix",
         "secondaire": "Secondaire",
@@ -3099,60 +3095,60 @@
       },
       "regles": {
         "titre": "Règles de réservation",
-        "intro": "Ces réglages changent les créneaux proposés à vos clientes. Une modification s'applique aux réservations à venir, pas à celles déjà prises.",
+        "intro": "Ces réglages définissent les créneaux proposés. Une modification ne vaut que pour les nouvelles réservations.",
         "pas": "Pas des créneaux",
         "pasAide": "{n} min propose {exemple}…",
         "battement": "Battement entre rendez-vous",
         "battementAide": "{duree} réservées après chaque prestation.",
-        "battementAucun": "Aucun temps de remise en état réservé.",
+        "battementAucun": "Aucune pause entre deux rendez-vous.",
         "delai": "Délai minimal avant un rendez-vous",
         "delaiAide": "Une cliente ne peut pas réserver dans les {duree}.",
         "delaiAucun": "Réservation possible jusqu'à la dernière minute.",
         "horizon": "Réservable jusqu'à (jours à l'avance)",
-        "horizonAide": "Agenda ouvert sur {n} jours."
+        "horizonAide": "Réservations ouvertes {n} jours à l'avance."
       },
       "apropos": {
         "titre": "Page « À propos »",
-        "intro": "Votre histoire, en quelques paragraphes. Elle devient une page à part sur votre mini-site, et le lien n'apparaît dans le menu qu'une fois le texte écrit.",
+        "intro": "Votre histoire, en quelques paragraphes, sur une page à part. Le lien apparaît dans le menu dès que le texte est écrit.",
         "titrePage": "Titre de la page",
-        "titrePageAide": "Laissé vide, votre mini-site affiche « À propos de {salon} ».",
+        "titrePageAide": "Vide : « À propos de {salon} ».",
         "titrePageExemple": "À propos de {salon}",
         "presentation": "Votre présentation",
-        "presentationAide": "Séparez vos paragraphes par une ligne vide. Depuis quand vous exercez, ce que vous faites le mieux, ce qui vous distingue.",
+        "presentationAide": "Une ligne vide entre les paragraphes. Votre parcours, ce que vous faites le mieux, ce qui vous distingue.",
         "presentationExemple": "Nous avons ouvert en 2015, dans un quartier où personne ne coiffait le cheveu afro.\n\nAujourd'hui, trois prestataires vous reçoivent sur rendez-vous…",
         "mots": "{n, plural, =0 {0 mot} one {# mot} other {# mots}}",
         "enLigne": "la page est en ligne",
         "masquee": "la page reste masquée tant que ce champ est vide",
         "photo": "Photo de la page",
-        "photoAide": "Portrait ou vue du salon. Sans photo, une image d'ambiance est affichée à la place."
+        "photoAide": "Un portrait ou une vue du salon. Sans photo, une image par défaut s'affiche."
       },
       "deplacement": {
         "titre": "Où vous vous déplacez",
         "quartiers": "Quartiers desservis",
-        "quartiersAide": "Séparés par des virgules. Affichés tels quels sur votre mini-site."
+        "quartiersAide": "Séparés par des virgules. Affichés tels quels."
       },
       "acompte": {
         "titre": "Montant de l'acompte",
-        "intro": "Le temps se réserve à un pourcentage : un créneau libéré assez tôt peut être repris. Les fournitures, elles, se règlent en entier — vous les avez déjà achetées.",
+        "intro": "L'acompte est un pourcentage de la prestation : un créneau libéré à temps peut être repris. Les fournitures se règlent en entier, vous les avez déjà achetées.",
         "part": "Part de la prestation demandée (%)",
-        "partAide": "S'applique aux prestations que vous avez marquées « demande un acompte ».",
+        "partAide": "Uniquement pour les prestations marquées « demande un acompte ».",
         "minimum": "Acompte minimum ({devise})",
-        "minimumAide": "Plancher, quel que soit le pourcentage. Utile sur les petites prestations.",
+        "minimumAide": "Montant minimum, quel que soit le pourcentage. Utile pour les petites prestations.",
         "fournitures": "Fournitures payées d'avance",
         "fournituresAide": "Des mèches achetées pour une cliente précise ne se revendent pas toujours.",
-        "aucun": "Avec 0 % et aucun minimum, aucun acompte ne sera demandé — même sur les prestations qui en réclament un."
+        "aucun": "À 0 % sans minimum, aucun acompte n'est demandé, même sur les prestations qui en exigent un."
       },
       "annulation": {
         "titre": "Annulation",
         "politique": "Politique affichée à la cliente",
-        "politiqueAide": "Elle doit être acceptée avant toute réservation : c'est ce texte que vous pourrez opposer en cas de litige.",
+        "politiqueAide": "La cliente l'accepte avant de réserver : c'est le texte qui fait foi en cas de litige.",
         "delai": "Annulation gratuite jusqu'à (heures avant)"
       },
       "retard": {
         "titre": "Retard",
-        "intro": "Le retard se règle en le disant à l'avance. Une cliente prévenue arrive à l'heure ; une cliente qui l'apprend sur place se sent lésée — et vous perdez les deux.",
+        "intro": "Annoncez la règle à l'avance : une cliente prévenue arrive à l'heure, une cliente surprise sur place se sent lésée.",
         "audela": "Ce qu'il se passe au-delà",
-        "audelaAide": "Affiché sur votre mini-site et rappelé dans l'e-mail de confirmation.",
+        "audelaAide": "Affiché sur votre mini-site et dans l'e-mail de confirmation.",
         "audelaExemple": "Nous faisons notre possible pour vous prendre quand même, mais la prestation peut être raccourcie ou reportée selon les rendez-vous suivants.",
         "tolerance": "Tolérance",
         "aucune": "Aucune",
@@ -3161,19 +3157,19 @@
         "vuParCliente": "Vu par la cliente",
         "apercuSansTolerance": "Merci d'arriver à l'heure. En cas de retard :",
         "apercuTolerance": "Merci d'arriver à l'heure. Au-delà de {n} minutes de retard :",
-        "vide": "Tant que ce champ est vide, rien n'est affiché à la cliente et l'e-mail ne mentionne pas le retard.",
+        "vide": "Tant que ce champ est vide, la cliente ne voit rien et l'e-mail ne parle pas du retard.",
         "agendaSignale": "L'agenda, lui, signale déjà les rendez-vous en retard de plus de {n} min."
       },
       "point": {
         "recherche": "salon de beauté",
         "format": "Format attendu : 4.2634, 15.2429",
         "libelle": "Point exact (facultatif)",
-        "aide": "Collez les coordonnées depuis Google Maps : clic droit sur votre salon, puis clic sur les chiffres pour les copier.",
+        "aide": "Dans Google Maps, faites un clic droit sur votre salon, cliquez sur les coordonnées pour les copier, puis collez-les ici.",
         "aria": "Latitude et longitude",
         "verifier": "Vérifier le point sur la carte",
         "trouver": "Trouver mon salon sur la carte",
-        "itineraireExact": "L'itinéraire mène au point exact.",
-        "itineraireAdresse": "Sans point, l'itinéraire cherche l'adresse écrite."
+        "itineraireExact": "L'itinéraire mène à ce point précis.",
+        "itineraireAdresse": "Sans point, l'itinéraire utilise l'adresse écrite."
       },
       "exemple": {
         "titre": "Sur un exemple",
@@ -3183,7 +3179,7 @@
         "total": "Total",
         "acompte": "Acompte demandé",
         "partTotal": "{pct} % du total",
-        "sansPourcentage": "Sans pourcentage, l'acompte reste au minimum quel que soit le panier — {minimum}, plus les fournitures.",
+        "sansPourcentage": "Sans pourcentage, l'acompte est le minimum ({minimum}) plus les fournitures, quel que soit le total.",
         "minimumApplique": "Ici c'est le minimum qui s'applique : {taux} % ne feraient que {montant}."
       },
       "nonEnregistre": "Modifications non enregistrées.",
@@ -3193,14 +3189,14 @@
     },
     "abonnement": {
       "titre": "Abonnement",
-      "description": "Votre accès, votre offre et vos paiements, au même endroit.",
+      "description": "Votre offre, votre accès et vos paiements.",
       "reserve": {
         "titre": "Réservé au propriétaire",
         "corps": "Le règlement de l'abonnement se fait depuis le compte de la personne qui possède le salon."
       },
       "paiementValide": "Paiement validé : votre abonnement est actif.",
       "paiementTraite": "Votre paiement a été traité. Consultez l'historique.",
-      "aucunAbonnement": "Aucun abonnement n'est encore rattaché à ce salon. L'équipe Beauty Salon s'en charge à la validation.",
+      "aucunAbonnement": "Aucun abonnement pour ce salon pour l'instant. L'équipe Beauty Salon s'en occupe.",
       "erreur": "Chargement impossible.",
       "statutDemande": {
         "pending": "En vérification",
@@ -3240,7 +3236,7 @@
         },
         "periode": {
           "titre": "Offre {offre} active",
-          "detail": "Votre salon est couvert jusqu'au <gras>{date}</gras>. Un paiement anticipé s'ajoute à la suite, sans perdre un jour.",
+          "detail": "Votre salon est couvert jusqu'au <gras>{date}</gras>. Payer en avance ajoute du temps à la suite, sans perdre de jour.",
           "badge": "Actif",
           "action": "Prolonger"
         },
@@ -3252,7 +3248,7 @@
         },
         "expire": {
           "titre": "Abonnement expiré",
-          "detail": "Réservations en ligne fermées, tableau de bord en lecture seule. Vos données sont intactes : tout se rouvre dès la validation de votre paiement.",
+          "detail": "Réservations en ligne fermées, tableau de bord en lecture seule. Vos données sont conservées : tout rouvre dès que votre paiement est validé.",
           "badge": "Expiré",
           "action": "Réactiver mon salon"
         },
@@ -3288,7 +3284,7 @@
       },
       "programme": {
         "titre": "{offre} à partir du {date}",
-        "detail": "Votre offre actuelle va jusqu'à son terme, puis {offre} prend la suite jusqu'au {fin} ({montant}). Les fonctions Pro se mettront alors en pause : vos réglages sont gardés, et reviennent si vous repassez à Pro."
+        "detail": "Votre offre actuelle va jusqu'à son terme, puis {offre} prend le relais jusqu'au {fin} ({montant}). Les fonctions Pro se mettent alors en pause ; leurs réglages sont conservés."
       },
       "annuel": {
         "titre": "Passez à l'annuel, économisez {montant} par an",
@@ -3298,15 +3294,15 @@
       },
       "attente": {
         "titre": "Paiement en cours de vérification",
-        "kkiapay": "KKIAPAY confirme votre transaction auprès du serveur. Votre période s’ouvre après cette confirmation.",
-        "manuel": "L'équipe Beauty Salon retrouve votre versement sur le compte crédité, puis ouvre votre période. Cette page se met à jour d'elle-même ; vous recevez aussi un e-mail et une notification.",
+        "kkiapay": "KKIAPAY confirme votre paiement. Votre période s'ouvre dès la confirmation.",
+        "manuel": "L'équipe Beauty Salon vérifie votre paiement, puis ouvre votre période. Vous recevez un e-mail et une notification ; cette page se met à jour toute seule.",
         "offre": "Offre",
         "montant": "Montant",
         "moyen": "Moyen",
         "reference": "Référence",
         "mois": "{n} mois",
-        "declare": "Déclaré le {date}. Un seul paiement peut attendre à la fois.",
-        "saspay": "SASPAY confirme votre paiement auprès du serveur. Votre période s’ouvre dès cette confirmation ; si vous n’avez pas terminé le paiement, reprenez-le ci-dessous."
+        "declare": "Envoyé le {date}. Un seul paiement peut être en vérification à la fois.",
+        "saspay": "SASPAY confirme votre paiement. Votre période s'ouvre dès la confirmation. Paiement non terminé ? Reprenez-le ci-dessous."
       },
       "groupes": {
         "standard": "Standard",
@@ -3315,7 +3311,7 @@
       "commande": {
         "fermee": {
           "titre": "Le règlement n'est pas encore ouvert",
-          "corps": "Aucun moyen de paiement n'est configuré pour le moment. L'équipe Beauty Salon vous contacte avant la fin de votre période — rien ne s'interrompt sans prévenir."
+          "corps": "Aucun moyen de paiement n'est disponible pour l'instant. L'équipe Beauty Salon vous contactera avant la fin de votre période : rien ne s'arrête sans prévenir."
         },
         "debutSuite": "Votre nouvelle période commencera le {date}, à la suite de l'actuelle.",
         "debutValidation": "Votre période commencera à la validation du paiement.",
@@ -3342,7 +3338,7 @@
         "moyen": "Moyen de paiement",
         "etape3": "Déclarez votre paiement",
         "reference": "Référence de la transaction",
-        "referenceAide": "Le numéro du reçu, dans votre application de paiement.",
+        "referenceAide": "Le numéro de transaction affiché sur le reçu, dans votre application de paiement.",
         "referenceExemple": "Ex. : 4200001234202609251234",
         "capture": "Capture du reçu",
         "facultative": "(facultative)",
@@ -3352,7 +3348,7 @@
         "retirer": "Retirer",
         "formats": "JPEG, PNG ou WebP, 15 Mo au plus.",
         "offreMin": "Offre {offre}",
-        "accesVerification": "Votre accès s'ouvre à la vérification du versement, pas à l'envoi de ce formulaire.",
+        "accesVerification": "Votre accès s'ouvre une fois le paiement vérifié, pas à l'envoi de ce formulaire.",
         "declarer": "Déclarer",
         "declarerSuite": " mon paiement",
         "effet": {
@@ -3379,12 +3375,12 @@
         "qrIndisponible": "QR code indisponible. Rechargez la page.",
         "scannez": "Scannez le code avec {moyen}.",
         "envoyez": "Envoyez exactement <gras>{somme}</gras>.",
-        "copiez": "Copiez la référence du reçu ci-dessous.",
+        "copiez": "Reportez la référence du reçu à l'étape 3, ci-dessous.",
         "numero": "Numéro",
         "numeroCopie": "Numéro copié.",
         "titulaire": "Titulaire",
         "montant": "Montant",
-        "verifiez": "Vérifiez que le nom du titulaire s'affiche avant de valider l'envoi dans votre application.",
+        "verifiez": "Vérifiez le nom du titulaire avant de valider le transfert dans votre application.",
         "copieImpossible": "Copie impossible : sélectionnez le texte à la main.",
         "copie": "Copié",
         "copier": "Copier"
@@ -3404,7 +3400,7 @@
         "regleeLe": "Réglée le {date}",
         "emiseLe": "Émise le {date}",
         "titre": "Paiements et factures",
-        "sousTitre": "Vos règlements déclarés et les factures émises à chaque paiement validé.",
+        "sousTitre": "Les paiements que vous avez envoyés et la facture de chaque paiement validé.",
         "telecharger": "PDF",
         "telechargement": "Préparation…",
         "telechargerAria": "Télécharger la facture {numero} en PDF",
