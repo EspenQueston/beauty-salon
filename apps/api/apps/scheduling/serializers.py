@@ -103,6 +103,9 @@ class PublicBookingCreateSerializer(serializers.Serializer):
     address = serializers.CharField(required=False, allow_blank=True, max_length=255)
 
     marketing_consent = serializers.BooleanField(default=False)
+    # Confirmations et rappels sur WhatsApp, au numero donne : cochee par
+    # defaut dans le formulaire, et jamais utilisee pour de la promotion.
+    notifications_whatsapp = serializers.BooleanField(default=True)
     # Case a cocher obligatoire : le salon doit pouvoir opposer sa politique
     # d'annulation en cas de litige.
     accepts_policy = serializers.BooleanField()

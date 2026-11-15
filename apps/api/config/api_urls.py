@@ -35,9 +35,8 @@ from apps.billing.views import (
     QrCodeView,
     SubscriptionView,
 )
-from apps.billing.views_kkiapay import KkiapayView, KkiapayConfirmationView, KkiapayWebhookView
+from apps.billing.views_kkiapay import KkiapayConfirmationView, KkiapayView, KkiapayWebhookView
 from apps.billing.views_saspay import SaspayConfirmationView, SaspayView, SaspayWebhookView
-from apps.common.home import HomeMetricView, HomeSessionView, HomeView
 from apps.catalog.views import (
     ResourceViewSet,
     ServiceCategoryViewSet,
@@ -53,6 +52,7 @@ from apps.clients.views import (
     ClientSessionView,
     ClientSignupView,
 )
+from apps.common.home import HomeMetricView, HomeSessionView, HomeView
 from apps.customers.views import CustomerViewSet
 from apps.domains.views_salon import DomainesView, DomaineVerifierView, DomaineView
 from apps.finance.views import TransactionViewSet
@@ -62,9 +62,14 @@ from apps.notifications.views import (
     NotificationView,
     PlatformNotificationView,
     PushView,
+    WebhookWhatsAppPlateformeView,
 )
 from apps.parrainage.views import ParrainageClienteView, ParrainageSalonView
-from apps.parrainage.views_clients import ParrainageClientsSalonView, ParrainageClientSalonView, DevisParrainageView
+from apps.parrainage.views_clients import (
+    DevisParrainageView,
+    ParrainageClientSalonView,
+    ParrainageClientsSalonView,
+)
 from apps.payments.views import (
     PaymentChannelViewSet,
     PublicBookingCancelView,
@@ -265,6 +270,11 @@ urlpatterns = [
         name="assistant-conversation",
     ),
     path("webhooks/n8n/<str:cle>/<str:jeton>", WebhookN8nView.as_view(), name="webhook-n8n"),
+    path(
+        "webhooks/whatsapp-plateforme/<str:jeton>",
+        WebhookWhatsAppPlateformeView.as_view(),
+        name="webhook-whatsapp-plateforme",
+    ),
     path(
         "webhooks/whatsapp/<str:instance>/<str:jeton>",
         WebhookWhatsAppView.as_view(),

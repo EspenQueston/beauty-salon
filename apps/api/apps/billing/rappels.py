@@ -153,4 +153,31 @@ def _rappeler(tenant: Tenant, maintenant: datetime) -> str | None:
         except IntegrityError:
             # Un autre passage l'a inscrit entre-temps : rien a faire.
             return None
+        try:
+            _whatsapp_rappel(abonnement, genre, maintenant)
+        except Exception:  # noqa: BLE001 - l'e-mail est parti, c'est l'essentiel
+            logger.exception("Rappel WhatsApp non programme pour %s.", tenant.id)
         return genre
+
+
+def _whatsapp_rappel(abonnement: Subscription, genre: str, maintenant: datetime) -> None:
+    """Le meme rappel sur WhatsApp, aux proprietaires. Ne leve jamais."""
+    from apps.notifications import whatsapp
+
+    famille = genre.split("_")[0]  # trial_7 -> trial, renewal_3 -> renewal
+    if famille not in ("trial", "renewal", "grace", "closed"):
+        return
+    fuseau = courriers._fuseau(abonnement)
+    fin = abonnement.current_period_end
+    if famille == "grace":
+        fin = fin + GRACE
+    whatsapp.ecrire_a_la_direction(
+        abonnement.tenant,
+        famille,
+        f"abo:{abonnement.pk}:{genre}:{abonnement.current_period_end.date().isoformat()}",
+        proprietaires_seulement=True,
+        selon_langue=lambda langue: {
+            "fin": courriers.date_longue(fin, fuseau, langue),
+            "echeance": courriers.quand(abonnement.current_period_end, fuseau, maintenant, langue),
+        },
+    )

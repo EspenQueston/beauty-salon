@@ -66,21 +66,15 @@ def _appel(methode: str, chemin: str, **kwargs) -> dict:
 
 
 def creer_instance(instance: str, webhook: str) -> dict:
-    return _appel(
-        "POST",
-        "/instance/create",
-        json={
-            "instanceName": instance,
-            "qrcode": True,
-            "integration": "WHATSAPP-BAILEYS",
-            "webhook": {
-                "url": webhook,
-                "byEvents": False,
-                "base64": False,
-                "events": ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
-            },
-        },
-    )
+    corps = {"instanceName": instance, "qrcode": True, "integration": "WHATSAPP-BAILEYS"}
+    if webhook:
+        corps["webhook"] = {
+            "url": webhook,
+            "byEvents": False,
+            "base64": False,
+            "events": ["MESSAGES_UPSERT", "CONNECTION_UPDATE"],
+        }
+    return _appel("POST", "/instance/create", json=corps)
 
 
 def qr_code(instance: str) -> str:
@@ -95,8 +89,16 @@ def etat(instance: str) -> str:
     return ((donnees.get("instance") or {}).get("state") or donnees.get("state") or "").lower()
 
 
-def envoyer_texte(instance: str, numero: str, texte: str) -> None:
-    _appel("POST", f"/message/sendText/{instance}", json={"number": numero, "text": texte})
+def etat_ou_vide(instance: str) -> str:
+    """Comme `etat`, mais chaine vide si l'instance n'existe pas encore."""
+    try:
+        return etat(instance)
+    except EvolutionIndisponible:
+        return ""
+
+
+def envoyer_texte(instance: str, numero: str, texte: str) -> dict:
+    return _appel("POST", f"/message/sendText/{instance}", json={"number": numero, "text": texte})
 
 
 def supprimer(instance: str) -> None:

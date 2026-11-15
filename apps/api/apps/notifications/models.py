@@ -268,3 +268,80 @@ class PushSubscription(UUIDModel, TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.appareil or 'Appareil'} — {self.user}"
+
+
+class MessageWhatsApp(UUIDModel, TimeStampedModel):
+    """Un message WhatsApp a envoyer, ou deja envoye : la file et le journal.
+
+    -----------------------------------------------------------------------
+    Pourquoi une table, et pas un simple appel
+    -----------------------------------------------------------------------
+
+    L'envoi passe par Evolution, sur le numero unique de la plateforme. Il
+    peut echouer (telephone deconnecte, passerelle arretee) et il doit
+    rester lent : WhatsApp limite, voire bannit, un numero qui ecrit trop
+    vite. La ligne est donc ecrite d'abord, dans la transaction de
+    l'evenement, puis une tache l'envoie a son rythme et retente.
+
+    `cle` rend chaque message unique : une tache d'e-mail qui retente apres
+    une panne ne programme pas un second WhatsApp. Elle se compose de
+    l'objet et du moment (« resa:<id>:rappel »).
+
+    Comme `PlatformNotification`, la ligne ne porte qu'une reference au
+    salon et n'a pas de politique RLS : elle est ecrite par des taches qui
+    traversent les salons et n'est lue que dans l'administration. Elle
+    contient un numero de telephone : elle n'est exposee par aucune API.
+    """
+
+    class Statut(models.TextChoices):
+        EN_ATTENTE = "en_attente", _("En attente")
+        ENVOYE = "envoye", _("Envoyé")
+        ECHEC = "echec", _("Échec")
+        IGNORE = "ignore", _("Ignoré")
+
+    tenant = models.ForeignKey(
+        "tenants.Tenant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="messages_whatsapp",
+        verbose_name=_("salon concerné"),
+    )
+    cle = models.CharField(_("clé"), max_length=160, unique=True)
+    genre = models.CharField(_("genre"), max_length=40, db_index=True)
+    numero = models.CharField(_("numéro"), max_length=20)
+    langue = models.CharField(_("langue"), max_length=5, default="fr")
+    texte = models.TextField(_("texte"), max_length=1500)
+    statut = models.CharField(
+        _("statut"), max_length=12, choices=Statut.choices, default=Statut.EN_ATTENTE,
+        db_index=True,
+    )
+    tentatives = models.PositiveSmallIntegerField(_("tentatives"), default=0)
+    erreur = models.CharField(_("erreur"), max_length=200, blank=True)
+    envoye_le = models.DateTimeField(_("envoyé le"), null=True, blank=True)
+    identifiant = models.CharField(_("identifiant WhatsApp"), max_length=100, blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = _("message WhatsApp")
+        verbose_name_plural = _("messages WhatsApp")
+
+    def __str__(self) -> str:
+        return f"{self.genre} → {self.numero} ({self.get_statut_display()})"
+
+
+class DesinscriptionWhatsApp(UUIDModel, TimeStampedModel):
+    """Un numero qui a repondu « STOP » : plus aucun message ne lui part.
+
+    Par numero, et non par fiche cliente : la meme personne est cliente de
+    plusieurs salons, et c'est le meme telephone qui recoit.
+    """
+
+    numero = models.CharField(_("numéro"), max_length=20, unique=True)
+
+    class Meta:
+        verbose_name = _("désinscription WhatsApp")
+        verbose_name_plural = _("désinscriptions WhatsApp")
+
+    def __str__(self) -> str:
+        return self.numero

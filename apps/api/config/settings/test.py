@@ -67,3 +67,11 @@ REST_FRAMEWORK = {  # noqa: F405
         globals()["REST_FRAMEWORK"]["DEFAULT_THROTTLE_RATES"], "1000/min"
     ),
 }
+
+# Aucun message WhatsApp reel pendant la suite : sans instance, `configure()`
+# repond False et chaque ligne de la file finit « ignoree ». Les tests qui
+# exercent l'envoi posent une instance et remplacent `_envoyer` par un double.
+WHATSAPP_INSTANCE = ""
+WHATSAPP_WEBHOOK_TOKEN = ""
+EVOLUTION_API_URL = ""
+EVOLUTION_API_KEY = ""

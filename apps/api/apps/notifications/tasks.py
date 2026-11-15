@@ -81,6 +81,7 @@ def send_booking_notifications(self, booking_id: str, tenant_id: str):
                 to=[email_du_rendez_vous(booking)],
                 salon=booking.tenant,
             )
+            _whatsapp_reservation(booking, context)
             _ecrire_au_salon(
                 booking,
                 "booking_notification_salon",
@@ -146,6 +147,7 @@ def send_booking_reminders():
                     "rappel",
                     date=rappel["date_label"],
                     heure=rappel["time_label"],
+                    lien=_status_url(booking),
                 )
                 # Marque meme sans e-mail : sinon la cliente sans adresse
                 # serait reexaminee a chaque passage de la tache.
@@ -155,6 +157,37 @@ def send_booking_reminders():
 
     logger.info("Rappels envoyes : %s", sent)
     return sent
+
+
+def _whatsapp_reservation(booking: Booking, context: dict) -> None:
+    """La confirmation WhatsApp a la cliente, et l'alerte a la direction.
+
+    Le message suit l'etat de la reservation : acompte a regler, demande a
+    valider par le salon, ou rendez-vous deja confirme.
+    """
+    from apps.notifications import whatsapp
+
+    if booking.status == Booking.Status.PENDING_PAYMENT:
+        genre, lien = "attente_acompte", _payment_url(booking)
+    elif booking.status == Booking.Status.REQUESTED:
+        genre, lien = "demande", _status_url(booking)
+    else:
+        genre, lien = "confirme", _status_url(booking)
+    whatsapp.ecrire_a_la_cliente(
+        booking, genre, date=context["date_label"], heure=context["time_label"], lien=lien
+    )
+
+    # La direction lit sa propre langue, et la date dans le fuseau du salon :
+    # celle de l'e-mail de la cliente fait l'affaire, elle est deja locale.
+    whatsapp.ecrire_a_la_direction(
+        booking.tenant,
+        "reservation",
+        f"resa:{booking.pk}:pro_reservation",
+        cliente=booking.customer.full_name,
+        service=booking.service_name,
+        date=context["date_label"],
+        heure=context["time_label"],
+    )
 
 
 def email_du_rendez_vous(booking: Booking) -> str:
@@ -605,6 +638,15 @@ def send_deposit_proof_alert(self, booking_id: str, tenant_id: str):
                 pre=lambda t: t.dire("pro_acompte_pre", cliente=cliente),
                 intro_texte=lambda t: t.dire("pro_acompte_txt", cliente=cliente),
             )
+            from apps.notifications import whatsapp
+
+            whatsapp.ecrire_a_la_direction(
+                booking.tenant,
+                "acompte",
+                f"resa:{booking.pk}:acompte:{booking.updated_at.isoformat()}",
+                cliente=cliente,
+                date=_booking_context(booking)["date_label"],
+            )
     except Exception as exc:  # noqa: BLE001 - on retente, sans perdre la trace
         logger.exception("Echec d'alerte d'acompte pour %s.", booking_id)
         raise self.retry(exc=exc) from exc
@@ -648,6 +690,7 @@ def send_booking_accepted(self, booking_id: str, tenant_id: str):
                 "accepte",
                 date=accepte["date_label"],
                 heure=accepte["time_label"],
+                lien=_status_url(booking),
             )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec de confirmation pour %s.", booking_id)
@@ -694,6 +737,7 @@ def send_deposit_rejected(self, booking_id: str, tenant_id: str):
                 "acompte_refuse",
                 date=context["date_label"],
                 heure=context["time_label"],
+                lien=context["payment_url"],
             )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Echec d'avis de refus pour %s.", booking_id)
@@ -782,6 +826,7 @@ def send_booking_cancelled(self, booking_id: str, tenant_id: str, by_salon: bool
                     "annule",
                     date=context["date_label"],
                     heure=context["time_label"],
+                    lien=_salon_base_url(booking.tenant),
                 )
 
             # Le salon aussi : une annulation libère un créneau qu'il peut
@@ -873,6 +918,7 @@ def send_booking_rescheduled(
                 "deplace",
                 date=context["date_label"],
                 heure=context["time_label"],
+                lien=_status_url(booking),
             )
     except Exception as exc:  # noqa: BLE001
         raise self.retry(exc=exc) from exc
@@ -990,3 +1036,26 @@ def pousser_notification(
         )
 
     return {"envoyes": envoyes, "supprimes": len(disparus), "repris": len(a_reprendre)}
+
+
+# ---------------------------------------------------------------------------
+# WhatsApp
+# ---------------------------------------------------------------------------
+
+
+# Lent par principe : un numero WhatsApp Web qui ecrit en rafale a des
+# inconnus se fait limiter, voire bannir. Dix messages par minute et par
+# worker laissent passer les rappels du jour sans ressembler a un robot.
+@shared_task(bind=True, max_retries=4, rate_limit="10/m")
+def envoyer_message_whatsapp(self, message_id: str):
+    """Envoie une ligne de la file WhatsApp ; retente si la passerelle tombe."""
+    from apps.notifications import whatsapp
+
+    statut = whatsapp.envoyer(message_id)
+    if statut == "retenter":
+        if self.request.retries < self.max_retries:
+            # 2, 4, 8, 16 minutes : le temps de reconnecter un telephone.
+            raise self.retry(countdown=120 * 2**self.request.retries)
+        whatsapp.abandonner(message_id)
+        return "echec"
+    return statut

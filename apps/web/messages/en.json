@@ -635,11 +635,13 @@
       "offres": "I agree to receive the salon's offers.",
       "usage": "Your details are used for this appointment only.",
       "telephone": "Phone (WhatsApp)",
-      "telephoneAide": "Digits only, with the country code (e.g. +242061234567). This is how the salon will confirm.",
+      "telephoneAide": "Preferably your WhatsApp number, with the country code (e.g. +242061234567): your confirmation and reminder go there.",
       "emailAide": "To receive the confirmation and the reminder the day before.",
       "message": "Message to the salon (optional)",
       "confirmer": "Confirm the booking",
-      "email": "Email"
+      "email": "Email",
+      "whatsapp": "Get my confirmation and reminder on WhatsApp.",
+      "whatsappAide": "Only about this appointment, never advertising. Reply STOP to stop."
     },
     "lieu": {
       "fraisDeplacement": "+ {amount} travel fee",

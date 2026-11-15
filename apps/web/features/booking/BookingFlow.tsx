@@ -159,6 +159,7 @@ function schemaContact(t: (cle: string) => string) {
       message: t("erreurs.politique"),
     }),
     marketing_consent: z.boolean().optional(),
+    notifications_whatsapp: z.boolean().optional(),
     // Champ piège, laissé vide par une vraie visiteuse.
     website: z.string().max(0).optional(),
   });
@@ -1292,7 +1293,15 @@ function ContactStep({
     formState: { errors, isSubmitting },
   } = useForm<ContactValues>({
     resolver: zodResolver(schemaContact(t)),
-    defaultValues: { email: "", customer_note: "", website: "", address: "" },
+    defaultValues: {
+      email: "",
+      customer_note: "",
+      website: "",
+      address: "",
+      // Cochée par défaut, et dit clairement à côté : confirmations et
+      // rappels seulement, jamais de publicité (décision du 15/11/2026).
+      notifications_whatsapp: true,
+    },
   });
   const champTelephone = register("phone");
 
@@ -1338,6 +1347,7 @@ function ContactStep({
             travel_zone: zone?.id,
             address: zone ? values.address?.trim() : undefined,
             marketing_consent: values.marketing_consent ?? false,
+            notifications_whatsapp: values.notifications_whatsapp ?? true,
             accepts_policy: true,
             /*
               La langue dans laquelle elle vient de lire tout ceci.
@@ -1623,6 +1633,20 @@ function ContactStep({
               {errors.accepts_policy.message}
             </p>
           )}
+
+          <label className="flex items-start gap-2.5 text-sm">
+            <input
+              type="checkbox"
+              {...register("notifications_whatsapp")}
+              className="mt-0.5 size-4 accent-[var(--salon-primary)]"
+            />
+            <span className="text-[var(--site-ink)]">
+              {t("coordonnees.whatsapp")}
+              <span className="mt-1 block text-[var(--site-muted)]">
+                {t("coordonnees.whatsappAide")}
+              </span>
+            </span>
+          </label>
 
           <label className="flex items-start gap-2.5 text-sm">
             <input

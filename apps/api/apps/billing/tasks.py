@@ -78,6 +78,10 @@ def envoyer_courrier_abonnement(self, genre: str, tenant_id: str, demande_id: st
                         courriers.proprietaires_par_langue(tenant_id),
                         salon,
                     )
+                    try:
+                        _whatsapp_paiement(genre, demande)
+                    except Exception:  # noqa: BLE001 - l'e-mail est parti
+                        logger.exception("WhatsApp d'abonnement non programme.")
                 return
 
             abonnement = Subscription.objects.select_related("plan", "tenant").get(
@@ -145,3 +149,32 @@ def annoncer_changement_de_tarif(prix_id: str, ancien: str):
 
     logger.info("Changement de tarif annonce a %s salon(s).", envoyes)
     return envoyes
+
+
+def _whatsapp_paiement(genre: str, demande) -> None:
+    """Le meme evenement sur WhatsApp, aux proprietaires : paiement valide ou
+    refuse. L'accuse de reception reste un e-mail : il n'annonce rien a faire."""
+    from apps.notifications import whatsapp
+
+    from . import courriers
+
+    if genre == "paiement_valide":
+        abonnement = demande.subscription
+        fuseau = courriers._fuseau(abonnement)
+        whatsapp.ecrire_a_la_direction(
+            demande.tenant,
+            "abo_valide",
+            f"abo:{demande.pk}:valide",
+            proprietaires_seulement=True,
+            selon_langue=lambda langue: {
+                "offre": courriers.nom_offre(demande.plan, langue),
+                "fin": courriers.date_longue(abonnement.current_period_end, fuseau, langue),
+            },
+        )
+    elif genre == "paiement_refuse":
+        whatsapp.ecrire_a_la_direction(
+            demande.tenant,
+            "abo_refuse",
+            f"abo:{demande.pk}:refuse",
+            proprietaires_seulement=True,
+        )

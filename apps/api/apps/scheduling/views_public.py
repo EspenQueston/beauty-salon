@@ -233,6 +233,7 @@ class PublicBookingCreateView(APIView):
                 "contact_preference", Customer.ContactPreference.WHATSAPP
             ),
             marketing_consent=data.get("marketing_consent", False),
+            notifications_whatsapp=data.get("notifications_whatsapp", True),
         )
 
         from apps.clients.services import attach, compte_de_l_adresse, est_cliente

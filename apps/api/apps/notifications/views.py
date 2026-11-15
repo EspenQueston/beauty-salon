@@ -30,9 +30,11 @@ l'oeil, et un « 9+ » qui mentirait ferait douter de tout le reste.
 
 from __future__ import annotations
 
+import logging
+
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -49,6 +51,8 @@ from .serializers import (
 
 # Ce que la cloche affiche d'un coup.
 FENETRE = 30
+
+logger = logging.getLogger(__name__)
 
 
 class _BoiteMixin:
@@ -347,3 +351,28 @@ class NotificationEssaiView(APIView):
             salon=habillage.apparence(tenant_id),
             langue=langue,
         )
+
+
+class WebhookWhatsAppPlateformeView(APIView):
+    """Les evenements de l'instance WhatsApp de la plateforme.
+
+    Seul « STOP » est traite (voir whatsapp.traiter_reponse). Authentifie
+    par le jeton de l'adresse ; sans jeton configure, l'adresse n'existe pas.
+    """
+
+    authentication_classes: list = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, jeton: str):
+        import hmac
+
+        from django.conf import settings
+
+        from . import whatsapp
+
+        attendu = settings.WHATSAPP_WEBHOOK_TOKEN
+        if not attendu or not hmac.compare_digest(jeton.encode(), attendu.encode()):
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        charge = request.data if isinstance(request.data, dict) else {}
+        logger.info("Webhook WhatsApp plateforme : %s", whatsapp.traiter_reponse(charge))
+        return Response({"ok": True})

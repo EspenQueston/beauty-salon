@@ -29,7 +29,13 @@ from django.utils.translation import ngettext
 
 from apps.common.admin import ADMIN_DB, AdminDatabaseMixin, TenantScopedAdmin
 
-from .models import Notification, PlatformNotification, PushSubscription
+from .models import (
+    DesinscriptionWhatsApp,
+    MessageWhatsApp,
+    Notification,
+    PlatformNotification,
+    PushSubscription,
+)
 
 
 class _LectureSeule:
@@ -157,3 +163,29 @@ class PushSubscriptionAdmin(_LectureSeule, AdminDatabaseMixin, admin.ModelAdmin)
     @admin.display(description="compte", ordering="user__email")
     def compte(self, obj):
         return obj.user.display_name or obj.user.email
+
+
+@admin.register(MessageWhatsApp)
+class MessageWhatsAppAdmin(_LectureSeule, AdminDatabaseMixin, admin.ModelAdmin):
+    """Le journal des messages WhatsApp : ce qui est parti, ce qui attend,
+    ce qui a echoue et pourquoi. Le numero est affiche masque dans la liste."""
+
+    list_display = (
+        "created_at", "genre", "numero_masque", "tenant", "statut", "tentatives", "erreur",
+    )
+    list_filter = ("statut", "genre")
+    search_fields = ("numero", "tenant__name", "cle")
+    readonly_fields = [f.name for f in MessageWhatsApp._meta.fields]
+
+    @admin.display(description="numéro")
+    def numero_masque(self, obj):
+        return f"+{obj.numero[:4]}…{obj.numero[-2:]}"
+
+
+@admin.register(DesinscriptionWhatsApp)
+class DesinscriptionWhatsAppAdmin(AdminDatabaseMixin, admin.ModelAdmin):
+    """Les numeros qui ont repondu STOP. Retirer une ligne reabonne le numero :
+    a ne faire qu'a la demande de la personne."""
+
+    list_display = ("numero", "created_at")
+    search_fields = ("numero",)

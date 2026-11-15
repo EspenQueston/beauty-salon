@@ -46,6 +46,8 @@ class CustomerDetails:
     email: str = ""
     contact_preference: str = Customer.ContactPreference.WHATSAPP
     marketing_consent: bool = False
+    # Confirmations et rappels sur WhatsApp : case cochee par defaut.
+    notifications_whatsapp: bool = True
 
 
 # Les deux façons dont PostgreSQL refuse un créneau déjà pris.
@@ -424,6 +426,7 @@ def _upsert_customer(tenant, details: CustomerDetails) -> Customer:
                 "contact_preference": details.contact_preference,
                 "marketing_consent": details.marketing_consent,
                 "marketing_consent_at": timezone.now() if details.marketing_consent else None,
+                "notifications_whatsapp": details.notifications_whatsapp,
             },
         )
 
@@ -444,6 +447,13 @@ def _upsert_customer(tenant, details: CustomerDetails) -> Customer:
             customer.marketing_consent = True
             customer.marketing_consent_at = timezone.now()
             changed += ["marketing_consent", "marketing_consent_at"]
+        # WhatsApp suit le dernier choix : c'est une case de service, que la
+        # cliente coche ou decoche a chaque reservation en sachant pourquoi.
+        # La desinscription par STOP, elle, est tenue a part et ne se leve pas
+        # ici (voir notifications/whatsapp.py).
+        if customer.notifications_whatsapp != details.notifications_whatsapp:
+            customer.notifications_whatsapp = details.notifications_whatsapp
+            changed.append("notifications_whatsapp")
         if changed:
             customer.save(update_fields=[*changed, "updated_at"])
 

@@ -218,6 +218,14 @@ OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 EVOLUTION_API_URL = env("EVOLUTION_API_URL", default="")
 EVOLUTION_API_KEY = env("EVOLUTION_API_KEY", default="")
 
+# Notifications WhatsApp (toutes offres) : un seul numero « Beauty Salon »,
+# relie a Evolution par l'instance nommee ici. Vide = rien ne part, les
+# messages sont journalises « non configure » et l'e-mail suffit.
+# Voir apps/notifications/whatsapp.py.
+WHATSAPP_INSTANCE = env("WHATSAPP_INSTANCE", default="")
+# Jeton du webhook de cette instance (reponses « STOP »). Vide = webhook ferme.
+WHATSAPP_WEBHOOK_TOKEN = env("WHATSAPP_WEBHOOK_TOKEN", default="")
+
 # Jeton partage avec le serveur Next : ses appels internes ne sont pas
 # comptes dans les limites de debit par IP. Vide, personne n'est exempte.
 # Voir apps/common/throttling.py.

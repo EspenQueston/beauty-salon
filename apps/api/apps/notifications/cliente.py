@@ -74,8 +74,19 @@ def comptes_de_la_cliente(booking) -> list[str]:
     return sorted({str(user.pk) for user in candidats if est_cliente(user)})
 
 
-def prevenir_cliente(booking, genre: str, *, date: str, heure: str) -> None:
-    """Pousse la notification aux appareils de la cliente. Ne leve jamais."""
+def prevenir_cliente(booking, genre: str, *, date: str, heure: str, lien: str = "") -> None:
+    """Previent la cliente hors e-mail : WhatsApp, puis push sur ses appareils.
+
+    Ne leve jamais. WhatsApp part quel que soit le compte : il suit le
+    telephone de la fiche, pas une inscription (voir notifications/whatsapp.py).
+    """
+    from . import whatsapp
+
+    genre_whatsapp = genre
+    if genre == "accepte" and getattr(booking, "deposit_paid", False):
+        genre_whatsapp = "accepte_acompte"
+    whatsapp.ecrire_a_la_cliente(booking, genre_whatsapp, date=date, heure=heure, lien=lien)
+
     try:
         comptes = comptes_de_la_cliente(booking)
         if not comptes:
