@@ -72,6 +72,10 @@ x-environnement-django: &environnement-django
   # fonction s'affiche « a configurer » dans le tableau de bord.
   EVOLUTION_API_URL: ${EVOLUTION_API_URL:-}
   EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-}
+  # Notifications WhatsApp (toutes offres) : instance du numero Beauty Salon,
+  # et jeton du webhook STOP. Vides = rien ne part, l'e-mail suffit.
+  WHATSAPP_INSTANCE: ${WHATSAPP_INSTANCE:-}
+  WHATSAPP_WEBHOOK_TOKEN: ${WHATSAPP_WEBHOOK_TOKEN:-}
   CURRENCY_API_KEY: ${CURRENCY_API_KEY:-}
   # Abonnements KKIAPAY : compte marchand plateforme, environnements séparés.
   KKIAPAY_ENABLED: ${KKIAPAY_ENABLED:-False}
