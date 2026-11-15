@@ -384,6 +384,11 @@ class PlatformPaymentMethod(UUIDModel, TimeStampedModel):
     account_holder = models.CharField(_("titulaire du compte"), max_length=120, blank=True)
     qr_image = models.ImageField(_("QR code"), upload_to=chemin_qr, blank=True, max_length=255)
     instructions = models.TextField(_("instructions"), max_length=1000, blank=True)
+    # La meme consigne pour les salons qui lisent le tableau de bord en
+    # anglais. Vide : ils lisent la version francaise, plutot que rien.
+    instructions_en = models.TextField(
+        _("instructions (anglais)"), max_length=1000, blank=True
+    )
 
     active = models.BooleanField(_("actif"), default=True)
     position = models.PositiveSmallIntegerField(_("ordre"), default=0)

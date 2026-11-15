@@ -217,10 +217,14 @@ class MoyenForm(forms.ModelForm):
             "account_number",
             "account_holder",
             "instructions",
+            "instructions_en",
             "active",
             "position",
         )
-        widgets = {"instructions": forms.Textarea(attrs={"rows": 3})}
+        widgets = {
+            "instructions": forms.Textarea(attrs={"rows": 3}),
+            "instructions_en": forms.Textarea(attrs={"rows": 3}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -276,7 +280,14 @@ class PlatformPaymentMethodAdmin(admin.ModelAdmin):
                 "description": "Le numéro qui reçoit les paiements, et le nom affiché au salon.",
             },
         ),
-        ("Instructions", {"fields": ("instructions",)}),
+        (
+            "Instructions",
+            {
+                "fields": ("instructions", "instructions_en"),
+                "description": "Affichées sous le QR code ou le numéro. La version anglaise "
+                "est montrée aux salons qui lisent le tableau de bord en anglais.",
+            },
+        ),
     )
 
     @admin.display(description="Moyen", ordering="provider_name")

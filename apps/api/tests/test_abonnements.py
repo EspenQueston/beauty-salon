@@ -746,3 +746,22 @@ def test_prolonger_depuis_la_liste_demande_une_justification(client, salon_a, of
         abonnement.refresh_from_db()
         assert abonnement.status == Subscription.Status.ACTIVE
         assert acces_de(abonnement).ouvert
+
+
+@pytest.mark.django_db
+def test_la_consigne_d_un_moyen_suit_la_langue_du_tableau_de_bord(api_client, salon_a, moyens):
+    PlatformPaymentMethod.objects.filter(pk=moyens["wechat"].pk).update(
+        instructions_en="Scan, then enter the reference."
+    )
+    client = connecter(api_client, salon_a.owner)
+
+    def consigne(**entetes):
+        pays = client.get(URL_OFFRES, **entetes).json()["pays"]
+        chine = next(p for p in pays if p["code"] == "CN")["devises"][0]
+        return chine["moyens"][0]["instructions"]
+
+    assert consigne() == "Scannez puis indiquez la référence."
+    assert consigne(HTTP_ACCEPT_LANGUAGE="en") == "Scan, then enter the reference."
+    # Sans version anglaise, le salon anglophone lit le francais plutot que rien.
+    PlatformPaymentMethod.objects.filter(pk=moyens["wechat"].pk).update(instructions_en="")
+    assert consigne(HTTP_ACCEPT_LANGUAGE="en") == "Scannez puis indiquez la référence."

@@ -150,6 +150,7 @@ class MoyenDeReglementSerializer(serializers.ModelSerializer):
     kind_label = serializers.CharField(source="get_kind_display", read_only=True)
     libelle = serializers.CharField(read_only=True)
     qr_url = serializers.SerializerMethodField()
+    instructions = serializers.SerializerMethodField()
 
     class Meta:
         model = PlatformPaymentMethod
@@ -163,6 +164,15 @@ class MoyenDeReglementSerializer(serializers.ModelSerializer):
             "instructions",
             "qr_url",
         )
+
+    def get_instructions(self, moyen) -> str:
+        """La consigne dans la langue du tableau de bord, le francais a defaut."""
+        from apps.translations.langue import demandee
+
+        request = self.context.get("request")
+        if request is not None and demandee(request) == "en" and moyen.instructions_en:
+            return moyen.instructions_en
+        return moyen.instructions
 
     def get_qr_url(self, moyen) -> str:
         if moyen.kind not in PlatformPaymentMethod.QR_KINDS or not moyen.qr_image:
