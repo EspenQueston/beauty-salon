@@ -36,6 +36,7 @@
  * salon.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -69,6 +70,7 @@ export function CheckinCode({
    */
   defaultOpen?: boolean;
 }) {
+  const t = useTranslations("reservation");
   const [open, setOpen] = useState(defaultOpen);
 
   if (!open) {
@@ -82,14 +84,17 @@ export function CheckinCode({
           aria-hidden
           className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[var(--salon-primary)]/12"
         >
-          <SalonIcon name="sparkle" className="size-5 text-[var(--salon-ink)]" />
+          <SalonIcon
+            name="sparkle"
+            className="size-5 text-[var(--salon-ink)]"
+          />
         </span>
         <span className="min-w-0">
           <span className="block text-sm font-medium text-[var(--site-ink)]">
-            Mon code d&apos;arrivée
+            {t("code.titre")}
           </span>
           <span className="block text-xs text-[var(--site-subtle)]">
-            À montrer en arrivant au salon
+            {t("code.sousTitre")}
           </span>
         </span>
       </button>
@@ -118,8 +123,7 @@ export function CheckinCode({
       )}
 
       <p className="mt-2 text-sm text-[var(--site-muted)]">
-        Montrez ce code à votre arrivée : le salon le scanne et vous êtes
-        enregistrée.
+        {t("code.explication")}
       </p>
       <button
         type="button"

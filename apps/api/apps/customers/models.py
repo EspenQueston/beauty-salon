@@ -29,6 +29,12 @@ class Customer(TenantOwnedModel):
     marketing_consent = models.BooleanField(default=False)
     marketing_consent_at = models.DateTimeField(null=True, blank=True)
 
+    # Confirmations et rappels sur WhatsApp. Coche par defaut dans le
+    # formulaire de reservation (decision produit du 15/11/2026), et dit
+    # clairement a cote de la case. Jamais de promotion par ce canal : la
+    # relance commerciale reste sous `marketing_consent`.
+    notifications_whatsapp = models.BooleanField(_("messages WhatsApp"), default=True)
+
     # Notes internes (allergies, sensibilite du cuir chevelu, historique de
     # coloration). Lecture reservee aux roles owner/manager : ni la cliente
     # ni un prestataire de passage n'y ont acces.

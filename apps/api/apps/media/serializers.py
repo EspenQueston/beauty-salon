@@ -32,6 +32,7 @@ def media_url(asset, request=None) -> str:
 
 class MediaAssetSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = MediaAsset
@@ -39,6 +40,7 @@ class MediaAssetSerializer(serializers.ModelSerializer):
             "id",
             "file",
             "url",
+            "variants",
             "content_type",
             "byte_size",
             "kind",
@@ -48,6 +50,8 @@ class MediaAssetSerializer(serializers.ModelSerializer):
             "height",
             "position",
             "featured",
+            "service",
+            "staff_member",
             "created_at",
         )
         read_only_fields = ("content_type", "byte_size", "width", "height")
@@ -55,6 +59,45 @@ class MediaAssetSerializer(serializers.ModelSerializer):
 
     def get_url(self, asset) -> str:
         return media_url(asset, self.context.get("request"))
+
+    def get_variants(self, asset) -> dict:
+        """Les copies WebP reduites, par largeur : `{"480": url, "1024": url}`.
+
+        La galerie des prestations, dans l'espace pro, affiche des vignettes :
+        sans elles, un telephone telechargeait chaque original (jusqu'a 15 Mo).
+        Rien pour un media prive : il ne sort que par la route gardee, et ses
+        copies avec lui.
+        """
+        if asset.visibility == MediaAsset.Visibility.PRIVATE:
+            return {}
+        from .tasks import DERIVATIVE_WIDTHS
+
+        request = self.context.get("request")
+        variantes = {}
+        for label, chemin in (asset.derivatives or {}).items():
+            largeur = DERIVATIVE_WIDTHS.get(label)
+            if largeur and chemin:
+                adresse = asset.file.storage.url(chemin)
+                variantes[str(largeur)] = request.build_absolute_uri(adresse) if request else adresse
+        return variantes
+
+    def _du_salon(self, objet):
+        """Une prestation ou une prestataire de ce salon, et d'aucun autre.
+
+        Les politiques RLS masquent deja les lignes des autres salons ; le
+        controle explicite garde la regle lisible et independante d'elles.
+        """
+        request = self.context.get("request")
+        tenant_id = getattr(request, "tenant_id", None)
+        if objet is not None and tenant_id is not None and str(objet.tenant_id) != str(tenant_id):
+            raise serializers.ValidationError("Introuvable dans ce salon.")
+        return objet
+
+    def validate_service(self, service):
+        return self._du_salon(service)
+
+    def validate_staff_member(self, membre):
+        return self._du_salon(membre)
 
     def validate_file(self, uploaded):
         """Le type declare par le navigateur ne suffit pas, mais il elimine

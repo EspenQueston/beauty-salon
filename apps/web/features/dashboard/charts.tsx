@@ -32,7 +32,10 @@
  *     chaque série légendée, et un tableau des valeurs reste accessible.
  */
 
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
+
+import { useFormats } from "./formats";
 
 /* --------------------------------------------------------------------------
  * Outils communs
@@ -54,9 +57,32 @@ function shortMoney(value: number): string {
   return String(Math.round(value));
 }
 
-function monthLabel(iso: string): string {
+function monthLabel(iso: string, region: string): string {
   const date = new Date(`${iso}T00:00:00`);
-  return new Intl.DateTimeFormat("fr-FR", { month: "short" }).format(date);
+  return new Intl.DateTimeFormat(region, { month: "short" }).format(date);
+}
+
+/** Les postes comptables (`Transaction.*Category` côté serveur). */
+const CATEGORIES = [
+  "service", "product", "travel", "tip", "other_income",
+  "supplies", "rent", "wages", "utilities", "transport", "marketing", "equipment", "taxes", "other_expense",
+];
+
+/**
+ * Le nom d'un poste dans la langue de l'espace.
+ *
+ * Le serveur envoie son libellé en français ; la clé suffit à le retrouver
+ * dans le catalogue. Un poste inconnu garde le libellé du serveur plutôt
+ * qu'une clé brute.
+ */
+export function useLibellePoste() {
+  const t = useTranslations("pro.finances.postes");
+  return (slice: { category: string; label: string }): string => {
+    if (slice.category === "__other__") {
+      return t("autres", { n: Number(slice.label.match(/\d+/)?.[0] ?? 0) });
+    }
+    return CATEGORIES.includes(slice.category) ? t(slice.category) : slice.label;
+  };
 }
 
 /* --------------------------------------------------------------------------
@@ -85,12 +111,17 @@ export function MonthlyBars({
   points: MonthPoint[];
   currency: string;
 }) {
+  const t = useTranslations("pro.finances.graphiques");
+  const { region } = useFormats();
   const [hover, setHover] = useState<number | null>(null);
   const labelId = useId();
 
   const max = niceMax(
     Math.max(
-      ...points.flatMap((point) => [Number(point.income), Number(point.expense)]),
+      ...points.flatMap((point) => [
+        Number(point.income),
+        Number(point.expense),
+      ]),
       0,
     ),
   );
@@ -112,8 +143,8 @@ export function MonthlyBars({
   return (
     <figure className="m-0">
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        <Legend color="var(--viz-income)" label="Recettes" />
-        <Legend color="var(--viz-expense)" label="Dépenses" />
+        <Legend color="var(--viz-income)" label={t("recettes")} />
+        <Legend color="var(--viz-expense)" label={t("depenses")} />
       </div>
 
       <div className="overflow-x-auto">
@@ -123,9 +154,7 @@ export function MonthlyBars({
           role="img"
           aria-labelledby={labelId}
         >
-          <title id={labelId}>
-            Recettes et dépenses des {points.length} derniers mois
-          </title>
+          <title id={labelId}>{t("barresTitre", { n: points.length })}</title>
 
           {/* Grille discrète : elle aide à situer, elle ne concurrence pas
               les barres. */}
@@ -194,10 +223,12 @@ export function MonthlyBars({
                   y={H - 8}
                   textAnchor="middle"
                   className={`text-[11px] ${
-                    active ? "fill-[var(--color-ink)]" : "fill-[var(--color-subtle)]"
+                    active
+                      ? "fill-[var(--color-ink)]"
+                      : "fill-[var(--color-subtle)]"
                   }`}
                 >
-                  {monthLabel(point.month)}
+                  {monthLabel(point.month, region)}
                 </text>
               </g>
             );
@@ -214,22 +245,22 @@ export function MonthlyBars({
         {hover !== null ? (
           <>
             <span className="font-medium text-ink">
-              {new Intl.DateTimeFormat("fr-FR", {
+              {new Intl.DateTimeFormat(region, {
                 month: "long",
                 year: "numeric",
               }).format(new Date(`${points[hover].month}T00:00:00`))}
             </span>{" "}
-            · recettes{" "}
+            · {t("recettesMin")}{" "}
             <span className="tabular text-ink">
-              {Number(points[hover].income).toLocaleString("fr-FR")} {currency}
+              {Number(points[hover].income).toLocaleString(region)} {currency}
             </span>{" "}
-            · dépenses{" "}
+            · {t("depensesMin")}{" "}
             <span className="tabular text-ink">
-              {Number(points[hover].expense).toLocaleString("fr-FR")} {currency}
+              {Number(points[hover].expense).toLocaleString(region)} {currency}
             </span>
           </>
         ) : (
-          "Survolez un mois pour le détail."
+          t("survol")
         )}
       </figcaption>
     </figure>
@@ -254,6 +285,8 @@ export function CumulativeCurve({
   points: MonthPoint[];
   currency: string;
 }) {
+  const t = useTranslations("pro.finances.graphiques");
+  const { region } = useFormats();
   const labelId = useId();
   const values = points.map((point) => Number(point.cumulative));
 
@@ -271,7 +304,9 @@ export function CumulativeCurve({
     PAD.left + (index / Math.max(points.length - 1, 1)) * plotW;
   const y = (value: number) => PAD.top + plotH - ((value - min) / span) * plotH;
 
-  const line = values.map((value, index) => `${x(index)},${y(value)}`).join(" ");
+  const line = values
+    .map((value, index) => `${x(index)},${y(value)}`)
+    .join(" ");
   const area = `${PAD.left},${y(0)} ${line} ${x(values.length - 1)},${y(0)}`;
   const last = values[values.length - 1] ?? 0;
   const positive = last >= 0;
@@ -285,7 +320,7 @@ export function CumulativeCurve({
           role="img"
           aria-labelledby={labelId}
         >
-          <title id={labelId}>Résultat cumulé sur la période</title>
+          <title id={labelId}>{t("cumulTitre")}</title>
 
           {/* La ligne du zéro est la seule graduation qui compte ici :
               au-dessus on gagne, en dessous on perd. */}
@@ -341,7 +376,7 @@ export function CumulativeCurve({
                 textAnchor="middle"
                 className="fill-[var(--color-subtle)] text-[11px]"
               >
-                {monthLabel(point.month)}
+                {monthLabel(point.month, region)}
               </text>
             ) : null,
           )}
@@ -349,13 +384,13 @@ export function CumulativeCurve({
       </div>
 
       <figcaption className="mt-1 text-xs text-muted">
-        Cumul à ce jour :{" "}
+        {t("cumulAuJour")}{" "}
         <span
           className={`tabular font-medium ${
             positive ? "text-emerald-600" : "text-danger"
           }`}
         >
-          {last.toLocaleString("fr-FR")} {currency}
+          {last.toLocaleString(region)} {currency}
         </span>
       </figcaption>
     </figure>
@@ -398,13 +433,16 @@ export function DonutChart({
   slices: Slice[];
   currency: string;
 }) {
+  const t = useTranslations("pro.finances.graphiques");
+  const { region } = useFormats();
+  const libelle = useLibellePoste();
   const labelId = useId();
   const total = slices.reduce((sum, slice) => sum + Number(slice.total), 0);
 
   if (total <= 0) {
     return (
       <p className="py-8 text-center text-sm text-muted">
-        Aucune recette sur la période.
+        {t("aucuneRecette")}
       </p>
     );
   }
@@ -416,15 +454,14 @@ export function DonutChart({
   // Les décalages sont calculés d'avance plutôt qu'accumulés dans le rendu :
   // muter une variable pendant le rendu rend le résultat dépendant du nombre
   // de passes de React, donc instable.
-  const arcs = slices.reduce<{ slice: Slice; length: number; offset: number }[]>(
-    (acc, slice) => {
-      const length = (Number(slice.total) / total) * circumference;
-      const previous = acc[acc.length - 1];
-      const offset = previous ? previous.offset + previous.length : 0;
-      return [...acc, { slice, length, offset }];
-    },
-    [],
-  );
+  const arcs = slices.reduce<
+    { slice: Slice; length: number; offset: number }[]
+  >((acc, slice) => {
+    const length = (Number(slice.total) / total) * circumference;
+    const previous = acc[acc.length - 1];
+    const offset = previous ? previous.offset + previous.length : 0;
+    return [...acc, { slice, length, offset }];
+  }, []);
 
   return (
     <figure className="m-0 flex flex-wrap items-center gap-5">
@@ -434,7 +471,7 @@ export function DonutChart({
         role="img"
         aria-labelledby={labelId}
       >
-        <title id={labelId}>Répartition des recettes par origine</title>
+        <title id={labelId}>{t("anneauTitre")}</title>
         <g transform="rotate(-90 70 70)">
           {arcs.map(({ slice, length, offset }, index) => {
             // 2 px de fond entre deux parts : sans cet écart, deux teintes
@@ -468,14 +505,18 @@ export function DonutChart({
               <span
                 aria-hidden
                 className="size-2.5 shrink-0 rounded-sm"
-                style={{ background: DONUT_COLORS[index] ?? "var(--viz-other)" }}
+                style={{
+                  background: DONUT_COLORS[index] ?? "var(--viz-other)",
+                }}
               />
-              <span className="min-w-0 flex-1 truncate text-ink">{slice.label}</span>
+              <span className="min-w-0 flex-1 truncate text-ink">
+                {libelle(slice)}
+              </span>
               <span className="tabular font-medium text-ink">
                 {Math.round(share * 100)} %
               </span>
               <span className="tabular w-full text-xs text-subtle sm:w-auto">
-                {Number(slice.total).toLocaleString("fr-FR")} {currency}
+                {Number(slice.total).toLocaleString(region)} {currency}
               </span>
             </li>
           );
@@ -510,6 +551,8 @@ export function RankedBars({
   currency: string;
   emptyLabel: string;
 }) {
+  const { region } = useFormats();
+  const libelle = useLibellePoste();
   const total = rows.reduce((sum, row) => sum + Number(row.total), 0);
   const max = Math.max(...rows.map((row) => Number(row.total)), 0);
 
@@ -528,9 +571,11 @@ export function RankedBars({
         return (
           <li key={row.category}>
             <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2">
-              <span className="min-w-0 truncate text-sm text-ink">{row.label}</span>
+              <span className="min-w-0 truncate text-sm text-ink">
+                {libelle(row)}
+              </span>
               <span className="tabular text-sm font-medium text-ink">
-                {value.toLocaleString("fr-FR")} {currency}
+                {value.toLocaleString(region)} {currency}
               </span>
             </div>
             <div className="flex items-center gap-2">

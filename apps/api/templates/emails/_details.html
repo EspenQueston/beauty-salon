@@ -1,31 +1,61 @@
 {% comment %}
 ===========================================================================
-Le tableau de détails : libellé à gauche, valeur à droite.
+Les détails du rendez-vous, en grille de deux colonnes.
 ===========================================================================
 
-C'est la seule chose de ces e-mails qui soit sur deux colonnes, et c'est
-voulu. Une mise en page à deux colonnes ne tient pas en e-mail — l'appli
-Gmail sur Android ignore une partie des requêtes média, et deux colonnes
-restent deux colonnes sur 360 px de large. Ici il ne s'agit pas d'une mise
-en page mais d'un **tableau de données**, et un tableau se rend correctement
-partout, y compris dans Outlook.
+C'était une liste : libellé à gauche, valeur à droite, une ligne par fait.
+Correct, et long — sur un téléphone, une prestation avec deux options et un
+déplacement faisait huit lignes, soit un écran entier avant d'atteindre le
+bouton. La moitié de la largeur restait vide à gauche pendant ce temps.
 
-La valeur est alignée à droite et en `tabular` : des montants et des heures
-alignés se comparent d'un coup d'œil, ce qui est exactement l'usage.
+C'est maintenant une grille de deux colonnes, qui reste à deux colonnes
+**y compris sur 360 px**. Huit faits tiennent en quatre rangées au lieu de
+huit, et l'œil compare deux valeurs d'un coup au lieu de descendre.
 
-Attendu dans le contexte : `rows`, une liste de dictionnaires
-`{label, value, strong}`.
+---------------------------------------------------------------------------
+Deux colonnes qui ne s'effondrent pas : pourquoi c'est sûr ici
+---------------------------------------------------------------------------
+
+L'objection connue aux colonnes en e-mail — l'application Gmail sur Android
+ignore une partie des requêtes média — porte sur des colonnes qu'on veut
+faire **retomber** l'une sous l'autre sur petit écran. C'est ce mécanisme-là
+qui casse, parce qu'il dépend d'un `@media`.
+
+Ici on ne veut rien faire retomber : deux colonnes à `width="50%"` dans un
+vrai tableau restent deux colonnes partout, Outlook compris, sans une seule
+requête média. À 360 px de large chaque cellule fait environ 160 px — de
+quoi loger « Durée / 3 h 30 » sans serrer.
+
+---------------------------------------------------------------------------
+Le découpage en rangées se fait en Python
+---------------------------------------------------------------------------
+
+`rows` arrive **déjà groupé** : une liste de rangées, chaque rangée portant
+un ou deux faits. Composer ce découpage dans le gabarit demanderait d'ouvrir
+et de fermer des `<tr>` au milieu d'une boucle, selon la parité et selon la
+largeur du fait — le genre de logique qui produit un tableau presque valide,
+que les clients de messagerie réparent chacun à leur façon.
+
+`_grouper()` dans `notifications/tasks.py` s'en charge, et des tests le
+vérifient au lieu d'un rendu qu'on inspecte à l'œil.
 ===========================================================================
 {% endcomment %}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
-  {% for row in rows %}
-  <tr>
-    <td class="muted line" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:400 14px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#82828e;white-space:nowrap;">
-      {{ row.label }}
-    </td>
-    <td class="ink line" align="right" style="padding:9px 0;border-bottom:1px solid #f0ecef;font:{% if row.strong %}600{% else %}400{% endif %} 14px/20px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17171c;">
-      {{ row.value }}
-    </td>
-  </tr>
-  {% endfor %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="soft line" style="margin:0 0 20px;background:#faf8fa;border:1px solid #ebe6ea;border-radius:14px;">
+  <tr><td style="padding:6px 8px;">
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      {% for rangee in rows %}
+      <tr>
+        {% for fait in rangee %}
+        <td {% if rangee|length == 1 %}colspan="2"{% else %}width="50%" style="width:50%;"{% endif %} class="cell" valign="top">
+          <div style="padding:12px 12px;">
+            {% include "emails/_parts.html" with part="fact" label=fait.label value=fait.value strong=fait.strong %}
+          </div>
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+
+  </td></tr>
 </table>

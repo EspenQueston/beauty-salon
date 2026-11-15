@@ -46,6 +46,8 @@ class CustomerDetails:
     email: str = ""
     contact_preference: str = Customer.ContactPreference.WHATSAPP
     marketing_consent: bool = False
+    # Confirmations et rappels sur WhatsApp : case cochee par defaut.
+    notifications_whatsapp: bool = True
 
 
 # Les deux façons dont PostgreSQL refuse un créneau déjà pris.
@@ -84,6 +86,7 @@ def est_un_conflit_de_creneau(exc: Exception) -> bool:
     return getattr(exc.__cause__, "sqlstate", None) == DEADLOCK
 
 
+@transaction.atomic
 def create_booking(
     *,
     tenant,
@@ -99,6 +102,13 @@ def create_booking(
     address: str = "",
     idempotency_key: str | None = None,
     actor=None,
+    # La langue de lecture du mini-site au moment de la reservation. Elle ne
+    # sert qu aux e-mails, mais elle se perd si on ne la retient pas ici.
+    language: str = "fr",
+    # Le compte cliente connecte qui reserve, s'il y en a un (voir
+    # `Booking.compte`). Jamais deduit de la fiche ni de l'adresse saisie.
+    compte=None,
+    code_parrainage_client: str = "",
 ) -> Booking:
     if idempotency_key:
         existing = replay_booking(tenant, idempotency_key)
@@ -107,6 +117,8 @@ def create_booking(
 
     if not service.active:
         raise BookingRefused("Cette prestation n'est plus proposée.")
+    from apps.parrainage.clients import verrou_identite
+    verrou_identite(tenant.id, customer.email)
     if not staff_member.active:
         raise BookingRefused("Ce prestataire n'accepte plus de rendez-vous.")
 
@@ -197,8 +209,12 @@ def create_booking(
                     else Booking.Status.REQUESTED
                 ),
                 source=source,
+                language=language,
+                contact_email=(customer.email or "").strip().lower(),
+                compte=compte,
                 service_name=service.name,
                 total_amount=total,
+                prix_initial=total,
                 # Instantane : renommer ou retarifer une option demain ne
                 # doit pas reecrire ce qui a ete vendu aujourd'hui.
                 options_snapshot=[
@@ -223,6 +239,9 @@ def create_booking(
                 travel_fee_amount=travel_fee,
                 customer_note=customer_note,
             )
+            from apps.parrainage.clients import capturer, reserver
+            capturer(booking, code_parrainage_client)
+            reserver(booking, compte)
     except CRENEAU_PRIS as exc:
         if not est_un_conflit_de_creneau(exc):
             raise
@@ -281,11 +300,13 @@ def cancel_booking(
     # Personne n'etait prevenu jusqu'ici. Une cliente qui se deplace pour un
     # rendez-vous annule la veille est le pire resultat possible du produit,
     # et c'etait silencieux.
+    from apps.notifications import evenements
     from apps.notifications.tasks import send_booking_cancelled
 
     send_booking_cancelled.delay(
         str(booking.id), str(booking.tenant_id), by_salon=by_salon
     )
+    evenements.rendez_vous_annule(booking, par_le_salon=by_salon)
 
     AuditLog.objects.create(
         tenant_id=booking.tenant_id,
@@ -388,32 +409,51 @@ def _upsert_customer(tenant, details: CustomerDetails) -> Customer:
     Le telephone fait office d'identite : une meme personne qui reserve deux
     fois doit retrouver son historique, pas creer une seconde fiche.
     """
-    customer, created = Customer.objects.get_or_create(
-        tenant=tenant,
-        phone=details.phone.strip(),
-        defaults={
-            "full_name": details.full_name.strip(),
-            "email": details.email.strip(),
-            "contact_preference": details.contact_preference,
-            "marketing_consent": details.marketing_consent,
-            "marketing_consent_at": timezone.now() if details.marketing_consent else None,
-        },
-    )
+    from apps.customers.coordonnees import memes_chiffres
+
+    # Par les chiffres seulement : une cliente enregistree avec
+    # « +86 136 1234 5678 » est retrouvee quand elle tape « +8613612345678 ».
+    existante = memes_chiffres(Customer.objects.filter(tenant=tenant), details.phone).first()
+    if existante is not None:
+        customer, created = existante, False
+    else:
+        customer, created = Customer.objects.get_or_create(
+            tenant=tenant,
+            phone=details.phone.strip(),
+            defaults={
+                "full_name": details.full_name.strip(),
+                "email": details.email.strip(),
+                "contact_preference": details.contact_preference,
+                "marketing_consent": details.marketing_consent,
+                "marketing_consent_at": timezone.now() if details.marketing_consent else None,
+                "notifications_whatsapp": details.notifications_whatsapp,
+            },
+        )
 
     if not created:
         changed = []
         if details.full_name and customer.full_name != details.full_name.strip():
             customer.full_name = details.full_name.strip()
             changed.append("full_name")
-        if details.email and not customer.email:
-            customer.email = details.email.strip()
-            changed.append("email")
+        # L'adresse d'une fiche existante n'est jamais remplie ni changee
+        # par une reservation en ligne. La fiche est retrouvee par le seul
+        # telephone, que n'importe qui peut saisir : y ecrire l'adresse de
+        # qui reserve permettrait de s'approprier la fiche d'une autre. Le
+        # rendez-vous garde sa propre adresse (`Booking.contact_email`), et
+        # c'est a elle que partent ses e-mails.
         # Le consentement s'ajoute mais ne se retire jamais implicitement :
         # le retirer demande une action explicite de la cliente.
         if details.marketing_consent and not customer.marketing_consent:
             customer.marketing_consent = True
             customer.marketing_consent_at = timezone.now()
             changed += ["marketing_consent", "marketing_consent_at"]
+        # WhatsApp suit le dernier choix : c'est une case de service, que la
+        # cliente coche ou decoche a chaque reservation en sachant pourquoi.
+        # La desinscription par STOP, elle, est tenue a part et ne se leve pas
+        # ici (voir notifications/whatsapp.py).
+        if customer.notifications_whatsapp != details.notifications_whatsapp:
+            customer.notifications_whatsapp = details.notifications_whatsapp
+            changed.append("notifications_whatsapp")
         if changed:
             customer.save(update_fields=[*changed, "updated_at"])
 

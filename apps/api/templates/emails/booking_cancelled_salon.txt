@@ -1,14 +1,13 @@
-{% autoescape off %}Bonjour,
+{% autoescape off %}{{ t.pro_bonjour }}
 
-{{ customer.full_name }} a annulé son rendez-vous.
+{{ intro_texte }}
 
-Prestation : {{ booking.service_name }}
-Date : {{ date_label }} à {{ time_label }}
-Téléphone : {{ customer.phone }}
-{% if booking.cancellation_reason %}Motif : {{ booking.cancellation_reason }}
+{{ t.prestation }}{{ t.deux_points }} {{ booking.service_name }}
+{{ t.date }}{{ t.deux_points }} {{ when_label }}
+{{ t.pro_telephone }}{{ t.deux_points }} {{ customer.phone }}
+{% if booking.cancellation_reason %}{{ t.pro_motif }}{{ t.deux_points }} {{ booking.cancellation_reason }}
 {% endif %}
-Le créneau est de nouveau libre. Si des clientes sont sur votre liste
-d'attente, c'est le moment de les prévenir :
+{{ t.pro_annule_libre }} {{ t.pro_annule_attente }}
 
 {{ waitlist_url }}
 

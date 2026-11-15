@@ -342,6 +342,9 @@ ABSENCES_ASSUMEES = {
     "catalog.ServiceResource",  # inline sur Service
     "staff.StaffService",  # inline sur StaffMember
     "store.RequirementProduct",  # inline sur Requirement
+    # Le contenu des conversations de l'assistant : il appartient au salon et
+    # a sa cliente. La plateforme n'en voit que les fils (ConversationAssistant).
+    "assistants.MessageAssistant",
 }
 
 

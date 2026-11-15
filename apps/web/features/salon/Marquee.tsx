@@ -45,12 +45,14 @@
  * lecteurs d'écran, qui sinon énuméreraient tout en double.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import type { PublicSalon } from "@/lib/types";
 import { SalonIcon } from "./icons";
 
 export function Marquee({ salon }: { salon: PublicSalon }) {
+  const t = useTranslations("salon");
   const [arretee, setArretee] = useState(false);
 
   // Une prestation par catégorie d'abord, puis on complète : un salon dont la
@@ -140,7 +142,7 @@ export function Marquee({ salon }: { salon: PublicSalon }) {
         className="marquee-bouton absolute right-1.5 top-1/2 z-[2] flex size-7 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--site-line)] bg-[var(--site-surface)] text-[var(--site-muted)] transition hover:text-[var(--site-ink)] focus-visible:opacity-100"
       >
         <span className="sr-only">
-          {arretee ? "Relancer le défilement" : "Arrêter le défilement"}
+          {arretee ? t("relancerDefilement") : t("arreterDefilement")}
         </span>
         <svg
           viewBox="0 0 24 24"

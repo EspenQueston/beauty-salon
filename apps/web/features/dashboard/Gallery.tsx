@@ -9,6 +9,7 @@
  * de faire disparaître silencieusement une photo de la sélection.
  */
 
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -35,12 +36,29 @@ interface Asset {
   url: string;
   content_type: string;
   byte_size: number;
-  kind: "gallery" | "logo" | "banner" | "service" | "staff" | "payment" | "about" | "product" | "proof";
+  kind:
+    | "gallery"
+    | "logo"
+    | "banner"
+    | "service"
+    | "staff"
+    | "payment"
+    | "about"
+    | "product"
+    | "proof";
   alt_text: string;
   width: number | null;
   height: number | null;
   position: number;
   featured: boolean;
+  /** Ce que montre la photo, et qui l'a faite : de quoi « Réserver ce look ». */
+  service: string | null;
+  staff_member: string | null;
+}
+
+interface Choix {
+  id: string;
+  name: string;
 }
 
 /** Nombre de médias montrés sur l'accueil du mini-site. */
@@ -54,25 +72,37 @@ interface Profile {
 const MAX_BYTES = 15 * 1024 * 1024;
 const ACCEPT = "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 
-const KIND_LABELS: Record<string, string> = {
-  gallery: "Galerie",
-  logo: "Logo",
-  banner: "Bannière",
-};
+type Traduire = ReturnType<typeof useTranslations>;
 
-function humanSize(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} Ko`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+/** « 820 Ko », « 2.4 MB » : l'unité suit la langue (`pro.galerie.taille`). */
+function humanSize(bytes: number, t: Traduire): string {
+  if (bytes < 1024 * 1024) return t("taille.ko", { n: Math.round(bytes / 1024) });
+  return t("taille.mo", { n: (bytes / (1024 * 1024)).toFixed(1) });
 }
 
 export function Gallery() {
+  const t = useTranslations("pro.galerie");
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
   const canEdit = ["owner", "manager"].includes(membership.role);
 
-  const assets = useResource<Page<Asset>>("/api/v1/media/?page_size=100", tenantId);
+  const assets = useResource<Page<Asset>>(
+    "/api/v1/media/?page_size=100",
+    tenantId,
+  );
   const profile = useResource<Profile>("/api/v1/salon-profile", tenantId);
+  // Pour relier une photo à sa prestation et à qui l'a faite.
+  const services = useResource<Page<Choix>>(
+    "/api/v1/services/?page_size=200",
+    tenantId,
+  );
+  const equipe = useResource<Page<Choix>>(
+    "/api/v1/staff-members/?page_size=100",
+    tenantId,
+  );
+  const prestations = rows(services.data);
+  const prestataires = rows(equipe.data);
 
   const all = rows(assets.data);
   const logoId = profile.data?.logo ?? null;
@@ -109,8 +139,8 @@ export function Gallery() {
         ),
       {
         success: assetId
-          ? `${KIND_LABELS[field]} mis à jour sur votre mini-site.`
-          : `${KIND_LABELS[field]} retiré.`,
+          ? t(`identite.${field}.maj`)
+          : t(`identite.${field}.retire`),
       },
     );
     if (ok) {
@@ -122,8 +152,12 @@ export function Gallery() {
   async function remove(asset: Asset) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(`/api/v1/media/${asset.id}/`, { method: "DELETE" }, tenantId),
-      { success: "Photo supprimée." },
+        dashboardFetch(
+          `/api/v1/media/${asset.id}/`,
+          { method: "DELETE" },
+          tenantId,
+        ),
+      { success: t("supprimee") },
     );
     if (ok) {
       assets.reload();
@@ -143,9 +177,7 @@ export function Gallery() {
     const next = !asset.featured;
 
     if (next && featuredCount >= FEATURED_SLOTS) {
-      toast.error(
-        `L'accueil affiche ${FEATURED_SLOTS} médias. Retirez-en un avant d'en ajouter un autre.`,
-      );
+      toast.error(t("vitrinePleine", { n: FEATURED_SLOTS }));
       return;
     }
 
@@ -158,8 +190,8 @@ export function Gallery() {
         ),
       {
         success: next
-          ? "Photo mise en vitrine sur votre accueil."
-          : "Photo retirée de la vitrine.",
+          ? t("misEnVitrine")
+          : t("retireeVitrine"),
       },
     );
     if (ok) assets.reload();
@@ -174,7 +206,35 @@ export function Gallery() {
           { method: "PATCH", body: JSON.stringify({ alt_text: altText }) },
           tenantId,
         ),
-      { success: "Description enregistrée." },
+      { success: t("descriptionOk") },
+    );
+    if (ok) assets.reload();
+  }
+
+  /** Relie la photo à une prestation ou à une prestataire (ou défait le lien). */
+  async function relier(
+    asset: Asset,
+    champ: "service" | "staff_member",
+    valeur: string,
+  ) {
+    const ok = await toast.run(
+      () =>
+        dashboardFetch(
+          `/api/v1/media/${asset.id}/`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ [champ]: valeur || null }),
+          },
+          tenantId,
+        ),
+      {
+        success:
+          champ === "service"
+            ? valeur
+              ? t("prestationReliee")
+              : t("prestationRetiree")
+            : t("signatureOk"),
+      },
     );
     if (ok) assets.reload();
   }
@@ -189,7 +249,10 @@ export function Gallery() {
       async () => {
         await dashboardFetch(
           `/api/v1/media/${asset.id}/`,
-          { method: "PATCH", body: JSON.stringify({ position: index + direction }) },
+          {
+            method: "PATCH",
+            body: JSON.stringify({ position: index + direction }),
+          },
           tenantId,
         );
         await dashboardFetch(
@@ -198,7 +261,7 @@ export function Gallery() {
           tenantId,
         );
       },
-      { success: "Ordre mis à jour." },
+      { success: t("ordreOk") },
     );
     if (ok) assets.reload();
   }
@@ -206,11 +269,13 @@ export function Gallery() {
   return (
     <section>
       <PageHeader
-        title="Photos"
-        description="Vos réalisations, votre logo et votre bannière. C'est la première chose que voit une cliente."
+        title={t("titre")}
+        description={t("description")}
       />
 
-      {assets.error && <ErrorState>Impossible de charger vos photos.</ErrorState>}
+      {assets.error && (
+        <ErrorState>{t("erreur")}</ErrorState>
+      )}
 
       {canEdit && (
         <Uploader
@@ -223,12 +288,12 @@ export function Gallery() {
       )}
 
       <div className="mt-8">
-        <SectionTitle>Identité visuelle</SectionTitle>
+        <SectionTitle>{t("identiteVisuelle")}</SectionTitle>
         <div className="grid gap-4 sm:grid-cols-2">
           <IdentitySlot
             field="logo"
             asset={identity.find((a) => a.id === logoId) ?? null}
-            hint="Carré, au moins 400 px de côté."
+            hint={t("identite.logo.aide")}
             canEdit={canEdit}
             choices={all}
             onChange={(id) => setIdentity("logo", id)}
@@ -236,7 +301,7 @@ export function Gallery() {
           <IdentitySlot
             field="banner"
             asset={identity.find((a) => a.id === bannerId) ?? null}
-            hint="Panoramique, au moins 1200 px de large."
+            hint={t("identite.banner.aide")}
             canEdit={canEdit}
             choices={all}
             onChange={(id) => setIdentity("banner", id)}
@@ -246,11 +311,10 @@ export function Gallery() {
 
       <div className="mt-8">
         <SectionTitle>
-          Galerie
+          {t("galerie")}
           {gallery.length > 0 && (
             <span className="ml-2 font-normal normal-case tracking-normal text-subtle">
-              {gallery.length} photo{gallery.length > 1 ? "s" : ""} ·{" "}
-              {featuredCount}/{FEATURED_SLOTS} en vitrine
+              {t("compte", { n: gallery.length, vitrine: featuredCount, max: FEATURED_SLOTS })}
             </span>
           )}
         </SectionTitle>
@@ -258,10 +322,18 @@ export function Gallery() {
         {gallery.length > 0 && canEdit && (
           <p className="mb-4 flex items-start gap-2 rounded-xl bg-surface-muted p-3 text-sm text-muted">
             <Icon name="star" className="mt-0.5 size-4 shrink-0 text-salon" />
+            <span>{t("aideEtoile")}</span>
+          </p>
+        )}
+
+        {gallery.length > 0 && canEdit && (
+          <p className="mb-4 flex items-start gap-2 rounded-xl bg-salon-soft p-3 text-sm text-ink">
+            <Icon
+              name="sparkles"
+              className="mt-0.5 size-4 shrink-0 text-salon"
+            />
             <span>
-              L&apos;étoile met une photo en vitrine sur votre page
-              d&apos;accueil. Les flèches, elles, changent l&apos;ordre de la
-              page « Réalisations » — les deux sont indépendants.
+              {t.rich("aideRelier", { gras: (texte) => <strong>{texte}</strong> })}
             </span>
           </p>
         )}
@@ -269,10 +341,7 @@ export function Gallery() {
         {assets.data === null && !assets.error && <Skeleton rows={2} />}
 
         {gallery.length === 0 && assets.data !== null && (
-          <EmptyState title="Aucune photo">
-            Une galerie vide dessert le mini-site. Trois ou quatre réalisations
-            nettes suffisent à déclencher une réservation.
-          </EmptyState>
+          <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
         )}
 
         {/*
@@ -299,13 +368,13 @@ export function Gallery() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={asset.url}
-                      alt={asset.alt_text || "Réalisation du salon"}
+                      alt={asset.alt_text || t("realisation")}
                       className="size-full object-cover"
                     />
                   )}
                   {asset.featured && (
                     <span className="absolute left-2 top-2">
-                      <Badge tone="salon">Vitrine</Badge>
+                      <Badge tone="salon">{t("vitrine")}</Badge>
                     </span>
                   )}
 
@@ -316,8 +385,8 @@ export function Gallery() {
                       aria-pressed={asset.featured}
                       title={
                         asset.featured
-                          ? "Retirer de la vitrine"
-                          : "Mettre en vitrine sur l'accueil"
+                          ? t("retirerVitrine")
+                          : t("mettreVitrineAccueil")
                       }
                       className={`absolute right-2 top-2 flex size-9 items-center justify-center rounded-full backdrop-blur transition ${
                         asset.featured
@@ -327,9 +396,7 @@ export function Gallery() {
                     >
                       <Icon name="star" className="size-4" />
                       <span className="sr-only">
-                        {asset.featured
-                          ? "Retirer de la vitrine"
-                          : "Mettre en vitrine"}
+                        {asset.featured ? t("retirerVitrine") : t("mettreVitrine")}
                       </span>
                     </button>
                   )}
@@ -340,15 +407,49 @@ export function Gallery() {
                     defaultValue={asset.alt_text}
                     onBlur={(event) => rename(asset, event.target.value.trim())}
                     disabled={!canEdit}
-                    placeholder="Décrire la photo"
-                    aria-label="Description de la photo"
+                    placeholder={t("decrire")}
+                    aria-label={t("description_")}
                     className={inputClass}
                   />
+                  <div className="mt-2 grid gap-2">
+                    <select
+                      value={asset.service ?? ""}
+                      onChange={(event) =>
+                        relier(asset, "service", event.target.value)
+                      }
+                      disabled={!canEdit}
+                      aria-label={t("prestationMontree")}
+                      className={`${inputClass} py-1.5 text-[13px]`}
+                    >
+                      <option value="">{t("prestationAucune")}</option>
+                      {prestations.map((choix) => (
+                        <option key={choix.id} value={choix.id}>
+                          {choix.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={asset.staff_member ?? ""}
+                      onChange={(event) =>
+                        relier(asset, "staff_member", event.target.value)
+                      }
+                      disabled={!canEdit}
+                      aria-label={t("realiseePar")}
+                      className={`${inputClass} py-1.5 text-[13px]`}
+                    >
+                      <option value="">{t("realiseeParAucun")}</option>
+                      {prestataires.map((choix) => (
+                        <option key={choix.id} value={choix.id}>
+                          {choix.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <p className="mt-2 text-xs text-subtle">
                     {asset.width && asset.height
                       ? `${asset.width} × ${asset.height} · `
                       : ""}
-                    {humanSize(asset.byte_size)}
+                    {humanSize(asset.byte_size, t)}
                   </p>
 
                   {canEdit && (
@@ -357,7 +458,7 @@ export function Gallery() {
                         type="button"
                         onClick={() => move(asset, -1)}
                         disabled={index === 0}
-                        aria-label="Reculer d'une place"
+                        aria-label={t("reculer")}
                       >
                         ←
                       </GhostButton>
@@ -365,7 +466,7 @@ export function Gallery() {
                         type="button"
                         onClick={() => move(asset, 1)}
                         disabled={index === gallery.length - 1}
-                        aria-label="Avancer d'une place"
+                        aria-label={t("avancer")}
                       >
                         →
                       </GhostButton>
@@ -374,7 +475,7 @@ export function Gallery() {
                         onClick={() => remove(asset)}
                         className="ml-auto"
                       >
-                        Supprimer
+                        {t("supprimer")}
                       </DangerButton>
                     </div>
                   )}
@@ -387,7 +488,7 @@ export function Gallery() {
 
       {!canEdit && (
         <p className="mt-6 text-sm text-muted">
-          Seuls le propriétaire et le gérant peuvent gérer les photos.
+          {t("lectureSeule")}
         </p>
       )}
     </section>
@@ -409,18 +510,22 @@ function IdentitySlot({
   choices: Asset[];
   onChange: (assetId: string | null) => void;
 }) {
-  const images = choices.filter((item) => !item.content_type.startsWith("video/"));
+  const t = useTranslations("pro.galerie");
+  const libelle = t(`identite.${field}.titre`);
+  const images = choices.filter(
+    (item) => !item.content_type.startsWith("video/"),
+  );
 
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-medium text-ink">{KIND_LABELS[field]}</p>
+          <p className="text-sm font-medium text-ink">{libelle}</p>
           <p className="mt-0.5 text-xs text-muted">{hint}</p>
         </div>
         {asset && canEdit && (
           <GhostButton type="button" onClick={() => onChange(null)}>
-            Retirer
+            {t("retirer")}
           </GhostButton>
         )}
       </div>
@@ -434,7 +539,7 @@ function IdentitySlot({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={asset.url}
-            alt={asset.alt_text || KIND_LABELS[field]}
+            alt={asset.alt_text || libelle}
             className="size-full object-cover"
           />
         ) : (
@@ -448,13 +553,13 @@ function IdentitySlot({
         <select
           value={asset?.id ?? ""}
           onChange={(event) => onChange(event.target.value || null)}
-          aria-label={`Choisir le ${KIND_LABELS[field].toLowerCase()}`}
+          aria-label={t(`identite.${field}.choisir`)}
           className={`${inputClass} mt-3`}
         >
-          <option value="">— Aucune —</option>
+          <option value="">{t("aucune")}</option>
           {images.map((item, index) => (
             <option key={item.id} value={item.id}>
-              {item.alt_text || `Photo ${index + 1}`}
+              {item.alt_text || t("numero", { n: index + 1 })}
             </option>
           ))}
         </select>
@@ -476,6 +581,7 @@ function Uploader({
   tenantId: string;
   onUploaded: () => void;
 }) {
+  const t = useTranslations("pro.galerie.envoi");
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -500,7 +606,7 @@ function Uploader({
         setQueue((current) =>
           current.map((item, position) =>
             position === index
-              ? { ...item, state: "failed", message: "Plus de 15 Mo" }
+              ? { ...item, state: "failed", message: t("tropLourd") }
               : item,
           ),
         );
@@ -513,7 +619,11 @@ function Uploader({
       form.append("alt_text", "");
 
       try {
-        await dashboardFetch("/api/v1/media/", { method: "POST", body: form }, tenantId);
+        await dashboardFetch(
+          "/api/v1/media/",
+          { method: "POST", body: form },
+          tenantId,
+        );
         succeeded += 1;
         setQueue((current) =>
           current.map((item, position) =>
@@ -529,7 +639,9 @@ function Uploader({
                   ...item,
                   state: "failed",
                   message:
-                    caught instanceof Error ? caught.message : "Envoi impossible",
+                    caught instanceof Error
+                      ? caught.message
+                      : t("impossible"),
                 }
               : item,
           ),
@@ -542,17 +654,15 @@ function Uploader({
 
     if (succeeded > 0) {
       toast.success(
-        succeeded === 1
-          ? "Photo ajoutée. Elle est en ligne sur votre mini-site."
-          : `${succeeded} photos ajoutées.`,
+        succeeded === 1 ? t("uneAjoutee") : t("ajoutees", { n: succeeded }),
       );
       onUploaded();
     }
     if (failures.length > 0) {
       toast.error(
         failures.length === 1
-          ? `« ${failures[0]} » n'a pas pu être envoyée.`
-          : `${failures.length} fichiers n'ont pas pu être envoyés.`,
+          ? t("unEchec", { nom: failures[0] })
+          : t("echecs", { n: failures.length }),
       );
     }
     // Laisse la liste visible un instant : elle dit quel fichier a échoué.
@@ -579,11 +689,9 @@ function Uploader({
         }`}
       >
         <Icon name="image" className="mx-auto size-8 text-subtle" />
-        <p className="mt-3 font-medium text-ink">
-          Déposez vos photos ici
-        </p>
+        <p className="mt-3 font-medium text-ink">{t("deposer")}</p>
         <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted">
-          JPEG, PNG, WebP ou vidéo courte MP4 / WebM. 15 Mo maximum par fichier.
+          {t("formats")}
         </p>
 
         <div className="mt-5">
@@ -593,7 +701,7 @@ function Uploader({
             onClick={() => inputRef.current?.click()}
             icon={<Icon name="plus" className="size-4" />}
           >
-            Choisir des fichiers
+            {t("choisir")}
           </Button>
         </div>
 
@@ -633,7 +741,11 @@ function Uploader({
                       : "text-subtle"
                 }
               >
-                {item.state === "done" ? "✓" : item.state === "failed" ? "✕" : "…"}
+                {item.state === "done"
+                  ? "✓"
+                  : item.state === "failed"
+                    ? "✕"
+                    : "…"}
               </span>
               <span className="truncate text-ink">{item.name}</span>
               {item.message && (
@@ -665,6 +777,7 @@ function FromUrl({
   tenantId: string;
   onImported: () => void;
 }) {
+  const t = useTranslations("pro.galerie.lien");
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -686,7 +799,7 @@ function FromUrl({
           },
           tenantId,
         ),
-      { success: "Média importé depuis le lien." },
+      { success: t("importe") },
     );
     setBusy(false);
 
@@ -704,7 +817,7 @@ function FromUrl({
         onClick={() => setOpen(true)}
         className="mt-3 text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
       >
-        ou coller le lien d&apos;une photo ou d&apos;une vidéo
+        {t("ouvrir")}
       </button>
     );
   }
@@ -721,12 +834,12 @@ function FromUrl({
         type="url"
         inputMode="url"
         placeholder="https://images.pexels.com/photos/…"
-        aria-label="Adresse de la photo ou de la vidéo"
+        aria-label={t("adresse")}
         className={inputClass}
       />
       <div className="flex items-center justify-center gap-2">
         <Button type="submit" pending={busy} disabled={!url.trim()}>
-          Importer
+          {t("importer")}
         </Button>
         <button
           type="button"
@@ -736,7 +849,7 @@ function FromUrl({
           }}
           className="rounded-lg px-2 py-2 text-sm text-muted transition hover:text-ink"
         >
-          Annuler
+          {t("annuler")}
         </button>
       </div>
     </form>

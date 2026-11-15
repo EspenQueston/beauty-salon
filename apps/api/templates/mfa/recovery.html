@@ -1,21 +1,35 @@
 {% extends "mfa/base.html" %}
 {% block title %}Codes de secours{% endblock %}
+{% block largeur %}28rem{% endblock %}
+
+{% comment %}
+Pas de « revenir à la connexion » ici.
+
+À ce stade la session est vérifiée et l'enrôlement vient d'aboutir : il n'y
+a rien à recommencer, et proposer de se déconnecter entre l'affichage des
+codes et leur recopie serait le meilleur moyen de les perdre. Ils ne sont
+montrés qu'une fois.
+{% endcomment %}
+{% block pied %}{% endblock %}
 
 {% block contenu %}
   <h1>Notez vos codes de secours</h1>
   <p>
     Ils sont affichés <strong>une seule fois</strong>. Chacun ne fonctionne
-    qu'une fois et remplace le code de votre téléphone si vous le perdez.
+    qu&apos;une fois et remplace le code de votre téléphone si vous le perdez.
   </p>
 
-  <ol class="codes">
+  <ol class="mfa-codes">
     {% for code in codes %}<li>{{ code }}</li>{% endfor %}
   </ol>
 
-  <p class="discret">
+  <p class="mfa-discret">
     Sans téléphone ni code de secours, seul un autre administrateur pourra
-    vous rendre l'accès.
+    vous rendre l&apos;accès.
   </p>
 
-  <a class="suite" href="{{ next_url }}">J'ai noté mes codes, continuer →</a>
+  <a class="mfa-suite" href="{{ next_url }}">
+    J&apos;ai noté mes codes, continuer
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13.172 12l-4.95-4.95 1.414-1.414L16 12l-6.364 6.364-1.414-1.414z"/></svg>
+  </a>
 {% endblock %}

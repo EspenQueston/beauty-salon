@@ -250,3 +250,62 @@ def test_toute_reservation_du_salon_reste_lisible(api_client, salon_a):
 
     assert reponse.status_code == 200
     assert reponse.data["deposit_proof"] is None
+
+
+# ---------------------------------------------------------------------------
+# Les copies reduites suivent l'original
+# ---------------------------------------------------------------------------
+
+
+def grande_image(salon, visibilite) -> MediaAsset:
+    """Assez large pour que les copies de 480 et 1024 pixels soient produites."""
+    tampon = io.BytesIO()
+    Image.new("RGB", (1200, 800), "pink").save(tampon, format="PNG")
+    with as_tenant(salon.tenant):
+        from django.core.files.base import ContentFile
+
+        return MediaAsset.objects.create(
+            tenant=salon.tenant,
+            file=ContentFile(tampon.getvalue(), name="grande.png"),
+            content_type="image/png",
+            kind=MediaAsset.Kind.GALLERY,
+            visibility=visibilite,
+        )
+
+
+@pytest.mark.django_db
+def test_les_copies_d_une_image_privee_restent_privees(salon_a):
+    """Elles etaient ecrites sous la racine publique, servies par le serveur
+    de fichiers alors que l'original ne l'etait plus."""
+    from apps.media.tasks import process_media_asset
+
+    asset = grande_image(salon_a, MediaAsset.Visibility.PRIVATE)
+    process_media_asset(str(asset.id), str(salon_a.tenant.id))
+
+    with as_tenant(salon_a.tenant):
+        asset.refresh_from_db()
+    assert set(asset.derivatives) == {"sm", "md"}
+    assert all(chemin.startswith("prive/") for chemin in asset.derivatives.values())
+
+
+@pytest.mark.django_db
+def test_la_mediatheque_donne_les_vignettes_du_public_seulement(api_client, salon_a):
+    """La galerie des prestations affiche les copies reduites ; un media prive
+    n'en publie aucune adresse."""
+    from apps.media.tasks import process_media_asset
+    from tests.test_dashboard_api import login
+
+    publique = grande_image(salon_a, MediaAsset.Visibility.PUBLIC)
+    privee = grande_image(salon_a, MediaAsset.Visibility.PRIVATE)
+    for asset in (publique, privee):
+        process_media_asset(str(asset.id), str(salon_a.tenant.id))
+
+    login(api_client, salon_a.owner)
+    reponse = api_client.get("/api/v1/media/?page_size=100")
+
+    par_id = {ligne["id"]: ligne for ligne in reponse.data["results"]}
+    variantes = par_id[str(publique.id)]["variants"]
+    assert set(variantes) == {"480", "1024"}
+    assert all(adresse.endswith(".webp") and "/prive/" not in adresse for adresse in variantes.values())
+    if str(privee.id) in par_id:
+        assert par_id[str(privee.id)]["variants"] == {}

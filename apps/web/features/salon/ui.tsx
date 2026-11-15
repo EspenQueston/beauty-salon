@@ -7,7 +7,7 @@
  * couleur d'un bouton qu'elle est dans un outil de gestion.
  */
 
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 import type { ReactNode } from "react";
 
 import { SalonIcon, type SalonIconName } from "./icons";
@@ -26,7 +26,9 @@ export function Card({
   padded?: boolean;
 }) {
   return (
-    <div className={`${SURFACE} ${padded ? "p-5" : ""} ${className}`}>{children}</div>
+    <div className={`${SURFACE} ${padded ? "p-5" : ""} ${className}`}>
+      {children}
+    </div>
   );
 }
 
@@ -94,7 +96,7 @@ export function MoreLink({
   children: ReactNode;
 }) {
   return (
-    <Link
+    <Lien
       href={href}
       className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--site-line)] bg-[var(--site-surface)] px-4 py-2 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
     >
@@ -103,7 +105,7 @@ export function MoreLink({
         name="arrow"
         className="size-4 transition-transform group-hover:translate-x-0.5"
       />
-    </Link>
+    </Lien>
   );
 }
 
@@ -132,15 +134,20 @@ export function PrimaryLink({
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noreferrer noopener" className={style}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer noopener"
+        className={style}
+      >
         {content}
       </a>
     );
   }
   return (
-    <Link href={href} className={style}>
+    <Lien href={href} className={style}>
       {content}
-    </Link>
+    </Lien>
   );
 }
 
@@ -165,13 +172,13 @@ export function InverseLink({
   className?: string;
 }) {
   return (
-    <Link
+    <Lien
       href={href}
       className={`inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--salon-ink-white)] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl ${className}`}
     >
       {icon && <SalonIcon name={icon} className="size-4" />}
       {children}
-    </Link>
+    </Lien>
   );
 }
 
@@ -202,15 +209,20 @@ export function GhostLink({
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noreferrer noopener" className={style}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer noopener"
+        className={style}
+      >
         {content}
       </a>
     );
   }
   return (
-    <Link href={href} className={style}>
+    <Lien href={href} className={style}>
       {content}
-    </Link>
+    </Lien>
   );
 }
 

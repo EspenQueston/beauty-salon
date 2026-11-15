@@ -46,7 +46,7 @@ from decimal import ROUND_UP, Decimal
 
 from django.db import transaction
 
-from apps.scheduling.services.deposit import WHOLE_UNIT_CURRENCIES
+from apps.common.devises import pas
 
 from .devises import taux
 
@@ -59,9 +59,7 @@ class DeviseRefusee(Exception):
 
 def pas_de(devise: str) -> Decimal:
     """Plus petite unite de la devise : le franc CFA n'a pas de centimes."""
-    return (
-        Decimal("1") if devise.upper() in WHOLE_UNIT_CURRENCIES else Decimal("0.01")
-    )
+    return pas(devise)
 
 
 def convertir_montant(montant: Decimal, facteur: Decimal, vers: str) -> Decimal:

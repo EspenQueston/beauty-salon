@@ -20,23 +20,46 @@ class Tenant(UUIDModel, TimeStampedModel):
         ACTIVE = "active", _("Actif")
         SUSPENDED = "suspended", _("Suspendu")
 
-    class Plan(models.TextChoices):
-        TRIAL = "trial", _("Essai")
-        SOLO = "solo", _("Solo")
-        SALON = "salon", _("Salon")
-        PRO = "pro", _("Pro")
-
     class Country(models.TextChoices):
         CONGO = "CG", _("Congo-Brazzaville")
         DRC = "CD", _("République démocratique du Congo")
         CHINA = "CN", _("Chine")
+        BENIN = "BJ", _("Bénin")
+        BURKINA_FASO = "BF", _("Burkina Faso")
+        IVORY_COAST = "CI", _("Côte d’Ivoire")
+        TOGO = "TG", _("Togo")
+        SENEGAL = "SN", _("Sénégal")
+        NIGER = "NE", _("Niger")
+        # Pays reglés par SASPAY (Mobile Money), que KKIAPAY ne couvre pas.
+        # Voir apps/billing/saspay.py.
+        CAMEROON = "CM", _("Cameroun")
+        GHANA = "GH", _("Ghana")
+        GUINEA = "GN", _("Guinée")
+        KENYA = "KE", _("Kenya")
+        MALI = "ML", _("Mali")
+        MALAWI = "MW", _("Malawi")
+        NIGERIA = "NG", _("Nigeria")
+        RWANDA = "RW", _("Rwanda")
+        TANZANIA = "TZ", _("Tanzanie")
+        UGANDA = "UG", _("Ouganda")
+        ZAMBIA = "ZM", _("Zambie")
 
     class Currency(models.TextChoices):
         XAF = "XAF", _("Franc CFA")
+        XOF = "XOF", _("Franc CFA BCEAO")
         CDF = "CDF", _("Franc congolais")
         CNY = "CNY", _("Yuan")
         USD = "USD", _("Dollar américain")
         EUR = "EUR", _("Euro")
+        GHS = "GHS", _("Cedi ghanéen")
+        GNF = "GNF", _("Franc guinéen")
+        KES = "KES", _("Shilling kényan")
+        MWK = "MWK", _("Kwacha malawien")
+        NGN = "NGN", _("Naira nigérian")
+        RWF = "RWF", _("Franc rwandais")
+        TZS = "TZS", _("Shilling tanzanien")
+        UGX = "UGX", _("Shilling ougandais")
+        ZMW = "ZMW", _("Kwacha zambien")
 
     name = models.CharField(_("nom"), max_length=120)
     # Sert de sous-domaine par defaut : <slug>.PLATFORM_DOMAIN
@@ -45,9 +68,10 @@ class Tenant(UUIDModel, TimeStampedModel):
     status = models.CharField(
         _("statut"), max_length=20, choices=Status.choices, default=Status.PENDING
     )
-    plan = models.CharField(
-        _("offre"), max_length=20, choices=Plan.choices, default=Plan.TRIAL
-    )
+    # L'offre d'un salon (essai, Standard, Pro) n'est pas ici : elle vit dans
+    # son abonnement (billing.Subscription), seule source des droits. Un
+    # ancien champ « offre » (Essai/Solo/Salon/Pro) a ete retire : modifiable
+    # dans l'administration, il ne commandait rien.
     country = models.CharField(
         _("pays"), max_length=2, choices=Country.choices, default=Country.CONGO
     )

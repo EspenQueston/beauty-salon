@@ -11,3 +11,6 @@ class CommonConfig(AppConfig):
 
     name = "apps.common"
     verbose_name = "Socle"
+
+    def ready(self):
+        from . import home_signals  # noqa: F401

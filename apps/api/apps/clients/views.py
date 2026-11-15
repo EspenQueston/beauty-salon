@@ -15,7 +15,7 @@ from .serializers import (
     ClientProfileSerializer,
     ClientSignupSerializer,
 )
-from .services import bookings_for, linked_salons
+from .services import bookings_for, est_cliente, linked_salons, retrouver_historique
 
 
 class IsClient(IsAuthenticated):
@@ -29,9 +29,7 @@ class IsClient(IsAuthenticated):
     message = "Cet espace est réservé aux clientes."
 
     def has_permission(self, request, view):
-        return super().has_permission(request, view) and hasattr(
-            request.user, "client_profile"
-        )
+        return super().has_permission(request, view) and est_cliente(request.user)
 
 
 class ClientSignupView(APIView):
@@ -66,8 +64,47 @@ class ClientSignupView(APIView):
         # choisi un mot de passe est une etape que personne ne comprend.
         login(request, user)
 
+        # Le lien de verification, vers le mini-site d'ou elle s'inscrit.
+        from apps.accounts import tasks
+
+        langue = str(request.data.get("lang", "fr"))[:2]
+        base = tasks.base_cliente(user, langue)
+        user_id = str(user.pk)
+        transaction.on_commit(lambda: tasks.verification.delay(user_id, base, langue))
+
+        return Response(ClientProfileSerializer(profile).data, status=status.HTTP_201_CREATED)
+
+
+class ClientPasswordResetView(APIView):
+    """« Mot de passe oublié » depuis un mini-site.
+
+    Toujours la même réponse, que l'adresse soit inscrite ou non. Bornée
+    comme la réinitialisation de l'espace professionnel : chaque appel peut
+    envoyer un e-mail.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_scope = "password_reset"
+
+    def post(self, request):
+        from django.db import transaction
+
+        from apps.accounts import tasks
+        from apps.accounts.serializers import PasswordResetRequestSerializer
+
+        payload = PasswordResetRequestSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        tenant_id = getattr(request, "tenant_id", None)
+        if tenant_id is not None:
+            # En arriere-plan, dans tous les cas : le temps de reponse ne dit
+            # pas si l'adresse est inscrite (voir `accounts/tasks.py`).
+            email = payload.validated_data["email"].strip().lower()
+            langue = str(request.data.get("lang", "fr"))[:2]
+            transaction.on_commit(
+                lambda: tasks.reinitialisation_cliente.delay(email, str(tenant_id), langue)
+            )
         return Response(
-            ClientProfileSerializer(profile).data, status=status.HTTP_201_CREATED
+            {"detail": "Si un compte existe pour cette adresse, un e-mail vient d'être envoyé."}
         )
 
 
@@ -105,9 +142,7 @@ class ClientForgetBookingView(APIView):
 
         booking_id = str(request.data.get("booking", "")).strip()
         if not booking_id:
-            return Response(
-                {"detail": "Rendez-vous manquant.", "code": "missing"}, status=400
-            )
+            return Response({"detail": "Rendez-vous manquant.", "code": "missing"}, status=400)
 
         # On verifie que la visite appartient bien a cette cliente, et
         # qu'elle est close. Sans ce controle, n'importe quel identifiant
@@ -118,21 +153,20 @@ class ClientForgetBookingView(APIView):
 
         if row is None:
             return Response(
-                {"detail": "Ce rendez-vous n'est pas dans votre historique.",
-                 "code": "not_yours"},
+                {"detail": "Ce rendez-vous n'est pas dans votre historique.", "code": "not_yours"},
                 status=404,
             )
         if not row.get("can_forget"):
             return Response(
-                {"detail": "Ce rendez-vous est encore à venir. "
-                           "Contactez le salon pour l'annuler.",
-                 "code": "still_upcoming"},
+                {
+                    "detail": "Ce rendez-vous est encore à venir. "
+                    "Contactez le salon pour l'annuler.",
+                    "code": "still_upcoming",
+                },
                 status=400,
             )
 
-        HiddenBooking.objects.get_or_create(
-            user=request.user, booking_id=booking_id
-        )
+        HiddenBooking.objects.get_or_create(user=request.user, booking_id=booking_id)
         return Response({"detail": "Retiré de votre historique."})
 
 
@@ -145,6 +179,12 @@ class ClientBookingsView(APIView):
     permission_classes = [IsClient]
 
     def get(self, request):
+        # Les rendez-vous pris sans compte avec la meme adresse : cherches une
+        # fois par session (les nouveaux sont rattaches a la reservation).
+        if not request.session.get("historique_retrouve"):
+            retrouver_historique(request.user)
+            if request.user.email_verified_at:
+                request.session["historique_retrouve"] = True
         rows = bookings_for(request.user)
         return Response(
             {
@@ -164,12 +204,19 @@ class ClientSessionView(APIView):
     s'il doit interroger l'espace salon ou l'espace cliente.
     """
 
-    permission_classes = [IsAuthenticated]
+    # Ouverte aux visiteuses anonymes : l'icone du compte, dans la barre de
+    # chaque page du mini-site, demande « connectee ou pas ? ». Un 403 a
+    # chaque page vue remplirait la console de toutes les visiteuses.
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        is_client = hasattr(request.user, "client_profile")
+        if not request.user.is_authenticated:
+            return Response({"connecte": False})
+        # Un compte professionnel n'est jamais cliente, meme avec un profil.
+        is_client = est_cliente(request.user)
         return Response(
             {
+                "connecte": True,
                 "email": request.user.email,
                 "display_name": request.user.display_name,
                 "is_client": is_client,

@@ -21,7 +21,7 @@ class ClientSignupSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     phone = serializers.CharField(max_length=32)
-    password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+    password = serializers.CharField(write_only=True, min_length=10, max_length=128)
 
     whatsapp = serializers.CharField(max_length=32, required=False, allow_blank=True)
     wechat = serializers.CharField(max_length=64, required=False, allow_blank=True)
@@ -53,6 +53,7 @@ class ClientSignupSerializer(serializers.Serializer):
 class ClientProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="user.display_name")
     email = serializers.EmailField(source="user.email", read_only=True)
+    email_verified = serializers.BooleanField(source="user.email_verified", read_only=True)
     phone = serializers.CharField(source="user.phone")
     preferred_salon_name = serializers.CharField(
         source="preferred_salon.name", read_only=True, default=""
@@ -66,6 +67,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
         fields = (
             "full_name",
             "email",
+            "email_verified",
             "phone",
             "whatsapp",
             "wechat",

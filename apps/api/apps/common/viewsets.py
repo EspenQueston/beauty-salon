@@ -42,3 +42,13 @@ class TenantModelViewSet(viewsets.ModelViewSet):
         # par le client : c'est la difference entre une API multi-tenant et
         # une faille.
         serializer.save(tenant_id=self.request.tenant_id)
+
+
+class TenantReadOnlyViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsTenantMember, HasTenantRole]
+    model = None
+    select_related = ()
+    prefetch_related = ()
+    required_roles = ()
+    safe_roles = ()
+    get_queryset = TenantModelViewSet.get_queryset

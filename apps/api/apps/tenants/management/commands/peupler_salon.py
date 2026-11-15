@@ -159,10 +159,15 @@ FOURNITURES = [
 # Les consignes suffisent a les rendre affichables : un `PaymentChannel` est
 # utilisable des qu'il porte un QR **ou** une consigne. On n'invente pas de
 # QR code - il n'y a rien a scanner derriere.
-MOYENS = [
-    ("wechat", "Beauty Salon Demo", "Mettez votre nom en commentaire du virement."),
-    ("alipay", "Beauty Salon Demo", "Envoyez la capture une fois le paiement fait."),
-]
+#
+# Ceux du pays du salon (`payments/moyens.py`) : WeChat et Alipay en Chine,
+# un numero Mobile Money en Afrique. Un salon de Brazzaville avec un QR
+# Alipay ne demontrait rien - ses clientes ne l'auraient meme pas vu.
+MOYENS = {
+    "wechat": ("Beauty Salon Demo", "Mettez votre nom en commentaire du virement."),
+    "alipay": ("Beauty Salon Demo", "Envoyez la capture une fois le paiement fait."),
+    "mobile_money": ("Beauty Salon Demo", "MTN MoMo : 06 000 00 00 — indiquez votre nom en motif."),
+}
 
 ZONES = [
     ("Centre-ville", "2000"),
@@ -404,7 +409,11 @@ class Command(BaseCommand):
     def _moyens(self, tenant):
         from apps.payments.models import PaymentChannel
 
-        for rang, (genre, compte, consigne) in enumerate(MOYENS):
+        from apps.payments.moyens import moyens_du_pays
+
+        genres = [g for g in moyens_du_pays(tenant.country) if g in MOYENS]
+        for rang, genre in enumerate(genres):
+            compte, consigne = MOYENS[genre]
             PaymentChannel.objects.get_or_create(
                 tenant=tenant,
                 kind=genre,
@@ -415,7 +424,7 @@ class Command(BaseCommand):
                     "position": rang,
                 },
             )
-        self.stdout.write(f"{OK} {len(MOYENS)} moyens de paiement")
+        self.stdout.write(f"{OK} {len(genres)} moyens de paiement")
 
     def _zones(self, tenant):
         for rang, (nom, frais) in enumerate(ZONES):

@@ -18,6 +18,19 @@
  * fichiers, indéfiniment.
  *
  * ---------------------------------------------------------------------------
+ * La seule exception : les notifications
+ * ---------------------------------------------------------------------------
+ *
+ * Un push ne peut arriver que par un service worker. Le retirer en
+ * développement rendrait donc les notifications invérifiables ailleurs qu'en
+ * production — c'est-à-dire au moment où il est trop tard pour découvrir
+ * qu'elles ne partent pas.
+ *
+ * Qui a activé les notifications garde donc son service worker, dans les deux
+ * environnements. C'est un choix délibéré, et il ne concerne que les postes
+ * où quelqu'un a cliqué : les autres retrouvent le nettoyage habituel.
+ *
+ * ---------------------------------------------------------------------------
  * Après le chargement, pas pendant
  * ---------------------------------------------------------------------------
  *
@@ -29,11 +42,23 @@
 
 import { useEffect } from "react";
 
+import { CLE_OPTIN } from "@/features/dashboard/push";
+
+function notificationsActivees(): boolean {
+  try {
+    return localStorage.getItem(CLE_OPTIN) === "1";
+  } catch {
+    // Navigation privée, stockage bloqué : on retombe sur le comportement
+    // par défaut, qui est de nettoyer.
+    return false;
+  }
+}
+
 export function ServiceWorker() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== "production" && !notificationsActivees()) {
       navigator.serviceWorker
         .getRegistrations()
         .then((anciens) => anciens.forEach((ancien) => ancien.unregister()))

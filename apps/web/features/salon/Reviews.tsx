@@ -10,11 +10,15 @@
  * silence est plus neutre que le vide annoncé.
  */
 
+import { useTranslations } from "next-intl";
+
 import { formatDate } from "@/lib/format";
 import type { PublicReview, RatingSummary } from "@/lib/types";
 import { Stars } from "./Stars";
 import { SURFACE } from "./ui";
 import { Reveal } from "@/features/ui/Reveal";
+import { delaiCascade } from "./effets";
+import { CommentaireAvis } from "./CommentaireAvis";
 
 export function RatingBadge({ rating }: { rating: RatingSummary }) {
   if (rating.average == null || rating.count === 0) return null;
@@ -23,9 +27,7 @@ export function RatingBadge({ rating }: { rating: RatingSummary }) {
     <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5 text-sm backdrop-blur">
       <Stars value={rating.average} size="size-3.5" />
       <span className="tabular font-semibold">{rating.average.toFixed(1)}</span>
-      <span className="opacity-80">
-        · {rating.count} avis
-      </span>
+      <span className="opacity-80">· {rating.count} avis</span>
     </span>
   );
 }
@@ -39,50 +41,46 @@ export function ReviewList({
   rating: RatingSummary;
   timeZone: string;
 }) {
+  const t = useTranslations("salon");
   if (reviews.length === 0) return null;
 
   return (
     <div>
       {rating.average != null && (
         <div
-          className={`${SURFACE} mb-6 flex flex-wrap items-center gap-x-6 gap-y-3 p-5`}
+          className={`${SURFACE} mb-4 flex flex-wrap items-center gap-x-6 gap-y-2.5 p-3.5 sm:mb-6 sm:gap-y-3 sm:p-5`}
         >
-          <div className="flex items-baseline gap-2">
-            <span className="tabular text-4xl font-semibold text-[var(--site-ink)]">
+          <div className="flex items-baseline gap-1.5 sm:gap-2">
+            <span className="tabular text-3xl font-semibold text-[var(--site-ink)] sm:text-4xl">
               {rating.average.toFixed(1)}
             </span>
-            <span className="text-[var(--site-muted)]">/ 5</span>
+            <span className="text-sm text-[var(--site-muted)] sm:text-base">/ 5</span>
           </div>
           <div>
-            <Stars value={rating.average} size="size-5" />
-            <p className="mt-1 text-sm text-[var(--site-muted)]">
-              {rating.count} avis vérifié{rating.count > 1 ? "s" : ""}
+            <Stars value={rating.average} size="size-4 sm:size-5" />
+            <p className="mt-1 text-xs text-[var(--site-muted)] sm:text-sm">
+              {t("hero.avis", { n: rating.count })}
             </p>
           </div>
-          <p className="ml-auto max-w-xs text-xs leading-relaxed text-[var(--site-subtle)]">
-            Chaque avis est rattaché à un rendez-vous réellement honoré. Le
-            salon ne peut ni les modifier ni les supprimer.
+          <p className="w-full text-[0.7rem] leading-relaxed text-[var(--site-subtle)] sm:ml-auto sm:w-auto sm:max-w-xs sm:text-xs">
+            {t("avisGarantie")}
           </p>
         </div>
       )}
 
       {/*
-        Quatre colonnes sur grand écran, une seule sur téléphone.
+        Deux colonnes sur téléphone, comme les autres grilles du mini-site ;
+        quatre sur grand écran.
 
-        C'est la seule grille de cartes du mini-site qui reste à une colonne
-        sous 640 px, et c'est délibéré : un avis porte un texte libre, non
-        tronqué. Serré dans une demi-largeur de téléphone, un commentaire de
-        deux phrases donne quinze lignes et une carte deux fois plus haute que
-        sa voisine. Les cartes de prestation et d'équipe, elles, tiennent des
-        libellés courts — d'où les deux colonnes partout ailleurs.
-
-        Le commentaire précédent annonçait « deux colonnes dès le petit
-        écran » au-dessus d'un `grid-cols-1` : il décrivait une intention, pas
-        le code.
+        Un avis porte un texte libre : serré dans une demi-largeur de
+        téléphone, un commentaire de deux phrases donnerait une carte deux
+        fois plus haute que sa voisine. Il y est donc replié à quelques lignes
+        avec « Lire la suite » (`CommentaireAvis`), et les cartes restent de
+        hauteur comparable.
       */}
-      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         {reviews.map((review, index) => (
-          <Reveal as="li" key={review.id} delay={Math.min(index, 6) * 70}>
+          <Reveal as="li" key={review.id} delay={delaiCascade(index)}>
             {/*
               Traitement en citation plutôt qu'en carte de commentaire.
 
@@ -94,15 +92,17 @@ export function ReviewList({
               Il est décoratif : le texte se lit sans lui, et un lecteur
               d'écran n'annonce pas un guillemet.
             */}
-            <article className={`${SURFACE} lift relative flex h-full flex-col p-4 sm:p-5`}>
+            <article
+              className={`${SURFACE} lift relative flex h-full flex-col p-3 sm:p-5`}
+            >
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-3 top-1 select-none font-serif text-5xl leading-none text-[var(--salon-primary)]/15 sm:text-6xl"
+                className="pointer-events-none absolute right-2.5 top-1 select-none font-serif text-4xl leading-none text-[var(--salon-primary)]/15 sm:right-3 sm:text-6xl"
               >
                 &ldquo;
               </span>
 
-              <Stars value={review.rating} />
+              <Stars value={review.rating} size="size-3 sm:size-4" />
 
               {/*
                 Les deux critères les plus bas, et eux seuls.
@@ -114,14 +114,14 @@ export function ReviewList({
                 déçue. Les taire serait de la mise en scène.
               */}
               {review.detail.length > 0 && (
-                <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                <ul className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 sm:mt-2">
                   {[...review.detail]
                     .sort((a, b) => a.rating - b.rating)
                     .slice(0, 2)
                     .map((critere) => (
                       <li
                         key={critere.field}
-                        className="flex items-center gap-1 text-[0.7rem] text-[var(--site-subtle)]"
+                        className="flex items-center gap-1 text-[0.62rem] text-[var(--site-subtle)] sm:text-[0.7rem]"
                       >
                         <span>{critere.label}</span>
                         <Stars value={critere.rating} size="size-2.5" />
@@ -130,18 +130,15 @@ export function ReviewList({
                 </ul>
               )}
 
-              {review.comment && (
-                <p className="relative mt-3 flex-1 text-[0.85rem] leading-relaxed text-[var(--site-ink)] sm:text-sm">
-                  {review.comment}
-                </p>
-              )}
+              {review.comment ? <CommentaireAvis texte={review.comment} /> : <div className="flex-1" />}
 
-              <footer className="mt-4 border-t border-[var(--site-line)] pt-3">
-                <p className="text-sm font-medium text-[var(--site-ink)]">
+              <footer className="mt-3 border-t border-[var(--site-line)] pt-2.5 sm:mt-4 sm:pt-3">
+                <p className="truncate text-[0.8rem] font-medium text-[var(--site-ink)] sm:text-sm">
                   {review.author_name}
                 </p>
-                <p className="mt-0.5 text-xs text-[var(--site-subtle)]">
-                  {review.service_name} · {formatDate(review.created_at, timeZone)}
+                <p className="mt-0.5 line-clamp-2 text-[0.66rem] text-[var(--site-subtle)] sm:text-xs">
+                  {review.service_name} ·{" "}
+                  {formatDate(review.created_at, timeZone)}
                 </p>
               </footer>
             </article>

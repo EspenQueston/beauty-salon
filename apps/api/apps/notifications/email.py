@@ -27,7 +27,36 @@ from django.template.loader import render_to_string
 logger = logging.getLogger(__name__)
 
 
-def send_email(subject: str, template: str, context: dict, to: list[str]) -> bool:
+def expediteur_du_salon(salon) -> tuple[str, list[str] | None]:
+    """L'expediteur et l'adresse de reponse d'un e-mail envoye pour un salon.
+
+    Une cliente reserve chez « Blond Rose », pas chez « Beauty Salon ». Un
+    message qui arrive sous le seul nom de la plateforme est un expediteur
+    inconnu : il est ouvert moins souvent, et signale plus souvent comme
+    indesirable — ce qui degrade la reputation de tous les envois suivants.
+
+    L'adresse d'envoi reste celle de la plateforme (c'est elle que SPF, DKIM
+    et DMARC authentifient) ; seul le nom affiche change. La reponse, elle,
+    va au salon quand il a publie une adresse de contact : c'est a lui que la
+    cliente veut ecrire.
+    """
+    from email.utils import formataddr, parseaddr
+
+    _, adresse = parseaddr(settings.DEFAULT_FROM_EMAIL)
+    nom = " ".join(f"{salon.name} via Beauty Salon".split())
+    expediteur = formataddr((nom, adresse)) if adresse else settings.DEFAULT_FROM_EMAIL
+
+    from apps.salons.models import SalonProfile
+
+    contact = (
+        SalonProfile.objects.filter(tenant_id=salon.id)
+        .values_list("contact_email", flat=True)
+        .first()
+    )
+    return expediteur, ([contact] if contact else None)
+
+
+def send_email(subject: str, template: str, context: dict, to: list[str], salon=None) -> bool:
     """Envoie un message en deux parties : texte, puis HTML.
 
     -----------------------------------------------------------------------
@@ -54,11 +83,15 @@ def send_email(subject: str, template: str, context: dict, to: list[str]) -> boo
     context = {**context, "subject": subject}
 
     text = render_to_string(f"emails/{template}.txt", context)
+    expediteur, reponse = (
+        expediteur_du_salon(salon) if salon is not None else (settings.DEFAULT_FROM_EMAIL, None)
+    )
     message = EmailMultiAlternatives(
         subject=subject,
         body=text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
+        from_email=expediteur,
         to=recipients,
+        reply_to=reponse,
     )
 
     try:

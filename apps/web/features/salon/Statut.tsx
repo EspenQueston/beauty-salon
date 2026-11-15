@@ -35,6 +35,8 @@
 import { useSyncExternalStore } from "react";
 
 import type { PublicSalon } from "@/lib/types";
+import { useTranslations } from "next-intl";
+
 import { etatOuverture } from "./ouverture";
 
 const PAS = 30_000;
@@ -71,6 +73,7 @@ export function StatutOuverture({
   /** « clair » : posé sur une photo. « encre » : posé sur la page. */
   ton?: "clair" | "encre";
 }) {
+  const t = useTranslations("salon");
   const instant = useSyncExternalStore(
     souscrire,
     instantaneNavigateur,
@@ -79,6 +82,25 @@ export function StatutOuverture({
 
   const etat = etatOuverture(salon, new Date(instant));
   if (!etat.detail) return null;
+
+  /*
+   * Le jour, dit **dans une phrase**.
+   *
+   * Le français l'écrit en minuscules — « ouvre lundi à 09:00 » — et
+   * l'anglais le capitalise toujours. Un `toLowerCase()` appliqué ici
+   * aurait donné « opens monday », ce qu'aucun anglophone n'écrit. La
+   * casse appartient donc au catalogue, pas au code.
+   */
+  const detail =
+    etat.detail.cle === "fermeA"
+      ? t("statut.fermeA", { heure: etat.detail.heure })
+      : t("statut.ouvreA", {
+          heure: etat.detail.heure,
+          quand:
+            etat.detail.quand === "aujourdhui" || etat.detail.quand === "demain"
+              ? t(`statut.${etat.detail.quand}`)
+              : t(`joursPhrase.${etat.detail.quand}`),
+        });
 
   return (
     <span
@@ -107,11 +129,15 @@ export function StatutOuverture({
       </span>
       <span>
         <span className="font-semibold">
-          {etat.ouvert ? "Ouvert" : "Fermé"}
+          {etat.ouvert ? t("statut.ouvert") : t("statut.ferme")}
         </span>
-        <span className={ton === "clair" ? "text-white/75" : "text-[var(--site-muted)]"}>
+        <span
+          className={
+            ton === "clair" ? "text-white/75" : "text-[var(--site-muted)]"
+          }
+        >
           {" · "}
-          {etat.detail}
+          {detail}
         </span>
       </span>
     </span>

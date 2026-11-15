@@ -28,6 +28,7 @@
  */
 
 import { browserApi, csrfToken } from "@/lib/api";
+import { langueDeLaPage } from "@/lib/langue-page";
 
 export async function api<T>(
   path: string,
@@ -50,6 +51,7 @@ export async function api<T>(
     headers: {
       "Content-Type": "application/json",
       "X-Tenant-Host": host,
+      ...langueDeLaPage(),
       ...(needsCsrf ? { "X-CSRFToken": await csrfToken() } : {}),
       ...(init?.headers ?? {}),
     },

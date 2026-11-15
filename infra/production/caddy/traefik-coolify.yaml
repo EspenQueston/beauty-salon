@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# Route de la plateforme dans le Traefik de Coolify.
+#
+# Modele : `deployer.sh` remplace DOMAINE_REGEX par le domaine de .env
+# (points echappes) et ecrit le resultat dans
+# /data/coolify/proxy/dynamic/salon.yaml, dossier que Traefik surveille :
+# la route est prise en compte sans redemarrer quoi que ce soit, et les
+# autres services de Coolify ne sont pas touches. Le fichier apparait aussi
+# dans l'interface de Coolify (Proxy > Dynamic configurations).
+#
+# L'expression ne couvre que le domaine de la plateforme et ses
+# sous-domaines. Les noms que Coolify attribue lui-meme s'ecrivent avec des
+# points (`x.65.21.157.38.sslip.io`), les notres avec des tirets
+# (`x.65-21-157-38.sslip.io`) : aucun recouvrement possible.
+# ---------------------------------------------------------------------------
+
+tcp:
+  routers:
+    # Port 443 : passage sans dechiffrement. Traefik lit le nom demande
+    # (SNI) et transmet la connexion telle quelle a Caddy, qui presente son
+    # propre certificat. Les routeurs TCP passent avant les routeurs HTTP :
+    # tout autre nom continue d'etre servi par Traefik, comme avant.
+    salon-https:
+      entryPoints:
+        - https
+      rule: 'HostSNIRegexp(`^(.+\.)?DOMAINE_REGEX$`)'
+      service: salon-caddy-https
+      tls:
+        passthrough: true
+
+  services:
+    salon-caddy-https:
+      loadBalancer:
+        serversTransport: salon-proxy-protocol
+        servers:
+          - address: 'salon-caddy:443'
+
+  serversTransports:
+    # L'adresse du visiteur, annoncee a Caddy en tete de connexion : sans
+    # elle, tous les visiteurs auraient celle de Traefik (voir
+    # caddy/coolify.caddy).
+    salon-proxy-protocol:
+      proxyProtocol:
+        version: 2
+
+http:
+  routers:
+    # Port 80 : Caddy repond par une redirection vers HTTPS. Priorite au
+    # dessus du routeur « catchall » de Coolify (-1000), qui renverrait 503.
+    salon-http:
+      entryPoints:
+        - http
+      rule: 'HostRegexp(`^(.+\.)?DOMAINE_REGEX$`)'
+      service: salon-caddy-http
+
+  services:
+    salon-caddy-http:
+      loadBalancer:
+        servers:
+          - url: 'http://salon-caddy:80'

@@ -11,7 +11,9 @@ L'acces existe pour le support - repondre a « mon total de mars est faux »
 sans demander une capture d'ecran - et pour rien d'autre. D'ou l'absence
 totale d'ecriture : personne chez la plateforme ne doit pouvoir corriger,
 ajouter ou supprimer une ligne dans la comptabilite d'un salon. Une
-correction se fait par le salon, depuis son propre ecran.
+correction passe par l'operation d'origine (reservation ou paiement),
+pas par la saisie directe d'une ecriture. Les anciennes lignes manuelles
+restent consultables.
 
 C'est aussi ce qui distingue cette table de `billing` : la facturation de
 l'abonnement appartient a la plateforme et s'y modifie ; les comptes du

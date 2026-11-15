@@ -12,6 +12,8 @@ export type IconName =
   | "bag"
   | "calendar"
   | "users"
+  | "phone"
+  | "mail"
   | "sparkles"
   | "scissors"
   | "clock"
@@ -19,6 +21,7 @@ export type IconName =
   | "team"
   | "store"
   | "receipt"
+  | "download"
   | "external"
   | "menu"
   | "plus"
@@ -43,9 +46,45 @@ export type IconName =
   | "eye"
   | "sliders"
   | "close"
-  | "scan";
+  | "scan"
+  | "copy"
+  // Offre Pro.
+  | "globe"
+  | "palette"
+  | "chat"
+  | "lock"
+  | "crown"
+  | "send"
+  // Parrainage.
+  | "gift"
+  | "share"
+  // Catalogue : liste ou galerie, et les gestes des vignettes.
+  | "rows"
+  | "trash"
+  | "eye-off";
 
-const PATHS: Record<IconName, ReactNode> = {
+/*
+  Exportés pour l'image des notifications (app/notification-image), qui
+  dessine le même pictogramme en grand : une alerte doit ressembler à l'écran
+  qu'elle ouvre.
+*/
+export const PATHS: Record<IconName, ReactNode> = {
+  gift: (
+    <>
+      <rect x="3.5" y="8" width="17" height="4" rx="1" />
+      <path d="M5 12v7.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V12" />
+      <path d="M12 8v12.5" />
+      <path d="M12 8C10.5 4.5 7 4 6.5 6s2.5 2 5.5 2c3 0 6-0.5 5.5-2S13.5 4.5 12 8z" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="18" cy="5.5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="18.5" r="2.5" />
+      <path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1" />
+    </>
+  ),
   edit: (
     <>
       <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" />
@@ -103,6 +142,18 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M3 10h18M8 3v4M16 3v4" />
     </>
   ),
+  /* Le combiné et l’enveloppe : joindre une cliente depuis l’agenda. */
+  phone: (
+    <path d="M6.5 3.5h3l1.5 3.8-2 1.5a12 12 0 0 0 5.2 5.2l1.5-2 3.8 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z" />
+  ),
+
+  mail: (
+    <>
+      <rect x="2.75" y="5" width="18.5" height="14" rx="2.5" />
+      <path d="m3.5 7.5 8.5 6 8.5-6" />
+    </>
+  ),
+
   users: (
     <>
       <circle cx="9" cy="8" r="3.2" />
@@ -157,6 +208,13 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M10 20v-5h4v5" />
     </>
   ),
+  download: (
+    <>
+      <path d="M12 4v11" />
+      <path d="m7 10.5 5 5 5-5" />
+      <path d="M5 20h14" />
+    </>
+  ),
   receipt: (
     <>
       <path d="M6 3h12v18l-3-1.8-3 1.8-3-1.8L6 21z" />
@@ -205,6 +263,24 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   bolt: <path d="M13.5 3 5.5 13.5h5L10 21l8.5-10.5h-5z" />,
+  rows: (
+    <>
+      <rect x="3" y="4" width="18" height="6.5" rx="1.6" />
+      <rect x="3" y="13.5" width="18" height="6.5" rx="1.6" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16M9.5 7V4.8c0-.4.4-.8.8-.8h3.4c.4 0 .8.4.8.8V7" />
+      <path d="m6 7 1 12.2c.1.9.8 1.8 1.8 1.8h6.4c1 0 1.7-.9 1.8-1.8L18 7M10 11v6M14 11v6" />
+    </>
+  ),
+  "eye-off": (
+    <>
+      <path d="M10.6 5.6c.5-.1.9-.1 1.4-.1 6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.4M6.6 6.7A17 17 0 0 0 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1.1" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+    </>
+  ),
   eye: (
     <>
       <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
@@ -226,6 +302,40 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M3.5 12h17" />
     </>
   ),
+  copy: (
+    <>
+      <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2" />
+      <path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z" />
+    </>
+  ),
+  palette: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" />
+      <circle cx="7.5" cy="11.5" r="1" />
+      <circle cx="10.5" cy="7.5" r="1" />
+      <circle cx="15.5" cy="8.5" r="1" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4A8 8 0 1 1 20 12z" />
+      <path d="M8.5 11h.01M12 11h.01M15.5 11h.01" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="10.5" width="14" height="10" rx="2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </>
+  ),
+  crown: <path d="M4 18h16M4.5 15 3 7l5 3.5L12 4l4 6.5L21 7l-1.5 8z" />,
+  send: <path d="M21 3 10.5 13.5M21 3l-6.5 18-4-7.5L3 9.5z" />,
 };
 
 export function Icon({

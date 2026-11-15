@@ -53,6 +53,23 @@ DEVISE_ATTENDUE = {
     Tenant.Country.CHINA: Tenant.Currency.CNY,
     Tenant.Country.CONGO: Tenant.Currency.XAF,
     Tenant.Country.DRC: Tenant.Currency.CDF,
+    Tenant.Country.BENIN: Tenant.Currency.XOF,
+    Tenant.Country.BURKINA_FASO: Tenant.Currency.XOF,
+    Tenant.Country.IVORY_COAST: Tenant.Currency.XOF,
+    Tenant.Country.TOGO: Tenant.Currency.XOF,
+    Tenant.Country.SENEGAL: Tenant.Currency.XOF,
+    Tenant.Country.NIGER: Tenant.Currency.XOF,
+    Tenant.Country.MALI: Tenant.Currency.XOF,
+    Tenant.Country.CAMEROON: Tenant.Currency.XAF,
+    Tenant.Country.GHANA: Tenant.Currency.GHS,
+    Tenant.Country.GUINEA: Tenant.Currency.GNF,
+    Tenant.Country.KENYA: Tenant.Currency.KES,
+    Tenant.Country.MALAWI: Tenant.Currency.MWK,
+    Tenant.Country.NIGERIA: Tenant.Currency.NGN,
+    Tenant.Country.RWANDA: Tenant.Currency.RWF,
+    Tenant.Country.TANZANIA: Tenant.Currency.TZS,
+    Tenant.Country.UGANDA: Tenant.Currency.UGX,
+    Tenant.Country.ZAMBIA: Tenant.Currency.ZMW,
 }
 
 

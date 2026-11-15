@@ -1,20 +1,37 @@
-import { adjustForContrast } from "./contrast";
+import { adjustForContrast, parseHex, toHex } from "./contrast";
 import type { PublicService, ThemeConfig } from "./types";
 
 const LOCALE = "fr-FR";
+
+/**
+ * Comment une devise se paie avec SASPAY, tel que le serveur le décide :
+ * Mobile Money (la devise du pays), carte (l'USD), ou les deux (l'USD en
+ * RDC). Vide pour les autres moyens.
+ */
+export type Canal = "mobile_money" | "carte" | "mobile_money_carte" | "";
+
+/** La clé de traduction de chaque canal (`…canal.<clé>`). */
+export const CLE_CANAL = {
+  mobile_money: "mobileMoney",
+  carte: "carte",
+  mobile_money_carte: "mobileMoneyCarte",
+} as const;
 
 /**
  * Les montants XAF et CDF n'ont pas de decimales dans l'usage courant :
  * afficher « 25 000 FCFA » plutot que « 25 000,00 » evite de faire passer
  * un tarif simple pour un devis comptable.
  */
-const ZERO_DECIMAL = new Set(["XAF", "CDF", "JPY"]);
+// GNF, RWF et UGX n'ont pas de subdivision (ISO 4217). La même liste que le
+// serveur (`apps/api/apps/common/devises.py`), plus le yen : un test vérifie
+// qu'elles concordent (audit du 16/10/2026, C-07).
+const ZERO_DECIMAL = new Set(["XAF", "XOF", "CDF", "JPY", "GNF", "RWF", "UGX"]);
 
-export function formatPrice(amount: string | number, currency: string): string {
+export function formatPrice(amount: string | number, currency: string, locale = LOCALE): string {
   const value = typeof amount === "string" ? Number(amount) : amount;
   const digits = ZERO_DECIMAL.has(currency) ? 0 : 2;
 
-  return new Intl.NumberFormat(LOCALE, {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: digits,
@@ -22,10 +39,12 @@ export function formatPrice(amount: string | number, currency: string): string {
   }).format(value);
 }
 
-export function formatServicePrice(service: PublicService, currency: string): string {
-  if (service.price_kind === "quote") return "Sur devis";
-  const price = formatPrice(service.price_amount, currency);
-  return service.price_kind === "from" ? `À partir de ${price}` : price;
+export function formatServicePrice(service: PublicService, currency: string, locale = LOCALE): string {
+  if (service.price_kind === "quote") return locale.startsWith("en") ? "On request" : "Sur devis";
+  const price = formatPrice(service.price_amount, currency, locale);
+  return service.price_kind === "from"
+    ? `${locale.startsWith("en") ? "From" : "À partir de"} ${price}`
+    : price;
 }
 
 export function formatDuration(minutes: number): string {
@@ -45,8 +64,8 @@ export function formatTime(iso: string, timeZone: string): string {
   }).format(new Date(iso));
 }
 
-export function formatDate(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat(LOCALE, {
+export function formatDate(iso: string, timeZone: string, locale = LOCALE): string {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -140,6 +159,12 @@ export function themeToCssVars(theme: ThemeConfig): Record<string, string> {
   if (isSafeColor(theme.primary)) vars["--salon-primary"] = theme.primary!;
   if (isSafeColor(theme.accent)) vars["--salon-accent"] = theme.accent!;
   if (isSafeColor(theme.surface)) vars["--salon-surface"] = theme.surface!;
+  // Un fond franc pour le mode sombre (noir) : le sol de la page, et des
+  // cartes a peine plus claires pour qu'elles se detachent.
+  if (isSafeColor(theme.dark)) {
+    vars["--salon-dark"] = theme.dark!;
+    vars["--salon-dark-surface"] = eclaircir(theme.dark!, 0.075);
+  }
   if (theme.radius && /^[0-9.]+(px|rem|em)$/.test(theme.radius)) {
     vars["--salon-radius"] = theme.radius;
   }
@@ -187,6 +212,14 @@ const PRIMAIRE_PAR_DEFAUT = "#b4436c";
  */
 function encreSurFondClair(marque: string, fond: string): string {
   return adjustForContrast(marque, fond, 4.5) ?? marque;
+}
+
+/** Une couleur melangee a du blanc, dans la proportion donnee (0 a 1). */
+function eclaircir(couleur: string, part: number): string {
+  const rgb = parseHex(couleur);
+  if (!rgb) return couleur;
+  const mele = (v: number) => Math.round(v + (255 - v) * part);
+  return toHex({ r: mele(rgb.r), g: mele(rgb.g), b: mele(rgb.b) });
 }
 
 function isSafeColor(value?: string): boolean {

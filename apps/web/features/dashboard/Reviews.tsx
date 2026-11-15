@@ -10,6 +10,7 @@
  * plateforme, joignable en cas d'avis manifestement abusif.
  */
 
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { formatDate } from "@/lib/format";
@@ -25,6 +26,7 @@ import {
 } from "@/features/ui";
 import { Icon } from "./icons";
 import { useDashboard } from "./DashboardShell";
+import { useFormats } from "./formats";
 import { rows, useResource, type Page } from "./useResource";
 
 interface Review {
@@ -40,7 +42,18 @@ interface Review {
   created_at: string;
 }
 
+/** Les critères notés (`Review.CRITERIA` côté serveur), libellés sous `pro.avis.criteres`. */
+const CRITERES = [
+  "rating_result",
+  "rating_welcome",
+  "rating_punctuality",
+  "rating_cleanliness",
+  "rating_value",
+];
+
 export function Reviews() {
+  const t = useTranslations("pro.avis");
+  const { region } = useFormats();
   const { membership } = useDashboard();
   const tenantId = membership.tenant.id;
   const timeZone = membership.tenant.timezone;
@@ -65,47 +78,48 @@ export function Reviews() {
   return (
     <section>
       <PageHeader
-        title="Avis"
-        description="Ce que vos clientes disent après leur rendez-vous. Chaque avis est rattaché à une prestation réellement honorée."
+        title={t("titre")}
+        description={t("description")}
       />
 
-      {reviews.error && <ErrorState>Impossible de charger les avis.</ErrorState>}
+      {reviews.error && (
+        <ErrorState>{t("erreur")}</ErrorState>
+      )}
       {reviews.data === null && !reviews.error && <Skeleton rows={3} />}
 
       {all.length === 0 && reviews.data !== null && (
-        <EmptyState title="Aucun avis pour l'instant">
-          Une demande d&apos;avis part automatiquement par e-mail quelques
-          heures après chaque prestation terminée. Les premiers arriveront
-          d&apos;eux-mêmes.
-        </EmptyState>
+        <EmptyState title={t("vide.titre")}>{t("vide.corps")}</EmptyState>
       )}
 
       {published.length > 0 && (
         <>
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             <StatTile
-              label="Note moyenne"
-              value={average ? `${average.toFixed(1)} / 5` : "—"}
-              hint={`sur ${published.length} avis publié${published.length > 1 ? "s" : ""}`}
+              label={t("moyenne")}
+              value={average ? `${average.toLocaleString(region, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} / 5` : "—"}
+              hint={t("surAvis", { n: published.length })}
             />
             <StatTile
-              label="Cinq étoiles"
+              label={t("cinq")}
               value={String(spread[0].count)}
               hint={
                 published.length > 0
-                  ? `${Math.round((spread[0].count / published.length) * 100)} % des avis`
+                  ? t("partDesAvis", { pct: Math.round((spread[0].count / published.length) * 100) })
                   : undefined
               }
             />
             <StatTile
-              label="Trois étoiles ou moins"
+              label={t("troisOuMoins")}
               value={String(
-                spread.filter((row) => row.score <= 3).reduce((t, r) => t + r.count, 0),
+                spread
+                  .filter((row) => row.score <= 3)
+                  .reduce((t, r) => t + r.count, 0),
               )}
-              hint="à lire en priorité"
+              hint={t("priorite")}
               tone={
-                spread.filter((row) => row.score <= 3).reduce((t, r) => t + r.count, 0) >
-                0
+                spread
+                  .filter((row) => row.score <= 3)
+                  .reduce((t, r) => t + r.count, 0) > 0
                   ? "danger"
                   : "neutral"
               }
@@ -113,11 +127,13 @@ export function Reviews() {
           </div>
 
           <Card className="mb-8">
-            <SectionTitle>Répartition</SectionTitle>
+            <SectionTitle>{t("repartition")}</SectionTitle>
             <ul className="space-y-2">
               {spread.map((row) => {
                 const share =
-                  published.length > 0 ? (row.count / published.length) * 100 : 0;
+                  published.length > 0
+                    ? (row.count / published.length) * 100
+                    : 0;
                 return (
                   <li key={row.score} className="flex items-center gap-3">
                     <span className="tabular w-10 shrink-0 text-sm text-muted">
@@ -156,17 +172,20 @@ export function Reviews() {
                         />
                       ))}
                     </span>
-                    <span className="font-medium text-ink">{review.author_name}</span>
+                    <span className="font-medium text-ink">
+                      {review.author_name}
+                    </span>
                     {review.status === "hidden" && (
-                      <Badge tone="warning">Masqué par la plateforme</Badge>
+                      <Badge tone="warning">{t("masque")}</Badge>
                     )}
                   </p>
 
                   <p className="mt-1 text-sm text-subtle">
                     {review.service_name}
-                    {review.staff_member_name && ` · ${review.staff_member_name}`}
+                    {review.staff_member_name &&
+                      ` · ${review.staff_member_name}`}
                     {" · "}
-                    {formatDate(review.booking_starts_at, timeZone)}
+                    {formatDate(review.booking_starts_at, timeZone, region)}
                   </p>
 
                   {/*
@@ -185,11 +204,13 @@ export function Reviews() {
                           className="flex items-center justify-between gap-2 border-b border-line pb-1.5"
                         >
                           <dt className="min-w-0 truncate text-xs text-muted">
-                            {critere.label}
+                            {CRITERES.includes(critere.field)
+                              ? t(`criteres.${critere.field}`)
+                              : critere.label}
                           </dt>
                           <dd
                             className="flex shrink-0 items-center gap-0.5 text-salon"
-                            aria-label={`${critere.rating} sur 5`}
+                            aria-label={t("surCinq", { n: critere.rating })}
                           >
                             {[1, 2, 3, 4, 5].map((step) => (
                               <Icon
@@ -218,10 +239,7 @@ export function Reviews() {
 
       {all.length > 0 && (
         <p className="mt-6 max-w-2xl text-sm leading-relaxed text-muted">
-          Vous ne pouvez ni modifier ni supprimer un avis : c&apos;est ce qui
-          leur donne leur valeur aux yeux de vos clientes. Un avis
-          manifestement abusif peut être signalé à l&apos;équipe Beauty Salon,
-          qui décide de le retirer.
+          {t("regle")}
         </p>
       )}
     </section>

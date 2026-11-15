@@ -18,17 +18,22 @@
  * et l'avertissement explicite avant publication.
  *
  * ---------------------------------------------------------------------------
- * Pourquoi seulement WeChat et Alipay
+ * Quels moyens
  * ---------------------------------------------------------------------------
  *
- * Parce que ce sont les deux moyens utilisés là où sont les premiers salons.
- * Le modèle accepte déjà Mobile Money, Airtel et Orange Money pour
- * Brazzaville et Kinshasa ; ils s'afficheront quand ces salons arriveront.
+ * Ceux qui existent dans le pays du salon, tels que le serveur les donne
+ * (`/payment-channels/disponibles/`) : WeChat Pay et Alipay en Chine ; Mobile
+ * Money, Orange ou Airtel Money là où l'opérateur est présent, et virement,
+ * en Afrique. Ceux-là se règlent avec un numéro que la cliente compose : le
+ * QR code y devient facultatif, et c'est le numéro qu'on demande.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
+import { nomDuMoyen, parNumero } from "./moyens";
+import { useReauth } from "./Reauth";
 import {
   Badge,
   Card,
@@ -51,19 +56,9 @@ interface Channel {
   instructions: string;
   active: boolean;
   usable: boolean;
+  /** Faux si le moyen n'existe pas dans le pays du salon : plus proposé. */
+  propose: boolean;
 }
-
-/**
- * Moyens proposés à la création.
- *
- * La liste du serveur en contient davantage — Mobile Money, Airtel, Orange —
- * mais les proposer maintenant à des salons chinois encombrerait le choix
- * pour rien.
- */
-const OFFERED = [
-  { value: "wechat", label: "WeChat Pay" },
-  { value: "alipay", label: "Alipay" },
-];
 
 export function PaymentChannels({
   tenantId,
@@ -76,23 +71,38 @@ export function PaymentChannels({
   media: PickableMedia[];
   onMediaChanged: () => void;
 }) {
+  const t = useTranslations("pro.encaissement");
   const toast = useToast();
-  const channels = useResource<Page<Channel>>("/api/v1/payment-channels/", tenantId);
-  const list = rows(channels.data);
-
-  const missing = OFFERED.filter(
-    (option) => !list.some((channel) => channel.kind === option.value),
+  // Toute modification d'un moyen exige une identité confirmée de moins de
+  // dix minutes (le serveur le refuse sinon) : voir Reauth.tsx.
+  const { avecReauth, fenetre } = useReauth();
+  const libelle = (kind: string) => nomDuMoyen(kind, t("virement"));
+  const channels = useResource<Page<Channel>>(
+    "/api/v1/payment-channels/",
+    tenantId,
   );
+  const list = rows(channels.data);
+  // Les moyens du pays du salon, décidés par le serveur (qui refuse les autres).
+  const disponibles = useResource<{ kind: string }[]>(
+    "/api/v1/payment-channels/disponibles/",
+    tenantId,
+  );
+  const missing = (disponibles.data ?? [])
+    .map((item) => item.kind)
+    .filter((kind) => !list.some((channel) => channel.kind === kind));
 
   async function create(kind: string) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(
+        avecReauth(() => dashboardFetch(
           "/api/v1/payment-channels/",
-          { method: "POST", body: JSON.stringify({ kind, position: list.length }) },
+          {
+            method: "POST",
+            body: JSON.stringify({ kind, position: list.length }),
+          },
           tenantId,
-        ),
-      { success: "Moyen ajouté. Téléversez votre QR code." },
+        )),
+      { success: t(parNumero(kind) ? "ajouteNumero" : "ajoute") },
     );
     if (ok) channels.reload();
   }
@@ -100,12 +110,12 @@ export function PaymentChannels({
   async function patch(channel: Channel, changes: Partial<Channel>) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(
+        avecReauth(() => dashboardFetch(
           `/api/v1/payment-channels/${channel.id}/`,
           { method: "PATCH", body: JSON.stringify(changes) },
           tenantId,
-        ),
-      { success: "Enregistré." },
+        )),
+      { success: t("enregistre") },
     );
     if (ok) channels.reload();
   }
@@ -113,31 +123,27 @@ export function PaymentChannels({
   async function remove(channel: Channel) {
     const ok = await toast.run(
       () =>
-        dashboardFetch(
+        avecReauth(() => dashboardFetch(
           `/api/v1/payment-channels/${channel.id}/`,
           { method: "DELETE" },
           tenantId,
-        ),
-      { success: `${channel.kind_label} retiré.` },
+        )),
+      { success: t("retire", { moyen: libelle(channel.kind) }) },
     );
     if (ok) channels.reload();
   }
 
   return (
     <Card id="encaissement">
-      <SectionTitle>Encaisser les acomptes</SectionTitle>
-      <p className="-mt-2 mb-4 text-sm text-muted">
-        Publiez le QR code de votre compte : vos clientes régleront leur
-        acompte dessus avant de venir. L&apos;argent arrive directement chez
-        vous — nous ne le touchons jamais.
-      </p>
+      {fenetre}
+      <SectionTitle>{t("titre")}</SectionTitle>
+      <p className="-mt-2 mb-4 text-sm text-muted">{t("intro")}</p>
 
       {channels.data === null && !channels.error && <Skeleton rows={1} />}
 
       {list.length === 0 && channels.data !== null && (
         <p className="mb-3 text-sm text-muted">
-          Sans QR code, vos clientes réservent sans rien régler et vous
-          encaissez sur place, comme aujourd&apos;hui.
+          {t("sansQr")}
         </p>
       )}
 
@@ -160,14 +166,10 @@ export function PaymentChannels({
       )}
 
       {canEdit && missing.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {missing.map((option) => (
-            <GhostButton
-              key={option.value}
-              type="button"
-              onClick={() => create(option.value)}
-            >
-              Ajouter {option.label}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {missing.map((kind) => (
+            <GhostButton key={kind} type="button" onClick={() => create(kind)}>
+              {t("ajouter", { moyen: libelle(kind) })}
             </GhostButton>
           ))}
         </div>
@@ -193,82 +195,163 @@ function ChannelCard({
   onPatch: (changes: Partial<Channel>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("pro.encaissement");
   const [name, setName] = useState(channel.account_name);
   const [instructions, setInstructions] = useState(channel.instructions);
+  const nom = nomDuMoyen(channel.kind, t("virement"));
+  // Mobile Money, virement : un numéro ou des coordonnées, pas d'abord un QR.
+  const numero = parNumero(channel.kind);
+  const banque = channel.kind === "bank";
 
   return (
     <div
       className={`rounded-xl border p-3 transition ${
-        channel.active && channel.usable
+        channel.active && channel.usable && channel.propose
           ? "border-line bg-surface"
           : "border-dashed border-line bg-surface-muted"
       }`}
     >
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-        <p className="font-medium text-ink">{channel.kind_label}</p>
-        {channel.usable ? (
-          <Badge tone="success">Proposé</Badge>
+        <p className="font-medium text-ink">{nom}</p>
+        {!channel.propose ? (
+          <Badge tone="warning">{t("horsPays")}</Badge>
+        ) : channel.usable ? (
+          <Badge tone="success">{t("propose")}</Badge>
         ) : (
-          <Badge tone="warning">QR manquant</Badge>
+          <Badge tone="warning">{t(numero ? "numeroManquant" : "qrManquant")}</Badge>
         )}
       </div>
 
-      {/* L'aperçu est à taille réelle, pas en vignette : un QR code trop
-          petit pour être scanné ne permet pas de vérifier qu'il est le bon,
-          et c'est exactement l'erreur qui envoie l'argent ailleurs. */}
-      {channel.qr_url && (
-        <span className="mb-2.5 block w-fit rounded-xl bg-white p-2 ring-1 ring-line">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={channel.qr_url}
-            alt={`QR code ${channel.kind_label}`}
-            className="size-32 object-contain"
+      {numero ? (
+        // Mobile Money, virement : le numéro d'abord — c'est lui que la
+        // cliente compose. Le QR code reste possible, replié.
+        <>
+          <label className="block">
+            <span className="mb-1 block text-xs text-muted">
+              {t(banque ? "coordonnees" : numero ? "numero" : "precision")}
+            </span>
+            <input
+              value={instructions}
+              onChange={(event) => setInstructions(event.target.value)}
+              onBlur={() => {
+                if (instructions !== channel.instructions)
+                  onPatch({ instructions });
+              }}
+              disabled={!canEdit}
+              placeholder={t(banque ? "coordonneesExemple" : numero ? "numeroExemple" : "precisionExemple")}
+              className={inputClass}
+            />
+          </label>
+          <label className="mt-2 block">
+            <span className="mb-1 block text-xs text-muted">{t(numero ? "titulaire" : "compte")}</span>
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              onBlur={() => {
+                if (name !== channel.account_name) onPatch({ account_name: name });
+              }}
+              disabled={!canEdit}
+              placeholder={t(numero ? "titulaireExemple" : "compteExemple")}
+              className={inputClass}
+            />
+          </label>
+          <details className="mt-3" open={!!channel.qr_url}>
+            <summary className="min-h-9 cursor-pointer py-1 text-xs font-medium text-muted hover:text-ink">
+              {t("qrFacultatif")}
+            </summary>
+            <div className="mt-2">
+              {/* L'aperçu est à taille réelle, pas en vignette : un QR code trop
+                  petit pour être scanné ne permet pas de vérifier qu'il est le bon,
+                  et c'est exactement l'erreur qui envoie l'argent ailleurs. */}
+              {channel.qr_url && (
+                <span className="mb-2.5 block w-fit rounded-xl bg-white p-2 ring-1 ring-line">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={channel.qr_url}
+                    alt={t("qrDe", { moyen: nom })}
+                    className="size-32 object-contain"
+                  />
+                </span>
+              )}
+
+              <MediaPicker
+                tenantId={tenantId}
+                assets={media}
+                value={channel.qr_image}
+                onChange={(id) => onPatch({ qr_image: id })}
+                onUploaded={onMediaChanged}
+                label={numero ? t("qrFacultatif") : t("qr")}
+                hint={t("qrAide")}
+                // Surtout pas « gallery » : le genre décide de ce qui apparaît sur la
+                // page Réalisations du mini-site. Un QR téléversé puis jamais
+                // rattaché y restait pour toujours, entre deux coiffures.
+                kind="payment"
+              />
+            </div>
+          </details>
+        </>
+      ) : (
+        <>
+          {/* L'aperçu est à taille réelle, pas en vignette : un QR code trop
+              petit pour être scanné ne permet pas de vérifier qu'il est le bon,
+              et c'est exactement l'erreur qui envoie l'argent ailleurs. */}
+          {channel.qr_url && (
+            <span className="mb-2.5 block w-fit rounded-xl bg-white p-2 ring-1 ring-line">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={channel.qr_url}
+                alt={t("qrDe", { moyen: nom })}
+                className="size-32 object-contain"
+              />
+            </span>
+          )}
+
+          <MediaPicker
+            tenantId={tenantId}
+            assets={media}
+            value={channel.qr_image}
+            onChange={(id) => onPatch({ qr_image: id })}
+            onUploaded={onMediaChanged}
+            label={numero ? t("qrFacultatif") : t("qr")}
+            hint={t("qrAide")}
+            // Surtout pas « gallery » : le genre décide de ce qui apparaît sur la
+            // page Réalisations du mini-site. Un QR téléversé puis jamais
+            // rattaché y restait pour toujours, entre deux coiffures.
+            kind="payment"
           />
-        </span>
+
+          <label className="mt-3 block">
+            <span className="mb-1 block text-xs text-muted">{t(numero ? "titulaire" : "compte")}</span>
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              onBlur={() => {
+                if (name !== channel.account_name) onPatch({ account_name: name });
+              }}
+              disabled={!canEdit}
+              placeholder={t(numero ? "titulaireExemple" : "compteExemple")}
+              className={inputClass}
+            />
+          </label>
+
+          <label className="mt-2 block">
+            <span className="mb-1 block text-xs text-muted">
+              {t(banque ? "coordonnees" : numero ? "numero" : "precision")}
+            </span>
+            <input
+              value={instructions}
+              onChange={(event) => setInstructions(event.target.value)}
+              onBlur={() => {
+                if (instructions !== channel.instructions)
+                  onPatch({ instructions });
+              }}
+              disabled={!canEdit}
+              placeholder={t(banque ? "coordonneesExemple" : numero ? "numeroExemple" : "precisionExemple")}
+              className={inputClass}
+            />
+          </label>
+        </>
       )}
-
-      <MediaPicker
-        tenantId={tenantId}
-        assets={media}
-        value={channel.qr_image}
-        onChange={(id) => onPatch({ qr_image: id })}
-        onUploaded={onMediaChanged}
-        label="QR code"
-        hint="La capture de votre code depuis l'application."
-        // Surtout pas « gallery » : le genre décide de ce qui apparaît sur la
-        // page Réalisations du mini-site. Un QR téléversé puis jamais
-        // rattaché y restait pour toujours, entre deux coiffures.
-        kind="payment"
-      />
-
-      <label className="mt-3 block">
-        <span className="mb-1 block text-xs text-muted">Nom du compte</span>
-        <input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          onBlur={() => {
-            if (name !== channel.account_name) onPatch({ account_name: name });
-          }}
-          disabled={!canEdit}
-          placeholder="Ce que la cliente verra en scannant"
-          className={inputClass}
-        />
-      </label>
-
-      <label className="mt-2 block">
-        <span className="mb-1 block text-xs text-muted">Précision</span>
-        <input
-          value={instructions}
-          onChange={(event) => setInstructions(event.target.value)}
-          onBlur={() => {
-            if (instructions !== channel.instructions)
-              onPatch({ instructions });
-          }}
-          disabled={!canEdit}
-          placeholder="« Mettez votre nom en commentaire »"
-          className={inputClass}
-        />
-      </label>
 
       {canEdit && (
         <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line pt-2.5">
@@ -277,7 +360,7 @@ function ChannelCard({
             onClick={() => onPatch({ active: !channel.active })}
             className="text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
           >
-            {channel.active ? "Suspendre" : "Réactiver"}
+            {channel.active ? t("suspendre") : t("reactiver")}
           </button>
           <span aria-hidden className="text-subtle">
             ·
@@ -287,7 +370,7 @@ function ChannelCard({
             onClick={onRemove}
             className="text-xs text-danger underline-offset-2 hover:underline"
           >
-            Supprimer
+            {t("supprimer")}
           </button>
         </div>
       )}

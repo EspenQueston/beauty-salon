@@ -9,6 +9,87 @@ from django.utils.translation import gettext_lazy as _
 from .db import get_current_tenant_id
 
 
+class HomeReference(models.Model):
+    """Publication volontaire par la plateforme, distincte des données privées du salon."""
+
+    tenant = models.ForeignKey("tenants.Tenant", on_delete=models.CASCADE)
+    author = models.CharField("responsable", max_length=100)
+    quote_fr = models.TextField("témoignage français", max_length=1000, blank=True)
+    quote_en = models.TextField("témoignage anglais", max_length=1000, blank=True)
+    portrait = models.URLField("portrait autorisé (HTTPS)", blank=True)
+    consent = models.BooleanField("autorisation de publication obtenue", default=False)
+    verified = models.BooleanField("identité et propos vérifiés", default=False)
+    active = models.BooleanField("publier", default=False)
+    showcase = models.BooleanField("proposer le mini-site comme exemple", default=False)
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "référence de la page d’accueil"
+        verbose_name_plural = "références de la page d’accueil"
+        ordering = ("position", "pk")
+
+    def __str__(self):
+        return f"{self.tenant} · {self.author}"
+
+    def clean(self):
+        super().clean()
+        if self.active and not (self.consent and self.verified):
+            raise ValidationError("Une publication exige l’autorisation et la vérification.")
+        if self.portrait and not self.portrait.startswith("https://"):
+            raise ValidationError({"portrait": "Le portrait doit utiliser HTTPS."})
+
+
+
+class HomeSettings(models.Model):
+    key = models.CharField(max_length=12, default="home", unique=True, editable=False)
+    support_email = models.EmailField("adresse d’assistance", blank=True)
+    support_whatsapp = models.CharField(
+        "WhatsApp d’assistance (indicatif inclus)", max_length=20, blank=True
+    )
+
+    class Meta:
+        verbose_name = "contact de la page d’accueil"
+        verbose_name_plural = "contact de la page d’accueil"
+
+    def __str__(self):
+        return "Assistance du site principal"
+
+    def clean(self):
+        super().clean()
+        if self.support_whatsapp and not self.support_whatsapp.lstrip("+").isdigit():
+            raise ValidationError(
+                {"support_whatsapp": "Utilisez uniquement l’indicatif et les chiffres."}
+            )
+
+
+
+class HomeMetric(models.Model):
+    day = models.DateField()
+    event = models.CharField(max_length=32)
+    language = models.CharField(max_length=2)
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "mesure du parcours de création"
+        verbose_name_plural = "mesures du parcours de création"
+        constraints = [
+            models.UniqueConstraint(fields=("day", "event", "language"), name="home_metric_daily")
+        ]
+        ordering = ("-day", "event")
+
+    def __str__(self):
+        return f"{self.day} · {self.event} · {self.count}"
+
+
+class HomeBookingMilestone(models.Model):
+    """Repère interne : un premier rendez-vous ne se compte qu'une fois par salon."""
+
+    tenant = models.OneToOneField("tenants.Tenant", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.tenant_id)
+
+
 class UUIDModel(models.Model):
     """Cle primaire UUID : aucun identifiant devinable n'apparait dans les URL."""
 
