@@ -1,0 +1,21 @@
+{% autoescape off %}{{ t.pro_bonjour }}
+
+{{ titre }}
+
+{{ accroche }}
+{% if montant %}
+{{ montant.label }}{{ t.deux_points }} {{ montant.texte }}{% if montant.aide %} ({{ montant.aide }}){% endif %}
+{% endif %}{% if faits %}
+{% for fait in faits %}{{ fait.label }}{{ t.deux_points }} {{ fait.value }}
+{% endfor %}{% endif %}{% if avis %}
+{{ avis.titre }}{% if avis.texte %}
+{{ avis.texte }}{% endif %}
+{% endif %}{% for paragraphe in paragraphes %}{% if paragraphe %}
+{{ paragraphe }}
+{% endif %}{% endfor %}{% if bouton_url %}
+{{ bouton_texte }}{{ t.deux_points }} {{ bouton_url }}
+{% endif %}
+{{ t.pro_signature }}
+
+{{ pied }}
+{% endautoescape %}

@@ -122,7 +122,7 @@ def test_even_at_one_hundred_percent_travel_stays_out():
     assert due == euros("770")  # 450 + 80 + 240, sans les 75 de trajet
 
 
-@pytest.mark.parametrize("currency", ["XAF", "XOF", "CDF"])
+@pytest.mark.parametrize("currency", ["XAF", "XOF", "CDF", "GNF", "RWF", "UGX"])
 def test_currencies_without_cents_are_rounded_down(currency):
     """Un acompte a 137,40 XAF ne se paie pas : la piece n'existe pas.
 
@@ -190,6 +190,7 @@ def test_the_deposit_follows_the_basket_end_to_end(api_client, salon_a):
             "starts_at": next_monday_at(10).isoformat(),
             "full_name": "Awa Diallo",
             "phone": "+242066112233",
+            "email": "awa@example.com",
             "accepts_policy": True,
             "options": [str(option.id)],
         },
@@ -228,6 +229,7 @@ def test_a_salon_without_a_rate_falls_back_to_its_minimum(api_client, salon_a):
             "starts_at": next_monday_at(10).isoformat(),
             "full_name": "Awa Diallo",
             "phone": "+242066112233",
+            "email": "awa@example.com",
             "accepts_policy": True,
         },
         format="json",

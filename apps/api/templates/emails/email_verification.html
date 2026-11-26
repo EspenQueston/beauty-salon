@@ -1,0 +1,21 @@
+{% extends "emails/base_produit.html" %}
+
+{% block preheader %}{% if anglais %}One click to confirm your email address{% else %}Un clic pour confirmer votre adresse e-mail{% endif %}{% endblock %}
+
+{% block body %}
+  {% if anglais %}
+    {% include "emails/_parts.html" with part="title" text="Confirm your email address" %}
+    {% include "emails/_parts.html" with part="text" text="Please confirm that this address is yours. It protects your account and lets us reach you about your salon." %}
+    {% include "emails/_parts.html" with part="button" url=verify_url text="Confirm my address" color="#B4436C" %}
+    {% include "emails/_parts.html" with part="notice" title="Not you?" text="If you did not create a Beauty Salon account, ignore this message: nothing will happen." %}
+  {% else %}
+    {% include "emails/_parts.html" with part="title" text="Confirmez votre adresse e-mail" %}
+    {% include "emails/_parts.html" with part="text" text="Confirmez que cette adresse est bien la vôtre : elle protège votre compte et nous permet de vous joindre au sujet de votre salon." %}
+    {% include "emails/_parts.html" with part="button" url=verify_url text="Confirmer mon adresse" color="#B4436C" %}
+    {% include "emails/_parts.html" with part="notice" title="Ce n'est pas vous ?" text="Si vous n'avez pas créé de compte Beauty Salon, ignorez ce message : il ne se passera rien." %}
+  {% endif %}
+{% endblock %}
+
+{% block footer %}
+  {% if anglais %}Link valid for {{ heures }} hours, usable once.{% else %}Lien valable {{ heures }} heures, utilisable une seule fois.{% endif %}
+{% endblock %}

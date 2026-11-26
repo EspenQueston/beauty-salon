@@ -18,6 +18,7 @@
  * travail hors du fil principal.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 export interface NavSection {
@@ -26,6 +27,7 @@ export interface NavSection {
 }
 
 export function SectionNav({ sections }: { sections: NavSection[] }) {
+  const t = useTranslations("pro.profilNav");
   const [active, setActive] = useState(sections[0]?.id ?? "");
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -67,7 +69,7 @@ export function SectionNav({ sections }: { sections: NavSection[] }) {
       ref={barRef}
       className="sticky top-0 z-20 -mx-4 mb-6 overflow-x-auto border-b border-line bg-bg/90 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
     >
-      <nav aria-label="Sections du profil">
+      <nav aria-label={t("sections")}>
         <ul className="flex min-w-max gap-1 py-2">
           {sections.map((section) => {
             const current = section.id === active;

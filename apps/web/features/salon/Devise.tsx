@@ -42,9 +42,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+
+import { useTranslations } from "next-intl";
 
 import { browserApi } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
@@ -52,6 +55,11 @@ import { SalonIcon } from "./icons";
 
 /**
  * Le taux, demandé à l'API du salon.
+ *
+ * `X-Tenant-Host` : en production, l'API répond sur `api.<domaine>`, pas sur
+ * l'hôte du mini-site. Sans cet en-tête, le serveur ne savait pas de quel
+ * salon il s'agissait (404) et le bouton ne convertissait rien — sans rien
+ * dire. En local l'API partage l'hôte de la page, d'où un défaut invisible.
  *
  * `browserApi()` et non un chemin relatif : le mini-site est servi par Next
  * sur un port, l'API répond sur un autre. Un `/api/v1/...` nu partait vers
@@ -64,11 +72,13 @@ import { SalonIcon } from "./icons";
 async function lireTaux(vers: string): Promise<number> {
   const reponse = await fetch(
     `${browserApi()}/api/v1/public/rate?vers=${encodeURIComponent(vers)}`,
+    { headers: { "X-Tenant-Host": window.location.hostname } },
   );
   if (!reponse.ok) throw new Error("taux indisponible");
   const data = await reponse.json();
   const valeur = Number(data.taux);
-  if (!valeur || !Number.isFinite(valeur)) throw new Error("taux inexploitable");
+  if (!valeur || !Number.isFinite(valeur))
+    throw new Error("taux inexploitable");
   return valeur;
 }
 
@@ -111,7 +121,11 @@ function lirePreference(cle: string, devise: string): string {
   let preference: Preference | null = null;
   try {
     const decode = JSON.parse(brut);
-    if (decode && typeof decode.lue === "string" && typeof decode.base === "string") {
+    if (
+      decode &&
+      typeof decode.lue === "string" &&
+      typeof decode.base === "string"
+    ) {
       preference = decode;
     }
   } catch {
@@ -128,7 +142,10 @@ function lirePreference(cle: string, devise: string): string {
 
 function ecrirePreference(cle: string, lue: string, base: string) {
   try {
-    localStorage.setItem(cle, JSON.stringify({ lue, base } satisfies Preference));
+    localStorage.setItem(
+      cle,
+      JSON.stringify({ lue, base } satisfies Preference),
+    );
   } catch {
     // Sans stockage, le choix ne survit pas au changement de page. Il vaut
     // mieux que rien.
@@ -143,13 +160,18 @@ function oublierPreference(cle: string) {
   }
 }
 
-/** Ce qu'on propose de lire, au-delà de la devise du salon. */
+/*
+  Ce qu'on propose de lire, au-delà de la devise du salon.
+
+  Le symbole ne se traduit pas — « ¥ » est « ¥ » dans toutes les langues — mais
+  le nom, si : le catalogue le porte sous `devise.noms`.
+*/
 const PROPOSEES = [
-  { code: "XAF", label: "Franc CFA", court: "FCFA" },
-  { code: "CNY", label: "Yuan", court: "¥" },
-  { code: "CDF", label: "Franc congolais", court: "FC" },
-  { code: "EUR", label: "Euro", court: "€" },
-  { code: "USD", label: "Dollar", court: "$" },
+  { code: "XAF", court: "FCFA" },
+  { code: "CNY", court: "¥" },
+  { code: "CDF", court: "FC" },
+  { code: "EUR", court: "€" },
+  { code: "USD", court: "$" },
 ];
 
 function court(code: string): string {
@@ -166,6 +188,8 @@ interface Contexte {
   prix: (montant: string | number) => string;
   /** Vrai pendant l'aller-retour vers le taux. */
   occupe: boolean;
+  /** Le dernier choix n'a pas pu être converti : à dire, pas à taire. */
+  echec: boolean;
 }
 
 const DeviseContext = createContext<Contexte | null>(null);
@@ -191,6 +215,15 @@ export function DeviseProvider({
   const [affichee, setAffichee] = useState(devise);
   const [taux, setTaux] = useState(1);
   const [occupe, setOccupe] = useState(false);
+  const [echec, setEchec] = useState(false);
+  const derniereDemande = useRef(0);
+
+  // Le message d'échec s'efface de lui-même : il informe, il ne bloque pas.
+  useEffect(() => {
+    if (!echec) return;
+    const minuterie = window.setTimeout(() => setEchec(false), 4500);
+    return () => window.clearTimeout(minuterie);
+  }, [echec]);
 
   const cle = `beauty-salon.devise.${salonSlug}`;
 
@@ -205,6 +238,7 @@ export function DeviseProvider({
   */
   useEffect(() => {
     let perime = false;
+    const demande = ++derniereDemande.current;
 
     // `lirePreference` efface d'elle-même un choix fait contre une autre
     // devise que celle du salon aujourd'hui : c'est le salon qui décide.
@@ -224,7 +258,7 @@ export function DeviseProvider({
     */
     lireTaux(voulue)
       .then((valeur) => {
-        if (perime) return;
+        if (perime || demande !== derniereDemande.current) return;
         setTaux(valeur);
         setAffichee(voulue);
       })
@@ -240,6 +274,8 @@ export function DeviseProvider({
 
   const choisir = useCallback(
     (code: string) => {
+      setEchec(false);
+      const demande = ++derniereDemande.current;
       if (code === devise) {
         // Revenir à la devise du salon, c'est renoncer à la préférence.
         // La garder ferait réapparaître un « ≈ » au prochain changement de
@@ -247,6 +283,7 @@ export function DeviseProvider({
         oublierPreference(cle);
         setAffichee(devise);
         setTaux(1);
+        setOccupe(false);
         return;
       }
 
@@ -255,16 +292,23 @@ export function DeviseProvider({
       setOccupe(true);
       lireTaux(code)
         .then((valeur) => {
+          if (demande !== derniereDemande.current) return;
           setTaux(valeur);
           setAffichee(code);
         })
         .catch(() => {
+          if (demande !== derniereDemande.current) return;
           // On revient à la devise du salon plutôt que de laisser un
-          // affichage à moitié converti.
+          // affichage à moitié converti — et on le dit : un bouton qui ne
+          // fait rien sans explication passe pour cassé.
+          oublierPreference(cle);
           setAffichee(devise);
           setTaux(1);
+          setEchec(true);
         })
-        .finally(() => setOccupe(false));
+        .finally(() => {
+          if (demande === derniereDemande.current) setOccupe(false);
+        });
     },
     [cle, devise],
   );
@@ -275,6 +319,7 @@ export function DeviseProvider({
       affichee,
       choisir,
       occupe,
+      echec,
       prix: (montant) => {
         const brut = typeof montant === "string" ? Number(montant) : montant;
         if (affichee === devise) return formatPrice(brut, devise);
@@ -283,7 +328,7 @@ export function DeviseProvider({
         return `≈ ${formatPrice(brut * taux, affichee)}`;
       },
     }),
-    [affichee, choisir, devise, occupe, taux],
+    [affichee, choisir, devise, echec, occupe, taux],
   );
 
   return (
@@ -299,7 +344,8 @@ export function DeviseProvider({
  * en compte déjà quatre éléments sur téléphone.
  */
 export function DeviseToggle({ className = "" }: { className?: string }) {
-  const { reelle, affichee, choisir, occupe } = useDevise();
+  const t = useTranslations("devise");
+  const { reelle, affichee, choisir, occupe, echec } = useDevise();
   const [ouvert, setOuvert] = useState(false);
 
   // La devise du salon d'abord, puis les autres : on lit son prix réel avant
@@ -308,7 +354,6 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
     const autres = PROPOSEES.filter((d) => d.code !== reelle);
     const sienne = PROPOSEES.find((d) => d.code === reelle) ?? {
       code: reelle,
-      label: reelle,
       court: reelle,
     };
     return [sienne, ...autres];
@@ -320,16 +365,32 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
         type="button"
         onClick={() => setOuvert((o) => !o)}
         aria-expanded={ouvert}
-        aria-label={`Afficher les prix en une autre devise (actuellement ${court(affichee)})`}
-        className={`flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition ${
+        aria-label={t("ouvrir", { devise: court(affichee) })}
+        className={`flex h-11 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition sm:h-9 ${
           affichee === reelle
             ? "border-[var(--site-line)] text-[var(--site-muted)] hover:border-[var(--salon-primary)] hover:text-[var(--salon-ink)]"
             : "border-[var(--salon-primary)] text-[var(--salon-ink)]"
         }`}
       >
-        <SalonIcon name="sparkle" className={`size-3.5 ${occupe ? "animate-pulse" : ""}`} />
+        {/* L'échange, pas l'étincelle : ce bouton ne montre pas une
+            monnaie, il en substitue une à une autre le temps d'une
+            lecture. L'étincelle, elle, marque un soin partout ailleurs
+            sur le mini-site. */}
+        <SalonIcon
+          name="echange"
+          className={`size-3.5 ${occupe ? "animate-pulse" : ""}`}
+        />
         {court(affichee)}
       </button>
+
+      {echec && !ouvert && (
+        <p
+          role="status"
+          className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] px-3 py-2 text-[0.72rem] leading-snug text-[var(--site-muted)] shadow-lg"
+        >
+          {t("indisponible", { devise: court(reelle) })}
+        </p>
+      )}
 
       {ouvert && (
         <>
@@ -344,7 +405,7 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
           />
           <div className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] shadow-lg">
             <p className="border-b border-[var(--site-line)] px-3 py-2 text-[0.7rem] leading-snug text-[var(--site-subtle)]">
-              Lire les prix en…
+              {t("lire")}
             </p>
             <ul>
               {options.map((option) => (
@@ -355,15 +416,22 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
                       choisir(option.code);
                       setOuvert(false);
                     }}
-                    className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition hover:bg-[var(--salon-primary)]/[0.06] ${
+                    className={`flex min-h-11 w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition hover:bg-[var(--salon-primary)]/[0.06] ${
                       option.code === affichee
                         ? "font-semibold text-[var(--salon-ink)]"
                         : "text-[var(--site-ink)]"
                     }`}
                   >
-                    <span className="truncate">{option.label}</span>
+                    {/* Le nom peut manquer pour une devise qu'un salon a
+                        choisie hors de la liste : son code fait alors office
+                        de nom, ce qui vaut mieux qu'une case vide. */}
+                    <span className="truncate">
+                      {t.has(`noms.${option.code}`)
+                        ? t(`noms.${option.code}`)
+                        : option.code}
+                    </span>
                     <span className="shrink-0 text-xs text-[var(--site-subtle)]">
-                      {option.code === reelle ? "facturé" : option.court}
+                      {option.code === reelle ? t("facture") : option.court}
                     </span>
                   </button>
                 </li>
@@ -371,8 +439,7 @@ export function DeviseToggle({ className = "" }: { className?: string }) {
             </ul>
             {affichee !== reelle && (
               <p className="border-t border-[var(--site-line)] px-3 py-2 text-[0.68rem] leading-snug text-[var(--site-subtle)]">
-                Conversion indicative, au taux du jour. Le salon encaisse en{" "}
-                {court(reelle)}.
+                {t("avertissement", { devise: court(reelle) })}
               </p>
             )}
           </div>

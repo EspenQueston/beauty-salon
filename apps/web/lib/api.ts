@@ -8,6 +8,8 @@
  * domaine personnalise en production.
  */
 
+import { LANGUE_PAR_DEFAUT, type Langue } from "@/i18n/langues";
+import { langueDeLaPage } from "@/lib/langue-page";
 import type {
   BookingConfirmation,
   PublicReview,
@@ -18,6 +20,35 @@ import type {
 // Cote serveur on parle a l'API en direct (pas de traversee du proxy) ;
 // cote navigateur on passe par l'URL publique.
 const SERVER_API = process.env.INTERNAL_API_URL ?? "http://127.0.0.1:8001";
+
+/**
+ * En-tetes des appels faits par le serveur Next, et non par un navigateur.
+ *
+ * ---------------------------------------------------------------------------
+ * Pourquoi le serveur se presente
+ * ---------------------------------------------------------------------------
+ *
+ * L'API limite le debit par adresse IP. Tout ce que le serveur Next demande
+ * pour rendre une page part de la meme adresse — la sienne — quel que soit
+ * le visiteur a l'origine du rendu. Sans distinction, tous les mini-sites se
+ * partagent donc un seul compteur de lecture publique : au-dela de 120 rendus
+ * par minute, plateforme entiere, les pages de salon tombaient en 429.
+ *
+ * Le jeton dit a l'API « c'est le serveur de rendu », qui n'est alors pas
+ * compte. Le transmettre ne change pas la cle de cache de Next : il est le
+ * meme pour toutes les requetes.
+ *
+ * Jamais `NEXT_PUBLIC_` : ce nom-la serait recopie dans le JavaScript envoye
+ * au navigateur, et n'importe qui pourrait alors contourner la limite. Sous
+ * ce nom, la valeur n'existe que dans le processus serveur ; dans le code qui
+ * part vers le navigateur, elle vaut `undefined`.
+ */
+function serverHeaders(host: string): HeadersInit {
+  const token = process.env.INTERNAL_API_TOKEN;
+  return token
+    ? { "X-Tenant-Host": host, "X-Internal-Token": token }
+    : { "X-Tenant-Host": host };
+}
 
 
 const API_PORT = process.env.NEXT_PUBLIC_API_PORT ?? "8001";
@@ -56,19 +87,56 @@ export class ApiRequestError extends Error {
   }
 }
 
-/** Contenu complet d'un mini-site, en une requete. */
-export async function fetchSalon(host: string): Promise<PublicSalon | null> {
-  const response = await fetch(`${SERVER_API}/api/v1/public/salon`, {
-    headers: { "X-Tenant-Host": host },
+/**
+ * Contenu complet d'un mini-site, en une requete.
+ *
+ * La langue est un **parametre**, et non une valeur devinee ici.
+ *
+ * Ce module est importe par des composants client — le parcours de
+ * reservation, l espace cliente. Y lire `next/root-params`, qui n existe que
+ * sur le serveur, casse leur compilation entiere. C est `lib/salon-serveur.ts`
+ * qui connait la langue du rendu et la passe ici.
+ *
+ * Elle entre dans la cle de cache de Next : deux langues, deux entrees.
+ */
+/**
+ * Un domaine personnalisé en pause (le salon n'a plus l'offre Pro) : l'API
+ * répond 404 en donnant l'adresse du salon sur la plateforme, où la page
+ * redirige plutôt que d'afficher « introuvable ».
+ */
+export class SalonDeplace extends Error {
+  constructor(readonly canonique: string) {
+    super("Salon servi à une autre adresse.");
+  }
+}
+
+// Un nom d'hôte, rien d'autre : jamais une adresse complète venue d'ailleurs.
+const HOTE_VALIDE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+
+export async function fetchSalon(
+  host: string,
+  langue: Langue = LANGUE_PAR_DEFAUT,
+): Promise<PublicSalon | null> {
+  const response = await fetch(
+    `${SERVER_API}/api/v1/public/salon?lang=${langue}`,
+    {
+    headers: serverHeaders(host),
     // Le contenu vitrine bouge rarement, et un cache court absorbe un pic de
     // trafic apres un post Instagram. Mais 60 s, c'est trop long pour la
     // gerante qui vient de changer ses couleurs et recharge sa page : elle
     // conclut que le reglage ne marche pas. Quinze secondes protegent
     // toujours du pic, sans donner cette impression.
     next: { revalidate: 15 },
-  });
+    },
+  );
 
-  if (response.status === 404) return null;
+  if (response.status === 404) {
+    const corps = (await response.json().catch(() => null)) as { canonique?: unknown } | null;
+    if (typeof corps?.canonique === "string" && HOTE_VALIDE.test(corps.canonique)) {
+      throw new SalonDeplace(corps.canonique);
+    }
+    return null;
+  }
   if (!response.ok) {
     throw new ApiRequestError(response.status, "fetch_failed", "Salon indisponible.");
   }
@@ -124,6 +192,7 @@ export async function browserRequest<T>(
     headers: {
       "Content-Type": "application/json",
       "X-Tenant-Host": host,
+      ...langueDeLaPage(),
       ...(needsCsrf ? { "X-CSRFToken": await csrfToken() } : {}),
       ...(init.headers ?? {}),
     },
@@ -252,7 +321,7 @@ export async function fetchReviews(
   host: string,
 ): Promise<{ average: number | null; count: number; results: PublicReview[] }> {
   const response = await fetch(`${SERVER_API}/api/v1/public/reviews`, {
-    headers: { "X-Tenant-Host": host },
+    headers: serverHeaders(host),
     next: { revalidate: 15 },
   });
 
@@ -300,6 +369,7 @@ export async function postForm<T>(
     headers: {
       "X-Tenant-Host": host,
       "X-CSRFToken": await csrfToken(),
+      ...langueDeLaPage(),
     },
     body: form,
   });
@@ -315,4 +385,38 @@ export async function postForm<T>(
     );
   }
   return body as T;
+}
+
+
+/**
+ * Le catalogue de la page d'accueil, lu par le serveur de rendu.
+ *
+ * Il arrivait par un appel du navigateur, une fois la page affichée et
+ * hydratée, vers un autre domaine (`api.`) : une connexion de plus, à
+ * 700 ms l'aller-retour depuis la Chine — les tarifs et les références
+ * apparaissaient plus de cinq secondes après l'ouverture.
+ *
+ * Lu ici, il part dans le HTML. La page reste statique et se régénère au
+ * plus toutes les 60 s. Trois secondes au plus : si l'API ne répond pas (au
+ * build, par exemple), on renvoie `null` et le navigateur la lit lui-même,
+ * comme avant.
+ */
+export async function fetchHomeCatalogue(
+  langue: string,
+): Promise<import("@/features/site/HomeContext").HomeCatalogue | null> {
+  try {
+    const token = process.env.INTERNAL_API_TOKEN;
+    const response = await fetch(
+      `${SERVER_API}/api/v1/account/home?lang=${langue === "en" ? "en" : "fr"}`,
+      {
+        next: { revalidate: 60 },
+        signal: AbortSignal.timeout(3000),
+        headers: token ? { "X-Internal-Token": token } : undefined,
+      },
+    );
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
 }

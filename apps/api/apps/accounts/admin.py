@@ -6,6 +6,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from apps.common.admin import TenantScopedAdmin
+from apps.common.admin_suppression import SuppressionDefinitiveMixin
 
 from .forms import UserChangeForm, UserCreationForm
 from .models import Invitation, Membership, User
@@ -18,13 +19,26 @@ class MembershipInline(admin.TabularInline):
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(SuppressionDefinitiveMixin, BaseUserAdmin):
     add_form = UserCreationForm
     form = UserChangeForm
     change_password_form = AdminPasswordChangeForm
     ordering = ("email",)
-    list_display = ("email", "display_name", "is_platform_admin", "is_active", "is_staff")
-    list_filter = ("is_platform_admin", "is_active", "is_staff")
+    list_display = (
+        "email",
+        "display_name",
+        "adresse_verifiee",
+        "is_platform_admin",
+        "is_active",
+        "is_staff",
+    )
+    list_filter = (
+        ("email_verified_at", admin.EmptyFieldListFilter),
+        "is_platform_admin",
+        "is_active",
+        "is_staff",
+    )
+    actions = ("action_renvoyer_verification",)
     search_fields = ("email", "display_name", "phone")
     inlines = (MembershipInline,)
 
@@ -44,9 +58,69 @@ class UserAdmin(BaseUserAdmin):
                 )
             },
         ),
-        ("Dates", {"fields": ("last_login", "created_at", "updated_at")}),
+        ("Dates", {"fields": ("email_verified_at", "last_login", "created_at", "updated_at")}),
+        ("Zone sensible", {"fields": ("lien_suppression",)}),
     )
-    readonly_fields = ("last_login", "created_at", "updated_at")
+    readonly_fields = (
+        "email_verified_at",
+        "last_login",
+        "created_at",
+        "updated_at",
+        "lien_suppression",
+    )
+
+    @admin.display(description="E-mail confirmé", boolean=True, ordering="email_verified_at")
+    def adresse_verifiee(self, user) -> bool:
+        return user.email_verified_at is not None
+
+    @admin.action(description="Renvoyer le lien de confirmation d'adresse")
+    def action_renvoyer_verification(self, request, queryset):
+        """La preuve vient toujours du clic de la personne : l'equipe renvoie le lien,
+        elle ne coche pas la case a sa place."""
+        from django.contrib import messages
+        from django.db import transaction
+
+        from . import tasks
+
+        envoyes = 0
+        for user in queryset.filter(email_verified_at__isnull=True, is_active=True):
+            base = tasks.base_cliente(user) if hasattr(user, "client_profile") else ""
+            user_id = str(user.pk)
+            transaction.on_commit(lambda u=user_id, b=base: tasks.verification.delay(u, b))
+            envoyes += 1
+        self.message_user(
+            request,
+            f"Lien renvoyé à {envoyes} compte(s)." if envoyes else "Aucun compte à confirmer.",
+            messages.SUCCESS if envoyes else messages.INFO,
+        )
+
+    # --- Suppression definitive (apps/common/suppression.py) ---------------
+
+    def suppression_identifiant(self, user) -> str:
+        return user.email
+
+    def suppression_contexte(self, request, user) -> dict:
+        from apps.common.suppression import obstacles_compte
+
+        salons = ", ".join(str(m.tenant) for m in user.memberships.select_related("tenant"))
+        return {
+            "obstacles": obstacles_compte(user, request.user),
+            "resume": (
+                "Partent : le compte, ses accès aux salons"
+                + (f" ({salons})" if salons else "")
+                + ", ses appareils de connexion, ses notifications et son espace cliente."
+            ),
+            "conserve": [
+                "Ce qu'il a fait dans les salons (rendez-vous, gestes d'abonnement), sans son nom.",
+                "Le journal d'audit, qui garde une adresse masquée et le motif.",
+            ],
+        }
+
+    def suppression_executer(self, request, user, donnees) -> str:
+        from apps.common.suppression import masquer, supprimer_compte
+
+        supprimer_compte(user, administrateur=request.user, motif=donnees["motif"])
+        return f"Compte {masquer(user.email)} supprimé définitivement."
 
     add_fieldsets = (
         (

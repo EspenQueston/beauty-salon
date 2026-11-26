@@ -69,6 +69,25 @@ def test_the_admin_is_closed_without_verification(client, admin_user):
     assert response["Location"].startswith(reverse("mfa"))
 
 
+def test_the_admin_stays_closed_under_its_production_path(client, admin_user, settings):
+    """En production, l'administration vit sous un chemin tire au hasard.
+
+    Le middleware ne gardait que `/admin/` : sous `ADMIN_PATH`, un mot de
+    passe suffisait. La garde doit suivre le chemin reel.
+    """
+    settings.ADMIN_PATH = "gestion-8bf2e7757220/"
+    assert client.login(email=admin_user.email, password=PASSWORD)
+
+    for path in ("/gestion-8bf2e7757220/", "/gestion-8bf2e7757220/tenants/tenant/"):
+        response = client.get(path)
+        assert response.status_code == 302, path
+        assert response["Location"].startswith(reverse("mfa")), path
+
+    # L'ecran de connexion, lui, reste exempte : c'est la porte d'entree.
+    connexion = client.get("/gestion-8bf2e7757220/login/")
+    assert not connexion.get("Location", "").startswith(reverse("mfa"))
+
+
 def test_every_admin_page_is_closed_not_only_the_index(client, admin_user):
     assert client.login(email=admin_user.email, password=PASSWORD)
 

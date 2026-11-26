@@ -17,7 +17,8 @@
  * découvre pas la nuance en revenant deux jours plus tard.
  */
 
-import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useEffect, useId, useState } from "react";
 
 import { checkSlug } from "@/lib/dashboard";
 import { appUrl } from "@/lib/site";
@@ -27,10 +28,27 @@ type State = "idle" | "checking" | "free" | "taken" | "invalid";
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "localhost";
 
-export function AddressCheck() {
+/**
+ * @param nu Rendu sans la carte qui l'entoure, pour être posé dans un cadre
+ *           à soi — ce que fait la mise en page du téléphone.
+ */
+export function AddressCheck({ nu = false }: { nu?: boolean } = {}) {
+  const t = useTranslations("site");
+  /*
+   * L'identifiant du champ vient de React et n'est plus écrit en dur.
+   *
+   * La page d'accueil rend ce composant deux fois — une version pour le
+   * téléphone, une pour le grand écran, un seul des deux étant affiché.
+   * Deux `id="adresse-salon"` dans le même document rendraient
+   * l'association entre l'intitulé et le champ imprévisible, et un lecteur
+   * d'écran annoncerait l'un pour l'autre.
+   */
+  const champ = useId();
   const [name, setName] = useState("");
   /** Dernière réponse du serveur, avec l'adresse à laquelle elle répond. */
-  const [answer, setAnswer] = useState<{ slug: string; free: boolean } | null>(null);
+  const [answer, setAnswer] = useState<{ slug: string; free: boolean } | null>(
+    null,
+  );
 
   const slug = toSlug(name);
 
@@ -77,24 +95,25 @@ export function AddressCheck() {
   }, [slug]);
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
-      <label
-        htmlFor="adresse-salon"
-        className="block text-sm font-medium text-ink"
-      >
-        Votre adresse est-elle libre ?
+    <div
+      className={
+        nu
+          ? ""
+          : "rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6"
+      }
+    >
+      <label htmlFor={champ} className="block text-sm font-medium text-ink">
+        {t("adresse.question")}
       </label>
-      <p className="mt-1 text-sm text-muted">
-        Tapez le nom de votre salon. Aucune inscription demandée.
-      </p>
+      <p className="mt-1 text-sm text-muted">{t("adresse.aide")}</p>
 
       <div className="mt-3 flex flex-wrap items-stretch gap-2">
         <div className="flex min-w-[14rem] flex-1 items-center rounded-xl border border-line bg-bg px-3 focus-within:border-salon">
           <input
-            id="adresse-salon"
+            id={champ}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Blondrose"
+            placeholder={t("adresse.exemple")}
             autoComplete="organization"
             className="min-w-0 flex-1 bg-transparent py-3 text-ink outline-none placeholder:text-subtle"
           />
@@ -108,25 +127,26 @@ export function AddressCheck() {
             href={`${appUrl}/inscription?slug=${encodeURIComponent(slug)}&nom=${encodeURIComponent(name.trim())}`}
             className="inline-flex items-center justify-center rounded-xl bg-salon px-5 py-3 font-semibold text-white shadow-sm transition hover:brightness-110"
           >
-            Réserver cette adresse
+            {t("adresse.reserver")}
           </a>
         )}
       </div>
 
       <p className="mt-3 min-h-[1.25rem] text-sm" aria-live="polite">
-        {state === "checking" && <span className="text-subtle">Vérification…</span>}
+        {state === "checking" && (
+          <span className="text-subtle">{t("adresse.verification")}</span>
+        )}
         {state === "invalid" && (
-          <span className="text-subtle">Trois caractères au minimum.</span>
+          <span className="text-subtle">{t("adresse.tropCourt")}</span>
         )}
         {state === "free" && (
           <span className="font-medium text-success">
-            {slug}.{PLATFORM_DOMAIN} est disponible. Elle est à vous en trois
-            minutes.
+            {t("adresse.libre", { adresse: `${slug}.${PLATFORM_DOMAIN}` })}
           </span>
         )}
         {state === "taken" && (
           <span className="text-danger">
-            {slug}.{PLATFORM_DOMAIN} est déjà pris. Essayez une variante.
+            {t("adresse.prise", { adresse: `${slug}.${PLATFORM_DOMAIN}` })}
           </span>
         )}
       </p>

@@ -26,6 +26,7 @@
  * et « nouveau mot de passe » ne se remplissent pas de la même façon.
  */
 
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
 export function PasswordField({
@@ -51,6 +52,7 @@ export function PasswordField({
   /** Classes du champ, pour suivre l'habillage de l'écran hôte. */
   inputClassName: string;
 }) {
+  const t = useTranslations("commun.motDePasse");
   const id = useId();
   const [shown, setShown] = useState(false);
 
@@ -83,9 +85,9 @@ export function PasswordField({
           aria-pressed={shown}
           aria-controls={id}
           aria-label={
-            shown ? "Masquer le mot de passe" : "Afficher le mot de passe"
+            shown ? t("masquer") : t("afficher")
           }
-          title={shown ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          title={shown ? t("masquer") : t("afficher")}
           className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-muted transition hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-salon)]"
         >
           <EyeIcon off={shown} />

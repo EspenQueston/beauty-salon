@@ -32,8 +32,9 @@
  * autres, c'est une de trop.
  */
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 
 import {
   ApiRequestError,
@@ -63,6 +64,7 @@ export function ReviewForm({
   token: string;
   timeZone: string;
 }) {
+  const t = useTranslations("salon");
   /*
    * L'absence de jeton se décide au premier rendu, pas dans un effet.
    *
@@ -73,7 +75,7 @@ export function ReviewForm({
   const [state, setState] = useState<State>(() =>
     token
       ? { phase: "loading" }
-      : { phase: "refused", reason: "Ce lien est incomplet." },
+      : { phase: "refused", reason: t("avisFormulaire.lienIncomplet") },
   );
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
@@ -97,19 +99,21 @@ export function ReviewForm({
           reason:
             caught instanceof ApiRequestError
               ? caught.message
-              : "Ce lien n'est plus valide.",
+              : t("avisFormulaire.lienInvalide"),
         });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [host, token]);
+    // `t` : stable tant que la langue ne change pas, et une bascule recharge
+    // la page entière — le linter ne peut pas le savoir.
+  }, [host, token, t]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (noted === 0) {
-      setError("Notez au moins un critère.");
+      setError(t("avisFormulaire.auMoinsUnCritere"));
       return;
     }
 
@@ -133,7 +137,7 @@ export function ReviewForm({
       setError(
         caught instanceof ApiRequestError
           ? caught.message
-          : "Envoi impossible. Réessayez.",
+          : t("avisFormulaire.envoiImpossible"),
       );
     } finally {
       setPending(false);
@@ -148,7 +152,7 @@ export function ReviewForm({
           <div className="skeleton h-4 w-1/2 rounded-lg" />
           <div className="skeleton h-24 rounded-xl" />
         </div>
-        <span className="sr-only">Vérification du lien…</span>
+        <span className="sr-only">{t("avisFormulaire.verification")}</span>
       </Card>
     );
   }
@@ -167,7 +171,7 @@ export function ReviewForm({
         </p>
         <div className="mt-6">
           <PrimaryLink href="/" icon="arrow">
-            Retour au salon
+            {t("avis.retourAuSalon")}
           </PrimaryLink>
         </div>
       </Card>
@@ -187,22 +191,21 @@ export function ReviewForm({
           <SalonIcon name="check" className="size-6" />
         </span>
         <h1 className="mt-4 text-xl font-semibold text-[var(--site-ink)]">
-          Merci pour votre avis
+          {t("avis.merci")}
         </h1>
         <p className="mx-auto mt-2 max-w-sm leading-relaxed text-[var(--site-muted)]">
-          Il est en ligne. Il aidera les prochaines clientes à choisir en
-          connaissance de cause.
+          {t("avis.mercicorps")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <PrimaryLink href="/reserver" icon="calendar">
-            Reprendre rendez-vous
+            {t("titresAccueil.reserverMaintenant")}
           </PrimaryLink>
-          <Link
+          <Lien
             href="/"
             className="inline-flex items-center rounded-full border border-[var(--site-line)] px-5 py-3 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
           >
-            Voir le salon
-          </Link>
+            {t("avis.voirLeSalon")}
+          </Lien>
         </div>
       </Card>
     );
@@ -213,28 +216,32 @@ export function ReviewForm({
   return (
     <Card>
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--salon-ink)]">
-        Votre visite
+        {t("avis.votreVisite")}
       </p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--site-ink)]">
         {invitation.service_name}
       </h1>
       <p className="mt-1.5 text-[var(--site-muted)]">
         {formatDate(invitation.starts_at, timeZone)}
-        {invitation.staff_member_name && ` · avec ${invitation.staff_member_name}`}
+        {invitation.staff_member_name &&
+          ` · avec ${invitation.staff_member_name}`}
       </p>
 
       <form onSubmit={submit} className="mt-7">
         <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3">
           <p className="text-sm font-medium text-[var(--site-ink)]">
-            Votre note, point par point
+            {t("avis.pointParPoint")}
           </p>
           {/* Le compteur dit que tout n'est pas obligatoire — sans lui, une
               cliente qui saute une ligne croit son avis incomplet et referme
               la page. */}
           <p className="text-xs text-[var(--site-subtle)]">
             {noted === 0
-              ? "notez ce que vous voulez, une ligne suffit"
-              : `${noted} critère${noted > 1 ? "s" : ""} sur ${REVIEW_CRITERIA.length}`}
+              ? t("avis.uneLigneSuffit")
+              : t("avis.criteresNotes", {
+                  n: noted,
+                  total: REVIEW_CRITERIA.length,
+                })}
           </p>
         </div>
 
@@ -288,7 +295,7 @@ export function ReviewForm({
           onChange={(event) => setComment(event.target.value)}
           rows={5}
           maxLength={2000}
-          placeholder="Comment ça s’est passé ? Ce qui vous a plu, ce qui pourrait être mieux, ce que vous diriez à une amie…"
+          placeholder={t("avisFormulaire.exemple")}
           className="w-full rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] px-3.5 py-2.5 text-[var(--site-ink)] transition focus:border-[var(--salon-primary)]"
         />
 
@@ -306,7 +313,7 @@ export function ReviewForm({
           disabled={pending}
           className="salon-gradient mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pending ? "Envoi…" : "Publier mon avis"}
+          {pending ? t("avisFormulaire.envoi") : t("avisFormulaire.publier")}
         </button>
 
         <p className="mt-3 text-center text-xs text-[var(--site-subtle)]">

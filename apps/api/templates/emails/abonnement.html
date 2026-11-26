@@ -1,0 +1,37 @@
+{% extends "emails/base_produit.html" %}
+{% comment %}
+  Tous les e-mails d'abonnement : rappels, paiements, gestes, tarifs.
+
+  Un seul gabarit, dont `billing/courriers.py` fournit le contenu. Le montant
+  vient d'abord quand il y en a un — c'est le chiffre qu'on cherche — puis
+  les faits en grille de deux colonnes, l'avertissement, et un seul bouton.
+{% endcomment %}
+
+{% block preheader %}{{ preheader }}{% endblock %}
+
+{% block body %}
+  {% include "emails/_parts.html" with part="title" text=titre %}
+  {% include "emails/_parts.html" with part="lead" text=accroche %}
+
+  {% if montant %}
+    {% include "emails/_parts.html" with part="amount" label=montant.label text=montant.texte hint=montant.aide %}
+  {% endif %}
+
+  {% if details %}
+    {% include "emails/_details.html" with rows=details %}
+  {% endif %}
+
+  {% if avis %}
+    {% include "emails/_parts.html" with part="notice" title=avis.titre text=avis.texte %}
+  {% endif %}
+
+  {% for paragraphe in paragraphes %}
+    {% if paragraphe %}{% include "emails/_parts.html" with part="text" text=paragraphe %}{% endif %}
+  {% endfor %}
+
+  {% if bouton_url %}
+    {% include "emails/_parts.html" with part="button" url=bouton_url text=bouton_texte color="#B4436C" %}
+  {% endif %}
+{% endblock %}
+
+{% block footer %}{{ pied }}{% endblock %}

@@ -9,6 +9,7 @@
  * franchement plutôt que de laisser découvrir le problème côté cliente.
  */
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { dashboardFetch } from "@/lib/dashboard";
@@ -57,6 +58,7 @@ interface Service {
 }
 
 export function StaffMembers() {
+  const t = useTranslations("pro.prestataires");
   const { membership } = useDashboard();
   const toast = useToast();
   const tenantId = membership.tenant.id;
@@ -66,7 +68,10 @@ export function StaffMembers() {
     "/api/v1/staff-members/?page_size=100",
     tenantId,
   );
-  const services = useResource<Page<Service>>("/api/v1/services/?page_size=200", tenantId);
+  const services = useResource<Page<Service>>(
+    "/api/v1/services/?page_size=200",
+    tenantId,
+  );
 
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
 
@@ -97,13 +102,13 @@ export function StaffMembers() {
         { method: "DELETE" },
         tenantId,
       );
-      toast.success(result?.detail ?? `${member.name} retiré de la liste.`);
+      toast.success(result?.detail ?? t("retire", { nom: member.name }));
       staff.reload();
     } catch (caught) {
       toast.error(
         caught instanceof Error
           ? caught.message
-          : `${member.name} n'a pas pu être retiré.`,
+          : t("retraitImpossible", { nom: member.name }),
       );
     }
   }
@@ -111,24 +116,32 @@ export function StaffMembers() {
   return (
     <section>
       <PageHeader
-        title="Prestataires"
-        description="Qui réalise les prestations, et lesquelles. Une fiche suffit pour l’agenda : le compte pour se connecter est distinct, et se donne depuis Équipe."
+        title={t("titre")}
+        description={t("description")}
         action={
           canEdit && (
             <Button
               type="button"
               icon={<Icon name="plus" className="size-4" />}
               onClick={() =>
-                setEditing({ name: "", specialty: "", bio: "", active: true, services: [] })
+                setEditing({
+                  name: "",
+                  specialty: "",
+                  bio: "",
+                  active: true,
+                  services: [],
+                })
               }
             >
-              Ajouter
+              {t("ajouter")}
             </Button>
           )
         }
       />
 
-      {staff.error && <ErrorState>Impossible de charger les prestataires.</ErrorState>}
+      {staff.error && (
+        <ErrorState>{t("erreur")}</ErrorState>
+      )}
 
       {editing && (
         <StaffForm
@@ -149,22 +162,27 @@ export function StaffMembers() {
 
       {staffRows.length === 0 && staff.data !== null && (
         <EmptyState
-          title="Aucun prestataire"
+          title={t("vide.titre")}
           action={
             canEdit && (
               <Button
                 type="button"
                 onClick={() =>
-                  setEditing({ name: "", specialty: "", bio: "", active: true, services: [] })
+                  setEditing({
+                    name: "",
+                    specialty: "",
+                    bio: "",
+                    active: true,
+                    services: [],
+                  })
                 }
               >
-                Ajouter la première personne
+                {t("vide.ajouter")}
               </Button>
             )
           }
         >
-          Même si vous travaillez seule, créez votre fiche : c&apos;est elle qui
-          porte vos horaires et vos rendez-vous.
+          {t("vide.corps")}
         </EmptyState>
       )}
 
@@ -176,14 +194,14 @@ export function StaffMembers() {
                 <div className="min-w-0">
                   <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
                     {member.name}
-                    {!member.active && <Badge>Inactif</Badge>}
+                    {!member.active && <Badge>{t("inactif")}</Badge>}
                     {/* Réaliser des prestations et pouvoir se connecter sont
                         deux choses distinctes. Sans cette mention, cette
                         liste semblait contredire celle de l'Équipe. */}
                     {member.has_access ? (
-                      <Badge tone="success">Accès à l&apos;espace</Badge>
+                      <Badge tone="success">{t("acces")}</Badge>
                     ) : (
-                      <Badge>Sans compte</Badge>
+                      <Badge>{t("sansCompte")}</Badge>
                     )}
                   </p>
                   {member.has_access && member.access_email && (
@@ -192,13 +210,15 @@ export function StaffMembers() {
                     </p>
                   )}
                   {member.specialty && (
-                    <p className="mt-0.5 text-sm text-muted">{member.specialty}</p>
+                    <p className="mt-0.5 text-sm text-muted">
+                      {member.specialty}
+                    </p>
                   )}
 
                   <div className="mt-2">
                     {member.services.length === 0 ? (
                       <Badge tone="warning">
-                        Aucune compétence — n&apos;apparaît pas à la réservation
+                        {t("sansCompetence")}
                       </Badge>
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
@@ -212,11 +232,14 @@ export function StaffMembers() {
 
                 {canEdit && (
                   <div className="flex shrink-0 gap-2">
-                    <GhostButton type="button" onClick={() => setEditing(member)}>
-                      Modifier
+                    <GhostButton
+                      type="button"
+                      onClick={() => setEditing(member)}
+                    >
+                      {t("modifier")}
                     </GhostButton>
                     <DangerButton type="button" onClick={() => remove(member)}>
-                      Supprimer
+                      {t("supprimer")}
                     </DangerButton>
                   </div>
                 )}
@@ -228,7 +251,7 @@ export function StaffMembers() {
 
       {!canEdit && (
         <p className="mt-6 text-sm text-muted">
-          Seuls le propriétaire et le gérant peuvent modifier l&apos;équipe.
+          {t("lectureSeule")}
         </p>
       )}
     </section>
@@ -252,6 +275,7 @@ function StaffForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useTranslations("pro.prestataires");
   const toast = useToast();
   const [name, setName] = useState(initial.name ?? "");
   const [specialty, setSpecialty] = useState(initial.specialty ?? "");
@@ -272,7 +296,9 @@ function StaffForm({
     const ok = await toast.run(
       () =>
         dashboardFetch(
-          isNew ? "/api/v1/staff-members/" : `/api/v1/staff-members/${initial.id}/`,
+          isNew
+            ? "/api/v1/staff-members/"
+            : `/api/v1/staff-members/${initial.id}/`,
           {
             method: isNew ? "POST" : "PATCH",
             body: JSON.stringify({
@@ -287,7 +313,9 @@ function StaffForm({
           tenantId,
         ),
       {
-        success: isNew ? `${name} ajouté à l'équipe.` : `Fiche de ${name} enregistrée.`,
+        success: isNew
+          ? t("form.ajoute", { nom: name })
+          : t("form.enregistree", { nom: name }),
       },
     );
 
@@ -299,11 +327,11 @@ function StaffForm({
     <Card className="mb-7">
       <form onSubmit={submit}>
         <h2 className="mb-5 text-base font-semibold text-ink">
-          {isNew ? "Nouveau prestataire" : `Modifier « ${initial.name} »`}
+          {isNew ? t("form.nouveau") : t("form.modifier", { nom: initial.name ?? "" })}
         </h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nom">
+          <Field label={t("form.nom")}>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -312,16 +340,16 @@ function StaffForm({
             />
           </Field>
 
-          <Field label="Spécialité" hint="Affichée sur le mini-site.">
+          <Field label={t("form.specialite")} hint={t("form.specialiteAide")}>
             <input
               value={specialty}
               onChange={(event) => setSpecialty(event.target.value)}
-              placeholder="Tresses et perruques"
+              placeholder={t("form.specialiteExemple")}
               className={inputClass}
             />
           </Field>
 
-          <Field label="Présentation" className="sm:col-span-2">
+          <Field label={t("form.presentation")} className="sm:col-span-2">
             <textarea
               value={bio}
               onChange={(event) => setBio(event.target.value)}
@@ -345,21 +373,23 @@ function StaffForm({
               value={photo}
               onChange={setPhoto}
               onUploaded={onMediaChanged}
-              label="Portrait"
-              hint="Affiché sur votre mini-site. Sans photo, ses initiales sont utilisées."
+              label={t("form.portrait")}
+              hint={t("form.portraitAide")}
               kind="staff"
             />
           </div>
         </div>
 
         <fieldset className="mt-5">
-          <legend className="mb-1 text-sm font-medium text-ink">Compétences</legend>
-          <p className="mb-3 text-xs text-muted">
-            Seules les prestations cochées seront proposées avec cette personne.
-          </p>
+          <legend className="mb-1 text-sm font-medium text-ink">
+            {t("form.competences")}
+          </legend>
+          <p className="mb-3 text-xs text-muted">{t("form.competencesAide")}</p>
 
           {services.length === 0 ? (
-            <p className="text-sm text-muted">Créez d&apos;abord des prestations.</p>
+            <p className="text-sm text-muted">
+              {t("form.creezPrestations")}
+            </p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {services.map((service) => {
@@ -397,17 +427,17 @@ function StaffForm({
           <Toggle
             checked={active}
             onChange={setActive}
-            label="Accepte des rendez-vous"
-            hint="Décochez pendant un congé long, sans supprimer la fiche."
+            label={t("form.accepte")}
+            hint={t("form.accepteAide")}
           />
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
           <Button type="submit" pending={pending}>
-            {isNew ? "Ajouter" : "Enregistrer"}
+            {isNew ? t("form.ajouter") : t("form.enregistrer")}
           </Button>
           <GhostButton type="button" onClick={onClose}>
-            Annuler
+            {t("form.annuler")}
           </GhostButton>
         </div>
       </form>

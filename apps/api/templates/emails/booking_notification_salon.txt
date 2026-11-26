@@ -1,16 +1,16 @@
-{% autoescape off %}Nouvelle réservation sur votre mini-site.
+{% autoescape off %}{{ t.pro_resa_txt }}
 
-Cliente : {{ customer.full_name }}
-Téléphone : {{ customer.phone }}
-Prestation : {{ booking.service_name }}
-Prestataire : {{ staff_member.name }}
-Date : {{ date_label }} à {{ time_label }}
-Origine : {{ booking.get_source_display }}
+{{ t.pro_cliente }}{{ t.deux_points }} {{ customer.full_name }}
+{{ t.pro_telephone }}{{ t.deux_points }} {{ customer.phone }}
+{{ t.prestation }}{{ t.deux_points }} {{ booking.service_name }}
+{{ t.pro_prestataire }}{{ t.deux_points }} {{ staff_member.name }}
+{{ t.date }}{{ t.deux_points }} {{ when_label }}
+{{ t.pro_origine }}{{ t.deux_points }} {{ origine }}
 {% if booking.customer_note %}
-Message de la cliente :
+{{ t.pro_message_cliente }}{{ t.deux_points }}
 {{ booking.customer_note }}
 {% endif %}
-Retrouvez ce rendez-vous dans votre agenda :
+{{ t.pro_retrouver_agenda }}
 
 {{ agenda_url }}
 {% endautoescape %}

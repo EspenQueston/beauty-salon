@@ -34,8 +34,9 @@
  * bouton.
  */
 
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { Lien } from "@/features/ui/Lien";
 
 import { formatPrice } from "@/lib/format";
 import type { PublicSalon } from "@/lib/types";
@@ -51,7 +52,7 @@ import {
 } from "@/features/ui/AuthShell";
 import { PasswordField } from "@/features/ui/PasswordField";
 import { SalonLogo } from "@/features/salon/SalonLogo";
-import { platformUrl } from "@/lib/site";
+import { appUrl } from "@/lib/site";
 
 import { AuthShowcase } from "@/features/ui/AuthShowcase";
 // Les appels API de l'espace vivent à part : l'annulation en a besoin elle
@@ -60,6 +61,11 @@ import { api } from "./api";
 import { Annuler } from "./Annuler";
 import { ThemeToggle } from "@/features/ui/ThemeToggle";
 import { Tracker } from "./Tracker";
+import { ParrainageCliente } from "./ParrainageCliente";
+import { MenuEspace } from "./MenuEspace";
+import { BoutonDeconnexion } from "./ConfirmerDeconnexion";
+import { RappelNotificationsCliente } from "./RappelNotificationsCliente";
+import { EVENEMENT_SESSION } from "./session";
 import type { ClientBooking } from "./types";
 
 const CARD =
@@ -94,6 +100,7 @@ interface Session {
 interface ClientProfile {
   full_name: string;
   email: string;
+  email_verified?: boolean;
   phone: string;
   whatsapp: string;
   wechat: string;
@@ -102,39 +109,56 @@ interface ClientProfile {
   preferred_salon_slug: string;
 }
 
+/*
+  La table des états est une **fonction** de la langue.
 
-const STATUS: Record<string, { label: string; className: string }> = {
-  pending_payment: {
-    label: "Acompte à régler",
-    className: "bg-amber-500/20 text-amber-800 dark:text-amber-300",
-  },
-  requested: {
-    label: "Demandé",
-    className: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  },
-  confirmed: {
-    label: "Confirmé",
-    className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  },
-  checked_in: {
-    label: "Vous êtes arrivée",
-    className: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
-  },
-  completed: {
-    label: "Terminé",
-    className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
-  },
-  cancelled: {
-    label: "Annulé",
-    className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
-  },
-  no_show: {
-    label: "Non honoré",
-    className: "bg-red-500/15 text-red-700 dark:text-red-400",
-  },
-};
+  En constante de module, ses libellés se fixaient au démarrage du serveur —
+  en français, pour toutes les pages. Construite à l'appel, elle suit la
+  langue de la requête.
+*/
+function etats(
+  t: (cle: string) => string,
+): Record<string, { label: string; className: string }> {
+  return {
+    pending_payment: {
+      label: t("etat.acompte"),
+      className: "bg-amber-500/20 text-amber-800 dark:text-amber-300",
+    },
+    requested: {
+      label: t("etat.demande"),
+      className: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+    },
+    confirmed: {
+      label: t("etat.confirme"),
+      className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+    },
+    checked_in: {
+      label: t("etat.arrivee"),
+      className: "bg-sky-500/15 text-sky-700 dark:text-sky-400",
+    },
+    completed: {
+      label: t("etat.termine"),
+      className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
+    },
+    cancelled: {
+      label: t("etat.annule"),
+      className: "bg-black/[0.06] text-[var(--site-muted)] dark:bg-white/10",
+    },
+    no_show: {
+      label: t("etat.nonHonore"),
+      className: "bg-red-500/15 text-red-700 dark:text-red-400",
+    },
+  };
+}
 
-export function ClientSpace({ salon, host }: { salon: PublicSalon; host: string }) {
+export function ClientSpace({
+  salon,
+  host,
+}: {
+  salon: PublicSalon;
+  host: string;
+}) {
+  const t = useTranslations("espace");
   const [session, setSession] = useState<Session | null | "anonymous">(null);
 
   // Un jeton plutôt qu'un rappel : après une connexion ou une déconnexion,
@@ -147,8 +171,13 @@ export function ClientSpace({ salon, host }: { salon: PublicSalon; host: string 
   useEffect(() => {
     let cancelled = false;
 
-    api<Session>("/api/v1/public/client/session", host)
-      .then((data) => !cancelled && setSession(data))
+    api<Session | { connecte: false }>("/api/v1/public/client/session", host)
+      .then((data) => {
+        if (cancelled) return;
+        setSession("email" in data ? data : "anonymous");
+        // L'icône du compte, dans la barre du haut, suit l'état de session.
+        window.dispatchEvent(new Event(EVENEMENT_SESSION));
+      })
       .catch(() => !cancelled && setSession("anonymous"));
 
     return () => {
@@ -171,22 +200,33 @@ export function ClientSpace({ salon, host }: { salon: PublicSalon; host: string 
   // Un membre d'équipe sans profil cliente est renvoyé vers son tableau de
   // bord : lui montrer un espace vide n'aurait aucun sens.
   if (!session.is_client) {
+    // Sous le menu fixe, comme les autres pages de l'espace : posée seule,
+    // la carte collait à la barre de navigation.
     return (
-      <div className={`${CARD} mx-auto max-w-md p-6 text-center`}>
-        <p className="font-medium text-[var(--site-ink)]">
-          Ce compte est un compte professionnel.
-        </p>
-        <p className="mt-1.5 text-sm text-[var(--site-muted)]">
-          L&apos;espace cliente est réservé aux personnes qui réservent.
-        </p>
-        <Link href="/dashboard" className={`${PRIMARY} mt-4`}>
-          Aller à mon tableau de bord
-        </Link>
-      </div>
+      <main className="mx-auto flex min-h-[70svh] w-full max-w-md items-center px-4 pb-12 pt-24 sm:pb-16 sm:pt-32">
+        <div className={`${CARD} w-full p-6 text-center sm:p-8`}>
+          <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--salon-primary-soft)] text-[var(--salon-ink)]">
+            <SalonIcon name="store" className="size-6" />
+          </span>
+          <p className="mt-4 text-base font-semibold text-[var(--site-ink)] sm:text-lg">
+            {t("pro.titre")}
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-[var(--site-muted)]">
+            {t("pro.corps")}
+          </p>
+          {/* L'espace professionnel vit sur `app.` : y aller directement
+              plutôt que de le rendre sous l'adresse du salon. */}
+          <a href={appUrl} className={`${PRIMARY} mt-5 w-full sm:w-auto`}>
+            {t("pro.tableau")}
+          </a>
+        </div>
+      </main>
     );
   }
 
-  return <Space session={session} salon={salon} host={host} onChange={refresh} />;
+  return (
+    <Space session={session} salon={salon} host={host} onChange={refresh} />
+  );
 }
 
 /* --------------------------------------------------------------------------
@@ -209,6 +249,7 @@ function Gate({
   host: string;
   onDone: () => void;
 }) {
+  const t = useTranslations("espace");
   /*
     Tant qu'on n'est pas connectée, l'habillage du salon disparaît.
 
@@ -236,6 +277,10 @@ function Gate({
   const [whatsapp, setWhatsapp] = useState("");
   const [wechat, setWechat] = useState("");
   const [password, setPassword] = useState("");
+  // Compte avec double authentification (un compte d'équipe qui est aussi
+  // cliente) : le mot de passe est accepté, la session attend le code.
+  const [codeAttendu, setCodeAttendu] = useState(false);
+  const [code, setCode] = useState("");
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -243,7 +288,12 @@ function Gate({
     setFailure(null);
 
     try {
-      if (mode === "signup") {
+      if (codeAttendu) {
+        await api("/api/v1/auth/mfa/verify", host, {
+          method: "POST",
+          body: JSON.stringify({ code }),
+        });
+      } else if (mode === "signup") {
         await api("/api/v1/public/client/signup", host, {
           method: "POST",
           body: JSON.stringify({
@@ -256,14 +306,23 @@ function Gate({
           }),
         });
       } else {
-        await api("/api/v1/auth/login", host, {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        });
+        const reponse = await api<{ mfa_required?: boolean }>(
+          "/api/v1/auth/login",
+          host,
+          {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+          },
+        );
+        if (reponse?.mfa_required) {
+          setCodeAttendu(true);
+          setPassword("");
+          return;
+        }
       }
       onDone();
     } catch (caught) {
-      setFailure(caught instanceof Error ? caught.message : "Échec.");
+      setFailure(caught instanceof Error ? caught.message : t("compte.echec"));
     } finally {
       setPending(false);
     }
@@ -272,10 +331,14 @@ function Gate({
   return (
     <AuthShell
       homeHref="/"
-      homeLabel={`Retour chez ${salon.name}`}
+      homeLabel={t("compte.retourChez", { salon: salon.name })}
       brand={
         <>
-          <SalonLogo logo={salon.logo} name={salon.name} className="size-8 text-xs" />
+          <SalonLogo
+            logo={salon.logo}
+            name={salon.name}
+            className="size-8 text-xs"
+          />
           <span className="truncate font-semibold tracking-tight text-ink">
             {salon.name}
           </span>
@@ -301,19 +364,19 @@ function Gate({
         */
         <AuthShowcase
           seed={salon.slug}
-          title="Un compte, tous vos salons."
+          title={t("compte.unCompte")}
           points={[
             {
-              title: "Vos rendez-vous au même endroit",
-              body: `Ceux de ${salon.name} et ceux de vos autres salons, en une liste.`,
+              title: t("compte.rdvAuMemeEndroit"),
+              body: t("compte.ceuxDeListe", { salon: salon.name }),
             },
             {
-              title: "Plus rien à ressaisir",
-              body: "Votre nom et votre téléphone sont déjà là la prochaine fois.",
+              title: t("compte.plusRienARessaisir"),
+              body: t("compte.plusRienCorps"),
             },
             {
-              title: "Vous pouvez réserver sans compte",
-              body: "Le compte sert à retrouver vos rendez-vous, pas à en prendre.",
+              title: t("compte.sansCompteTitre"),
+              body: t("compte.sansCompteCorps"),
             },
           ]}
         />
@@ -333,19 +396,24 @@ function Gate({
       */}
       <div className={authCard}>
         <h1 className={authTitle}>
-          {mode === "login" ? "Retrouvez vos rendez-vous" : "Créer votre compte"}
+          {mode === "login"
+            ? t("compte.retrouvez")
+            : t("compte.creerVotreCompte")}
         </h1>
         <p className={authLead}>
           {mode === "login"
-            ? `Ceux de ${salon.name} et ceux de vos autres salons, au même endroit.`
-            : "Un seul compte pour tous les salons que vous fréquentez."}
+            ? t("compte.ceuxDeMemeEndroit", { salon: salon.name })
+            : t("compte.unSeulCompte")}
         </p>
 
-        <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-4">
+        <form
+          onSubmit={(event) => void submit(event)}
+          className="mt-6 space-y-4"
+        >
           {mode === "signup" && (
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-ink">
-                Votre nom
+                {t("compte.nom")}
               </span>
               <input
                 value={fullName}
@@ -379,7 +447,7 @@ function Gate({
             <>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-ink">
-                  Téléphone
+                  {t("compte.telephone")}
                 </span>
                 <input
                   value={phone}
@@ -427,29 +495,54 @@ function Gate({
           )}
 
           <PasswordField
-            label="Mot de passe"
+            label={t("compte.motDePasse")}
             value={password}
             onChange={setPassword}
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            autoComplete={
+              mode === "signup" ? "new-password" : "current-password"
+            }
             inputClassName={authInput}
             action={
               mode === "login" ? (
                 /*
-                  La réinitialisation mène au domaine de la plateforme, et
-                  c'est volontaire : l'e-mail de réinitialisation y renvoie
-                  de toute façon. Reconstruire ici un formulaire qui aboutit
-                  au même endroit donnerait deux chemins à maintenir pour un
-                  seul parcours.
+                  La réinitialisation reste sur le mini-site : elle menait à
+                  une page de la plateforme qui n'existait pas (404), et
+                  l'e-mail ramène de toute façon ici, aux couleurs du salon.
                 */
-                <a
-                  href={`${platformUrl}/mot-de-passe-oublie`}
+                <Lien
+                  href="/compte/mot-de-passe-oublie"
                   className={`${authLink} text-sm`}
                 >
-                  Mot de passe oublié ?
-                </a>
+                  {t("compte.motDePasseOublie")}
+                </Lien>
               ) : undefined
             }
           />
+
+          {codeAttendu && (
+            <div>
+              <label
+                htmlFor="code-2fa"
+                className="mb-1.5 block text-sm font-medium text-ink"
+              >
+                {t("compte.code2fa")}
+              </label>
+              <input
+                id="code-2fa"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                required
+                maxLength={20}
+                className={`${authInput} text-center font-mono text-lg tracking-[0.3em]`}
+              />
+              <p className="mt-1.5 text-xs text-ink/70">
+                {t("compte.code2faAide")}
+              </p>
+            </div>
+          )}
 
           {failure && (
             <p
@@ -466,15 +559,15 @@ function Gate({
             className={`${PRIMARY} w-full`}
           >
             {pending
-              ? "Un instant…"
+              ? t("compte.unInstant")
               : mode === "login"
-                ? "Se connecter"
-                : "Créer mon compte"}
+                ? t("compte.seConnecter")
+                : t("compte.creerMonCompte")}
           </button>
         </form>
 
         <p className="mt-5 text-center text-sm text-ink/75">
-          {mode === "login" ? "Pas encore de compte ? " : "Vous en avez déjà un ? "}
+          {mode === "login" ? t("compte.pasEncore") : t("compte.dejaUn")}{" "}
           <button
             type="button"
             onClick={() => {
@@ -483,7 +576,9 @@ function Gate({
             }}
             className={authLink}
           >
-            {mode === "login" ? "Créer un compte" : "Se connecter"}
+            {mode === "login"
+              ? t("compte.creerUnCompte")
+              : t("compte.seConnecter")}
           </button>
         </p>
       </div>
@@ -497,11 +592,11 @@ function Gate({
         plutôt que de s'inscrire. C'est un lien, pas une phrase.
       */}
       <p className="mt-5 text-center text-sm text-ink/75">
-        <Link href="/reserver" className={authLink}>
-          Réserver sans compte
-        </Link>
+        <Lien href="/reserver" className={authLink}>
+          {t("compte.reserverSansCompte")}
+        </Lien>
         <span className="mt-1 block text-xs text-muted">
-          Le compte sert à retrouver vos rendez-vous, pas à en prendre.
+          {t("compte.sansCompteCorps")}
         </span>
       </p>
     </AuthShell>
@@ -523,6 +618,7 @@ function Space({
   host: string;
   onChange: () => void;
 }) {
+  const t = useTranslations("espace");
   const [data, setData] = useState<{
     salons: { slug: string; name: string }[];
     bookings: ClientBooking[];
@@ -540,10 +636,10 @@ function Space({
 
   useEffect(() => {
     let cancelled = false;
-    api<{ salons: { slug: string; name: string }[]; bookings: ClientBooking[] }>(
-      "/api/v1/public/client/bookings",
-      host,
-    )
+    api<{
+      salons: { slug: string; name: string }[];
+      bookings: ClientBooking[];
+    }>("/api/v1/public/client/bookings", host)
       .then((result) => !cancelled && setData(result))
       .catch(() => !cancelled && setFailed(true));
 
@@ -592,7 +688,9 @@ function Space({
     produirait tôt ou tard deux verdicts différents : un bouton proposé sur
     une visite déjà notée, ou refusé sur une visite qui l'accepte encore.
   */
-  const toReview = (data?.bookings ?? []).filter((booking) => booking.can_review);
+  const toReview = (data?.bookings ?? []).filter(
+    (booking) => booking.can_review,
+  );
 
   /*
     Deux listes, deux onglets.
@@ -607,7 +705,7 @@ function Space({
   const firstName = session.client?.full_name?.split(" ")[0] ?? "";
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28">
+    <main className="mx-auto w-full max-w-3xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:grid lg:max-w-5xl lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-x-8">
       {/*
         L'en-tête porte l'identité, pas seulement un bonjour.
 
@@ -615,7 +713,7 @@ function Space({
         est, et le compte se distingue du mini-site public qu'on vient de
         quitter.
       */}
-      <header className="mb-6 flex flex-wrap items-center gap-3">
+      <header className="mb-6 flex flex-wrap items-center gap-3 lg:col-span-2">
         <span
           aria-hidden
           className="salon-gradient flex size-12 shrink-0 items-center justify-center rounded-2xl text-lg font-semibold text-white"
@@ -625,75 +723,106 @@ function Space({
 
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-semibold tracking-tight text-[var(--site-ink)] sm:text-2xl">
-            Bonjour {firstName}
+            {t("compte.bonjour", { nom: firstName })}
           </h1>
           <p className="truncate text-sm text-[var(--site-muted)]">
             {session.email}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void logout()}
-          className="shrink-0 rounded-xl border border-[var(--site-line)] px-3 py-2 text-sm text-[var(--site-muted)] transition hover:text-[var(--site-ink)]"
-        >
-          Se déconnecter
-        </button>
+        <BoutonDeconnexion onConfirmer={logout} />
       </header>
 
-      {/* Quatre chiffres, en deux colonnes dès le téléphone. Ils répondent à
+      {/* Les notifications sur l'appareil : proposées une fois l'espace
+          ouvert, jamais demandées sans un geste. */}
+      <RappelNotificationsCliente host={host} />
+
+      {/* Le menu des sections : colonne collée à gauche sur ordinateur, barre
+          de pastilles sous l'en-tête sur téléphone. Il suit la lecture. */}
+      <MenuEspace
+        titre={t("menu.titre")}
+        entrees={[
+          { id: "apercu", libelle: t("menu.apercu"), icone: "grid" },
+          {
+            id: "a-faire",
+            libelle: t("menu.aFaire"),
+            icone: "clock",
+            badge: toSettle.length + toReview.length,
+          },
+          {
+            id: "rendez-vous",
+            libelle: t("menu.rendezVous"),
+            icone: "calendar",
+          },
+          { id: "parrainage", libelle: t("menu.parrainage"), icone: "sparkle" },
+          { id: "profil", libelle: t("menu.profil"), icone: "user" },
+        ]}
+      />
+
+      <div className="min-w-0">
+        <section id="apercu" className="scroll-mt-32 lg:scroll-mt-24">
+          {/* Quatre chiffres, en deux colonnes dès le téléphone. Ils répondent à
           « où j'en suis » sans faire défiler.
 
           « À noter » a rejoint les trois autres parce que c'est le seul qui
           appelle un geste : les trois premiers décrivent, celui-là demande. */}
-      <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Tile label="À venir" value={String(upcoming.length)} />
-        <Tile label={visits > 1 ? "Visites" : "Visite"} value={String(visits)} />
-        <Tile
-          label="À noter"
-          value={String(toReview.length)}
-          accent={toReview.length > 0}
-        />
-        <Tile
-          label="Salon"
-          value={session.client?.preferred_salon_name || salon.name}
-          small
-        />
-      </dl>
+          <dl className="mb-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <Tile label={t("liste.aVenir")} value={String(upcoming.length)} />
+            <Tile
+              label={t("liste.visites", { n: visits })}
+              value={String(visits)}
+            />
+            <Tile
+              label={t("liste.aNoter")}
+              value={String(toReview.length)}
+              accent={toReview.length > 0}
+            />
+            <Tile
+              label="Salon"
+              value={session.client?.preferred_salon_name || salon.name}
+              small
+            />
+          </dl>
 
-      {failed && (
-        <p className="mb-6 rounded-xl bg-red-500/10 p-3.5 text-sm text-red-700">
-          Impossible de charger vos rendez-vous.
-        </p>
-      )}
+          {session.client?.email_verified === false && (
+            <RappelVerification email={session.email} host={host} />
+          )}
 
-      {/* Ce qui attend un geste passe avant tout le reste. */}
-      {toSettle.length > 0 && (
-        <div className="mb-6 rounded-2xl border-l-4 border-l-amber-500 border-y border-r border-[var(--site-line)] bg-[var(--site-surface)] p-4">
-          <p className="font-medium text-[var(--site-ink)]">
-            {toSettle.length === 1
-              ? "Un acompte reste à régler"
-              : `${toSettle.length} acomptes restent à régler`}
-          </p>
-          <p className="mt-1 text-sm text-[var(--site-muted)]">
-            Votre créneau est réservé, mais il se libérera si l&apos;acompte
-            n&apos;arrive pas.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {toSettle.map((booking) => (
-              <Link
-                key={booking.id}
-                href={`/paiement?token=${encodeURIComponent(booking.payment_token)}`}
-                className={`${PRIMARY} px-4 py-2.5 text-sm`}
-              >
-                Régler {booking.service_name}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+          {failed && (
+            <p className="mb-6 rounded-xl bg-red-500/10 p-3.5 text-sm text-red-700">
+              {t("liste.echec")}
+            </p>
+          )}
+        </section>
 
-      {/*
+        {(toSettle.length > 0 || toReview.length > 0) && (
+          <section id="a-faire" className="scroll-mt-32 lg:scroll-mt-24">
+            {/* Ce qui attend un geste passe avant tout le reste. */}
+            {toSettle.length > 0 && (
+              <div className="mb-6 rounded-2xl border-l-4 border-l-amber-500 border-y border-r border-[var(--site-line)] bg-[var(--site-surface)] p-4">
+                <p className="font-medium text-[var(--site-ink)]">
+                  {toSettle.length === 1
+                    ? t("liste.acompteRestant")
+                    : t("liste.acomptesRestants", { n: toSettle.length })}
+                </p>
+                <p className="mt-1 text-sm text-[var(--site-muted)]">
+                  {t("liste.acompteRappel")}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {toSettle.map((booking) => (
+                    <Lien
+                      key={booking.id}
+                      href={`/paiement?token=${encodeURIComponent(booking.payment_token)}`}
+                      className={`${PRIMARY} px-4 py-2.5 text-sm`}
+                    >
+                      Régler {booking.service_name}
+                    </Lien>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/*
         Les avis en attente, juste après les acomptes.
 
         Ils ne coûtent rien à la cliente si elle les ignore — d'où la place
@@ -701,142 +830,242 @@ function Space({
         le lien ne fonctionne plus. Le dire en jours plutôt qu'en date,
         parce que « il vous reste 6 jours » se comprend sans calcul.
       */}
-      {toReview.length > 0 && (
-        <div className="mb-6 rounded-2xl border-y border-r border-l-4 border-[var(--site-line)] border-l-[var(--salon-primary)] bg-[var(--site-surface)] p-4">
-          <p className="flex flex-wrap items-center gap-2 font-medium text-[var(--site-ink)]">
-            <SalonIcon name="star" className="size-4 text-[var(--salon-ink)]" />
-            {toReview.length === 1
-              ? "Une visite attend votre avis"
-              : `${toReview.length} visites attendent votre avis`}
-          </p>
-          <p className="mt-1 text-sm text-[var(--site-muted)]">
-            Cinq critères, deux minutes. Votre avis aide les prochaines
-            clientes à choisir — et le salon à s&apos;améliorer là où il faut.
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {toReview.map((booking) => (
-              <li key={booking.id}>
-                <a
-                  href={`${salonOrigin(booking.salon_slug, host)}/avis?token=${encodeURIComponent(booking.review_token)}`}
-                  className={`${PRIMARY} px-4 py-2.5 text-sm`}
-                >
-                  Noter {booking.service_name}
-                  <span className="ml-1.5 font-normal opacity-80">
-                    · {remaining(booking.review_until)}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+            {toReview.length > 0 && (
+              <div className="mb-6 rounded-2xl border-y border-r border-l-4 border-[var(--site-line)] border-l-[var(--salon-primary)] bg-[var(--site-surface)] p-4">
+                <p className="flex flex-wrap items-center gap-2 font-medium text-[var(--site-ink)]">
+                  <SalonIcon
+                    name="star"
+                    className="size-4 text-[var(--salon-ink)]"
+                  />
+                  {toReview.length === 1
+                    ? t("liste.visiteAttendAvis")
+                    : t("liste.visitesAvis", { n: toReview.length })}
+                </p>
+                <p className="mt-1 text-sm text-[var(--site-muted)]">
+                  {t("liste.avisInvitation")}
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {toReview.map((booking) => (
+                    <li key={booking.id}>
+                      <a
+                        href={`${salonOrigin(booking.salon_slug, host)}/avis?token=${encodeURIComponent(booking.review_token)}`}
+                        className={`${PRIMARY} px-4 py-2.5 text-sm`}
+                      >
+                        Noter {booking.service_name}
+                        <span className="ml-1.5 font-normal opacity-80">
+                          · {remaining(booking.review_until, t)}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
 
-      {data === null && !failed && (
-        <div className={`${CARD} mb-6 h-32 animate-pulse`} />
-      )}
+        <section id="rendez-vous" className="scroll-mt-32 lg:scroll-mt-24">
+          {data === null && !failed && (
+            <div className={`${CARD} mb-6 h-32 animate-pulse`} />
+          )}
 
-      {/* Le prochain rendez-vous, en grand : c'est la seule chose qu'on
+          {/* Le prochain rendez-vous, en grand : c'est la seule chose qu'on
           vient vérifier neuf fois sur dix. */}
-      {nextOne && <NextBooking booking={nextOne} host={host} onCancelled={relire} />}
+          {nextOne && (
+            <NextBooking booking={nextOne} host={host} onCancelled={relire} />
+          )}
 
-      {data !== null && upcoming.length === 0 && (
-        <div className={`${CARD} p-6 text-center`}>
-          <p className="font-medium text-[var(--site-ink)]">
-            Aucun rendez-vous à venir.
-          </p>
-          <p className="mt-1 text-sm text-[var(--site-muted)]">
-            {visits > 0
-              ? "Reprenez là où vous vous étiez arrêtée."
-              : "Choisissez une prestation pour commencer."}
-          </p>
-          <Link href="/reserver" className={`${PRIMARY} mt-4`}>
-            Réserver chez {salon.name}
-          </Link>
-        </div>
-      )}
+          {data !== null && upcoming.length === 0 && (
+            <div className={`${CARD} mb-8 p-6 text-center`}>
+              <p className="font-medium text-[var(--site-ink)]">
+                {t("liste.aucunAVenir")}
+              </p>
+              <p className="mt-1 text-sm text-[var(--site-muted)]">
+                {visits > 0
+                  ? t("liste.reprenezLa")
+                  : t("liste.choisissezPrestation")}
+              </p>
+              <Lien href="/reserver" className={`${PRIMARY} mt-4`}>
+                {t("liste.reserverChez", { salon: salon.name })}
+              </Lien>
+            </div>
+          )}
 
-      {(rest.length > 0 || past.length > 0) && (
-        <section className="mb-8">
-          {/* Deux onglets plutôt que deux sections empilées : l'historique
+          {(rest.length > 0 || past.length > 0) && (
+            <section className="mb-8">
+              {/* Deux onglets plutôt que deux sections empilées : l'historique
               d'une cliente fidèle poussait les rendez-vous suivants hors de
               l'écran, et ce sont eux qu'on vient voir. */}
-          <div
-            role="tablist"
-            aria-label="Vos rendez-vous"
-            className="mb-3 flex rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] p-1"
-          >
-            {(
-              [
-                ["avenir", "Ensuite", rest.length],
-                ["passe", "Historique", past.length],
-              ] as ["avenir" | "passe", string, number][]
-            ).map(([key, label, count]) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={tab === key}
-                onClick={() => setTab(key)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
-                  tab === key
-                    ? "salon-gradient font-medium text-white shadow-sm"
-                    : "text-[var(--site-muted)] hover:text-[var(--site-ink)]"
-                }`}
+              <div
+                role="tablist"
+                aria-label={t("liste.vosRdv")}
+                className="mb-3 flex rounded-xl border border-[var(--site-line)] bg-[var(--site-surface)] p-1"
               >
-                {label}
-                {count > 0 && (
-                  <span
-                    className={`tabular text-xs ${
-                      tab === key ? "text-white/75" : "text-[var(--site-subtle)]"
+                {(
+                  [
+                    ["avenir", "Ensuite", rest.length],
+                    ["passe", "Historique", past.length],
+                  ] as ["avenir" | "passe", string, number][]
+                ).map(([key, label, count]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === key}
+                    onClick={() => setTab(key)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm transition ${
+                      tab === key
+                        ? "salon-gradient font-medium text-white shadow-sm"
+                        : "text-[var(--site-muted)] hover:text-[var(--site-ink)]"
                     }`}
                   >
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {tab === "avenir" ? (
-            rest.length > 0 ? (
-              <ul className="grid gap-2.5 sm:grid-cols-2">
-                {rest.map((booking) => (
-                  <BookingCard key={booking.id} booking={booking} host={host} />
+                    {label}
+                    {count > 0 && (
+                      <span
+                        className={`tabular text-xs ${
+                          tab === key
+                            ? "text-white/75"
+                            : "text-[var(--site-subtle)]"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
                 ))}
-              </ul>
-            ) : (
-              <p className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}>
-                Rien d&apos;autre de prévu après votre prochain rendez-vous.
-              </p>
-            )
-          ) : past.length > 0 ? (
-            /* Deux colonnes dès le téléphone : ces cartes sont courtes, et
+              </div>
+
+              {tab === "avenir" ? (
+                rest.length > 0 ? (
+                  <ul className="grid gap-2.5 sm:grid-cols-2">
+                    {rest.map((booking) => (
+                      <BookingCard
+                        key={booking.id}
+                        booking={booking}
+                        host={host}
+                      />
+                    ))}
+                  </ul>
+                ) : (
+                  <p
+                    className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
+                  >
+                    {t("liste.rienApres")}
+                  </p>
+                )
+              ) : past.length > 0 ? (
+                /* Deux colonnes dès le téléphone : ces cartes sont courtes, et
                une seule colonne transformait dix visites en défilement. */
-            <ul className="grid grid-cols-2 gap-2.5">
-              {past.map((booking) => (
-                <BookingCard
-                  key={booking.id}
-                  booking={booking}
-                  host={host}
-                  compact
-                />
-              ))}
-            </ul>
-          ) : (
-            <p className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}>
-              Vos visites passées apparaîtront ici.
-            </p>
+                <ul className="grid grid-cols-2 gap-2.5">
+                  {past.map((booking) => (
+                    <BookingCard
+                      key={booking.id}
+                      booking={booking}
+                      host={host}
+                      compact
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p
+                  className={`${CARD} p-4 text-center text-sm text-[var(--site-muted)]`}
+                >
+                  {t("liste.passeesIci")}
+                </p>
+              )}
+            </section>
           )}
         </section>
-      )}
 
-      <Preferences
-        session={session}
-        host={host}
-        salons={data?.salons ?? []}
-        onSaved={onChange}
-      />
+        <ParrainageCliente host={host} />
+
+        <div id="profil" className="scroll-mt-32 lg:scroll-mt-24">
+          <Preferences
+            session={session}
+            host={host}
+            salons={data?.salons ?? []}
+            onSaved={onChange}
+          />
+        </div>
+      </div>
     </main>
+  );
+}
+
+/** Adresse pas encore confirmée : un rappel, et le lien à renvoyer. Rien n'est bloqué. */
+function RappelVerification({ email, host }: { email: string; host: string }) {
+  const t = useTranslations("espace.verification");
+  const locale = useLocale();
+  const [etat, setEtat] = useState<"repos" | "envoi" | "envoye">("repos");
+  const [erreur, setErreur] = useState("");
+
+  async function renvoyer() {
+    setEtat("envoi");
+    setErreur("");
+    try {
+      await api("/api/v1/auth/email/verify/resend", host, {
+        method: "POST",
+        body: JSON.stringify({ lang: locale }),
+      });
+      setEtat("envoye");
+    } catch (caught) {
+      setEtat("repos");
+      setErreur(caught instanceof Error ? caught.message : t("echec"));
+    }
+  }
+
+  /*
+    Titre, explication, bouton — empilés sur téléphone.
+
+    Tout tenait sur une ligne : une adresse longue, sans espace où se couper,
+    débordait sous le bouton « Renvoyer le lien ». L'adresse se coupe donc où
+    il faut (`break-all`), et le bouton passe dessous, pleine largeur, tant
+    que l'écran est étroit.
+  */
+  return (
+    <div
+      role="status"
+      className={`${CARD} mb-6 flex flex-col gap-3 border-l-4 border-l-[var(--salon-primary)] p-3.5 sm:flex-row sm:items-center sm:gap-4 sm:p-4`}
+    >
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--salon-primary-soft)] text-[var(--salon-ink)]">
+          <SalonIcon name="mail" className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-[var(--site-ink)] sm:text-sm">
+            {t("rappelTitre")}
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-[var(--site-muted)] sm:text-[13px]">
+            {t.rich("rappelCorps", {
+              email,
+              adresse: (morceau) => (
+                <span className="break-all font-medium text-[var(--site-ink)]">
+                  {morceau}
+                </span>
+              ),
+            })}
+          </p>
+          {erreur && (
+            <p className="mt-1 text-xs font-medium text-red-600">{erreur}</p>
+          )}
+        </div>
+      </div>
+      {etat === "envoye" ? (
+        <span className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--salon-primary-soft)] px-3 py-2 text-xs font-semibold text-[var(--salon-ink)] sm:shrink-0 sm:text-sm">
+          <SalonIcon name="check" className="size-3.5" />
+          {t("envoye")}
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => void renvoyer()}
+          disabled={etat === "envoi"}
+          className="w-full rounded-xl border border-[var(--site-line)] px-3 py-2 text-xs font-semibold text-[var(--site-ink)] transition hover:border-[var(--salon-primary)] disabled:opacity-60 sm:w-auto sm:shrink-0 sm:text-sm"
+        >
+          {etat === "envoi" ? t("envoi") : t("renvoyer")}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -891,7 +1120,8 @@ function BookingCard({
   highlight?: boolean;
   compact?: boolean;
 }) {
-  const status = STATUS[booking.status] ?? {
+  const t = useTranslations("espace");
+  const status = etats(t)[booking.status] ?? {
     label: booking.status,
     className: "bg-black/[0.06] text-[var(--site-muted)]",
   };
@@ -947,13 +1177,13 @@ function BookingCard({
             >
               <SalonIcon name="star" className="size-3.5 shrink-0" />
               <span className="truncate">
-                Noter · {remaining(booking.review_until)}
+                Noter · {remaining(booking.review_until, t)}
               </span>
             </a>
           ) : booking.reviewed ? (
             <p className="flex items-center gap-1.5 text-xs text-[var(--site-subtle)]">
               <SalonIcon name="check" className="size-3.5 shrink-0" />
-              Avis déposé
+              {t("liste.avisDepose")}
             </p>
           ) : (
             <a
@@ -961,7 +1191,7 @@ function BookingCard({
               className="flex items-center gap-1.5 text-xs font-medium text-[var(--site-muted)] underline-offset-2 hover:text-[var(--site-ink)] hover:underline"
             >
               <SalonIcon name="calendar" className="size-3.5 shrink-0" />
-              Reprendre rendez-vous
+              {t("liste.reprendre")}
             </a>
           )}
         </div>
@@ -1017,7 +1247,9 @@ function BookingCard({
           <SalonIcon name="store" className="size-3.5" />
           {booking.salon_name}
         </a>
-        {booking.staff_member_name && <span>avec {booking.staff_member_name}</span>}
+        {booking.staff_member_name && (
+          <span>avec {booking.staff_member_name}</span>
+        )}
         <span className="tabular">
           {formatPrice(booking.total_amount, booking.currency)}
         </span>
@@ -1041,7 +1273,7 @@ function BookingCard({
         href={`${salonUrl}/rendez-vous?token=${encodeURIComponent(booking.status_token)}`}
         className="mt-2.5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--salon-ink)] underline-offset-2 hover:underline"
       >
-        Voir le détail
+        {t("liste.voirDetail")}
         <SalonIcon name="arrow" className="size-3.5" />
       </a>
     </li>
@@ -1067,6 +1299,7 @@ function Preferences({
   salons: { slug: string; name: string }[];
   onSaved: () => void;
 }) {
+  const t = useTranslations("espace");
   const profile = session.client;
   const [whatsapp, setWhatsapp] = useState(profile?.whatsapp ?? "");
   const [wechat, setWechat] = useState(profile?.wechat ?? "");
@@ -1115,7 +1348,7 @@ function Preferences({
         <div className="grid grid-cols-2 gap-3">
           <label className="col-span-2 block">
             <span className="mb-1 block text-xs text-[var(--site-muted)]">
-              Téléphone
+              {t("compte.telephone")}
             </span>
             <input
               value={phone}
@@ -1153,7 +1386,7 @@ function Preferences({
           </button>
           {saved && (
             <span role="status" className="text-sm text-emerald-600">
-              Enregistré.
+              {t("liste.enregistre")}
             </span>
           )}
         </div>
@@ -1186,7 +1419,8 @@ function NextBooking({
   host: string;
   onCancelled: () => void;
 }) {
-  const status = STATUS[booking.status] ?? {
+  const t = useTranslations("espace");
+  const status = etats(t)[booking.status] ?? {
     label: booking.status,
     className: "bg-black/[0.06] text-[var(--site-muted)]",
   };
@@ -1210,7 +1444,7 @@ function NextBooking({
       {/* Bandeau de marque : on sait chez qui on va avant même de lire. */}
       <div className="salon-gradient px-4 py-2.5 text-white sm:px-5">
         <p className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <span className="font-medium">{countdown(start)}</span>
+          <span className="font-medium">{countdown(start, t)}</span>
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
               booking.payment_token ? "bg-white text-amber-700" : "bg-white/20"
@@ -1257,7 +1491,9 @@ function NextBooking({
 
           {booking.staff_member_name && (
             <div className="min-w-0">
-              <dt className="text-xs text-[var(--site-subtle)]">Avec</dt>
+              <dt className="text-xs text-[var(--site-subtle)]">
+                {t("liste.avec")}
+              </dt>
               <dd className="truncate text-[var(--site-ink)]">
                 {booking.staff_member_name}
               </dd>
@@ -1299,7 +1535,9 @@ function NextBooking({
             <SalonIcon name="pin" className="mt-0.5 size-4 shrink-0" />
             <span>
               À domicile · {booking.travel_zone_name}
-              {booking.address && <span className="block">{booking.address}</span>}
+              {booking.address && (
+                <span className="block">{booking.address}</span>
+              )}
             </span>
           </p>
         )}
@@ -1318,12 +1556,12 @@ function NextBooking({
 
         <div className="mt-4 flex flex-wrap gap-2">
           {booking.payment_token && (
-            <Link
+            <Lien
               href={`/paiement?token=${encodeURIComponent(booking.payment_token)}`}
               className={`${PRIMARY} px-4 py-2.5 text-sm`}
             >
-              Régler l&apos;acompte
-            </Link>
+              {t("liste.reglerAcompte")}
+            </Lien>
           )}
 
           {/*
@@ -1341,7 +1579,7 @@ function NextBooking({
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--site-line)] px-4 py-2.5 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
           >
             <SalonIcon name="sparkle" className="size-4" />
-            Suivre mon rendez-vous
+            {t("liste.suivre")}
           </a>
 
           {maps && (
@@ -1352,7 +1590,7 @@ function NextBooking({
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--site-line)] px-4 py-2.5 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
             >
               <SalonIcon name="pin" className="size-4" />
-              Itinéraire
+              {t("liste.itineraire")}
             </a>
           )}
           <a
@@ -1360,7 +1598,7 @@ function NextBooking({
             className="inline-flex items-center gap-2 rounded-xl border border-[var(--site-line)] px-4 py-2.5 text-sm font-medium text-[var(--site-ink)] transition hover:border-[var(--salon-primary)]"
           >
             <SalonIcon name="store" className="size-4" />
-            Le salon
+            {t("liste.leSalon")}
           </a>
         </div>
 
@@ -1396,16 +1634,21 @@ function salonOrigin(slug: string, host: string): string {
  * Une date se lit, un délai se comprend — et c'est le délai qui fait
  * remarquer qu'un rendez-vous est demain plutôt que la semaine prochaine.
  */
-function countdown(start: Date): string {
+/* Le traducteur arrive en paramètre : ce n'est pas un composant, et un
+   crochet React n'a rien à faire dans une fonction ordinaire. */
+function countdown(
+  start: Date,
+  t: (cle: string, vars?: Record<string, string | number | Date>) => string,
+): string {
   const days = Math.round((start.getTime() - Date.now()) / 86_400_000);
 
-  if (days < 0) return "Passé";
-  if (days === 0) return "Aujourd'hui";
-  if (days === 1) return "Demain";
-  if (days < 7) return `Dans ${days} jours`;
-  if (days < 14) return "Dans une semaine";
-  if (days < 31) return `Dans ${Math.round(days / 7)} semaines`;
-  return `Dans ${Math.round(days / 30)} mois`;
+  if (days < 0) return t("liste.passe");
+  if (days === 0) return t("liste.aujourdhui");
+  if (days === 1) return t("liste.demain");
+  if (days < 7) return t("liste.dansJours", { n: days });
+  if (days < 14) return t("liste.dansUneSemaine");
+  if (days < 31) return t("liste.dansSemaines", { n: Math.round(days / 7) });
+  return t("liste.dansMois", { n: Math.round(days / 30) });
 }
 
 /** « ven. 11 sept. · 14:00 » — assez pour reconnaître une visite passée. */
@@ -1420,12 +1663,15 @@ function countdown(start: Date): string {
  * Le décompte est arrondi au supérieur : une échéance à 6 h ce soir est
  * encore « aujourd'hui », pas « 0 jour ».
  */
-function remaining(iso: string): string {
+function remaining(
+  iso: string,
+  t: (cle: string, vars?: Record<string, string | number | Date>) => string,
+): string {
   if (!iso) return "";
   const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
-  if (days <= 0) return "dernières heures";
-  if (days === 1) return "dernier jour";
-  return `${days} jours`;
+  if (days <= 0) return t("liste.dernieresHeures");
+  if (days === 1) return t("liste.dernierJour");
+  return t("liste.joursRestants", { n: days });
 }
 
 function shortDate(iso: string): string {

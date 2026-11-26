@@ -1,0 +1,41 @@
+# ---------------------------------------------------------------------------
+# Mode « coolify » : Caddy derriere le Traefik de Coolify.
+#
+# Importe dans les options globales du Caddyfile quand ENTREE=coolify.
+#
+# Coolify tient deja les ports 80 et 443, pour d'autres services qu'on ne
+# doit pas deranger. Traefik ne peut pas obtenir de certificat « a la
+# demande » : il ignore quels sous-domaines de salon existeront demain. Il
+# transmet donc les connexions de notre domaine **sans les dechiffrer**
+# (passage TCP sur le SNI, voir traefik-coolify.yaml), et Caddy continue de
+# gerer chaque certificat de salon. Trois consequences, reglees ici.
+# ---------------------------------------------------------------------------
+
+servers :443 {
+	listener_wrappers {
+		# 1. L'adresse du visiteur. Relayee au niveau TCP, la connexion
+		#    arrive depuis Traefik : sans rien de plus, tous les visiteurs
+		#    auraient l'adresse de Traefik, et les limites de debit par IP
+		#    deviendraient une limite unique pour toute la plateforme.
+		#    Traefik annonce la vraie adresse en tete de connexion (protocole
+		#    PROXY) ; on ne l'accepte que des reseaux prives, les seuls d'ou
+		#    Caddy est joignable dans ce mode — il ne publie aucun port.
+		proxy_protocol {
+			timeout 5s
+			allow 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 fd00::/8
+		}
+		tls
+	}
+	# 2. Pas de HTTP/3. Il passe par UDP, que le relais TCP ne transporte
+	#    pas : l'annoncer ferait tenter au navigateur une connexion que
+	#    Traefik ne saurait pas servir, avant qu'il ne se rabatte sur TCP.
+	protocols h1 h2
+}
+
+# 3. La validation Let's Encrypt par le port 80 est impossible : Traefik y
+#    repond lui-meme a tout chemin `/.well-known/acme-challenge/`, pour ses
+#    propres certificats. Caddy prouve donc la possession du nom par le port
+#    443 (defi TLS-ALPN), que le relais lui transmet intact.
+cert_issuer acme {
+	disable_http_challenge
+}

@@ -11,12 +11,16 @@ from apps.catalog.models import Service, ServiceCategory, ServiceOption
 from apps.media.models import MediaAsset
 from apps.scheduling.models import BusinessHours
 from apps.staff.models import StaffMember
+from apps.translations.serializers import Traduit
 
 from .models import SalonProfile, TravelZone
 
 
 class MediaAssetSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
+    variants = serializers.SerializerMethodField()
+    prestation = serializers.SerializerMethodField()
+    prestataire = serializers.SerializerMethodField()
 
     class Meta:
         model = MediaAsset
@@ -26,6 +30,7 @@ class MediaAssetSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "url",
+            "variants",
             "content_type",
             "alt_text",
             "width",
@@ -33,17 +38,74 @@ class MediaAssetSerializer(serializers.ModelSerializer):
             "kind",
             "position",
             "featured",
+            "prestation",
+            "prestataire",
         )
 
-    def get_url(self, asset) -> str:
+    def _traduit(self, objet, champ: str) -> str:
+        """Le nom dans la langue du mini-site (voir apps/translations)."""
+        table = self.context.get("traductions") or {}
+        cle = (objet._meta.label_lower, str(objet.pk), champ)
+        return table.get(cle) or getattr(objet, champ)
+
+    def get_prestation(self, asset) -> dict | None:
+        """Ce que montre la realisation : de quoi la reserver telle quelle.
+
+        Rien si la prestation (ou sa categorie) est retiree de la vitrine : la
+        page ne doit pas proposer de reserver ce qui ne se reserve plus.
+        """
+        service = getattr(asset, "service", None)
+        if service is None or not service.active:
+            return None
+        categorie = service.category
+        if categorie is not None and not categorie.active:
+            return None
+        return {
+            "id": str(service.pk),
+            "nom": self._traduit(service, "name"),
+            "prix": str(service.price_amount),
+            "prix_type": service.price_kind,
+            "duree": service.duration_minutes,
+            "categorie_id": str(categorie.pk) if categorie else "",
+            "categorie": self._traduit(categorie, "name") if categorie else "",
+        }
+
+    def get_prestataire(self, asset) -> dict | None:
+        membre = getattr(asset, "staff_member", None)
+        if membre is None or not membre.active or membre.archived_at is not None:
+            return None
+        return {"id": str(membre.pk), "nom": membre.name}
+
+    def _absolue(self, url: str) -> str:
         request = self.context.get("request")
-        url = asset.file.url
         return request.build_absolute_uri(url) if request else url
 
+    def get_url(self, asset) -> str:
+        return self._absolue(asset.file.url)
 
-class PublicServiceOptionSerializer(serializers.ModelSerializer):
+    def get_variants(self, asset) -> dict:
+        """Les copies WebP reduites, par largeur : `{"480": url, "1024": url}`.
+
+        Une vignette de 170 pixels telechargeait l'original — jusqu'a
+        1600 x 2400, plusieurs centaines de kilo-octets par photo, sur des
+        reseaux mobiles factures a la donnee. Le mini-site en tire un
+        `srcset` : le navigateur prend la plus petite qui suffit a l'ecran.
+        """
+        from apps.media.tasks import DERIVATIVE_WIDTHS
+
+        variantes = {}
+        for label, chemin in (asset.derivatives or {}).items():
+            largeur = DERIVATIVE_WIDTHS.get(label)
+            if largeur and chemin:
+                variantes[str(largeur)] = self._absolue(asset.file.storage.url(chemin))
+        return variantes
+
+
+class PublicServiceOptionSerializer(Traduit, serializers.ModelSerializer):
     """Options proposees a la cliente, avec ce qu'elles coutent en argent et
     en temps. Les deux comptent : le second decide du creneau."""
+
+    champs_traduits = ("name", "description")
 
     class Meta:
         model = ServiceOption
@@ -72,7 +134,8 @@ class PublicRequirementSerializer(serializers.Serializer):
     products = serializers.ListField()
 
 
-class PublicServiceSerializer(serializers.ModelSerializer):
+class PublicServiceSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("name", "description")
     image = MediaAssetSerializer(read_only=True)
     staff_member_ids = serializers.SerializerMethodField()
     options = serializers.SerializerMethodField()
@@ -99,7 +162,7 @@ class PublicServiceSerializer(serializers.ModelSerializer):
         # Pre-groupees par la vue : evite une requete par prestation.
         grouped = self.context.get("options_by_service", {})
         return PublicServiceOptionSerializer(
-            grouped.get(service.id, []), many=True
+            grouped.get(service.id, []), many=True, context=self.context
         ).data
 
     def get_requirements(self, service) -> list:
@@ -112,7 +175,8 @@ class PublicServiceSerializer(serializers.ModelSerializer):
         return [str(value) for value in mapping.get(service.id, [])]
 
 
-class PublicCategorySerializer(serializers.ModelSerializer):
+class PublicCategorySerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("name",)
     services = serializers.SerializerMethodField()
 
     class Meta:
@@ -126,7 +190,8 @@ class PublicCategorySerializer(serializers.ModelSerializer):
         ).data
 
 
-class PublicStaffSerializer(serializers.ModelSerializer):
+class PublicStaffSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = ("specialty", "bio")
     photo = MediaAssetSerializer(read_only=True)
 
     class Meta:
@@ -148,7 +213,14 @@ class PublicTravelZoneSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "fee_amount")
 
 
-class PublicSalonSerializer(serializers.ModelSerializer):
+class PublicSalonSerializer(Traduit, serializers.ModelSerializer):
+    champs_traduits = (
+        "description",
+        "about_title",
+        "about_content",
+        "cancellation_policy",
+        "late_policy",
+    )
     name = serializers.CharField(source="tenant.name", read_only=True)
     slug = serializers.CharField(source="tenant.slug", read_only=True)
     currency = serializers.CharField(source="tenant.currency", read_only=True)
@@ -182,6 +254,7 @@ class PublicSalonSerializer(serializers.ModelSerializer):
             "longitude",
             "phone",
             "whatsapp_number",
+            "contact_email",
             "social_links",
             "wechat_id",
             "wechat_qr",
@@ -219,14 +292,10 @@ class PublicSalonSerializer(serializers.ModelSerializer):
         ).data
 
     def get_business_hours(self, profile) -> list:
-        return PublicBusinessHoursSerializer(
-            self.context.get("business_hours", []), many=True
-        ).data
+        return PublicBusinessHoursSerializer(self.context.get("business_hours", []), many=True).data
 
     def get_travel_zones(self, profile) -> list:
-        return PublicTravelZoneSerializer(
-            self.context.get("travel_zones", []), many=True
-        ).data
+        return PublicTravelZoneSerializer(self.context.get("travel_zones", []), many=True).data
 
     def get_gallery(self, profile) -> list:
         return MediaAssetSerializer(

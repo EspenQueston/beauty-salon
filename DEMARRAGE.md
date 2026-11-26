@@ -173,6 +173,7 @@ ensuite dans l'application viendra de vos propres saisies.
 ```bash
 cd apps/api
 uv run python manage.py runserver 0.0.0.0:8001
+Remove-Item -Recurse -Force .venv; uv sync --frozen
 ```
 
 Laissez-le tourner. Il se recharge tout seul quand un fichier Python change.

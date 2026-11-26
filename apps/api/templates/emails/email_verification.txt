@@ -1,0 +1,20 @@
+{% autoescape off %}{% if anglais %}Hello{% if nom %} {{ nom }}{% endif %},
+
+Please confirm that this address is yours by opening this link:
+{{ verify_url }}
+
+The link is valid for {{ heures }} hours and works once.
+
+If you did not create a Beauty Salon account, ignore this message.
+
+The Beauty Salon team{% else %}Bonjour{% if nom %} {{ nom }}{% endif %},
+
+Confirmez que cette adresse est bien la vôtre en ouvrant ce lien :
+{{ verify_url }}
+
+Ce lien est valable {{ heures }} heures et ne fonctionne qu'une fois.
+
+Si vous n'avez pas créé de compte Beauty Salon, ignorez ce message.
+
+L'équipe Beauty Salon{% endif %}
+{% endautoescape %}

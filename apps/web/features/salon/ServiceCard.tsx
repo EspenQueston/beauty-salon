@@ -7,7 +7,9 @@
  * tarif qu'on doit chercher est un tarif dont on se méfie.
  */
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+
+import { Lien } from "@/features/ui/Lien";
 
 import { formatDuration } from "@/lib/format";
 import { Prix } from "./Devise";
@@ -19,8 +21,10 @@ import {
 } from "@/lib/illustrations";
 import type { PublicService } from "@/lib/types";
 import { SalonIcon, type SalonIconName } from "./icons";
-import { Tilt } from "./Tilt";
+import { Relief } from "@/features/ui/Relief";
 import { Pill, SURFACE } from "./ui";
+import { photo, TAILLES } from "./images";
+import { TeinteDeMarque } from "./Teinte";
 
 export function ServiceCard({
   service,
@@ -43,6 +47,8 @@ export function ServiceCard({
    */
   fallback?: Illustration;
 }) {
+  const t = useTranslations("salon");
+  const c = useTranslations("commun");
   const deposit = service.requires_deposit;
 
   // Une carte sans visuel casse la grille et se lit comme une fiche
@@ -53,37 +59,42 @@ export function ServiceCard({
     : (fallback ?? pickIllustration(service.id, theme));
 
   return (
-    <Tilt className="h-full">
-      <Link
+    <Relief className="h-full">
+      <Lien
         href={`/reserver?service=${service.id}`}
+        // Une adresse par prestation : prechargees toutes a l'affichage du
+        // catalogue, elles faisaient autant de rendus serveur que de cartes
+        // visibles. La page de reservation, elle, est deja prechargee par le
+        // bouton « Reserver » du menu.
+        prefetch={false}
         className={`${SURFACE} group flex h-full flex-col overflow-hidden transition-shadow hover:shadow-[0_14px_32px_-10px_rgb(23_23_28_/_0.22)]`}
       >
         {service.image ? (
-          <span className="block aspect-[16/10] overflow-hidden bg-black/[0.04]">
+          <span className="relative block aspect-[16/10] overflow-hidden bg-black/[0.04]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={service.image.url}
+              {...photo(service.image, TAILLES.cartes)}
               alt={service.image.alt_text || service.name}
               loading="lazy"
               className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
+            <TeinteDeMarque />
           </span>
         ) : (
           <span className="relative block aspect-[16/10] overflow-hidden bg-black/[0.04]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={illustrationUrl(illustration!.id, { width: 640, ratio: 0.63 })}
+              src={illustrationUrl(illustration!.id, {
+                width: 640,
+                ratio: 0.63,
+              })}
               alt=""
               loading="lazy"
               className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
             {/* Teinte de marque : l'illustration reste au service du salon,
                 elle ne prend pas le dessus sur son identité. */}
-            <span
-              aria-hidden
-              className="absolute inset-0 opacity-30 mix-blend-multiply"
-              style={{ background: "var(--salon-primary)" }}
-            />
+            <TeinteDeMarque />
             <span
               aria-hidden
               className="absolute bottom-2 left-2 flex size-8 items-center justify-center rounded-lg bg-white/85 text-[var(--salon-ink-white)] backdrop-blur"
@@ -100,9 +111,25 @@ export function ServiceCard({
           remplissage d'un écran d'ordinateur ne laisse plus de place au
           texte.
         */}
+        {/*
+          Une seule disposition pour toutes les cartes, de tous les salons :
+          le nom, puis le prix dessous, puis la durée. Le prix ne remonte
+          jamais à côté d'un nom court — c'est ce qui donnait des cartes de
+          hauteurs différentes côte à côte. Le nom et la description gardent
+          chacun un nombre de lignes plafonné (deux ; trois pour la
+          description sur grand écran), et le bloc de texte une hauteur
+          réservée — celle d'un nom sur deux lignes et d'une description
+          pleine, mesurée : 9,2rem sur téléphone, 11,5rem au-delà. Toutes les
+          cartes ont ainsi la même taille, et l'espace libre d'un texte court
+          tombe au-dessus de « Réserver », pas entre le nom et son prix.
+        */}
         <span className="flex flex-1 flex-col p-3.5 sm:p-5">
-          <span className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-            <span className="text-[0.9rem] font-semibold leading-snug text-[var(--site-ink)] sm:text-base">
+          <span className="flex min-h-[9.2rem] flex-col sm:min-h-[11.5rem]">
+          <span className="flex flex-col items-start gap-1">
+            <span
+              title={service.name}
+              className="line-clamp-2 text-[0.9rem] font-semibold leading-snug text-[var(--site-ink)] sm:text-base"
+            >
               {service.name}
             </span>
             {/*
@@ -115,12 +142,14 @@ export function ServiceCard({
             */}
             {service.price_kind === "quote" ? (
               <span className="shrink-0 text-sm font-semibold text-[var(--salon-ink)] sm:text-base">
-                Sur devis
+                {t("prix.surDevis")}
               </span>
             ) : (
               <Prix
                 montant={service.price_amount}
-                prefixe={service.price_kind === "from" ? "À partir de" : ""}
+                prefixe={
+                  service.price_kind === "from" ? t("prix.aPartirDeSeul") : ""
+                }
                 className="tabular shrink-0 text-sm font-semibold text-[var(--salon-ink)] sm:text-base"
               />
             )}
@@ -131,7 +160,7 @@ export function ServiceCard({
               <SalonIcon name="clock" className="size-3.5" />
               {formatDuration(service.duration_minutes)}
             </Pill>
-            {deposit && <Pill tone="accent">Acompte</Pill>}
+            {deposit && <Pill tone="accent">{t("acompte")}</Pill>}
           </span>
 
           {service.description && (
@@ -139,16 +168,17 @@ export function ServiceCard({
               {service.description}
             </span>
           )}
+          </span>
 
-          <span className="mt-3 flex items-center gap-1.5 pt-1 text-[0.8rem] font-medium text-[var(--salon-ink)] sm:mt-4 sm:text-sm">
-            Réserver
+          <span className="mt-auto flex items-center gap-1.5 pt-4 text-[0.8rem] font-medium text-[var(--salon-ink)] sm:pt-5 sm:text-sm">
+            {c("reserver")}
             <SalonIcon
               name="arrow"
               className="size-4 transition-transform group-hover:translate-x-1"
             />
           </span>
         </span>
-      </Link>
-    </Tilt>
+      </Lien>
+    </Relief>
   );
 }

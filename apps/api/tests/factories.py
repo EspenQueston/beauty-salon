@@ -12,6 +12,7 @@ from decimal import Decimal
 
 import factory
 from django.conf import settings
+from django.utils import timezone
 
 from apps.accounts.models import Membership, User
 from apps.catalog.models import Service, ServiceCategory
@@ -55,6 +56,10 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     display_name = factory.Sequence(lambda n: f"Utilisateur {n}")
+    # Un compte deja en place : son adresse est confirmee (comme les comptes
+    # anterieurs a la verification, voir la migration accounts 0006). Les
+    # tests de la verification passent `email_verified_at=None`.
+    email_verified_at = factory.LazyFunction(timezone.now)
 
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):

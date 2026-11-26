@@ -4,8 +4,11 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.accounts.admin_login import freiner
 from apps.accounts.mfa import mfa_view
 from apps.common.views import csrf, health
+from apps.domains.views import certificat_autorise
+from apps.notifications.views_sw import service_worker_admin
 
 admin.site.site_header = "Beauty Salon - Administration plateforme"
 admin.site.site_title = "Beauty Salon"
@@ -13,6 +16,9 @@ admin.site.index_title = "Supervision"
 # « Voir le site » pointe par defaut sur « / », qui est ici la racine de
 # l'API : aucune page a afficher. Le site public vit sur un autre hote.
 admin.site.site_url = settings.SITE_BASE_URL
+# Le formulaire de connexion de Django n'a aucune limite de tentatives :
+# on lui pose les memes freins que la connexion de l'API.
+admin.site.login = freiner(admin.site.login)
 
 """
 Chemin de l'administration plateforme.
@@ -33,7 +39,14 @@ urlpatterns = [
     # Hors du site d'administration : c'est l'ecran qui debloque son acces.
     path("mfa", mfa_view, name="mfa"),
     path("health", health, name="health"),
+    # Interroge par Caddy avant d'emettre un certificat, par le reseau
+    # interne seulement : voir apps/domains/views.py.
+    path("interne/certificat", certificat_autorise, name="certificat-autorise"),
     path("api/v1/csrf", csrf, name="csrf"),
+    # Le service worker de l'administration, a la racine de l'hote.
+    # Servi depuis `/static/`, sa portee ne couvrirait pas les pages
+    # d'administration : voir apps/notifications/views_sw.py.
+    path("sw-admin.js", service_worker_admin, name="sw-admin"),
     path("api/v1/", include("config.api_urls")),
 ]
 
