@@ -14,7 +14,7 @@
  */
 
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { forwardRef, useMemo, useRef, useState } from "react";
 
 import { Lien } from "@/features/ui/Lien";
 import { isVideo, type MediaAsset } from "@/lib/types";
@@ -22,6 +22,8 @@ import { GalleryGrid } from "./GalleryGrid";
 import { SalonIcon } from "./icons";
 import { photo, TAILLES } from "./images";
 import { TeinteDeMarque } from "./Teinte";
+import { useMiseEnAvant, variablesMiseEnAvant } from "./miseEnAvant";
+import { useMouvementReduit } from "./fondPause";
 
 const TOUT = "";
 
@@ -60,6 +62,14 @@ export function RealisationsExplorer({
     : assets;
 
   const coupsDeCoeur = assets.filter((asset) => asset.featured);
+  // La visionneuse ouverte suspend la mise en avant des coups de cœur.
+  const [visionneuse, setVisionneuse] = useState(false);
+  const bandeau = useRef<HTMLUListElement>(null);
+  const { arretee, basculer } = useMiseEnAvant(bandeau, {
+    enPause: visionneuse,
+    nombre: coupsDeCoeur.length,
+  });
+  const calme = useMouvementReduit();
 
   return (
     <>
@@ -77,11 +87,37 @@ export function RealisationsExplorer({
                 {t("coupsDeCoeurCorps")}
               </p>
             </div>
-            <span className="hidden shrink-0 text-xs text-[var(--site-subtle)] sm:block">
-              {t("glisser")}
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="hidden text-xs text-[var(--site-subtle)] sm:block">
+                {t("glisser")}
+              </span>
+              {/* Commande discrète : tout ce qui bouge en boucle doit pouvoir
+                  s'arrêter (WCAG 2.2.2). Inutile quand le système demande
+                  déjà moins d'animations : rien ne bouge alors. */}
+              {!calme && (
+                <button
+                  type="button"
+                  onClick={basculer}
+                  aria-pressed={arretee}
+                  title={arretee ? t("reprendreAnimation") : t("pauseAnimation")}
+                  className="flex size-7 items-center justify-center rounded-full border border-[var(--site-line)] text-[var(--site-muted)] transition hover:text-[var(--site-ink)]"
+                >
+                  <span className="sr-only">
+                    {arretee ? t("reprendreAnimation") : t("pauseAnimation")}
+                  </span>
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="size-3">
+                    {arretee ? (
+                      <path d="M8 5v14l11-7z" />
+                    ) : (
+                      <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
+                    )}
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
           <CoupsDeCoeur
+            ref={bandeau}
             assets={coupsDeCoeur}
             onOuvrir={(asset) => {
               // La grille porte la visionneuse : on lui demande d'ouvrir
@@ -140,26 +176,39 @@ export function RealisationsExplorer({
           reservable={reservable}
           lienDirect
           aOuvrir={aOuvrir}
+          onVisionneuse={setVisionneuse}
         />
       </div>
     </>
   );
 }
 
-function CoupsDeCoeur({
-  assets,
-  onOuvrir,
-  reservable,
-}: {
-  assets: MediaAsset[];
-  onOuvrir: (asset: MediaAsset) => void;
-  reservable: boolean;
-}) {
+const CoupsDeCoeur = forwardRef<
+  HTMLUListElement,
+  {
+    assets: MediaAsset[];
+    onOuvrir: (asset: MediaAsset) => void;
+    reservable: boolean;
+  }
+>(function CoupsDeCoeur({ assets, onOuvrir, reservable }, ref) {
   const t = useTranslations("salon.galeriePlus");
   return (
-    <ul className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
+    /*
+      Marges négatives et remplissage égaux en haut et en bas : le bandeau
+      garde sa hauteur, mais laisse la place au zoom de la photo mise en
+      avant — sans eux, le défilement horizontal la couperait.
+    */
+    <ul
+      ref={ref}
+      style={variablesMiseEnAvant()}
+      className="-mx-4 -my-3 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-5 pt-3 [scrollbar-width:none] sm:-mx-3 sm:scroll-px-3 sm:px-3 [&::-webkit-scrollbar]:hidden"
+    >
       {assets.map((asset) => (
         <li key={asset.id} className="w-[68%] shrink-0 snap-start sm:w-64">
+          {/* Le zoom de la mise en avant vit sur ce cadre, celui du survol sur
+              l'image : deux éléments, deux transformations qui ne se
+              contrarient pas. */}
+          <div data-pop-cadre="" className="pop-carte rounded-2xl">
           <div className="group relative overflow-hidden rounded-2xl ring-1 ring-[var(--site-line)]">
             <button
               type="button"
@@ -214,8 +263,9 @@ function CoupsDeCoeur({
               </Lien>
             )}
           </div>
+          </div>
         </li>
       ))}
     </ul>
   );
-}
+});

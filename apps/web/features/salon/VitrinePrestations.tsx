@@ -78,7 +78,7 @@ export function VitrinePrestations({
         {cartes.map(({ id, carte }, index) => (
           <div
             key={id}
-            className={choisie ? "rise" : undefined}
+            className={choisie ? "rise h-full" : "h-full"}
             style={choisie ? { animationDelay: `${index * 60}ms` } : undefined}
           >
             {carte}

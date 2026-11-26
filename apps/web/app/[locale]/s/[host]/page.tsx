@@ -265,7 +265,7 @@ export default async function SalonHome({ params }: Props) {
               vedette={featured.map(({ service, category }, index) => ({
                 id: service.id,
                 carte: (
-                  <Reveal delay={delaiCascade(index)}>
+                  <Reveal delay={delaiCascade(index)} className="h-full">
                     <ServiceCard
                       service={service}
                       icon={categoryIcon(category.name)}

@@ -245,7 +245,7 @@ export function CatalogueExplorer({
 
               <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                 {prestations.map(({ id, carte }, rang) => (
-                  <Reveal key={id} delay={delaiCascade(rang)}>
+                  <Reveal key={id} delay={delaiCascade(rang)} className="h-full">
                     {carte}
                   </Reveal>
                 ))}

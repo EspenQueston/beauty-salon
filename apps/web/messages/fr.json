@@ -551,7 +551,9 @@
       "avisTitre": "Elles en parlent",
       "ctaTitre": "Envie du même résultat ?",
       "ctaCorps": "Choisissez votre prestation et votre créneau en quelques secondes. Une question avant de réserver ? {salon} vous répond.",
-      "ctaReserver": "Réserver maintenant"
+      "ctaReserver": "Réserver maintenant",
+      "pauseAnimation": "Mettre l'animation en pause",
+      "reprendreAnimation": "Reprendre l'animation"
     },
     "compteConnecte": "Mon espace — connectée ({nom})",
     "seConnecterCompte": "Se connecter à mon espace",

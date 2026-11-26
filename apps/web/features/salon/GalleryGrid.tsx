@@ -63,6 +63,7 @@ export function GalleryGrid({
   reservable = true,
   lienDirect = false,
   aOuvrir,
+  onVisionneuse,
 }: {
   assets: MediaAsset[];
   salonName: string;
@@ -72,6 +73,8 @@ export function GalleryGrid({
   lienDirect?: boolean;
   /** Ouvrir cette photo depuis l'extérieur (un coup de cœur). `jeton` change à chaque demande. */
   aOuvrir?: { id: string; jeton: number } | null;
+  /** Prévenu quand la visionneuse s'ouvre ou se ferme (pour suspendre une animation voisine). */
+  onVisionneuse?: (ouverte: boolean) => void;
 }) {
   const t = useTranslations("salon");
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -97,6 +100,11 @@ export function GalleryGrid({
     },
     [assets.length, openIndex, ouvrir],
   );
+
+  const ouverte = openIndex !== null;
+  useEffect(() => {
+    onVisionneuse?.(ouverte);
+  }, [ouverte, onVisionneuse]);
 
   // Une adresse partagée rouvre sa photo. Après le premier rendu : le
   // serveur ne connaît pas `?photo=`, la grille s'affiche d'abord fermée.

@@ -111,9 +111,25 @@ export function ServiceCard({
           remplissage d'un écran d'ordinateur ne laisse plus de place au
           texte.
         */}
+        {/*
+          Une seule disposition pour toutes les cartes, de tous les salons :
+          le nom, puis le prix dessous, puis la durée. Le prix ne remonte
+          jamais à côté d'un nom court — c'est ce qui donnait des cartes de
+          hauteurs différentes côte à côte. Le nom et la description gardent
+          chacun un nombre de lignes plafonné (deux ; trois pour la
+          description sur grand écran), et le bloc de texte une hauteur
+          réservée — celle d'un nom sur deux lignes et d'une description
+          pleine, mesurée : 9,2rem sur téléphone, 11,5rem au-delà. Toutes les
+          cartes ont ainsi la même taille, et l'espace libre d'un texte court
+          tombe au-dessus de « Réserver », pas entre le nom et son prix.
+        */}
         <span className="flex flex-1 flex-col p-3.5 sm:p-5">
-          <span className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-            <span className="text-[0.9rem] font-semibold leading-snug text-[var(--site-ink)] sm:text-base">
+          <span className="flex min-h-[9.2rem] flex-col sm:min-h-[11.5rem]">
+          <span className="flex flex-col items-start gap-1">
+            <span
+              title={service.name}
+              className="line-clamp-2 text-[0.9rem] font-semibold leading-snug text-[var(--site-ink)] sm:text-base"
+            >
               {service.name}
             </span>
             {/*
@@ -152,8 +168,9 @@ export function ServiceCard({
               {service.description}
             </span>
           )}
+          </span>
 
-          <span className="mt-3 flex items-center gap-1.5 pt-1 text-[0.8rem] font-medium text-[var(--salon-ink)] sm:mt-4 sm:text-sm">
+          <span className="mt-auto flex items-center gap-1.5 pt-4 text-[0.8rem] font-medium text-[var(--salon-ink)] sm:pt-5 sm:text-sm">
             {c("reserver")}
             <SalonIcon
               name="arrow"
