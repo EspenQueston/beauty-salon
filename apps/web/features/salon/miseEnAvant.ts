@@ -1,28 +1,28 @@
 "use client";
 
 /**
- * La mise en avant des « coups de cœur » : une photo après l'autre avance
- * vers la visiteuse, reste un instant, puis reprend sa place — et la suivante
- * part seulement quand la précédente est revenue.
+ * La mise en avant des « coups de cœur » : une photo zoome nettement, reste
+ * un instant au premier plan, revient à sa place ; puis le bandeau glisse
+ * jusqu'à la photo suivante, qui fait de même — et ainsi de suite, en boucle.
  *
  * ---------------------------------------------------------------------------
  * Ce que fait ce module, et ce qu'il ne fait pas
  * ---------------------------------------------------------------------------
  *
- *   - Il ne déplace rien : il pose `data-pop="on"` sur le cadre de la photo
- *     active ; le CSS (`.pop-carte` dans globals.css) fait le zoom, l'ombre et
- *     le premier plan. Le bandeau garde sa disposition, sa hauteur et son
- *     défilement au doigt : ce n'est pas un carrousel.
- *   - Il ne fait défiler personne : seules les photos *visibles* dans le
- *     bandeau passent à leur tour. Sur téléphone, celles qu'on n'a pas fait
- *     glisser attendent.
+ *   - Le zoom : il pose `data-pop="on"` sur le cadre de la photo active ; le
+ *     CSS (`.pop-carte` dans globals.css) fait l'agrandissement, l'ombre et
+ *     le premier plan. Une transformation : ni les voisines ni la hauteur du
+ *     bandeau ne bougent.
+ *   - Le défilement : seul le *bandeau* glisse (son `scrollLeft`), jamais la
+ *     page. Une photo déjà entièrement visible ne fait pas bouger le bandeau.
+ *     Après la dernière, il revient à la première.
  *   - Il ne rend pas React à chaque pas : le rythme vit dans des minuteries et
  *     des attributs, seul le bouton pause est un état.
  *
- * Il s'arrête quand la galerie est survolée ou reçoit le focus, quand la
- * visionneuse est ouverte, hors écran, onglet masqué, et ne démarre pas du
- * tout sous `prefers-reduced-motion`. Sans JavaScript, rien ne bouge et
- * tout reste cliquable.
+ * Il s'arrête quand la galerie est survolée, touchée ou reçoit le focus,
+ * quand la visionneuse est ouverte, hors écran, onglet masqué, et ne démarre
+ * pas du tout sous `prefers-reduced-motion`. Sans JavaScript, rien ne bouge
+ * et tout reste cliquable.
  */
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
@@ -30,20 +30,21 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 /** Les réglages, au même endroit. Les durées sont en millisecondes. */
 export const MISE_EN_AVANT = {
   /** Avancée vers la visiteuse. */
-  zoomMs: 650,
-  /** Temps passé au premier plan. */
-  maintienMs: 1400,
+  zoomMs: 500,
+  /** Temps passé au premier plan, zoomée. */
+  maintienMs: 1100,
   /** Retour à la place d'origine. */
-  retourMs: 650,
-  /** Pause entre le retour d'une photo et le départ de la suivante. */
-  pauseMs: 450,
+  retourMs: 500,
+  /** Glissement du bandeau jusqu'à la photo suivante. */
+  defilementMs: 700,
+  /** Courte pause avant le zoom suivant. */
+  pauseMs: 250,
   /** Agrandissement, sur grand écran puis sur téléphone. */
-  echelle: 1.06,
-  echelleMobile: 1.035,
+  echelle: 1.11,
+  echelleMobile: 1.09,
+  /** Reprise après que la visiteuse a touché le bandeau du doigt. */
+  repriseApresToucherMs: 3000,
 } as const;
-
-/** Une photo qui passe sous ce seuil de visibilité dans le bandeau ne s'anime pas. */
-const VISIBLE = 0.85;
 
 /**
  * Les variables CSS du rythme, à poser sur le conteneur : le CSS lit les
@@ -64,12 +65,13 @@ export function useMiseEnAvant(
 ): { arretee: boolean; basculer: () => void } {
   const [arretee, setArretee] = useState(false);
 
-  // Les raisons de s'arrêter, chacune tenue a jour par son evenement.
+  // Les raisons de s'arrêter, chacune tenue à jour par son événement.
   const etat = useRef({
     aLEcran: false,
     onglet: true,
     survol: false,
     focus: false,
+    toucher: false,
     exterieur: enPause,
     manuel: false,
   });
@@ -91,14 +93,16 @@ export function useMiseEnAvant(
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const cadres = () => [...racine.querySelectorAll<HTMLElement>("[data-pop-cadre]")];
-    const visibles = new Set<Element>();
     let prochain = 0;
     let actif: HTMLElement | null = null;
     let minuterie: number | undefined;
+    let finToucher: number | undefined;
 
     const enMarche = () => {
       const e = etat.current;
-      return e.aLEcran && e.onglet && !e.survol && !e.focus && !e.exterieur && !e.manuel;
+      return (
+        e.aLEcran && e.onglet && !e.survol && !e.focus && !e.toucher && !e.exterieur && !e.manuel
+      );
     };
 
     const attendre = (ms: number, suite: () => void) => {
@@ -112,31 +116,50 @@ export function useMiseEnAvant(
       actif = null;
     };
 
+    /** Fait glisser le bandeau jusqu'au cadre ; rend vrai s'il a fallu bouger. */
+    const amener = (cadre: HTMLElement): boolean => {
+      const article = cadre.parentElement ?? cadre;
+      const gauche = parseFloat(getComputedStyle(racine).paddingLeft) || 0;
+      const debut = article.offsetLeft - racine.offsetLeft;
+      const fin = debut + article.offsetWidth;
+      const vueDebut = racine.scrollLeft + gauche;
+      const vueFin = racine.scrollLeft + racine.clientWidth - gauche;
+      if (debut >= vueDebut - 1 && fin <= vueFin + 1) return false;
+      racine.scrollTo({ left: Math.max(0, debut - gauche), behavior: "smooth" });
+      return true;
+    };
+
+    const zoomer = (cadre: HTMLElement) => {
+      if (!enMarche()) return;
+      actif = cadre;
+      cadre.setAttribute("data-pop", "on");
+      attendre(MISE_EN_AVANT.zoomMs + MISE_EN_AVANT.maintienMs, () => {
+        rendre();
+        attendre(MISE_EN_AVANT.retourMs, pas);
+      });
+    };
+
     const pas = () => {
       if (!enMarche()) return;
       const tous = cadres();
       if (tous.length === 0) return;
-      // La prochaine photo visible et chargée, dans l'ordre d'affichage.
+      // La prochaine photo chargée, dans l'ordre d'affichage.
       let choisi: HTMLElement | null = null;
       for (let n = 0; n < tous.length; n += 1) {
         const rang = (prochain + n) % tous.length;
-        const cadre = tous[rang];
-        if (visibles.has(cadre) && !cadre.hasAttribute("data-pop-ko")) {
-          choisi = cadre;
+        if (!tous[rang].hasAttribute("data-pop-ko")) {
+          choisi = tous[rang];
           prochain = rang + 1;
           break;
         }
       }
-      if (!choisi) {
-        attendre(MISE_EN_AVANT.pauseMs * 2, pas);
-        return;
-      }
-      actif = choisi;
-      choisi.setAttribute("data-pop", "on");
-      attendre(MISE_EN_AVANT.zoomMs + MISE_EN_AVANT.maintienMs, () => {
-        rendre();
-        attendre(MISE_EN_AVANT.retourMs + MISE_EN_AVANT.pauseMs, pas);
-      });
+      if (!choisi) return;
+      const cible = choisi;
+      const glisse = amener(cible);
+      attendre(
+        (glisse ? MISE_EN_AVANT.defilementMs : 0) + MISE_EN_AVANT.pauseMs,
+        () => zoomer(cible),
+      );
     };
 
     // Appelée à chaque changement d'une raison de s'arrêter.
@@ -151,18 +174,6 @@ export function useMiseEnAvant(
       rendre();
       attendre((enCours ? MISE_EN_AVANT.retourMs : 0) + MISE_EN_AVANT.pauseMs, pas);
     };
-
-    // Visibilité de chaque photo dans le bandeau qui défile.
-    const dansLeBandeau = new IntersectionObserver(
-      (entrees) => {
-        for (const entree of entrees) {
-          if (entree.intersectionRatio >= VISIBLE) visibles.add(entree.target);
-          else visibles.delete(entree.target);
-        }
-      },
-      { root: racine, threshold: [0, VISIBLE, 1] },
-    );
-    for (const cadre of cadres()) dansLeBandeau.observe(cadre);
 
     // La galerie à l'écran, ou non.
     const aLEcran = new IntersectionObserver(
@@ -188,6 +199,22 @@ export function useMiseEnAvant(
       etat.current.survol = false;
       relancer.current();
     };
+    // Le doigt sur le bandeau : la visiteuse fait défiler elle-même, on se
+    // tait, et on reprend quelques secondes après qu'elle a lâché.
+    const surToucher = (evenement: PointerEvent) => {
+      if (evenement.pointerType === "mouse") return;
+      window.clearTimeout(finToucher);
+      etat.current.toucher = true;
+      relancer.current();
+    };
+    const surLacher = (evenement: PointerEvent) => {
+      if (evenement.pointerType === "mouse") return;
+      window.clearTimeout(finToucher);
+      finToucher = window.setTimeout(() => {
+        etat.current.toucher = false;
+        relancer.current();
+      }, MISE_EN_AVANT.repriseApresToucherMs);
+    };
     const surFocus = () => {
       etat.current.focus = true;
       relancer.current();
@@ -206,19 +233,25 @@ export function useMiseEnAvant(
     document.addEventListener("visibilitychange", surOnglet);
     racine.addEventListener("pointerenter", surEntree);
     racine.addEventListener("pointerleave", surSortie);
+    racine.addEventListener("pointerdown", surToucher);
+    racine.addEventListener("pointerup", surLacher);
+    racine.addEventListener("pointercancel", surLacher);
     racine.addEventListener("focusin", surFocus);
     racine.addEventListener("focusout", surPerteFocus);
     racine.addEventListener("error", surErreur, true);
 
     return () => {
       window.clearTimeout(minuterie);
+      window.clearTimeout(finToucher);
       rendre();
       relancer.current = () => {};
-      dansLeBandeau.disconnect();
       aLEcran.disconnect();
       document.removeEventListener("visibilitychange", surOnglet);
       racine.removeEventListener("pointerenter", surEntree);
       racine.removeEventListener("pointerleave", surSortie);
+      racine.removeEventListener("pointerdown", surToucher);
+      racine.removeEventListener("pointerup", surLacher);
+      racine.removeEventListener("pointercancel", surLacher);
       racine.removeEventListener("focusin", surFocus);
       racine.removeEventListener("focusout", surPerteFocus);
       racine.removeEventListener("error", surErreur, true);

@@ -75,7 +75,7 @@ export function RealisationsExplorer({
     <>
       {coupsDeCoeur.length >= 2 && (
         <section aria-labelledby="coups-de-coeur" className="mb-10 sm:mb-12">
-          <div className="mb-4 flex items-end justify-between gap-3">
+          <div className="mb-6 flex sm:mb-8 items-end justify-between gap-3">
             <div>
               <h2
                 id="coups-de-coeur"
@@ -201,7 +201,7 @@ const CoupsDeCoeur = forwardRef<
     <ul
       ref={ref}
       style={variablesMiseEnAvant()}
-      className="-mx-4 -my-3 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-5 pt-3 [scrollbar-width:none] sm:-mx-3 sm:scroll-px-3 sm:px-3 [&::-webkit-scrollbar]:hidden"
+      className="-mx-4 -my-8 flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 pb-10 pt-8 [scrollbar-width:none] sm:-mx-6 sm:scroll-px-6 sm:px-6 [&::-webkit-scrollbar]:hidden"
     >
       {assets.map((asset) => (
         <li key={asset.id} className="w-[68%] shrink-0 snap-start sm:w-64">
